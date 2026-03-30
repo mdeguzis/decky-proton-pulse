@@ -14,12 +14,12 @@ PROTONDB_USER_AGENT = "decky-proton-pulse/0.1.0 (github.com/<owner>/decky-proton
 
 
 class Plugin:
-    _system_info: dict = {}
-    _reports_cache: dict = {}
 
     # ─── Lifecycle ────────────────────────────────────────────────────────────
 
     async def _main(self):
+        self._system_info: dict = {}
+        self._reports_cache: dict = {}
         self._setup_logger()
         self._logger.info("Proton Pulse starting up")
         self._system_info = await self.get_system_info()
@@ -138,6 +138,8 @@ class Plugin:
             ["lspci"],
             capture_output=True, text=True, timeout=5
         )
+        if result.returncode != 0:
+            return None, None
         for line in result.stdout.splitlines():
             lower = line.lower()
             if any(k in lower for k in ['vga', '3d controller', 'display controller']):
@@ -170,8 +172,8 @@ class Plugin:
             for path in glob.glob("/sys/class/drm/card*/device/driver/module/version"):
                 with open(path) as f:
                     return f.read().strip()
-        except Exception:
-            pass
+        except OSError as e:
+            self._logger.warning(f"DRM driver version read failed: {e}")
         return None
 
     def _read_kernel(self) -> str | None:
@@ -189,7 +191,7 @@ class Plugin:
         return None
 
     def _read_custom_proton(self) -> str | None:
-        compat_dir = os.path.expanduser("~/.steam/root/compatibilitytools.d")
+        compat_dir = os.path.join(decky.DECKY_USER_HOME, ".steam", "root", "compatibilitytools.d")
         if not os.path.isdir(compat_dir):
             return None
         entries = [d for d in os.listdir(compat_dir)

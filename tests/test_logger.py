@@ -1,8 +1,10 @@
 # tests/test_logger.py
+import asyncio
 import logging
 import pytest
 import sys
 import os
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -10,10 +12,14 @@ from main import Plugin
 
 
 @pytest.fixture
-def plugin():
+def plugin(tmp_path):
     p = Plugin()
+    import main as main_module
+    original = main_module.LOG_FILE
+    main_module.LOG_FILE = str(tmp_path / "test.log")
     p._setup_logger()
-    return p
+    yield p
+    main_module.LOG_FILE = original
 
 
 def test_set_log_level_debug(plugin):
@@ -35,7 +41,17 @@ def test_set_log_level_invalid(plugin):
     assert result is False
 
 
-def test_is_game_running_returns_bool(plugin):
-    import asyncio
-    result = asyncio.run(plugin.is_game_running())
-    assert isinstance(result, bool)
+def test_is_game_running_true_when_pgrep_finds_process(plugin):
+    """Returns True when pgrep finds SteamLaunch."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0)
+        result = asyncio.run(plugin.is_game_running())
+    assert result is True
+
+
+def test_is_game_running_false_when_no_process(plugin):
+    """Returns False when pgrep finds nothing."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=1)
+        result = asyncio.run(plugin.is_game_running())
+    assert result is False
