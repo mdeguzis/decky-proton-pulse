@@ -1,57 +1,105 @@
+# main.py
 import os
-
-# The decky plugin module is located at decky-loader/plugin
-# For easy intellisense checkout the decky-loader code repo
-# and add the `decky-loader/plugin/imports` path to `python.analysis.extraPaths` in `.vscode/settings.json`
-import decky
 import asyncio
+import logging
+import logging.handlers
+import subprocess
+
+import decky
+
+LOG_FILE = "/tmp/decky-proton-pulse.log"
+PROTONDB_SUMMARY_URL = "https://www.protondb.com/api/v1/reports/summaries/{app_id}.json"
+PROTONDB_REPORTS_URL = "https://www.protondb.com/api/v1/reports/app/{app_id}"
+PROTONDB_USER_AGENT = "decky-proton-pulse/0.1.0 (github.com/<owner>/decky-proton-pulse)"
+
 
 class Plugin:
-    # A normal method. It can be called from the TypeScript side using @decky/api.
-    async def add(self, left: int, right: int) -> int:
-        return left + right
+    _system_info: dict = {}
+    _reports_cache: dict = {}
 
-    async def long_running(self):
-        await asyncio.sleep(15)
-        # Passing through a bunch of random data, just as an example
-        await decky.emit("timer_event", "Hello from the backend!", True, 2)
+    # ─── Lifecycle ────────────────────────────────────────────────────────────
 
-    # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
-        self.loop = asyncio.get_event_loop()
-        decky.logger.info("Hello World!")
+        self._setup_logger()
+        self._logger.info("Proton Pulse starting up")
+        self._system_info = await self.get_system_info()
+        self._logger.info(f"System detected: {self._system_info}")
 
-    # Function called first during the unload process, utilize this to handle your plugin being stopped, but not
-    # completely removed
     async def _unload(self):
-        decky.logger.info("Goodnight World!")
-        pass
+        self._logger.info("Proton Pulse unloading")
 
-    # Function called after `_unload` during uninstall, utilize this to clean up processes and other remnants of your
-    # plugin that may remain on the system
     async def _uninstall(self):
-        decky.logger.info("Goodbye World!")
-        pass
+        self._logger.info("Proton Pulse uninstalled")
 
-    async def start_timer(self):
-        self.loop.create_task(self.long_running())
-
-    # Migrations that should be performed before entering `_main()`.
     async def _migration(self):
-        decky.logger.info("Migrating")
-        # Here's a migration example for logs:
-        # - `~/.config/decky-template/template.log` will be migrated to `decky.decky_LOG_DIR/template.log`
-        decky.migrate_logs(os.path.join(decky.DECKY_USER_HOME,
-                                               ".config", "decky-template", "template.log"))
-        # Here's a migration example for settings:
-        # - `~/homebrew/settings/template.json` is migrated to `decky.decky_SETTINGS_DIR/template.json`
-        # - `~/.config/decky-template/` all files and directories under this root are migrated to `decky.decky_SETTINGS_DIR/`
+        decky.migrate_logs(
+            os.path.join(decky.DECKY_USER_HOME, ".config", "decky-proton-pulse", "proton-pulse.log")
+        )
         decky.migrate_settings(
-            os.path.join(decky.DECKY_HOME, "settings", "template.json"),
-            os.path.join(decky.DECKY_USER_HOME, ".config", "decky-template"))
-        # Here's a migration example for runtime data:
-        # - `~/homebrew/template/` all files and directories under this root are migrated to `decky.decky_RUNTIME_DIR/`
-        # - `~/.local/share/decky-template/` all files and directories under this root are migrated to `decky.decky_RUNTIME_DIR/`
-        decky.migrate_runtime(
-            os.path.join(decky.DECKY_HOME, "template"),
-            os.path.join(decky.DECKY_USER_HOME, ".local", "share", "decky-template"))
+            os.path.join(decky.DECKY_HOME, "settings", "proton-pulse.json"),
+            os.path.join(decky.DECKY_USER_HOME, ".config", "decky-proton-pulse"),
+        )
+
+    # ─── Logging ──────────────────────────────────────────────────────────────
+
+    def _setup_logger(self):
+        self._logger = logging.getLogger("proton-pulse")
+        self._logger.handlers.clear()
+        handler = logging.handlers.RotatingFileHandler(
+            LOG_FILE, maxBytes=5 * 1024 * 1024, backupCount=2
+        )
+        handler.setFormatter(
+            logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s",
+                              datefmt="%Y-%m-%d %H:%M:%S")
+        )
+        self._logger.addHandler(handler)
+        self._logger.setLevel(logging.INFO)
+
+    def _sync_set_log_level(self, level: str) -> bool:
+        """Synchronous helper used by tests and the async callable."""
+        valid = {"DEBUG": logging.DEBUG, "INFO": logging.INFO,
+                 "WARNING": logging.WARNING, "ERROR": logging.ERROR}
+        if level not in valid:
+            return False
+        self._logger.setLevel(valid[level])
+        return True
+
+    async def set_log_level(self, level: str) -> bool:
+        return self._sync_set_log_level(level)
+
+    async def get_log_contents(self) -> str:
+        try:
+            with open(LOG_FILE, "r") as f:
+                lines = f.readlines()
+            return "".join(lines[-200:])
+        except FileNotFoundError:
+            return ""
+
+    # ─── Game Guard ───────────────────────────────────────────────────────────
+
+    async def is_game_running(self) -> bool:
+        """Returns True if any Steam game process is detected via /proc scan."""
+        try:
+            result = subprocess.run(
+                ["pgrep", "-f", "SteamLaunch"],
+                capture_output=True, text=True, timeout=3
+            )
+            return result.returncode == 0
+        except Exception as e:
+            self._logger.warning(f"is_game_running check failed: {e}")
+            return False
+
+    # ─── System Detection ─────────────────────────────────────────────────────
+    # (stubs — filled in Task 5)
+
+    async def get_system_info(self) -> dict:
+        return {}
+
+    # ─── ProtonDB Fetcher ─────────────────────────────────────────────────────
+    # (stubs — filled in Task 6)
+
+    async def fetch_protondb_summary(self, app_id: str) -> dict:
+        return {}
+
+    async def fetch_protondb_reports(self, app_id: str) -> list:
+        return []
