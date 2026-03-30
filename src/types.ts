@@ -64,18 +64,5 @@ export interface TieredReports {
 }
 
 // ─── Steam CEF ───────────────────────────────────────────────────────────────
-// SteamClient is available as a global in the Steam CEF context.
-// These are the methods this plugin uses — not exhaustive.
-
-// @ts-ignore - SteamClient is already declared by @decky/ui
-declare global {
-  const SteamClient: {
-    Apps: {
-      SetAppLaunchOptions: (appId: number, options: string) => Promise<void>;
-      GetLaunchOptions: (appId: number) => Promise<string>;
-    };
-    GameSessions: {
-      GetRunningApps: () => Array<{ nAppID: number }>;
-    };
-  };
-}
+// SteamClient global is provided by @decky/ui — no redeclaration needed.
+// Types are available via node_modules/@decky/ui/dist/globals/SteamClient.d.ts

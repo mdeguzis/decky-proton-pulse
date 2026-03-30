@@ -1,6 +1,6 @@
 // src/lib/scoring.test.ts
 import { describe, it, expect } from 'vitest';
-import { scoreReport, bucketByGpuTier, WEIGHTS } from './scoring';
+import { scoreReport, bucketByGpuTier } from './scoring';
 import type { ProtonDBReport, SystemInfo } from '../types';
 
 const nvidiaSystem: SystemInfo = {
