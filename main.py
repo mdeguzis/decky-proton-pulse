@@ -90,10 +90,111 @@ class Plugin:
             return False
 
     # ─── System Detection ─────────────────────────────────────────────────────
-    # (stubs — filled in Task 5)
 
     async def get_system_info(self) -> dict:
-        return {}
+        info = {
+            'cpu': None, 'ram_gb': None, 'gpu': None, 'gpu_vendor': None,
+            'driver_version': None, 'kernel': None, 'distro': None, 'proton_custom': None
+        }
+        for field, fn in [
+            ('cpu',           self._read_cpu),
+            ('ram_gb',        self._read_ram_gb),
+            ('kernel',        self._read_kernel),
+            ('distro',        self._read_distro),
+            ('driver_version', self._read_driver_version),
+            ('proton_custom', self._read_custom_proton),
+        ]:
+            try:
+                info[field] = fn()
+            except Exception as e:
+                self._logger.warning(f"System detection failed for {field}: {e}")
+
+        try:
+            gpu, vendor = self._read_gpu()
+            info['gpu'] = gpu
+            info['gpu_vendor'] = vendor
+        except Exception as e:
+            self._logger.warning(f"GPU detection failed: {e}")
+
+        return info
+
+    def _read_cpu(self) -> str | None:
+        with open("/proc/cpuinfo", "r") as f:
+            for line in f:
+                if line.startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+        return None
+
+    def _read_ram_gb(self) -> int | None:
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                if line.startswith("MemTotal"):
+                    kb = int(line.split()[1])
+                    return round(kb / 1024 / 1024)
+        return None
+
+    def _read_gpu(self) -> tuple[str | None, str | None]:
+        result = subprocess.run(
+            ["lspci"],
+            capture_output=True, text=True, timeout=5
+        )
+        for line in result.stdout.splitlines():
+            lower = line.lower()
+            if any(k in lower for k in ['vga', '3d controller', 'display controller']):
+                name = line.split(":", 2)[-1].strip()
+                return name, self._detect_gpu_vendor(name)
+        return None, None
+
+    def _detect_gpu_vendor(self, gpu_string: str) -> str:
+        lower = gpu_string.lower()
+        if any(k in lower for k in ['nvidia', 'geforce', 'rtx', 'gtx', 'quadro']):
+            return 'nvidia'
+        if any(k in lower for k in ['amd', 'radeon', 'rx ', 'vega']):
+            return 'amd'
+        if any(k in lower for k in ['intel', 'arc', 'iris', 'uhd']):
+            return 'intel'
+        return 'other'
+
+    def _read_driver_version(self) -> str | None:
+        try:
+            result = subprocess.run(
+                ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except FileNotFoundError:
+            pass
+        try:
+            import glob
+            for path in glob.glob("/sys/class/drm/card*/device/driver/module/version"):
+                with open(path) as f:
+                    return f.read().strip()
+        except Exception:
+            pass
+        return None
+
+    def _read_kernel(self) -> str | None:
+        result = subprocess.run(["uname", "-r"], capture_output=True, text=True, timeout=3)
+        return result.stdout.strip() if result.returncode == 0 else None
+
+    def _read_distro(self) -> str | None:
+        try:
+            with open("/etc/os-release") as f:
+                for line in f:
+                    if line.startswith("PRETTY_NAME="):
+                        return line.split("=", 1)[1].strip().strip('"')
+        except FileNotFoundError:
+            pass
+        return None
+
+    def _read_custom_proton(self) -> str | None:
+        compat_dir = os.path.expanduser("~/.steam/root/compatibilitytools.d")
+        if not os.path.isdir(compat_dir):
+            return None
+        entries = [d for d in os.listdir(compat_dir)
+                   if os.path.isdir(os.path.join(compat_dir, d))]
+        return entries[0] if len(entries) == 1 else (", ".join(entries) if entries else None)
 
     # ─── ProtonDB Fetcher ─────────────────────────────────────────────────────
     # (stubs — filled in Task 6)
