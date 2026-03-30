@@ -43,6 +43,8 @@ class Plugin:
     # ─── Logging ──────────────────────────────────────────────────────────────
 
     def _setup_logger(self):
+        if not hasattr(self, '_reports_cache'):
+            self._reports_cache = {}
         self._logger = logging.getLogger("proton-pulse")
         self._logger.handlers.clear()
         handler = logging.handlers.RotatingFileHandler(
@@ -199,10 +201,64 @@ class Plugin:
         return entries[0] if len(entries) == 1 else (", ".join(entries) if entries else None)
 
     # ─── ProtonDB Fetcher ─────────────────────────────────────────────────────
-    # (stubs — filled in Task 6)
 
     async def fetch_protondb_summary(self, app_id: str) -> dict:
-        return {}
+        url = PROTONDB_SUMMARY_URL.format(app_id=app_id)
+        try:
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    url,
+                    headers={"User-Agent": PROTONDB_USER_AGENT},
+                    timeout=aiohttp.ClientTimeout(total=10)
+                ) as resp:
+                    if resp.status == 404:
+                        self._logger.debug(f"No ProtonDB summary for {app_id}")
+                        return {}
+                    if resp.status != 200:
+                        self._logger.warning(f"ProtonDB summary HTTP {resp.status} for {app_id}")
+                        return {}
+                    return await resp.json()
+        except Exception as e:
+            self._logger.error(f"fetch_protondb_summary failed for {app_id}: {e}")
+            return {}
 
     async def fetch_protondb_reports(self, app_id: str) -> list:
+        if not hasattr(self, '_reports_cache'):
+            self._reports_cache = {}
+        if app_id in self._reports_cache:
+            self._logger.debug(f"Cache hit for app {app_id}")
+            return self._reports_cache[app_id]
+
+        url = PROTONDB_REPORTS_URL.format(app_id=app_id)
+        for attempt in range(3):
+            try:
+                import aiohttp
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        url,
+                        headers={"User-Agent": PROTONDB_USER_AGENT},
+                        timeout=aiohttp.ClientTimeout(total=10)
+                    ) as resp:
+                        if resp.status == 404:
+                            self._logger.info(f"No ProtonDB reports for {app_id}")
+                            return []
+                        if resp.status == 429:
+                            wait = 2 ** (attempt + 1)
+                            self._logger.warning(f"Rate limited by ProtonDB, retrying in {wait}s")
+                            await asyncio.sleep(wait)
+                            continue
+                        if resp.status != 200:
+                            self._logger.warning(f"ProtonDB reports HTTP {resp.status} for {app_id}")
+                            return []
+                        data = await resp.json()
+                        self._reports_cache[app_id] = data
+                        self._logger.info(f"Fetched {len(data)} reports for app {app_id}")
+                        return data
+            except asyncio.TimeoutError:
+                self._logger.error(f"ProtonDB request timed out for {app_id}")
+                return []
+            except Exception as e:
+                self._logger.error(f"fetch_protondb_reports failed for {app_id}: {e}")
+                return []
         return []
