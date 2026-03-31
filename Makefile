@@ -13,8 +13,8 @@ DECK_IP   ?=
 DECK_USER ?= deck
 TARGET    ?= stable
 
-.PHONY: help build watch test test-ts test-py setup deploy build-and-deploy clean \
-        logs logs-loader cef-debug-enable live-reload-enable
+.PHONY: help build watch test test-ts test-py setup deploy deploy-reload build-and-deploy clean \
+        logs logs-loader reload cef-debug-enable live-reload-enable
 
 help:
 	@echo "Usage: make <target>"
@@ -32,12 +32,14 @@ help:
 	@echo "  test-py           Run Python tests only (pytest via uv)"
 	@echo "  setup             Install all dependencies (pnpm + uv)"
 	@echo "  deploy            Build and deploy to Steam Deck (requires DECK_IP)"
+	@echo "  deploy-reload     Build, deploy, then restart plugin_loader (requires DECK_IP)"
 	@echo "  build-and-deploy  Clean, test, build, and deploy (requires DECK_IP)"
 	@echo "  clean             Remove build output (dist/)"
 	@echo ""
 	@echo "On-device debugging (require DECK_IP):"
 	@echo "  logs              Follow plugin app log in real time"
 	@echo "  logs-loader       Follow plugin_loader journal in real time"
+	@echo "  reload            Restart plugin_loader on the Deck (equivalent to Decky UI reload)"
 	@echo "  cef-debug-enable  Enable remote CEF debugging (React DevTools on port 8081)"
 	@echo "  live-reload-enable  Configure LIVE_RELOAD=1 on plugin_loader service"
 
@@ -65,6 +67,8 @@ ifndef DECK_IP
 endif
 	bash scripts/deploy.sh --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
 
+deploy-reload: deploy reload
+
 build-and-deploy: clean test build
 ifndef DECK_IP
 	$(error DECK_IP is required: DECK_IP=192.168.1.x make build-and-deploy)
@@ -83,6 +87,10 @@ endef
 logs:
 	$(call require_deck_ip)
 	ssh $(DECK_USER)@$(DECK_IP) "tail -f /tmp/decky-proton-pulse.log"
+
+reload:
+	$(call require_deck_ip)
+	ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart plugin_loader"
 
 logs-loader:
 	$(call require_deck_ip)
