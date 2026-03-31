@@ -171,8 +171,9 @@ export default definePlugin(() => {
       const appId = props.appid ? parseInt(props.appid, 10) : null;
       focusedAppId = appId;
       if (appId) {
+        const appName = (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appId)?.display_name ?? '';
         if ((Content as any)._onGameFocus) {
-          (Content as any)._onGameFocus(appId, '');
+          (Content as any)._onGameFocus(appId, appName);
         } else {
           pendingAppId = appId;
         }

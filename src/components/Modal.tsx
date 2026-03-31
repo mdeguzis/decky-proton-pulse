@@ -20,8 +20,9 @@ export function ProtonPulseModal({ appId, appName, reports, sysInfo, closeModal 
   const scored = reports.map(r => scoreReport(r, sysInfo));
   const buckets = bucketByGpuTier(scored);
 
-  const defaultFilter: FilterTier = (sysInfo.gpu_vendor as FilterTier) ?? 'all';
-  const [filter, setFilter] = useState<FilterTier>(defaultFilter);
+  const gpuVendor = sysInfo.gpu_vendor;
+  const initialFilter: FilterTier = (gpuVendor === 'nvidia' || gpuVendor === 'amd') ? gpuVendor : 'other';
+  const [filter, setFilter] = useState<FilterTier>(initialFilter);
   const [selected, setSelected] = useState<ScoredReport | null>(null);
   const [applying, setApplying] = useState(false);
 
@@ -40,7 +41,8 @@ export function ProtonPulseModal({ appId, appName, reports, sysInfo, closeModal 
     }
     setApplying(true);
     try {
-      await SteamClient.Apps.SetAppLaunchOptions(appId, selected.notes);
+      const launchOptions = `STEAM_COMPAT_TOOL_INSTALL_PATH="" PROTON_VERSION="${selected.protonVersion}" %command%`;
+      await SteamClient.Apps.SetAppLaunchOptions(appId, launchOptions);
       toaster.toast({ title: 'Proton Pulse', body: `Launch options applied for ${appName}` });
       closeModal();
     } catch (e) {
