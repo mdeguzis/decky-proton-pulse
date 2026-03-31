@@ -63,9 +63,14 @@ echo "✓ Packaged: ${ZIP_NAME}"
 # Deploy via SCP if DECK_IP is set
 if [[ -n "$DECK_IP" ]]; then
   echo "Deploying to Steam Deck at $DECK_IP..."
-  ssh "${DECK_USER}@${DECK_IP}" "mkdir -p ${DECK_PLUGIN_DIR}/${PLUGIN_NAME}"
-  scp -r "${STAGING_DIR}/${PLUGIN_NAME}/." \
-    "${DECK_USER}@${DECK_IP}:${DECK_PLUGIN_DIR}/${PLUGIN_NAME}/"
+  # SCP to a writable temp dir, then sudo-move into the plugins directory
+  REMOTE_TMP="/tmp/${PLUGIN_NAME}-deploy"
+  ssh "${DECK_USER}@${DECK_IP}" "rm -rf ${REMOTE_TMP} && mkdir -p ${REMOTE_TMP}"
+  scp -r "${STAGING_DIR}/${PLUGIN_NAME}/." "${DECK_USER}@${DECK_IP}:${REMOTE_TMP}/"
+  ssh -tt "${DECK_USER}@${DECK_IP}" \
+    "sudo mkdir -p ${DECK_PLUGIN_DIR}/${PLUGIN_NAME} && \
+     sudo cp -r ${REMOTE_TMP}/. ${DECK_PLUGIN_DIR}/${PLUGIN_NAME}/ && \
+     rm -rf ${REMOTE_TMP}"
   echo "✓ Deployed. Restart Decky Loader on your Deck to reload the plugin."
 else
   echo "No --deck-ip provided — skipping SCP."
