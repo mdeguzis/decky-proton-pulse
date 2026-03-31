@@ -1,6 +1,7 @@
 # main.py
 import os
 import logging
+import logging.handlers
 import subprocess
 
 import decky
@@ -12,6 +13,7 @@ class Plugin:
 
     async def _main(self):
         self._system_info: dict = {}
+        self._debug_handler: logging.Handler | None = None
         decky.logger.info("Proton Pulse starting up")
         self._system_info = await self.get_system_info()
         decky.logger.info(f"System detected: {self._system_info}")
@@ -39,8 +41,36 @@ class Plugin:
                  "WARNING": logging.WARNING, "ERROR": logging.ERROR}
         if level not in valid:
             return False
-        decky.logger.setLevel(valid[level])
+        numeric = valid[level]
+        decky.logger.setLevel(numeric)
+        if numeric == logging.DEBUG:
+            self._enable_debug_log()
+        else:
+            self._disable_debug_log()
         return True
+
+    def _enable_debug_log(self) -> None:
+        if hasattr(self, '_debug_handler') and self._debug_handler is not None:
+            return
+        debug_path = os.path.join(decky.DECKY_PLUGIN_LOG_DIR, 'plugin-debug.log')
+        handler = logging.handlers.RotatingFileHandler(
+            debug_path, maxBytes=20 * 1024 * 1024, backupCount=3
+        )
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(logging.Formatter(
+            "[%(asctime)s] [%(levelname)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        ))
+        decky.logger.addHandler(handler)
+        self._debug_handler = handler
+        decky.logger.debug("Debug log enabled")
+
+    def _disable_debug_log(self) -> None:
+        if not hasattr(self, '_debug_handler') or self._debug_handler is None:
+            return
+        decky.logger.removeHandler(self._debug_handler)
+        self._debug_handler.close()
+        self._debug_handler = None
 
     async def set_log_level(self, level: str) -> bool:
         return self._sync_set_log_level(level)
