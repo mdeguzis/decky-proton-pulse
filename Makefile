@@ -13,7 +13,8 @@ DECK_IP   ?=
 DECK_USER ?= deck
 TARGET    ?= stable
 
-.PHONY: help build watch test test-ts test-py setup deploy build-and-deploy clean
+.PHONY: help build watch test test-ts test-py setup deploy build-and-deploy clean \
+        logs logs-loader cef-debug-enable live-reload-enable
 
 help:
 	@echo "Usage: make <target>"
@@ -33,6 +34,12 @@ help:
 	@echo "  deploy            Build and deploy to Steam Deck (requires DECK_IP)"
 	@echo "  build-and-deploy  Clean, test, build, and deploy (requires DECK_IP)"
 	@echo "  clean             Remove build output (dist/)"
+	@echo ""
+	@echo "On-device debugging (require DECK_IP):"
+	@echo "  logs              Follow plugin app log in real time"
+	@echo "  logs-loader       Follow plugin_loader journal in real time"
+	@echo "  cef-debug-enable  Enable remote CEF debugging (React DevTools on port 8081)"
+	@echo "  live-reload-enable  Configure LIVE_RELOAD=1 on plugin_loader service"
 
 build:
 	pnpm build
@@ -66,3 +73,38 @@ endif
 
 clean:
 	rm -rf dist/
+
+# ─── On-device debugging ───────────────────────────────────────────────────────
+
+define require_deck_ip
+	$(if $(DECK_IP),,$(error DECK_IP is required: DECK_IP=192.168.1.x make $@))
+endef
+
+logs:
+	$(call require_deck_ip)
+	ssh $(DECK_USER)@$(DECK_IP) "tail -f /tmp/decky-proton-pulse.log"
+
+logs-loader:
+	$(call require_deck_ip)
+	ssh $(DECK_USER)@$(DECK_IP) "journalctl -u plugin_loader -f"
+
+# Enable remote CEF debugging so React DevTools can connect.
+# After running: open http://$(DECK_IP):8081 in a Chromium browser on your dev machine,
+# or use chrome://inspect → Configure → add $(DECK_IP):8081
+cef-debug-enable:
+	$(call require_deck_ip)
+	ssh $(DECK_USER)@$(DECK_IP) "touch ~/.steam/steam/.cef-enable-remote-debugging"
+	ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart steam"
+	@echo "CEF debugging enabled. Connect at http://$(DECK_IP):8081 in a Chromium browser."
+
+# Enable LIVE_RELOAD=1 on the plugin_loader service so redeploying dist/index.js
+# triggers an automatic frontend reload (close the plugin panel first, then deploy).
+live-reload-enable:
+	$(call require_deck_ip)
+	ssh -tt $(DECK_USER)@$(DECK_IP) \
+	  "sudo mkdir -p /etc/systemd/system/plugin_loader.service.d && \
+	   echo -e '[Service]\nEnvironment=LIVE_RELOAD=1' | \
+	   sudo tee /etc/systemd/system/plugin_loader.service.d/live-reload.conf > /dev/null && \
+	   sudo systemctl daemon-reload && \
+	   sudo systemctl restart plugin_loader"
+	@echo "Live reload enabled. Close the plugin panel, then: make deploy && (plugin auto-reloads)"
