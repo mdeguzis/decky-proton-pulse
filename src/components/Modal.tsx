@@ -1,67 +1,64 @@
 // src/components/Modal.tsx
-import { useState } from 'react';
-import { ModalRoot, Tabs } from '@decky/ui';
-import type { Tab } from '@decky/ui';
-import type { ProtonDBReport, SystemInfo } from '../types';
+import { useState, useEffect } from 'react';
+import { SidebarNavigation } from '@decky/ui';
+import type { SidebarNavigationPage } from '@decky/ui';
+import { callable } from '@decky/api';
+import { pageState } from '../lib/pageState';
+import type { SystemInfo } from '../types';
 import { ConfigureTab } from './tabs/ConfigureTab';
 import { ManageTab } from './tabs/ManageTab';
 import { LogsTab } from './tabs/LogsTab';
 import { SettingsTab } from './tabs/SettingsTab';
 import { AboutTab } from './tabs/AboutTab';
 
-export type TabId = 'configure' | 'manage' | 'logs' | 'settings' | 'about';
+const getSystemInfo = callable<[], SystemInfo>('get_system_info');
 
-interface Props {
-  appId: number | null;
-  appName: string;
-  reports: ProtonDBReport[];
-  sysInfo: SystemInfo | null;
-  closeModal: () => void;
-  initialTab?: TabId;
-}
+export function ProtonPulsePage() {
+  const [activePage, setActivePage] = useState<string>(pageState.initialPage);
+  const [sysInfo, setSysInfo] = useState<SystemInfo | null>(null);
 
-export function ProtonPulseModal({ appId, appName, reports, sysInfo, closeModal, initialTab = 'configure' }: Props) {
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  const { appId, appName } = pageState;
 
-  const tabs: Tab[] = [
+  useEffect(() => {
+    getSystemInfo().then(setSysInfo).catch(console.error);
+  }, []);
+
+  const pages: SidebarNavigationPage[] = [
     {
-      id: 'configure',
       title: 'Configure',
-      content: (
-        <ConfigureTab
-          appId={appId}
-          appName={appName}
-          reports={reports}
-          sysInfo={sysInfo}
-          closeModal={closeModal}
-        />
-      ),
+      identifier: 'configure',
+      content: <ConfigureTab appId={appId} appName={appName} sysInfo={sysInfo} />,
     },
     {
-      id: 'manage',
       title: 'Manage',
+      identifier: 'manage',
       content: <ManageTab appId={appId} appName={appName} />,
     },
     {
-      id: 'logs',
       title: 'Logs',
+      identifier: 'logs',
       content: <LogsTab />,
     },
     {
-      id: 'settings',
       title: 'Settings',
+      identifier: 'settings',
       content: <SettingsTab />,
     },
     {
-      id: 'about',
       title: 'About',
+      identifier: 'about',
       content: <AboutTab />,
     },
   ];
 
   return (
-    <ModalRoot onCancel={closeModal} style={{ width: '90vw', maxWidth: 640 }}>
-      <Tabs tabs={tabs} activeTab={activeTab} onShowTab={setActiveTab} autoFocusContents={false} />
-    </ModalRoot>
+    <SidebarNavigation
+      title="Proton Pulse"
+      showTitle={true}
+      pages={pages}
+      page={activePage}
+      onPageRequested={setActivePage}
+      disableRouteReporting={true}
+    />
   );
 }
