@@ -20,12 +20,12 @@ import { ProtonPulsePage } from './components/Modal';
 import { ProtonPulseBadge } from './components/Badge';
 import { getSetting } from './lib/settings';
 import { pageState } from './lib/pageState';
+import { getProtonDBSummary } from './lib/protondb';
 import type { PageId } from './lib/pageState';
 import type { SystemInfo, ProtonDBSummary } from './types';
 
 // ─── Backend callables ────────────────────────────────────────────────────────
 const getSystemInfo  = callable<[], SystemInfo>('get_system_info');
-const fetchSummary   = callable<[app_id: string], ProtonDBSummary>('fetch_protondb_summary');
 const isGameRunning  = callable<[], boolean>('is_game_running');
 
 // ─── Module-level state ───────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ function Content() {
     const match = window.location.pathname.match(/\/library\/app\/(\d+)/);
     const loadSummary = (appId: number) => {
       setSummaryLoaded(false);
-      fetchSummary(String(appId))
+      getProtonDBSummary(String(appId))
         .then(setCurrentSummary)
         .catch(console.error)
         .finally(() => setSummaryLoaded(true));
@@ -81,7 +81,7 @@ function Content() {
     setCurrentAppName(appName);
     setCurrentSummary(null);
     setSummaryLoaded(false);
-    fetchSummary(String(appId))
+    getProtonDBSummary(String(appId))
       .then(setCurrentSummary)
       .catch(console.error)
       .finally(() => setSummaryLoaded(true));

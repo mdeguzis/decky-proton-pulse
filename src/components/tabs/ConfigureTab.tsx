@@ -1,12 +1,11 @@
 // src/components/tabs/ConfigureTab.tsx
 import { useState, useEffect } from 'react';
 import { DialogButton, Focusable } from '@decky/ui';
-import { toaster, callable } from '@decky/api';
+import { toaster } from '@decky/api';
 import { ReportCard } from '../ReportCard';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
+import { getProtonDBReports } from '../../lib/protondb';
 import type { ProtonDBReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
-
-const fetchReports = callable<[app_id: string], ProtonDBReport[]>('fetch_protondb_reports');
 
 interface Props {
   appId: number | null;
@@ -31,7 +30,7 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
     setLoading(true);
     setReports([]);
     setSelected(null);
-    fetchReports(String(appId))
+    getProtonDBReports(String(appId))
       .then(setReports)
       .catch(console.error)
       .finally(() => setLoading(false));
