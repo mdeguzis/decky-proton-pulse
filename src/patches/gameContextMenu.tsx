@@ -61,14 +61,14 @@ const injectMenuItem = (items: any[], appid: number): void => {
       onSelected={() => {
         const appName =
           (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appid)?.display_name ?? '';
-        pageState.initialPage = 'configure';
+        pageState.initialPage = 'manage-game';
         pageState.appId = appid;
         pageState.appName = appName;
-        dispatchNavigate({ tab: 'configure', appId: appid, appName });
+        dispatchNavigate({ tab: 'manage-game', appId: appid, appName });
         Navigation.Navigate('/proton-pulse');
       }}
     >
-      Proton Pulse…
+      ProtonDB Config
     </MenuItem>
   );
 };

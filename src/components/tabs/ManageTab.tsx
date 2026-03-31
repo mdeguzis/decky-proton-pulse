@@ -10,8 +10,9 @@ interface Props {
 export function ManageTab({ appId, appName }: Props) {
   if (!appId) {
     return (
-      <div style={{ padding: 16, color: '#888', fontSize: 12, textAlign: 'center' }}>
-        Navigate to a game first.
+      <div style={{ padding: 16, color: '#888', fontSize: 12, lineHeight: 1.6 }}>
+        Right-click any game in your library (or use the settings gear) and select{' '}
+        <span style={{ color: '#ccc' }}>ProtonDB Config</span> to configure launch options.
       </div>
     );
   }
