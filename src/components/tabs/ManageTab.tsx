@@ -1,5 +1,5 @@
 // src/components/tabs/ManageTab.tsx
-import { DialogButton } from '@decky/ui';
+import { DialogButton, Focusable } from '@decky/ui';
 import { toaster } from '@decky/api';
 
 interface Props {
@@ -27,7 +27,7 @@ export function ManageTab({ appId, appName }: Props) {
   };
 
   return (
-    <div style={{ padding: 8 }}>
+    <Focusable style={{ padding: 8 }}>
       <div style={{ marginBottom: 12, fontSize: 13, color: '#ccc' }}>
         <strong>{appName || `App ${appId}`}</strong>
       </div>
@@ -37,6 +37,6 @@ export function ManageTab({ appId, appName }: Props) {
       <DialogButton onClick={handleClear} style={{ background: '#555' }}>
         Clear Launch Options
       </DialogButton>
-    </div>
+    </Focusable>
   );
 }
