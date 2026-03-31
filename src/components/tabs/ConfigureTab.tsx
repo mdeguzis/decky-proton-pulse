@@ -60,7 +60,8 @@ export function ConfigureTab({ appId, appName, reports, sysInfo, closeModal }: P
       await SteamClient.Apps.SetAppLaunchOptions(appId, launchOptions);
       toaster.toast({ title: 'Proton Pulse', body: `Launch options applied for ${appName}` });
       closeModal();
-    } catch {
+    } catch (e) {
+      console.error('Proton Pulse: failed to apply launch options', e);
       toaster.toast({ title: 'Proton Pulse', body: 'Failed to apply — check logs.' });
     } finally {
       setApplying(false);
@@ -73,7 +74,8 @@ export function ConfigureTab({ appId, appName, reports, sysInfo, closeModal }: P
       await SteamClient.Apps.SetAppLaunchOptions(appId, '');
       toaster.toast({ title: 'Proton Pulse', body: 'Launch options cleared.' });
       closeModal();
-    } catch {
+    } catch (e) {
+      console.error('Proton Pulse: failed to clear launch options', e);
       toaster.toast({ title: 'Proton Pulse', body: 'Failed to clear — check logs.' });
     }
   };
@@ -103,8 +105,8 @@ export function ConfigureTab({ appId, appName, reports, sysInfo, closeModal }: P
             No ProtonDB reports found for this GPU tier.
           </div>
         ) : (
-          visibleReports.map((r, i) => (
-            <ReportCard key={i} report={r} selected={selected === r} onSelect={setSelected} />
+          visibleReports.map((r) => (
+            <ReportCard key={r.timestamp + '-' + r.protonVersion} report={r} selected={selected === r} onSelect={setSelected} />
           ))
         )}
       </div>
