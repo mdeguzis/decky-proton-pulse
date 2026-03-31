@@ -14,16 +14,15 @@ import { FaBolt } from 'react-icons/fa';
 
 import { ProtonPulsePage } from './components/Modal';
 import { pageState, dispatchNavigate } from './lib/pageState';
-import type { PageId } from './lib/pageState';
 import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextMenu';
 
 // ─── Sidebar panel ────────────────────────────────────────────────────────────
 function Content() {
-  const navigateTo = (tab: PageId) => {
-    pageState.initialPage = tab;
+  const openManage = () => {
+    pageState.initialPage = 'manage';
     pageState.appId = null;
     pageState.appName = '';
-    dispatchNavigate({ tab, appId: null, appName: '' });
+    dispatchNavigate({ tab: 'manage', appId: null, appName: '' });
     Router.CloseSideMenus();
     Router.Navigate('/proton-pulse');
   };
@@ -33,19 +32,10 @@ function Content() {
       <PanelSectionRow>
         <ButtonItem
           layout="below"
-          onClick={() => navigateTo('logs')}
-          description="View plugin activity log"
+          onClick={openManage}
+          description="View and manage ProtonDB configurations"
         >
-          Logs
-        </ButtonItem>
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => navigateTo('settings')}
-          description="Debug mode and display options"
-        >
-          Settings
+          Manage Configurations
         </ButtonItem>
       </PanelSectionRow>
     </PanelSection>
