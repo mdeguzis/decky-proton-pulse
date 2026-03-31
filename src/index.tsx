@@ -19,7 +19,7 @@ import { FaBolt } from 'react-icons/fa';
 import { ProtonPulsePage } from './components/Modal';
 import { ProtonPulseBadge } from './components/Badge';
 import { getSetting } from './lib/settings';
-import { pageState } from './lib/pageState';
+import { pageState, dispatchNavigate } from './lib/pageState';
 import { getProtonDBSummary } from './lib/protondb';
 import type { PageId } from './lib/pageState';
 import type { SystemInfo, ProtonDBSummary } from './types';
@@ -92,9 +92,13 @@ function Content() {
   // ─── Navigation helpers ───────────────────────────────────────────────────
 
   const navigateTo = (tab: PageId) => {
+    // Update pageState for the initial-mount case (first time route loads).
     pageState.initialPage = tab;
     pageState.appId = currentAppId;
     pageState.appName = currentAppName;
+    // Dispatch event so the already-mounted ProtonPulsePage updates immediately.
+    dispatchNavigate({ tab, appId: currentAppId, appName: currentAppName });
+    Router.CloseSideMenus();
     Router.Navigate('/proton-pulse');
   };
 
