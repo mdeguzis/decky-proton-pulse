@@ -11,22 +11,17 @@ import { AboutTab } from './tabs/AboutTab';
 
 export type TabId = 'configure' | 'manage' | 'logs' | 'settings' | 'about';
 
-// Set before calling showModal to control which tab opens first
-let _pendingTab: TabId = 'configure';
-export function setPendingTab(tab: TabId): void {
-  _pendingTab = tab;
-}
-
 interface Props {
   appId: number | null;
   appName: string;
   reports: ProtonDBReport[];
   sysInfo: SystemInfo | null;
   closeModal: () => void;
+  initialTab?: TabId;
 }
 
-export function ProtonPulseModal({ appId, appName, reports, sysInfo, closeModal }: Props) {
-  const [activeTab, setActiveTab] = useState<string>(_pendingTab);
+export function ProtonPulseModal({ appId, appName, reports, sysInfo, closeModal, initialTab = 'configure' }: Props) {
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
 
   const tabs: Tab[] = [
     {
