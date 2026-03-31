@@ -2,10 +2,12 @@
 # Usage: make <target> [DECK_IP=x.x.x.x make deploy]
 #
 # DECK_IP can also be set persistently in any of:
-#   ~/.deckip         (DECK_IP=192.168.1.x)
+#   ~/.deckip         (just the IP: 192.168.1.x)
 #   ~/.bashrc / ~/.zshrc / ~/.zshenv  (export DECK_IP=192.168.1.x)
 
--include $(HOME)/.deckip
+ifneq ($(wildcard $(HOME)/.deckip),)
+  DECK_IP ?= $(shell cat $(HOME)/.deckip)
+endif
 
 DECK_IP   ?=
 DECK_USER ?= deck
@@ -19,7 +21,7 @@ help:
 	@echo "       DECK_IP=x.x.x.x DECK_USER=deck TARGET=stable make deploy"
 	@echo ""
 	@echo "Persistent DECK_IP (pick one):"
-	@echo "  echo 'DECK_IP=192.168.1.x' >> ~/.deckip"
+	@echo "  echo '192.168.1.x' > ~/.deckip"
 	@echo "  echo 'export DECK_IP=192.168.1.x' >> ~/.zshenv"
 	@echo ""
 	@echo "  build             Build frontend (pnpm build)"
