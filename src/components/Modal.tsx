@@ -34,7 +34,7 @@ export function ProtonPulseModal({ appId, appName, reports, sysInfo, closeModal 
 
   const handleApply = async () => {
     if (!selected) return;
-    const running = SteamClient.GameSessions.GetRunningApps();
+    const running = (SteamClient.GameSessions as any).GetRunningApps();
     if (running.length > 0) {
       toaster.toast({ title: 'Proton Pulse', body: 'Quit your game first.' });
       return;
