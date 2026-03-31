@@ -25,7 +25,7 @@ help:
 	@echo "  echo '192.168.1.x' > ~/.deckip"
 	@echo "  echo 'export DECK_IP=192.168.1.x' >> ~/.zshenv"
 	@echo ""
-	@echo "  build             Build frontend (pnpm build)"
+	@echo "  build             Clean, test, then build frontend"
 	@echo "  watch             Watch frontend for changes (pnpm watch)"
 	@echo "  test              Run all tests (Python + TypeScript)"
 	@echo "  test-ts           Run TypeScript tests only (vitest)"
@@ -43,7 +43,7 @@ help:
 	@echo "  cef-debug-enable  Enable remote CEF debugging (React DevTools on port 8081)"
 	@echo "  live-reload-enable  Configure LIVE_RELOAD=1 on plugin_loader service"
 
-build:
+build: clean test
 	pnpm build
 
 watch:
