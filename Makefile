@@ -74,8 +74,6 @@ ifndef DECK_IP
 	$(error DECK_IP is required: DECK_IP=192.168.1.x make build-and-deploy)
 endif
 	bash scripts/deploy.sh --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
-	$(call require_deck_ip)
-	ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart plugin_loader"
 
 clean:
 	rm -rf dist/
