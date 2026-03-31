@@ -38,6 +38,7 @@ function Content() {
   const [currentAppId, setCurrentAppId]     = useState<number | null>(null);
   const [currentAppName, setCurrentAppName] = useState<string>('');
   const [currentSummary, setCurrentSummary] = useState<ProtonDBSummary | null>(null);
+  const [summaryLoaded, setSummaryLoaded]   = useState(false);
   const [showBadge]                         = useState(() => getSetting('showBadge', true));
 
   useEffect(() => {
@@ -46,13 +47,21 @@ function Content() {
 
     // URL-first appId detection — works when sidebar opens while already on a game page
     const match = window.location.pathname.match(/\/library\/app\/(\d+)/);
+    const loadSummary = (appId: number) => {
+      setSummaryLoaded(false);
+      fetchSummary(String(appId))
+        .then(setCurrentSummary)
+        .catch(console.error)
+        .finally(() => setSummaryLoaded(true));
+    };
+
     if (match) {
       const appId = parseInt(match[1], 10);
       setCurrentAppId(appId);
-      fetchSummary(String(appId)).then(setCurrentSummary).catch(console.error);
+      loadSummary(appId);
     } else if (pendingAppId !== null) {
       setCurrentAppId(pendingAppId);
-      fetchSummary(String(pendingAppId)).then(setCurrentSummary).catch(console.error);
+      loadSummary(pendingAppId);
       pendingAppId = null;
     }
 
@@ -71,7 +80,11 @@ function Content() {
     setCurrentAppId(appId);
     setCurrentAppName(appName);
     setCurrentSummary(null);
-    fetchSummary(String(appId)).then(setCurrentSummary).catch(console.error);
+    setSummaryLoaded(false);
+    fetchSummary(String(appId))
+      .then(setCurrentSummary)
+      .catch(console.error)
+      .finally(() => setSummaryLoaded(true));
   };
   (Content as any)._onGameFocus = onGameFocus;
   (Content as any)._onGameStart = () => setGameRunning(true);
@@ -94,11 +107,17 @@ function Content() {
   const handleBadgeClick = () => { handleConfigure(); };
 
   // ─── Disable reasons ───────────────────────────────────────────────────────
+  const protonDbStatus = !currentAppId
+    ? 'Navigate to a game first'
+    : !summaryLoaded
+    ? 'Checking ProtonDB…'
+    : currentSummary
+    ? `ProtonDB: ${currentSummary.tier} · ${currentSummary.total} report${currentSummary.total !== 1 ? 's' : ''}`
+    : 'Not found in ProtonDB';
+
   const configureDescription = gameRunning
-    ? 'Quit your game first'
-    : currentAppId
-    ? 'Find & apply ProtonDB launch options'
-    : 'Navigate to a game first';
+    ? `Quit your game first · ${protonDbStatus}`
+    : protonDbStatus;
 
   const manageDescription = currentAppId
     ? 'View and clear applied configs'
