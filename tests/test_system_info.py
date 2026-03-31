@@ -16,9 +16,7 @@ def run(coro):
 
 @pytest.fixture
 def plugin():
-    p = Plugin()
-    p._setup_logger()
-    return p
+    return Plugin()
 
 
 def test_system_info_keys(plugin):
