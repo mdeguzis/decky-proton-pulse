@@ -148,11 +148,10 @@ function Content() {
 export default definePlugin(() => {
   console.log('Proton Pulse initializing');
 
-  // Track the currently focused app — updated by the router
+  // Track the currently focused app — updated by the router (read by future patches)
+  // eslint-disable-next-line prefer-const
   let focusedAppId: number | null = null;
   void focusedAppId;
-  let focusedAppName = '';
-  void focusedAppName;
 
   // Badge patch: inject into game detail pages
   const patchGamePage = routerHook.addPatch(
@@ -160,6 +159,9 @@ export default definePlugin(() => {
     (props: any) => {
       const appId = props.appid ? parseInt(props.appid, 10) : null;
       focusedAppId = appId;
+      if (appId && (Content as any)._onGameFocus) {
+        (Content as any)._onGameFocus(appId, '');
+      }
       // Note: badge injection into existing badge row requires finding the
       // Steam DOM node for the badge area. This is Steam-version-dependent.
       // The badge component is returned here; exact positioning is adjusted
