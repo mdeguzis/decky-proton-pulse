@@ -1,5 +1,5 @@
 # Decky Proton Pulse — Makefile
-# Usage: make <target> [DECK_IP=192.168.1.x] [DECK_USER=deck] [TARGET=stable]
+# Usage: make <target> [DECK_IP=x.x.x.x make deploy]
 
 DECK_IP   ?=
 DECK_USER ?= deck
@@ -8,7 +8,9 @@ TARGET    ?= stable
 .PHONY: help build watch test test-ts test-py setup deploy clean
 
 help:
-	@echo "Usage: make <target> [DECK_IP=x.x.x.x] [DECK_USER=deck] [TARGET=stable]"
+	@echo "Usage: make <target>"
+	@echo "       DECK_IP=x.x.x.x make deploy"
+	@echo "       DECK_IP=x.x.x.x DECK_USER=deck TARGET=stable make deploy"
 	@echo ""
 	@echo "  build      Build frontend (pnpm build)"
 	@echo "  watch      Watch frontend for changes (pnpm watch)"
@@ -39,7 +41,7 @@ setup:
 
 deploy: build
 ifndef DECK_IP
-	$(error DECK_IP is required: make deploy DECK_IP=192.168.1.x)
+	$(error DECK_IP is required: DECK_IP=192.168.1.x make deploy)
 endif
 	bash scripts/deploy.sh --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
 
