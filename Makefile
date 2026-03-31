@@ -1,5 +1,11 @@
 # Decky Proton Pulse — Makefile
 # Usage: make <target> [DECK_IP=x.x.x.x make deploy]
+#
+# DECK_IP can also be set persistently in any of:
+#   ~/.deckip         (DECK_IP=192.168.1.x)
+#   ~/.bashrc / ~/.zshrc / ~/.zshenv  (export DECK_IP=192.168.1.x)
+
+-include $(HOME)/.deckip
 
 DECK_IP   ?=
 DECK_USER ?= deck
@@ -11,6 +17,10 @@ help:
 	@echo "Usage: make <target>"
 	@echo "       DECK_IP=x.x.x.x make deploy"
 	@echo "       DECK_IP=x.x.x.x DECK_USER=deck TARGET=stable make deploy"
+	@echo ""
+	@echo "Persistent DECK_IP (pick one):"
+	@echo "  echo 'DECK_IP=192.168.1.x' >> ~/.deckip"
+	@echo "  echo 'export DECK_IP=192.168.1.x' >> ~/.zshenv"
 	@echo ""
 	@echo "  build             Build frontend (pnpm build)"
 	@echo "  watch             Watch frontend for changes (pnpm watch)"
