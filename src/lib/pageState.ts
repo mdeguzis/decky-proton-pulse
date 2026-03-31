@@ -3,7 +3,7 @@
 // For re-entries (when the page is already mounted), use dispatchNavigate()
 // which fires a CustomEvent that the mounted component listens for.
 
-export type PageId = 'configure' | 'manage' | 'logs' | 'settings' | 'about';
+export type PageId = 'manage-game' | 'manage' | 'logs' | 'settings' | 'about';
 
 export interface NavigatePayload {
   tab: PageId;
@@ -23,7 +23,7 @@ export const pageState: {
   appId: number | null;
   appName: string;
 } = {
-  initialPage: 'configure',
+  initialPage: 'manage',
   appId: null,
   appName: '',
 };
