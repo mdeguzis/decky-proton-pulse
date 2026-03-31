@@ -30,6 +30,10 @@ const fetchReports       = callable<[app_id: string], ProtonDBReport[]>('fetch_p
 const setLogLevel        = callable<[level: string], boolean>('set_log_level');
 const isGameRunning      = callable<[], boolean>('is_game_running');
 
+// ─── Module-level state shared between Content and definePlugin ───────────────
+// Holds the appId focused before Content mounts; drained in the mount effect.
+let pendingAppId: number | null = null;
+
 // ─── Sidebar panel ────────────────────────────────────────────────────────────
 function Content() {
   const [sysInfo, setSysInfo] = useState<SystemInfo | null>(null);
@@ -41,6 +45,12 @@ function Content() {
 
   useEffect(() => {
     getSystemInfo().then(setSysInfo).catch(console.error);
+
+    if (pendingAppId !== null) {
+      setCurrentAppId(pendingAppId);
+      fetchSummary(String(pendingAppId)).then(setCurrentSummary).catch(console.error);
+      pendingAppId = null;
+    }
 
     const checkGame = async () => {
       const running = await isGameRunning();
@@ -60,6 +70,7 @@ function Content() {
   };
   // Expose so definePlugin can call it (module-level ref pattern)
   (Content as any)._onGameFocus = onGameFocus;
+  (Content as any)._onGameStart = () => setGameRunning(true);
 
   const handleDebugToggle = async (enabled: boolean) => {
     setDebugEnabled(enabled);
@@ -159,8 +170,12 @@ export default definePlugin(() => {
     (props: any) => {
       const appId = props.appid ? parseInt(props.appid, 10) : null;
       focusedAppId = appId;
-      if (appId && (Content as any)._onGameFocus) {
-        (Content as any)._onGameFocus(appId, '');
+      if (appId) {
+        if ((Content as any)._onGameFocus) {
+          (Content as any)._onGameFocus(appId, '');
+        } else {
+          pendingAppId = appId;
+        }
       }
       // Note: badge injection into existing badge row requires finding the
       // Steam DOM node for the badge area. This is Steam-version-dependent.
@@ -175,6 +190,9 @@ export default definePlugin(() => {
     'game_start',
     (appId: number) => {
       console.log(`Proton Pulse: game started ${appId}`);
+      if ((Content as any)._onGameStart) {
+        (Content as any)._onGameStart();
+      }
     }
   );
 
