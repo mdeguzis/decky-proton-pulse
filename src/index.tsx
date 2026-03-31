@@ -4,28 +4,28 @@ import {
   PanelSectionRow,
   ButtonItem,
   staticClasses,
-  showModal,
+  Router,
 } from '@decky/ui';
 import {
   addEventListener,
   removeEventListener,
   callable,
   definePlugin,
-  toaster,
   routerHook,
 } from '@decky/api';
 import { useState, useEffect } from 'react';
 import { FaBolt } from 'react-icons/fa';
 
-import { ProtonPulseModal } from './components/Modal';
+import { ProtonPulsePage } from './components/Modal';
 import { ProtonPulseBadge } from './components/Badge';
 import { getSetting } from './lib/settings';
-import type { SystemInfo, ProtonDBReport, ProtonDBSummary } from './types';
+import { pageState } from './lib/pageState';
+import type { PageId } from './lib/pageState';
+import type { SystemInfo, ProtonDBSummary } from './types';
 
 // ─── Backend callables ────────────────────────────────────────────────────────
 const getSystemInfo  = callable<[], SystemInfo>('get_system_info');
 const fetchSummary   = callable<[app_id: string], ProtonDBSummary>('fetch_protondb_summary');
-const fetchReports   = callable<[app_id: string], ProtonDBReport[]>('fetch_protondb_reports');
 const isGameRunning  = callable<[], boolean>('is_game_running');
 
 // ─── Module-level state ───────────────────────────────────────────────────────
@@ -76,57 +76,19 @@ function Content() {
   (Content as any)._onGameFocus = onGameFocus;
   (Content as any)._onGameStart = () => setGameRunning(true);
 
-  // ─── Modal helpers ────────────────────────────────────────────────────────
+  // ─── Navigation helpers ───────────────────────────────────────────────────
 
-  // Open modal at any non-configure tab (no reports fetch needed)
-  const openModalAt = (tab: 'manage' | 'logs' | 'settings' | 'about') => {
-    const modalRef: { hide?: () => void } = {};
-    const modal = showModal(
-      <ProtonPulseModal
-        appId={currentAppId}
-        appName={currentAppName}
-        reports={[]}
-        sysInfo={sysInfo}
-        initialTab={tab}
-        closeModal={() => modalRef.hide?.()}
-      />
-    );
-    modalRef.hide = modal.Close;
+  const navigateTo = (tab: PageId) => {
+    pageState.initialPage = tab;
+    pageState.appId = currentAppId;
+    pageState.appName = currentAppName;
+    Router.CloseSideMenus();
+    Router.Navigate('/proton-pulse');
   };
 
-  // Open Configure tab — fetches reports first
-  const handleConfigure = async () => {
+  const handleConfigure = () => {
     if (!currentAppId || gameRunning) return;
-
-    toaster.toast({ title: 'Proton Pulse', body: 'Fetching ProtonDB reports…' });
-    try {
-      const [reports, info] = await Promise.all([
-        fetchReports(String(currentAppId)),
-        sysInfo ? Promise.resolve(sysInfo) : getSystemInfo(),
-      ]);
-      if (!sysInfo) setSysInfo(info);
-
-      if (reports.length === 0) {
-        toaster.toast({ title: 'Proton Pulse', body: 'No ProtonDB reports found for this game.' });
-        return;
-      }
-
-      const modalRef: { hide?: () => void } = {};
-      const modal = showModal(
-        <ProtonPulseModal
-          appId={currentAppId}
-          appName={currentAppName}
-          reports={reports}
-          sysInfo={info}
-          initialTab="configure"
-          closeModal={() => modalRef.hide?.()}
-        />
-      );
-      modalRef.hide = modal.Close;
-    } catch (e) {
-      console.error('Proton Pulse: failed to fetch reports', e);
-      toaster.toast({ title: 'Proton Pulse', body: 'Failed to fetch reports — check logs.' });
-    }
+    navigateTo('configure');
   };
 
   // Badge click — same flow as Configure button
@@ -174,7 +136,7 @@ function Content() {
         <ButtonItem
           layout="below"
           disabled={!currentAppId}
-          onClick={() => openModalAt('manage')}
+          onClick={() => navigateTo('manage')}
           description={manageDescription}
         >
           Manage Configurations ▶
@@ -186,7 +148,7 @@ function Content() {
         <PanelSectionRow>
           <ButtonItem
             layout="below"
-            onClick={() => openModalAt('logs')}
+            onClick={() => navigateTo('logs')}
             description="View plugin activity log"
           >
             Logs ▶
@@ -195,7 +157,7 @@ function Content() {
         <PanelSectionRow>
           <ButtonItem
             layout="below"
-            onClick={() => openModalAt('settings')}
+            onClick={() => navigateTo('settings')}
             description="Debug mode and display options"
           >
             Settings ▶
@@ -209,6 +171,8 @@ function Content() {
 // ─── Plugin definition ────────────────────────────────────────────────────────
 export default definePlugin(() => {
   console.log('Proton Pulse initializing');
+
+  routerHook.addRoute('/proton-pulse', ProtonPulsePage);
 
   let focusedAppId: number | null = null;
   void focusedAppId;
@@ -248,6 +212,7 @@ export default definePlugin(() => {
     onDismount() {
       console.log('Proton Pulse unloading');
       routerHook.removePatch('/library/app/:appid', patchGamePage);
+      routerHook.removeRoute('/proton-pulse');
       removeEventListener('game_start', gameStartListener);
     },
   };
