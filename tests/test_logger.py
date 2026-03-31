@@ -12,28 +12,24 @@ from main import Plugin
 
 
 @pytest.fixture
-def plugin(tmp_path):
-    p = Plugin()
-    import main as main_module
-    original = main_module.LOG_FILE
-    main_module.LOG_FILE = str(tmp_path / "test.log")
-    p._setup_logger()
-    yield p
-    main_module.LOG_FILE = original
+def plugin():
+    return Plugin()
 
 
 def test_set_log_level_debug(plugin):
-    plugin._logger.setLevel(logging.INFO)
+    import decky
+    decky.logger.setLevel(logging.INFO)
     result = plugin._sync_set_log_level("DEBUG")
     assert result is True
-    assert plugin._logger.level == logging.DEBUG
+    assert decky.logger.level == logging.DEBUG
 
 
 def test_set_log_level_info(plugin):
-    plugin._logger.setLevel(logging.DEBUG)
+    import decky
+    decky.logger.setLevel(logging.DEBUG)
     result = plugin._sync_set_log_level("INFO")
     assert result is True
-    assert plugin._logger.level == logging.INFO
+    assert decky.logger.level == logging.INFO
 
 
 def test_set_log_level_invalid(plugin):

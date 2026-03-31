@@ -1,12 +1,9 @@
 # main.py
 import os
 import logging
-import logging.handlers
 import subprocess
 
 import decky
-
-LOG_FILE = "/tmp/decky-proton-pulse.log"
 
 
 class Plugin:
@@ -15,17 +12,15 @@ class Plugin:
 
     async def _main(self):
         self._system_info: dict = {}
-        self._reports_cache: dict = {}
-        self._setup_logger()
-        self._logger.info("Proton Pulse starting up")
+        decky.logger.info("Proton Pulse starting up")
         self._system_info = await self.get_system_info()
-        self._logger.info(f"System detected: {self._system_info}")
+        decky.logger.info(f"System detected: {self._system_info}")
 
     async def _unload(self):
-        self._logger.info("Proton Pulse unloading")
+        decky.logger.info("Proton Pulse unloading")
 
     async def _uninstall(self):
-        self._logger.info("Proton Pulse uninstalled")
+        decky.logger.info("Proton Pulse uninstalled")
 
     async def _migration(self):
         decky.migrate_logs(
@@ -38,28 +33,13 @@ class Plugin:
 
     # ─── Logging ──────────────────────────────────────────────────────────────
 
-    def _setup_logger(self):
-        if not hasattr(self, '_reports_cache'):
-            self._reports_cache = {}
-        self._logger = logging.getLogger("proton-pulse")
-        self._logger.handlers.clear()
-        handler = logging.handlers.RotatingFileHandler(
-            LOG_FILE, maxBytes=5 * 1024 * 1024, backupCount=2
-        )
-        handler.setFormatter(
-            logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s",
-                              datefmt="%Y-%m-%d %H:%M:%S")
-        )
-        self._logger.addHandler(handler)
-        self._logger.setLevel(logging.INFO)
-
     def _sync_set_log_level(self, level: str) -> bool:
         """Synchronous helper used by tests and the async callable."""
         valid = {"DEBUG": logging.DEBUG, "INFO": logging.INFO,
                  "WARNING": logging.WARNING, "ERROR": logging.ERROR}
         if level not in valid:
             return False
-        self._logger.setLevel(valid[level])
+        decky.logger.setLevel(valid[level])
         return True
 
     async def set_log_level(self, level: str) -> bool:
@@ -67,7 +47,7 @@ class Plugin:
 
     async def get_log_contents(self) -> str:
         try:
-            with open(LOG_FILE, "r") as f:
+            with open(decky.DECKY_PLUGIN_LOG, "r") as f:
                 lines = f.readlines()
             return "".join(lines[-200:])
         except FileNotFoundError:
@@ -84,7 +64,7 @@ class Plugin:
             )
             return result.returncode == 0
         except Exception as e:
-            self._logger.warning(f"is_game_running check failed: {e}")
+            decky.logger.warning(f"is_game_running check failed: {e}")
             return False
 
     # ─── System Detection ─────────────────────────────────────────────────────
@@ -95,24 +75,24 @@ class Plugin:
             'driver_version': None, 'kernel': None, 'distro': None, 'proton_custom': None
         }
         for field, fn in [
-            ('cpu',           self._read_cpu),
-            ('ram_gb',        self._read_ram_gb),
-            ('kernel',        self._read_kernel),
-            ('distro',        self._read_distro),
+            ('cpu',            self._read_cpu),
+            ('ram_gb',         self._read_ram_gb),
+            ('kernel',         self._read_kernel),
+            ('distro',         self._read_distro),
             ('driver_version', self._read_driver_version),
-            ('proton_custom', self._read_custom_proton),
+            ('proton_custom',  self._read_custom_proton),
         ]:
             try:
                 info[field] = fn()
             except Exception as e:
-                self._logger.warning(f"System detection failed for {field}: {e}")
+                decky.logger.warning(f"System detection failed for {field}: {e}")
 
         try:
             gpu, vendor = self._read_gpu()
             info['gpu'] = gpu
             info['gpu_vendor'] = vendor
         except Exception as e:
-            self._logger.warning(f"GPU detection failed: {e}")
+            decky.logger.warning(f"GPU detection failed: {e}")
 
         return info
 
@@ -171,7 +151,7 @@ class Plugin:
                 with open(path) as f:
                     return f.read().strip()
         except OSError as e:
-            self._logger.warning(f"DRM driver version read failed: {e}")
+            decky.logger.warning(f"DRM driver version read failed: {e}")
         return None
 
     def _read_kernel(self) -> str | None:
@@ -195,5 +175,3 @@ class Plugin:
         entries = [d for d in os.listdir(compat_dir)
                    if os.path.isdir(os.path.join(compat_dir, d))]
         return entries[0] if len(entries) == 1 else (", ".join(entries) if entries else None)
-
-
