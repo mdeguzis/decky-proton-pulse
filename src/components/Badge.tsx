@@ -24,10 +24,10 @@ const TIER_LABEL: Record<string, string> = {
 };
 
 export function ProtonPulseBadge({ summary, gpuVendor, badgeColor }: Props) {
-  if (!summary || !summary.score || summary.score === 'pending') return null;
+  if (!summary || !summary.tier || summary.tier === 'pending') return null;
 
-  const color = badgeColor ?? DEFAULT_COLORS[summary.score] ?? '#888';
-  const tier = TIER_LABEL[summary.score] ?? summary.score;
+  const color = badgeColor ?? DEFAULT_COLORS[summary.tier] ?? '#888';
+  const tier = TIER_LABEL[summary.tier] ?? summary.tier;
   const vendorLabel = gpuVendor ? gpuVendor.toUpperCase() : '';
   const label = vendorLabel ? `PP·${vendorLabel} ${tier}` : `PP ${tier}`;
 

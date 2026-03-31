@@ -39,11 +39,11 @@ export interface ProtonDBReport {
 }
 
 export interface ProtonDBSummary {
-  score: ProtonRating;
-  tier: number;
+  score: number;              // 0.0–1.0 float (e.g. 0.82)
+  tier: ProtonRating;         // e.g. "platinum"
   total: number;
-  trendingTier: number;
-  bestReported: ProtonRating;
+  trendingTier: ProtonRating; // e.g. "platinum"
+  bestReportedTier: ProtonRating; // renamed from bestReported in live API
   confidence: string;
 }
 
