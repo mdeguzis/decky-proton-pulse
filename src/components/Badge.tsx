@@ -5,6 +5,7 @@ interface Props {
   summary: ProtonDBSummary | null;
   gpuVendor: string | null;
   badgeColor?: string;
+  onClick?: () => void;
 }
 
 const DEFAULT_COLORS: Record<string, string> = {
@@ -23,7 +24,7 @@ const TIER_LABEL: Record<string, string> = {
   borked:   'Borked',
 };
 
-export function ProtonPulseBadge({ summary, gpuVendor, badgeColor }: Props) {
+export function ProtonPulseBadge({ summary, gpuVendor, badgeColor, onClick }: Props) {
   if (!summary || !summary.tier || summary.tier === 'pending') return null;
 
   const color = badgeColor ?? DEFAULT_COLORS[summary.tier] ?? '#888';
@@ -33,6 +34,7 @@ export function ProtonPulseBadge({ summary, gpuVendor, badgeColor }: Props) {
 
   return (
     <div
+      onClick={onClick}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -44,7 +46,7 @@ export function ProtonPulseBadge({ summary, gpuVendor, badgeColor }: Props) {
         fontSize: 11,
         fontWeight: 700,
         letterSpacing: '0.03em',
-        cursor: 'default',
+        cursor: onClick ? 'pointer' : 'default',
         userSelect: 'none',
       }}
       title={`Proton Pulse: ${tier} (${summary.total} reports)`}
