@@ -3,7 +3,6 @@ import {
   PanelSection,
   PanelSectionRow,
   ButtonItem,
-  ToggleField,
   staticClasses,
   showModal,
 } from '@decky/ui';
@@ -18,40 +17,46 @@ import {
 import { useState, useEffect } from 'react';
 import { FaBolt } from 'react-icons/fa';
 
-import { ProtonPulseModal } from './components/Modal';
+import { ProtonPulseModal, setPendingTab } from './components/Modal';
 import { ProtonPulseBadge } from './components/Badge';
-import { LogViewer } from './components/LogViewer';
+import { getSetting } from './lib/settings';
 import type { SystemInfo, ProtonDBReport, ProtonDBSummary } from './types';
 
 // ─── Backend callables ────────────────────────────────────────────────────────
-const getSystemInfo      = callable<[], SystemInfo>('get_system_info');
-const fetchSummary       = callable<[app_id: string], ProtonDBSummary>('fetch_protondb_summary');
-const fetchReports       = callable<[app_id: string], ProtonDBReport[]>('fetch_protondb_reports');
-const setLogLevel        = callable<[level: string], boolean>('set_log_level');
-const isGameRunning      = callable<[], boolean>('is_game_running');
+const getSystemInfo  = callable<[], SystemInfo>('get_system_info');
+const fetchSummary   = callable<[app_id: string], ProtonDBSummary>('fetch_protondb_summary');
+const fetchReports   = callable<[app_id: string], ProtonDBReport[]>('fetch_protondb_reports');
+const isGameRunning  = callable<[], boolean>('is_game_running');
 
-// ─── Module-level state shared between Content and definePlugin ───────────────
-// Holds the appId focused before Content mounts; drained in the mount effect.
+// ─── Module-level state ───────────────────────────────────────────────────────
 let pendingAppId: number | null = null;
 
 // ─── Sidebar panel ────────────────────────────────────────────────────────────
 function Content() {
-  const [sysInfo, setSysInfo] = useState<SystemInfo | null>(null);
-  const [gameRunning, setGameRunning] = useState(false);
-  const [debugEnabled, setDebugEnabled] = useState(false);
-  const [currentAppId, setCurrentAppId] = useState<number | null>(null);
+  const [sysInfo, setSysInfo]               = useState<SystemInfo | null>(null);
+  const [gameRunning, setGameRunning]       = useState(false);
+  const [currentAppId, setCurrentAppId]     = useState<number | null>(null);
   const [currentAppName, setCurrentAppName] = useState<string>('');
   const [currentSummary, setCurrentSummary] = useState<ProtonDBSummary | null>(null);
+  const [showBadge]                         = useState(() => getSetting('showBadge', true));
 
   useEffect(() => {
+    // Fetch system info once on mount
     getSystemInfo().then(setSysInfo).catch(console.error);
 
-    if (pendingAppId !== null) {
+    // URL-first appId detection — works when sidebar opens while already on a game page
+    const match = window.location.pathname.match(/\/library\/app\/(\d+)/);
+    if (match) {
+      const appId = parseInt(match[1], 10);
+      setCurrentAppId(appId);
+      fetchSummary(String(appId)).then(setCurrentSummary).catch(console.error);
+    } else if (pendingAppId !== null) {
       setCurrentAppId(pendingAppId);
       fetchSummary(String(pendingAppId)).then(setCurrentSummary).catch(console.error);
       pendingAppId = null;
     }
 
+    // Poll game-running state every 5s
     const checkGame = async () => {
       const running = await isGameRunning();
       setGameRunning(running);
@@ -61,33 +66,45 @@ function Content() {
     return () => clearInterval(interval);
   }, []);
 
-  // Called from routerHook when user focuses a game — see definePlugin below
+  // Called from routerHook when user navigates to a game page mid-session
   const onGameFocus = (appId: number, appName: string) => {
     setCurrentAppId(appId);
     setCurrentAppName(appName);
     setCurrentSummary(null);
     fetchSummary(String(appId)).then(setCurrentSummary).catch(console.error);
   };
-  // Expose so definePlugin can call it (module-level ref pattern)
   (Content as any)._onGameFocus = onGameFocus;
   (Content as any)._onGameStart = () => setGameRunning(true);
 
-  const handleDebugToggle = async (enabled: boolean) => {
-    setDebugEnabled(enabled);
-    await setLogLevel(enabled ? 'DEBUG' : 'INFO');
+  // ─── Modal helpers ────────────────────────────────────────────────────────
+
+  // Open modal at any non-configure tab (no reports fetch needed)
+  const openModalAt = (tab: 'manage' | 'logs' | 'settings' | 'about') => {
+    // Must call setPendingTab before showModal so the initial tab is correct
+    setPendingTab(tab);
+    const modalRef: { hide?: () => void } = {};
+    const modal = showModal(
+      <ProtonPulseModal
+        appId={currentAppId}
+        appName={currentAppName}
+        reports={[]}
+        sysInfo={sysInfo}
+        closeModal={() => modalRef.hide?.()}
+      />
+    );
+    modalRef.hide = modal.Close;
   };
 
-  const handleCheckProtonDB = async () => {
+  // Open Configure tab — fetches reports first
+  const handleConfigure = async () => {
     if (!currentAppId || gameRunning) return;
 
     toaster.toast({ title: 'Proton Pulse', body: 'Fetching ProtonDB reports…' });
-
     try {
       const [reports, info] = await Promise.all([
         fetchReports(String(currentAppId)),
         sysInfo ? Promise.resolve(sysInfo) : getSystemInfo(),
       ]);
-
       if (!sysInfo) setSysInfo(info);
 
       if (reports.length === 0) {
@@ -95,8 +112,8 @@ function Content() {
         return;
       }
 
-      // showModal returns { Hide } — pass it as closeModal via a ref to avoid
-      // the temporal dead-zone circular reference
+      // Must call setPendingTab before showModal
+      setPendingTab('configure');
       const modalRef: { hide?: () => void } = {};
       const modal = showModal(
         <ProtonPulseModal
@@ -109,46 +126,82 @@ function Content() {
       );
       modalRef.hide = modal.Close;
     } catch (e) {
+      console.error('Proton Pulse: failed to fetch reports', e);
       toaster.toast({ title: 'Proton Pulse', body: 'Failed to fetch reports — check logs.' });
     }
   };
 
+  // Badge click — same flow as Configure button
+  const handleBadgeClick = () => { handleConfigure(); };
+
+  // ─── Disable reasons ───────────────────────────────────────────────────────
+  const configureDescription = gameRunning
+    ? 'Quit your game first'
+    : currentAppId
+    ? 'Find & apply ProtonDB launch options'
+    : 'Navigate to a game first';
+
+  const manageDescription = currentAppId
+    ? 'View and clear applied configs'
+    : 'Navigate to a game first';
+
   return (
     <PanelSection>
-      {/* Badge preview in sidebar — also satisfies noUnusedLocals for ProtonPulseBadge */}
-      {currentAppId && (
+      {/* Badge row — gated by showBadge setting */}
+      {showBadge && currentAppId && (
         <PanelSectionRow>
-          <div style={{ display: 'flex', alignItems: 'center', fontSize: 11, color: '#aaa' }}>
-            {currentAppName}
-            <ProtonPulseBadge summary={currentSummary} gpuVendor={sysInfo?.gpu_vendor ?? null} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#aaa' }}>
+            <span>{currentAppName || `App ${currentAppId}`}</span>
+            <ProtonPulseBadge
+              summary={currentSummary}
+              gpuVendor={sysInfo?.gpu_vendor ?? null}
+              onClick={handleBadgeClick}
+            />
           </div>
         </PanelSectionRow>
       )}
 
+      {/* Game section */}
       <PanelSectionRow>
         <ButtonItem
           layout="below"
           disabled={gameRunning || !currentAppId}
-          onClick={handleCheckProtonDB}
-          description={gameRunning ? 'Quit your game first' : (currentAppId ? undefined : 'Navigate to a game first')}
+          onClick={handleConfigure}
+          description={configureDescription}
         >
-          Check ProtonDB ▶
+          Configure This Game ▶
+        </ButtonItem>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          disabled={!currentAppId}
+          onClick={() => openModalAt('manage')}
+          description={manageDescription}
+        >
+          Manage Configurations ▶
         </ButtonItem>
       </PanelSectionRow>
 
-      <PanelSection title="Settings">
+      {/* Plugin section */}
+      <PanelSection title="Plugin">
         <PanelSectionRow>
-          <ToggleField
-            label="Debug Logs"
-            checked={debugEnabled}
-            onChange={handleDebugToggle}
-          />
+          <ButtonItem
+            layout="below"
+            onClick={() => openModalAt('logs')}
+            description="View plugin activity log"
+          >
+            Logs ▶
+          </ButtonItem>
         </PanelSectionRow>
-      </PanelSection>
-
-      <PanelSection title="Logs">
         <PanelSectionRow>
-          <LogViewer />
+          <ButtonItem
+            layout="below"
+            onClick={() => openModalAt('settings')}
+            description="Debug mode and display options"
+          >
+            Settings ▶
+          </ButtonItem>
         </PanelSectionRow>
       </PanelSection>
     </PanelSection>
@@ -159,12 +212,9 @@ function Content() {
 export default definePlugin(() => {
   console.log('Proton Pulse initializing');
 
-  // Track the currently focused app — updated by the router (read by future patches)
-  // eslint-disable-next-line prefer-const
   let focusedAppId: number | null = null;
   void focusedAppId;
 
-  // Badge patch: inject into game detail pages
   const patchGamePage = routerHook.addPatch(
     '/library/app/:appid',
     (props: any) => {
@@ -178,15 +228,10 @@ export default definePlugin(() => {
           pendingAppId = appId;
         }
       }
-      // Note: badge injection into existing badge row requires finding the
-      // Steam DOM node for the badge area. This is Steam-version-dependent.
-      // The badge component is returned here; exact positioning is adjusted
-      // by inspecting the live Steam DOM with Decky's devtools.
       return props;
     }
   );
 
-  // Listen for game launch events to update game-running state
   const gameStartListener = addEventListener(
     'game_start',
     (appId: number) => {
