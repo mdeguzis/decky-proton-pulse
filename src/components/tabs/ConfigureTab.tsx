@@ -1,6 +1,6 @@
 // src/components/tabs/ConfigureTab.tsx
 import { useState, useEffect } from 'react';
-import { DialogButton } from '@decky/ui';
+import { DialogButton, Focusable } from '@decky/ui';
 import { toaster, callable } from '@decky/api';
 import { ReportCard } from '../ReportCard';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
@@ -109,14 +109,14 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
   };
 
   return (
-    <div>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+    <Focusable style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 6 }}>
         {FILTER_OPTIONS.map(({ value, label }) => (
-          <button
+          <DialogButton
             key={value}
             onClick={() => setFilter(value)}
             style={{
-              padding: '3px 10px', borderRadius: 4, border: 'none', cursor: 'pointer',
+              padding: '3px 10px', minWidth: 0, flex: '0 0 auto',
               fontWeight: filter === value ? 700 : 400,
               background: filter === value ? '#4c9eff' : '#333',
               color: filter === value ? '#fff' : '#aaa',
@@ -124,10 +124,10 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
             }}
           >
             {label}
-          </button>
+          </DialogButton>
         ))}
       </div>
-      <div style={{ maxHeight: 340, overflowY: 'auto', marginBottom: 10 }}>
+      <div style={{ maxHeight: 340, overflowY: 'auto' }}>
         {visibleReports.length === 0 ? (
           <div style={{ color: '#666', fontSize: 12, padding: 12, textAlign: 'center' }}>
             No ProtonDB reports found for this GPU tier.
@@ -144,15 +144,15 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
         )}
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <DialogButton onClick={handleClear} style={{ background: '#555' }}>Clear</DialogButton>
+        <DialogButton onClick={handleClear} style={{ background: '#555', flex: '0 0 auto' }}>Clear</DialogButton>
         <DialogButton
           onClick={handleApply}
           disabled={!selected || applying}
-          style={{ background: selected ? '#4c9eff' : '#333' }}
+          style={{ background: selected ? '#4c9eff' : '#333', flex: '0 0 auto' }}
         >
-          {applying ? 'Applying…' : 'Apply ▶'}
+          {applying ? 'Applying…' : 'Apply'}
         </DialogButton>
       </div>
-    </div>
+    </Focusable>
   );
 }

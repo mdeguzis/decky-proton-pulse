@@ -82,7 +82,6 @@ function Content() {
     pageState.initialPage = tab;
     pageState.appId = currentAppId;
     pageState.appName = currentAppName;
-    Router.CloseSideMenus();
     Router.Navigate('/proton-pulse');
   };
 
@@ -121,7 +120,6 @@ function Content() {
         </PanelSectionRow>
       )}
 
-      {/* Game section */}
       <PanelSectionRow>
         <ButtonItem
           layout="below"
@@ -129,7 +127,7 @@ function Content() {
           onClick={handleConfigure}
           description={configureDescription}
         >
-          Configure This Game ▶
+          Configure This Game
         </ButtonItem>
       </PanelSectionRow>
       <PanelSectionRow>
@@ -139,31 +137,27 @@ function Content() {
           onClick={() => navigateTo('manage')}
           description={manageDescription}
         >
-          Manage Configurations ▶
+          Manage Configurations
         </ButtonItem>
       </PanelSectionRow>
-
-      {/* Plugin section */}
-      <PanelSection title="Plugin">
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={() => navigateTo('logs')}
-            description="View plugin activity log"
-          >
-            Logs ▶
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={() => navigateTo('settings')}
-            description="Debug mode and display options"
-          >
-            Settings ▶
-          </ButtonItem>
-        </PanelSectionRow>
-      </PanelSection>
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          onClick={() => navigateTo('logs')}
+          description="View plugin activity log"
+        >
+          Logs
+        </ButtonItem>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          onClick={() => navigateTo('settings')}
+          description="Debug mode and display options"
+        >
+          Settings
+        </ButtonItem>
+      </PanelSectionRow>
     </PanelSection>
   );
 }

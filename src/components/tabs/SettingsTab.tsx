@@ -1,6 +1,6 @@
 // src/components/tabs/SettingsTab.tsx
 import { useState } from 'react';
-import { ToggleField } from '@decky/ui';
+import { ToggleField, Focusable } from '@decky/ui';
 import { callable } from '@decky/api';
 import { getSetting, setSetting } from '../../lib/settings';
 
@@ -22,7 +22,7 @@ export function SettingsTab() {
   };
 
   return (
-    <div style={{ padding: 8 }}>
+    <Focusable>
       <ToggleField
         label="Debug Logs"
         description="Enable verbose logging in plugin activity log"
@@ -35,6 +35,6 @@ export function SettingsTab() {
         checked={showBadge}
         onChange={handleShowBadgeToggle}
       />
-    </div>
+    </Focusable>
   );
 }
