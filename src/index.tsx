@@ -17,7 +17,7 @@ import {
 import { useState, useEffect } from 'react';
 import { FaBolt } from 'react-icons/fa';
 
-import { ProtonPulseModal, setPendingTab } from './components/Modal';
+import { ProtonPulseModal } from './components/Modal';
 import { ProtonPulseBadge } from './components/Badge';
 import { getSetting } from './lib/settings';
 import type { SystemInfo, ProtonDBReport, ProtonDBSummary } from './types';
@@ -80,8 +80,6 @@ function Content() {
 
   // Open modal at any non-configure tab (no reports fetch needed)
   const openModalAt = (tab: 'manage' | 'logs' | 'settings' | 'about') => {
-    // Must call setPendingTab before showModal so the initial tab is correct
-    setPendingTab(tab);
     const modalRef: { hide?: () => void } = {};
     const modal = showModal(
       <ProtonPulseModal
@@ -89,6 +87,7 @@ function Content() {
         appName={currentAppName}
         reports={[]}
         sysInfo={sysInfo}
+        initialTab={tab}
         closeModal={() => modalRef.hide?.()}
       />
     );
@@ -112,8 +111,6 @@ function Content() {
         return;
       }
 
-      // Must call setPendingTab before showModal
-      setPendingTab('configure');
       const modalRef: { hide?: () => void } = {};
       const modal = showModal(
         <ProtonPulseModal
@@ -121,6 +118,7 @@ function Content() {
           appName={currentAppName}
           reports={reports}
           sysInfo={info}
+          initialTab="configure"
           closeModal={() => modalRef.hide?.()}
         />
       );
