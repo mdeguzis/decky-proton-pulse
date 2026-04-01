@@ -4,8 +4,9 @@ import { DialogButton, Focusable } from '@decky/ui';
 import { toaster } from '@decky/api';
 import { ReportCard } from '../ReportCard';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
-import { getProtonDBReports } from '../../lib/protondb';
-import type { ProtonDBReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
+import { getProtonDBReports, getVotes, postUpvote } from '../../lib/protondb';
+import { getSetting } from '../../lib/settings';
+import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 
 interface Props {
   appId: number | null;
@@ -14,27 +15,47 @@ interface Props {
 }
 
 type FilterTier = GpuVendor | 'all';
+type SortMode = 'score' | 'votes';
+
+const STEAM_HEADER_URL = (id: number) =>
+  `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
+
+const reportKey = (r: CdnReport) => `${r.timestamp}_${r.protonVersion}`;
+
+const FILTER_ORDER: FilterTier[] = ['nvidia', 'amd', 'intel', 'other', 'all'];
+const FILTER_LABELS: Record<FilterTier, string> = {
+  nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel', other: 'Other', all: 'All',
+};
 
 export function ConfigureTab({ appId, appName, sysInfo }: Props) {
-  const [reports, setReports] = useState<ProtonDBReport[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const gpuVendor = sysInfo?.gpu_vendor ?? null;
-  const initialFilter: FilterTier = (gpuVendor === 'nvidia' || gpuVendor === 'amd') ? gpuVendor : 'other';
-  const [filter, setFilter] = useState<FilterTier>(initialFilter);
+  const [reports, setReports]   = useState<CdnReport[]>([]);
+  const [votes, setVotes]       = useState<Record<string, number>>({});
+  const [loading, setLoading]   = useState(false);
   const [selected, setSelected] = useState<ScoredReport | null>(null);
   const [applying, setApplying] = useState(false);
+  const [upvoting, setUpvoting] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>('score');
+
+  const gpuVendor = sysInfo?.gpu_vendor ?? null;
+  const initialFilter: FilterTier =
+    gpuVendor === 'nvidia' || gpuVendor === 'amd' || gpuVendor === 'intel' ? gpuVendor : 'other';
+  const [filter, setFilter] = useState<FilterTier>(initialFilter);
 
   useEffect(() => {
     if (!appId) return;
     setLoading(true);
     setReports([]);
+    setVotes({});
     setSelected(null);
-    getProtonDBReports(String(appId))
-      .then(setReports)
+    Promise.all([getProtonDBReports(String(appId)), getVotes(String(appId))])
+      .then(([r, v]) => { setReports(r); setVotes(v); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [appId]);
+
+  const refreshVotes = () => {
+    if (appId) getVotes(String(appId)).then(setVotes).catch(console.error);
+  };
 
   if (!appId) {
     return (
@@ -60,21 +81,29 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
     );
   }
 
-  const scored = reports.map(r => scoreReport(r, sysInfo));
+  const scored: ScoredReport[] = reports.map(r => ({
+    ...scoreReport(r, sysInfo),
+    upvotes: votes[reportKey(r)] ?? 0,
+  }));
+
   const buckets = bucketByGpuTier(scored);
 
-  const visibleReports: ScoredReport[] = filter === 'all'
-    ? [...buckets.nvidia, ...buckets.amd, ...buckets.other]
-    : filter === 'nvidia' ? buckets.nvidia
-    : filter === 'amd'    ? buckets.amd
-    :                       buckets.other;
+  const visibleReports: ScoredReport[] =
+    filter === 'all'                       ? [...buckets.nvidia, ...buckets.amd, ...buckets.other] :
+    filter === 'nvidia'                    ? buckets.nvidia :
+    filter === 'amd'                       ? buckets.amd :
+    filter === 'intel' || filter === 'other' ? buckets.other :
+                                               buckets.other;
 
-  const FILTER_OPTIONS: Array<{ value: FilterTier; label: string }> = [
-    { value: 'nvidia', label: 'NVIDIA' },
-    { value: 'amd',   label: 'AMD'   },
-    { value: 'other', label: 'Other' },
-    { value: 'all',   label: 'All'   },
-  ];
+  const sortedReports =
+    sortMode === 'votes'
+      ? [...visibleReports].sort((a, b) => b.upvotes - a.upvotes)
+      : visibleReports;
+
+  const cycleFilter = () => {
+    const idx = FILTER_ORDER.indexOf(filter);
+    setFilter(FILTER_ORDER[(idx + 1) % FILTER_ORDER.length]);
+  };
 
   const handleApply = async () => {
     if (!selected || !appId) return;
@@ -85,56 +114,74 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
     }
     setApplying(true);
     try {
-      const launchOptions = `STEAM_COMPAT_TOOL_INSTALL_PATH="" PROTON_VERSION="${selected.protonVersion}" %command%`;
-      await SteamClient.Apps.SetAppLaunchOptions(appId, launchOptions);
-      toaster.toast({ title: 'Proton Pulse', body: `Launch options applied for ${appName}` });
+      await SteamClient.Apps.SetAppLaunchOptions(
+        appId, `PROTON_VERSION="${selected.protonVersion}" %command%`
+      );
+      toaster.toast({ title: 'Proton Pulse', body: `Applied for ${appName}` });
     } catch (e) {
-      console.error('Proton Pulse: failed to apply launch options', e);
+      console.error('Proton Pulse: apply failed', e);
       toaster.toast({ title: 'Proton Pulse', body: 'Failed to apply — check logs.' });
     } finally {
       setApplying(false);
     }
   };
 
-  const handleClear = async () => {
-    if (!appId) return;
+  const handleUpvote = async () => {
+    if (!selected || !appId) return;
+    const token = getSetting<string>('gh-votes-token', '');
+    if (!token) {
+      toaster.toast({ title: 'Proton Pulse', body: 'Set a GitHub token in Settings to upvote.' });
+      return;
+    }
+    setUpvoting(true);
     try {
-      await SteamClient.Apps.SetAppLaunchOptions(appId, '');
-      toaster.toast({ title: 'Proton Pulse', body: 'Launch options cleared.' });
-    } catch (e) {
-      console.error('Proton Pulse: failed to clear launch options', e);
-      toaster.toast({ title: 'Proton Pulse', body: 'Failed to clear — check logs.' });
+      const ok = await postUpvote(String(appId), reportKey(selected), token);
+      if (ok) {
+        toaster.toast({ title: 'Proton Pulse', body: 'Vote submitted! Count updates in ~60s.' });
+        setTimeout(refreshVotes, 90_000);
+      } else {
+        toaster.toast({ title: 'Proton Pulse', body: 'Vote failed — check token in Settings.' });
+      }
+    } finally {
+      setUpvoting(false);
     }
   };
 
+  const btnStyle = (active?: boolean) => ({
+    padding: '3px 8px', minWidth: 0, flex: '0 0 auto', fontSize: 10,
+    background: active ? '#4c9eff' : '#333',
+    color: active ? '#fff' : '#aaa',
+  });
+
   return (
-    <Focusable style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 6 }}>
-        {FILTER_OPTIONS.map(({ value, label }) => (
-          <DialogButton
-            key={value}
-            onClick={() => setFilter(value)}
-            style={{
-              padding: '3px 10px', minWidth: 0, flex: '0 0 auto',
-              fontWeight: filter === value ? 700 : 400,
-              background: filter === value ? '#4c9eff' : '#333',
-              color: filter === value ? '#fff' : '#aaa',
-              fontSize: 11,
-            }}
-          >
-            {label}
-          </DialogButton>
-        ))}
+    <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Page header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <img
+          src={STEAM_HEADER_URL(appId)}
+          style={{ height: 40, borderRadius: 3, objectFit: 'cover' }}
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
+            {appName}
+          </div>
+          <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+            {reports.length} community reports
+          </div>
+        </div>
       </div>
-      <div style={{ maxHeight: 340, overflowY: 'auto' }}>
-        {visibleReports.length === 0 ? (
+
+      {/* Report list */}
+      <div style={{ flex: 1, overflowY: 'auto', marginBottom: 8 }}>
+        {sortedReports.length === 0 ? (
           <div style={{ color: '#666', fontSize: 12, padding: 12, textAlign: 'center' }}>
-            No ProtonDB reports found for this GPU tier.
+            No reports for this GPU tier.
           </div>
         ) : (
-          visibleReports.map((r) => (
+          sortedReports.map(r => (
             <ReportCard
-              key={r.timestamp + '-' + r.protonVersion}
+              key={reportKey(r)}
               report={r}
               selected={selected === r}
               onSelect={setSelected}
@@ -142,14 +189,35 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
           ))
         )}
       </div>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <DialogButton onClick={handleClear} style={{ background: '#555', flex: '0 0 auto' }}>Clear</DialogButton>
+
+      {/* Bottom action bar */}
+      <div style={{
+        display: 'flex', gap: 4, flexWrap: 'wrap',
+        paddingTop: 6, borderTop: '1px solid #2a3a4a',
+      }}>
+        <DialogButton onClick={() => setSortMode('votes')} style={btnStyle(sortMode === 'votes')}>
+          SORT BY VOTES
+        </DialogButton>
+        <DialogButton onClick={() => setSortMode('score')} style={btnStyle(sortMode === 'score')}>
+          SORT BY SCORE
+        </DialogButton>
+        <DialogButton onClick={cycleFilter} style={btnStyle()}>
+          FILTER: {FILTER_LABELS[filter]}
+        </DialogButton>
+        <div style={{ flex: 1 }} />
         <DialogButton
           onClick={handleApply}
           disabled={!selected || applying}
-          style={{ background: selected ? '#4c9eff' : '#333', flex: '0 0 auto' }}
+          style={btnStyle(!!selected)}
         >
-          {applying ? 'Applying…' : 'Apply'}
+          {applying ? 'APPLYING…' : 'APPLY'}
+        </DialogButton>
+        <DialogButton
+          onClick={handleUpvote}
+          disabled={!selected || upvoting}
+          style={{ ...btnStyle(), color: '#ffd700' }}
+        >
+          {upvoting ? '★ …' : '★ UPVOTE'}
         </DialogButton>
       </div>
     </Focusable>
