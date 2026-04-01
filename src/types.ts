@@ -15,54 +15,57 @@ export interface SystemInfo {
   proton_custom: string | null;
 }
 
-// ─── ProtonDB API ─────────────────────────────────────────────────────────────
-// Field names verified against https://www.protondb.com/api/v1/reports/app/2358720
-// Note: ProtonDB API is unofficial — field names may drift. Verify before coding.
+// ─── ProtonDB Summary ─────────────────────────────────────────────────────────
+// Still live: https://www.protondb.com/api/v1/reports/summaries/{appId}.json
 
 export type ProtonRating = 'platinum' | 'gold' | 'silver' | 'bronze' | 'borked' | 'pending';
 
-export interface ProtonDBReportResponses {
-  gpu?: string;
-  gpuDriver?: string;
-  os?: string;
-  ram?: number;
-  kernel?: string;
-  cpu?: string;
-}
-
-export interface ProtonDBReport {
-  timestamp: number;           // Unix seconds
-  rating: ProtonRating;
-  protonVersion: string;       // e.g. "GE-Proton9-7", "Proton 9.0"
-  notes: string;
-  responses: ProtonDBReportResponses;
-}
-
 export interface ProtonDBSummary {
-  score: number;              // 0.0–1.0 float (e.g. 0.82)
-  tier: ProtonRating;         // e.g. "platinum"
+  score: number;
+  tier: ProtonRating;
   total: number;
-  trendingTier: ProtonRating; // e.g. "platinum"
-  bestReportedTier: ProtonRating; // renamed from bestReported in live API
+  trendingTier: ProtonRating;
+  bestReportedTier: ProtonRating;
   confidence: string;
+}
+
+// ─── CDN Report ───────────────────────────────────────────────────────────────
+// Shape served by https://mdeguzis.github.io/proton-pulse-data/data/{appId}.json
+// rating is normalized to lowercase at fetch time ("Silver" → "silver")
+
+export interface CdnReport {
+  appId: string;
+  cpu: string;
+  duration: string;
+  gpu: string;
+  gpuDriver: string;
+  kernel: string;
+  notes: string;
+  os: string;
+  protonVersion: string;
+  ram: string;
+  rating: ProtonRating;
+  timestamp: number;
+  title: string;
 }
 
 // ─── Scoring ──────────────────────────────────────────────────────────────────
 
 export type GpuTier = 'nvidia' | 'amd' | 'intel' | 'unknown';
 
-export interface ScoredReport extends ProtonDBReport {
+export interface ScoredReport extends CdnReport {
   score: number;
   gpuTier: GpuTier;
   recencyDays: number;
+  notesModifier: number;
+  upvotes: number;
 }
 
 export interface TieredReports {
   nvidia: ScoredReport[];
   amd: ScoredReport[];
-  other: ScoredReport[];   // intel + unknown combined for display
+  other: ScoredReport[];
 }
 
 // ─── Steam CEF ───────────────────────────────────────────────────────────────
 // SteamClient global is provided by @decky/ui — no redeclaration needed.
-// Types are available via node_modules/@decky/ui/dist/globals/SteamClient.d.ts
