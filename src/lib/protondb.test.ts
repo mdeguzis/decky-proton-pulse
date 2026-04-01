@@ -42,11 +42,6 @@ const fakeCdnRaw = [
   },
 ];
 
-const fakeCdnNormalized: CdnReport[] = [
-  { ...fakeCdnRaw[0], rating: 'gold' },
-  { ...fakeCdnRaw[1], rating: 'silver' },
-];
-
 // ─── getProtonDBSummary ────────────────────────────────────────────────────────
 
 describe('getProtonDBSummary', () => {
@@ -103,6 +98,11 @@ describe('getProtonDBReports', () => {
     mockFetch.mockRejectedValue(new Error('timeout'));
     expect(await getProtonDBReports('1')).toEqual([]);
   });
+
+  it('returns empty array on 200 with empty body', async () => {
+    mockFetch.mockResolvedValue(makeResponse(200, []));
+    expect(await getProtonDBReports('730')).toEqual([]);
+  });
 });
 
 // ─── getVotes ─────────────────────────────────────────────────────────────────
@@ -148,6 +148,9 @@ describe('postUpvote', () => {
       'https://api.github.com/repos/mdeguzis/proton-pulse-data/dispatches',
       expect.objectContaining({
         method: 'POST',
+        headers: expect.objectContaining({
+          'Authorization': 'token mytoken',
+        }),
         body: JSON.stringify({
           event_type: 'upvote',
           client_payload: { appId: '730', reportKey: '1700000000_GE-Proton9-7' },
