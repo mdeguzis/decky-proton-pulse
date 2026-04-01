@@ -46,7 +46,7 @@ export function SettingsTab() {
           GitHub Votes Token
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 6 }}>
-          Personal access token for submitting upvotes (repo scope)
+          GitHub token for the `proton-pulse-data` repo with permission to trigger the upvote workflow
         </div>
         <input
           type="password"
