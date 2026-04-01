@@ -21,11 +21,11 @@ export interface SystemInfo {
 export type ProtonRating = 'platinum' | 'gold' | 'silver' | 'bronze' | 'borked' | 'pending';
 
 export interface ProtonDBSummary {
-  score: number;
-  tier: ProtonRating;
+  score: number;              // 0.0–1.0 float (e.g. 0.82)
+  tier: ProtonRating;         // e.g. "platinum"
   total: number;
-  trendingTier: ProtonRating;
-  bestReportedTier: ProtonRating;
+  trendingTier: ProtonRating; // e.g. "platinum"
+  bestReportedTier: ProtonRating; // renamed from bestReported in live API
   confidence: string;
 }
 
@@ -43,7 +43,7 @@ export interface CdnReport {
   notes: string;
   os: string;
   protonVersion: string;
-  ram: string;
+  ram: string;          // raw string from CDN, e.g. "16 GB" — not a number
   rating: ProtonRating;
   timestamp: number;
   title: string;
