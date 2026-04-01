@@ -21,8 +21,13 @@ export async function getProtonDBReports(appId: string): Promise<CdnReport[]> {
   try {
     const resp = await fetchNoCors(REPORTS_URL.replace('{id}', appId));
     if (resp.status !== 200) return [];
+    const VALID_RATINGS = new Set<string>(['platinum','gold','silver','bronze','borked','pending']);
     const raw = await resp.json() as Array<CdnReport & { rating: string }>;
-    return raw.map(r => ({ ...r, rating: r.rating.toLowerCase() as ProtonRating }));
+    return raw.map(r => {
+      const normalized = r.rating.toLowerCase();
+      const rating = VALID_RATINGS.has(normalized) ? normalized as ProtonRating : 'pending';
+      return { ...r, rating };
+    });
   } catch {
     return [];
   }
