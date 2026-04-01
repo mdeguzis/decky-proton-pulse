@@ -22,7 +22,7 @@ const STEAM_HEADER_URL = (id: number) =>
 
 const reportKey = (r: CdnReport) => `${r.timestamp}_${r.protonVersion}`;
 
-const FILTER_ORDER: FilterTier[] = ['nvidia', 'amd', 'intel', 'other', 'all'];
+const FILTER_ORDER: FilterTier[] = ['nvidia', 'amd', 'other', 'all'];
 const FILTER_LABELS: Record<FilterTier, string> = {
   nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel', other: 'Other', all: 'All',
 };
@@ -52,10 +52,6 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [appId]);
-
-  const refreshVotes = () => {
-    if (appId) getVotes(String(appId)).then(setVotes).catch(console.error);
-  };
 
   if (!appId) {
     return (
@@ -130,7 +126,7 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
     if (!selected || !appId) return;
     const token = getSetting<string>('gh-votes-token', '');
     if (!token) {
-      toaster.toast({ title: 'Proton Pulse', body: 'Set a GitHub token in Settings to upvote.' });
+      toaster.toast({ title: 'Proton Pulse', body: 'Set a GitHub token (gh-votes-token) in Settings to upvote.' });
       return;
     }
     setUpvoting(true);
@@ -138,7 +134,10 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
       const ok = await postUpvote(String(appId), reportKey(selected), token);
       if (ok) {
         toaster.toast({ title: 'Proton Pulse', body: 'Vote submitted! Count updates in ~60s.' });
-        setTimeout(refreshVotes, 90_000);
+        const capturedAppId = appId;
+        setTimeout(() => {
+          if (capturedAppId) getVotes(String(capturedAppId)).then(setVotes).catch(console.error);
+        }, 90_000);
       } else {
         toaster.toast({ title: 'Proton Pulse', body: 'Vote failed — check token in Settings.' });
       }
@@ -183,7 +182,7 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
             <ReportCard
               key={reportKey(r)}
               report={r}
-              selected={selected === r}
+              selected={selected !== null && reportKey(selected) === reportKey(r)}
               onSelect={setSelected}
             />
           ))
