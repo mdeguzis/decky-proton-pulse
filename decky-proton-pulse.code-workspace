@@ -1,0 +1,36 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../decky-proton-pulse.wiki"
+		},
+		{
+			"path": "../proton-pulse-data"
+		}
+	],
+	"settings": {
+		"workbench.colorCustomizations": {
+			"activityBar.activeBackground": "#e3ae5a",
+			"activityBar.background": "#e3ae5a",
+			"activityBar.foreground": "#15202b",
+			"activityBar.inactiveForeground": "#15202b99",
+			"activityBarBadge.background": "#17885c",
+			"activityBarBadge.foreground": "#e7e7e7",
+			"commandCenter.border": "#15202b99",
+			"sash.hoverBorder": "#e3ae5a",
+			"sideBar.border": "#e3ae5a",
+			"statusBar.background": "#dc992e",
+			"statusBar.foreground": "#15202b",
+			"statusBarItem.hoverBackground": "#b87d1f",
+			"statusBarItem.remoteBackground": "#dc992e",
+			"statusBarItem.remoteForeground": "#15202b",
+			"titleBar.activeBackground": "#dc992e",
+			"titleBar.activeForeground": "#15202b",
+			"titleBar.inactiveBackground": "#dc992e99",
+			"titleBar.inactiveForeground": "#15202b99"
+		},
+		"peacock.color": "#dc992e"
+	}
+}

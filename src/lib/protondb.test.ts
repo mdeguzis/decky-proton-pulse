@@ -178,7 +178,8 @@ describe('postUpvote', () => {
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
-          'Authorization': 'token mytoken',
+          'Authorization': 'Bearer mytoken',
+          'X-GitHub-Api-Version': '2022-11-28',
         }),
         body: JSON.stringify({
           event_type: 'upvote',
@@ -193,8 +194,42 @@ describe('postUpvote', () => {
     expect(await postUpvote('730', 'key', 'token')).toBe(true);
   });
 
+  it('falls back to workflow dispatch when repository dispatch is rejected', async () => {
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(404, null))
+      .mockResolvedValueOnce(makeResponse(204, null));
+
+    expect(await postUpvote('730', 'key', 'token')).toBe(true);
+    expect(mockFetch).toHaveBeenNthCalledWith(
+      2,
+      'https://api.github.com/repos/mdeguzis/proton-pulse-data/actions/workflows/upvote.yml/dispatches',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          ref: 'main',
+          inputs: { appId: '730', reportKey: 'key' },
+        }),
+      })
+    );
+  });
+
+  it('trims token before dispatching', async () => {
+    mockFetch.mockResolvedValue(makeResponse(204, null));
+    await postUpvote('730', 'key', ' token-with-space ');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.github.com/repos/mdeguzis/proton-pulse-data/dispatches',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'Authorization': 'Bearer token-with-space',
+        }),
+      })
+    );
+  });
+
   it('returns false on non-204', async () => {
-    mockFetch.mockResolvedValue(makeResponse(422, null));
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(422, null))
+      .mockResolvedValueOnce(makeResponse(422, null));
     expect(await postUpvote('730', 'key', 'token')).toBe(false);
   });
 
