@@ -23,6 +23,11 @@ jobs:
           REPORT_KEY="${{ github.event.client_payload.reportKey }}"
           VOTES_FILE="data/${APP_ID}/votes.json"
 
+          if [[ ! "$APP_ID" =~ ^[0-9]+$ ]]; then
+            echo "Invalid appId: ${APP_ID}"
+            exit 1
+          fi
+
           mkdir -p "data/${APP_ID}"
 
           python3 - "$VOTES_FILE" "$REPORT_KEY" <<'PYEOF'

@@ -7,7 +7,7 @@ vi.mock('@decky/api', () => ({
 
 import { fetchNoCors } from '@decky/api';
 import { getProtonDBSummary, getProtonDBReports, getVotes, postUpvote } from './protondb';
-import type { ProtonDBSummary, CdnReport } from '../types';
+import type { ProtonDBSummary } from '../types';
 
 const mockFetch = fetchNoCors as ReturnType<typeof vi.fn>;
 

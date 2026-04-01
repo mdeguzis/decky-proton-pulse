@@ -29,8 +29,9 @@ function truncate(str: string, maxLen: number): string {
 
 export function ReportCard({ report, selected, onSelect }: Props) {
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
-  const confScore = (report.score / 10).toFixed(1);
-  const confColor = confidenceColor(report.score);
+  const cappedScore = Math.min(100, report.score);
+  const confScore = (cappedScore / 10).toFixed(1);
+  const confColor = confidenceColor(cappedScore);
 
   return (
     <div
