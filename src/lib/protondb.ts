@@ -6,7 +6,9 @@ const SUMMARY_URL   = 'https://www.protondb.com/api/v1/reports/summaries/{id}.js
 const APP_INDEX_URL = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/index.json';
 const YEAR_URL      = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/{year}.json';
 const VOTES_URL     = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/votes.json';
-const DISPATCH_URL  = 'https://api.github.com/repos/mdeguzis/proton-pulse-data/dispatches';
+const REPOSITORY_DISPATCH_URL = 'https://api.github.com/repos/mdeguzis/proton-pulse-data/dispatches';
+const WORKFLOW_DISPATCH_URL   = 'https://api.github.com/repos/mdeguzis/proton-pulse-data/actions/workflows/upvote.yml/dispatches';
+const WORKFLOW_REF            = 'main';
 
 export async function getProtonDBSummary(appId: string): Promise<ProtonDBSummary | null> {
   try {
@@ -70,21 +72,38 @@ export async function postUpvote(
   reportKey: string,
   token: string,
 ): Promise<boolean> {
-  if (!token) return false;
+  const trimmedToken = token.trim();
+  if (!trimmedToken) return false;
+
+  const headers = {
+    'Authorization': `Bearer ${trimmedToken}`,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'Content-Type': 'application/json',
+  };
+
   try {
-    const resp = await fetchNoCors(DISPATCH_URL, {
+    const repositoryDispatchResp = await fetchNoCors(REPOSITORY_DISPATCH_URL, {
       method: 'POST',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         event_type: 'upvote',
         client_payload: { appId, reportKey },
       }),
     });
-    return resp.status === 204;
+
+    if (repositoryDispatchResp.status === 204) return true;
+
+    // Some installations expose only workflow_dispatch for the upvote workflow.
+    const workflowDispatchResp = await fetchNoCors(WORKFLOW_DISPATCH_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        ref: WORKFLOW_REF,
+        inputs: { appId, reportKey },
+      }),
+    });
+    return workflowDispatchResp.status === 204;
   } catch {
     return false;
   }

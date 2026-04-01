@@ -9,6 +9,8 @@ lib-cov
 *.swp
 *.zip
 
+.codex
+
 pids
 logs
 results
@@ -42,6 +44,7 @@ __pycache__/
 yalc.lock
 
 .vscode/settings.json
+.cline/
 
 # Ignore output folder
 

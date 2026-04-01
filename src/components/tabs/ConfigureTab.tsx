@@ -126,7 +126,7 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
     if (!selected || !appId) return;
     const token = getSetting<string>('gh-votes-token', '');
     if (!token) {
-      toaster.toast({ title: 'Proton Pulse', body: 'Set a GitHub token (gh-votes-token) in Settings to upvote.' });
+      toaster.toast({ title: 'Proton Pulse', body: 'Set a GitHub token in Settings to upvote.' });
       return;
     }
     setUpvoting(true);
@@ -139,7 +139,7 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
           if (capturedAppId) getVotes(String(capturedAppId)).then(setVotes).catch(console.error);
         }, 90_000);
       } else {
-        toaster.toast({ title: 'Proton Pulse', body: 'Vote failed — check token in Settings.' });
+        toaster.toast({ title: 'Proton Pulse', body: 'Vote failed. Check the token value and its repo/actions permissions.' });
       }
     } finally {
       setUpvoting(false);
