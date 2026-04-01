@@ -1,12 +1,11 @@
 // src/lib/protondb.ts
-// Fetch ProtonDB data directly from the CEF frontend using fetchNoCors,
-// matching the pattern used by protondb-decky (github.com/OMGDuke/protondb-decky).
-// This avoids Python-side aiohttp which is not bundled in the Decky plugin env.
 import { fetchNoCors } from '@decky/api';
-import type { ProtonDBSummary, ProtonDBReport } from '../types';
+import type { ProtonDBSummary, CdnReport, ProtonRating } from '../types';
 
-const SUMMARY_URL = 'https://www.protondb.com/api/v1/reports/summaries/{id}.json';
-const REPORTS_URL = 'https://www.protondb.com/api/v1/reports/app/{id}';
+const SUMMARY_URL  = 'https://www.protondb.com/api/v1/reports/summaries/{id}.json';
+const REPORTS_URL  = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}.json';
+const VOTES_URL    = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/votes.json';
+const DISPATCH_URL = 'https://api.github.com/repos/mdeguzis/proton-pulse-data/dispatches';
 
 export async function getProtonDBSummary(appId: string): Promise<ProtonDBSummary | null> {
   try {
@@ -18,12 +17,48 @@ export async function getProtonDBSummary(appId: string): Promise<ProtonDBSummary
   }
 }
 
-export async function getProtonDBReports(appId: string): Promise<ProtonDBReport[]> {
+export async function getProtonDBReports(appId: string): Promise<CdnReport[]> {
   try {
     const resp = await fetchNoCors(REPORTS_URL.replace('{id}', appId));
     if (resp.status !== 200) return [];
-    return await resp.json() as ProtonDBReport[];
+    const raw = await resp.json() as Array<CdnReport & { rating: string }>;
+    return raw.map(r => ({ ...r, rating: r.rating.toLowerCase() as ProtonRating }));
   } catch {
     return [];
+  }
+}
+
+export async function getVotes(appId: string): Promise<Record<string, number>> {
+  try {
+    const resp = await fetchNoCors(VOTES_URL.replace('{id}', appId));
+    if (resp.status !== 200) return {};
+    return await resp.json() as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+
+export async function postUpvote(
+  appId: string,
+  reportKey: string,
+  token: string,
+): Promise<boolean> {
+  if (!token) return false;
+  try {
+    const resp = await fetchNoCors(DISPATCH_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        event_type: 'upvote',
+        client_payload: { appId, reportKey },
+      }),
+    });
+    return resp.status === 204;
+  } catch {
+    return false;
   }
 }
