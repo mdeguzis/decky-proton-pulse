@@ -1,0 +1,54 @@
+# data-pipeline/.github/workflows/upvote.yml
+name: Handle Upvote
+
+on:
+  repository_dispatch:
+    types: [upvote]
+
+jobs:
+  upvote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to push vote count update to gh-pages
+
+    steps:
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Increment vote count
+        run: |
+          APP_ID="${{ github.event.client_payload.appId }}"
+          REPORT_KEY="${{ github.event.client_payload.reportKey }}"
+          VOTES_FILE="data/${APP_ID}/votes.json"
+
+          mkdir -p "data/${APP_ID}"
+
+          python3 - "$VOTES_FILE" "$REPORT_KEY" <<'PYEOF'
+          import json, sys, os
+
+          votes_file = sys.argv[1]
+          report_key = sys.argv[2]
+
+          data = {}
+          if os.path.exists(votes_file):
+              with open(votes_file) as f:
+                  data = json.load(f)
+
+          data[report_key] = data.get(report_key, 0) + 1
+
+          with open(votes_file, 'w') as f:
+              json.dump(data, f, separators=(',', ':'))
+
+          print(f"Vote recorded: {report_key!r} = {data[report_key]}")
+          PYEOF
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "data/${{ github.event.client_payload.appId }}/votes.json"
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "vote: app ${{ github.event.client_payload.appId }} +1"
+          git push
