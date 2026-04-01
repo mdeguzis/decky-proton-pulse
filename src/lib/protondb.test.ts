@@ -67,30 +67,50 @@ describe('getProtonDBSummary', () => {
 // ─── getProtonDBReports ────────────────────────────────────────────────────────
 
 describe('getProtonDBReports', () => {
-  it('fetches from CDN URL', async () => {
-    mockFetch.mockResolvedValue(makeResponse(200, fakeCdnRaw));
+  it('fetches index then year files', async () => {
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(200, ['2023']))
+      .mockResolvedValueOnce(makeResponse(200, fakeCdnRaw));
     await getProtonDBReports('730');
-    expect(mockFetch).toHaveBeenCalledWith(
-      'https://mdeguzis.github.io/proton-pulse-data/data/730.json'
+    expect(mockFetch).toHaveBeenNthCalledWith(1,
+      'https://mdeguzis.github.io/proton-pulse-data/data/730/index.json'
+    );
+    expect(mockFetch).toHaveBeenNthCalledWith(2,
+      'https://mdeguzis.github.io/proton-pulse-data/data/730/2023.json'
     );
   });
 
+  it('merges reports from multiple year files', async () => {
+    const year2022 = [fakeCdnRaw[0]];
+    const year2023 = [fakeCdnRaw[1]];
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(200, ['2022', '2023']))
+      .mockResolvedValueOnce(makeResponse(200, year2022))
+      .mockResolvedValueOnce(makeResponse(200, year2023));
+    const result = await getProtonDBReports('730');
+    expect(result).toHaveLength(2);
+  });
+
   it('normalizes rating to lowercase', async () => {
-    mockFetch.mockResolvedValue(makeResponse(200, fakeCdnRaw));
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(200, ['2023']))
+      .mockResolvedValueOnce(makeResponse(200, fakeCdnRaw));
     const result = await getProtonDBReports('730');
     expect(result[0].rating).toBe('gold');
     expect(result[1].rating).toBe('silver');
   });
 
   it('returns parsed array on 200', async () => {
-    mockFetch.mockResolvedValue(makeResponse(200, fakeCdnRaw));
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(200, ['2023']))
+      .mockResolvedValueOnce(makeResponse(200, fakeCdnRaw));
     const result = await getProtonDBReports('730');
     expect(result).toHaveLength(2);
     expect(result[0].protonVersion).toBe('GE-Proton9-7');
   });
 
-  it('returns empty array on 404', async () => {
-    mockFetch.mockResolvedValue(makeResponse(404, null));
+  it('returns empty array when index 404s', async () => {
+    mockFetch.mockResolvedValueOnce(makeResponse(404, null));
     expect(await getProtonDBReports('0')).toEqual([]);
   });
 
@@ -99,9 +119,18 @@ describe('getProtonDBReports', () => {
     expect(await getProtonDBReports('1')).toEqual([]);
   });
 
-  it('returns empty array on 200 with empty body', async () => {
-    mockFetch.mockResolvedValue(makeResponse(200, []));
+  it('returns empty array when index is empty', async () => {
+    mockFetch.mockResolvedValueOnce(makeResponse(200, []));
     expect(await getProtonDBReports('730')).toEqual([]);
+  });
+
+  it('skips year files that 404 and returns the rest', async () => {
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(200, ['2022', '2023']))
+      .mockResolvedValueOnce(makeResponse(404, null))
+      .mockResolvedValueOnce(makeResponse(200, fakeCdnRaw));
+    const result = await getProtonDBReports('730');
+    expect(result).toHaveLength(2);
   });
 });
 
