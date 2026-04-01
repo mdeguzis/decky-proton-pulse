@@ -1,0 +1,100 @@
+name: Update ProtonDB Data
+
+on:
+  schedule:
+    # Run on the 2nd of each month — bdefore usually publishes on the 1st.
+    - cron: '0 6 2 * *'
+  workflow_dispatch:
+    inputs:
+      dump_url:
+        description: 'Override dump URL (leave blank to auto-detect latest)'
+        required: false
+        default: ''
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to push to gh-pages
+
+    steps:
+      - name: Checkout scripts
+        uses: actions/checkout@v4
+        with:
+          path: scripts-repo
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Detect latest bdefore dump URL
+        id: detect
+        run: |
+          if [ -n "${{ github.event.inputs.dump_url }}" ]; then
+            echo "url=${{ github.event.inputs.dump_url }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # List all files in bdefore/protondb-data/reports via GitHub API,
+          # pick the one with the lexicographically largest name (most recent).
+          LATEST=$(curl -s \
+            "https://api.github.com/repos/bdefore/protondb-data/contents/reports" \
+            | python3 -c "
+          import sys, json
+          items = json.load(sys.stdin)
+          tarballs = [i for i in items if i['name'].endswith('.tar.gz')]
+          latest = sorted(tarballs, key=lambda x: x['name'])[-1]
+          print(latest['download_url'])
+          ")
+          echo "Detected latest dump: $LATEST"
+          echo "url=$LATEST" >> "$GITHUB_OUTPUT"
+
+      - name: Download dump
+        run: |
+          echo "Downloading: ${{ steps.detect.outputs.url }}"
+          curl -L --progress-bar \
+            "${{ steps.detect.outputs.url }}" \
+            -o /tmp/protondb-dump.tar.gz
+
+      - name: Split reports by game
+        run: |
+          mkdir -p /tmp/protondb-output
+          python3 scripts-repo/scripts/split_reports.py \
+            /tmp/protondb-dump.tar.gz \
+            /tmp/protondb-output
+
+      - name: Show output stats
+        run: |
+          echo "=== index.json ==="
+          cat /tmp/protondb-output/index.json
+          echo ""
+          echo "=== data/ file count ==="
+          ls /tmp/protondb-output/data/ | wc -l
+          echo ""
+          echo "=== total data/ size ==="
+          du -sh /tmp/protondb-output/data/
+
+      - name: Publish to gh-pages (orphan, no history)
+        run: |
+          cd /tmp/protondb-output
+
+          git init
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout --orphan gh-pages
+
+          # Add a minimal Jekyll bypass so GitHub Pages serves raw files
+          touch .nojekyll
+
+          git add -A
+          git commit -m "chore: update ProtonDB data $(date -u +%Y-%m-%d)"
+
+          git remote add origin \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+          # Force-push — we intentionally keep no history to bound repo size
+          git push --force origin gh-pages
+
+          echo "Published to https://${{ github.repository_owner }}.github.io/$(echo '${{ github.repository }}' | cut -d/ -f2)/"

@@ -3,6 +3,7 @@ import {
   PanelSection,
   PanelSectionRow,
   ButtonItem,
+  Focusable,
   staticClasses,
   Router,
 } from '@decky/ui';
@@ -14,31 +15,52 @@ import { FaBolt } from 'react-icons/fa';
 
 import { ProtonPulsePage } from './components/Modal';
 import { pageState, dispatchNavigate } from './lib/pageState';
+import type { PageId } from './lib/pageState';
 import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextMenu';
 
 // ─── Sidebar panel ────────────────────────────────────────────────────────────
 function Content() {
-  const openManage = () => {
-    pageState.initialPage = 'manage';
+  const navigateTo = (tab: PageId) => {
+    pageState.initialPage = tab;
     pageState.appId = null;
     pageState.appName = '';
-    dispatchNavigate({ tab: 'manage', appId: null, appName: '' });
+    dispatchNavigate({ tab, appId: null, appName: '' });
     Router.CloseSideMenus();
     Router.Navigate('/proton-pulse');
   };
 
   return (
-    <PanelSection>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={openManage}
-          description="View and manage ProtonDB configurations"
-        >
-          Manage Configurations
-        </ButtonItem>
-      </PanelSectionRow>
-    </PanelSection>
+    <Focusable>
+      <PanelSection>
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
+            onClick={() => navigateTo('manage')}
+            description="View and manage ProtonDB configurations"
+          >
+            Manage Configurations
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
+            onClick={() => navigateTo('logs')}
+            description="View plugin activity log"
+          >
+            Logs
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
+            onClick={() => navigateTo('settings')}
+            description="Debug mode and display options"
+          >
+            Settings
+          </ButtonItem>
+        </PanelSectionRow>
+      </PanelSection>
+    </Focusable>
   );
 }
 
