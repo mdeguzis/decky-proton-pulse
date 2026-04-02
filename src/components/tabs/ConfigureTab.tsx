@@ -1,7 +1,6 @@
 // src/components/tabs/ConfigureTab.tsx
 import { Component, type ErrorInfo, type ReactNode, useState, useEffect } from 'react';
-import { DialogButton, Focusable, GamepadButton } from '@decky/ui';
-import type { GamepadEvent } from '@decky/ui';
+import { DialogButton, Focusable } from '@decky/ui';
 import { toaster } from '@decky/api';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
 import {
@@ -187,7 +186,6 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   const [votes, setVotes]       = useState<Record<string, number>>({});
   const [loading, setLoading]   = useState(false);
   const [selected, setSelected] = useState<ScoredReport | null>(null);
-  const [detailReport, setDetailReport] = useState<ScoredReport | null>(null);
   const [applying, setApplying] = useState(false);
   const [upvoting, setUpvoting] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('score');
@@ -240,7 +238,6 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     setReports([]);
     setVotes({});
     setSelected(null);
-    setDetailReport(null);
     setReportDiagnostics(null);
     setVoteDiagnostics(null);
     Promise.all([getProtonDBReportsWithDiagnostics(String(appId)), getVotesWithDiagnostics(String(appId))])
@@ -272,7 +269,6 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   useEffect(() => {
     if (!sortedReports.length) {
       setSelected(null);
-      setDetailReport(null);
       return;
     }
     if (!selected) {
@@ -282,7 +278,6 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     const stillVisible = sortedReports.find((report) => reportKey(report) === reportKey(selected));
     if (!stillVisible) {
       setSelected(sortedReports[0]);
-      setDetailReport(null);
     }
   }, [selected, sortedReports]);
 
@@ -296,77 +291,6 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       setCurrentLaunchOptions(getLaunchOptionsFromDetails(result.details));
     });
   }, [appId, appName]);
-
-  if (!appId) {
-    return (
-      <div style={{ padding: 16, color: '#888', fontSize: 12, textAlign: 'center' }}>
-        Navigate to a game first.
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <GameSummaryHeader appId={appId} appName={appName} />
-        <LoadingIndicator label="Fetching ProtonDB reports…" />
-      </Focusable>
-    );
-  }
-
-  if (!sysInfo || reports.length === 0) {
-    const diagnosticsLines = !sysInfo
-        ? []
-        : [
-          `Tried App ID ${appId}`,
-          reportDiagnostics
-            ? `Primary source: ${reportDiagnostics.source}`
-            : 'Primary source: pending',
-          reportDiagnostics
-            ? `Report index response: ${reportDiagnostics.indexStatus ?? 'request failed'}`
-            : 'Report index response: pending',
-          reportDiagnostics
-            ? `Live detailed fallback: ${reportDiagnostics.liveDetailedStatus ?? 'not tried'}${reportDiagnostics.liveDetailedCount !== null ? ` · ${reportDiagnostics.liveDetailedCount} rows` : ''}`
-            : 'Live detailed fallback: pending',
-          reportDiagnostics && reportDiagnostics.source === 'live-summary'
-            ? `Live ProtonDB summary: ${reportDiagnostics.liveSummaryStatus ?? 'request failed'} · ${reportDiagnostics.liveSummaryTotal ?? 0} reports · ${reportDiagnostics.liveSummaryTier ?? 'unknown'} tier`
-            : reportDiagnostics
-              ? `Live ProtonDB summary: ${reportDiagnostics.liveSummaryStatus ?? 'not tried'}`
-              : 'Live ProtonDB summary: pending',
-          voteDiagnostics
-            ? `Votes response: ${voteDiagnostics.status ?? 'request failed'}`
-            : 'Votes response: pending',
-        ];
-    return (
-      <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <GameSummaryHeader appId={appId} appName={appName} reportsCount={reports.length} />
-        <div style={{ padding: 16, color: '#888', fontSize: 12, textAlign: 'center' }}>
-          {!sysInfo ? 'Loading system info…' : 'No ProtonDB reports found for this game.'}
-        </div>
-        {reportDiagnostics?.source === 'live-summary' && (
-          <div style={{ padding: '0 16px 12px', color: '#9dc4e8', fontSize: 11, textAlign: 'center' }}>
-            ProtonDB live summary exists, but detailed report cards were not available from the mirror or live detailed fallback.
-          </div>
-        )}
-        {!!diagnosticsLines.length && (
-          <div
-            style={{
-              margin: '0 16px',
-              padding: 12,
-              borderRadius: 6,
-              background: 'rgba(17, 31, 47, 0.75)',
-              color: '#9dc4e8',
-              fontSize: 11,
-              lineHeight: 1.5,
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {diagnosticsLines.join('\n')}
-          </div>
-        )}
-      </Focusable>
-    );
-  }
 
   const setFilterMode = (nextFilter: FilterTier) => {
     void logFrontendEvent('DEBUG', 'Changed report filter', { appId, previousFilter: filter, nextFilter });
@@ -383,7 +307,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   };
 
   const handleApply = async () => {
-    const targetReport = detailReport ?? selected;
+    const targetReport = selected;
     if (!targetReport || !appId) return;
     void logFrontendEvent('INFO', 'Apply launch option requested', {
       appId,
@@ -429,7 +353,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   };
 
   const handleUpvote = async () => {
-    const targetReport = detailReport ?? selected;
+    const targetReport = selected;
     if (!targetReport || !appId) return;
     const token = getSetting<string>('gh-votes-token', '');
     if (!token) {
@@ -475,56 +399,105 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     borderRadius: 4,
   });
 
-  const detailLaunchPreview = detailReport ? buildLaunchOptionPreview(detailReport.protonVersion) : '';
-  const detailConfidence = detailReport ? (Math.min(100, detailReport.score) / 10).toFixed(1) : null;
+  if (!appId) {
+    return (
+      <div style={{ padding: 16, color: '#888', fontSize: 12, textAlign: 'center' }}>
+        Navigate to a game first.
+      </div>
+    );
+  }
 
-  const handleDetailDirection = (evt: GamepadEvent) => {
-    if (evt.detail.button === GamepadButton.DIR_LEFT && detailReport) {
-      setDetailReport(null);
-    }
-  };
+  const diagnosticsLines = !sysInfo
+    ? []
+    : [
+      `Tried App ID ${appId}`,
+      reportDiagnostics
+        ? `Primary source: ${reportDiagnostics.source}`
+        : 'Primary source: pending',
+      reportDiagnostics
+        ? `Report index response: ${reportDiagnostics.indexStatus ?? 'request failed'}`
+        : 'Report index response: pending',
+      reportDiagnostics
+        ? (
+          reportDiagnostics.source === 'live-summary'
+            ? `Live ProtonDB summary: ${reportDiagnostics.liveSummaryStatus ?? 'request failed'} · ${reportDiagnostics.liveSummaryTotal ?? 0} reports · ${reportDiagnostics.liveSummaryTier ?? 'unknown'} tier`
+            : `Live ProtonDB summary: ${reportDiagnostics.liveSummaryStatus ?? 'not tried'}`
+        )
+        : 'Live ProtonDB summary: pending',
+      voteDiagnostics
+        ? `Votes response: ${voteDiagnostics.status ?? 'request failed'}`
+        : 'Votes response: pending',
+    ];
+
+  const selectedLaunchPreview = selected ? buildLaunchOptionPreview(selected.protonVersion) : '';
+  const selectedConfidence = selected ? (Math.min(100, selected.score) / 10).toFixed(1) : null;
+  const showDiagnosticsState = !loading && (!sysInfo || reports.length === 0);
 
   return (
     <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Page header */}
       <GameSummaryHeader appId={appId} appName={appName} reportsCount={reports.length} />
+      {loading ? (
+        <LoadingIndicator label="Fetching ProtonDB reports…" />
+      ) : showDiagnosticsState ? (
+        <>
+          <div style={{ padding: 16, color: '#888', fontSize: 12, textAlign: 'center' }}>
+            {!sysInfo ? 'Loading system info…' : 'No ProtonDB reports found for this game.'}
+          </div>
+          {reportDiagnostics?.source === 'live-summary' && (
+            <div style={{ padding: '0 16px 12px', color: '#9dc4e8', fontSize: 11, textAlign: 'center' }}>
+              ProtonDB live summary exists, but detailed report cards were not available from the mirror or live detailed fallback.
+            </div>
+          )}
+          {!!diagnosticsLines.length && (
+            <div
+              style={{
+                margin: '0 16px',
+                padding: 12,
+                borderRadius: 6,
+                background: 'rgba(17, 31, 47, 0.75)',
+                color: '#9dc4e8',
+                fontSize: 11,
+                lineHeight: 1.5,
+                whiteSpace: 'pre-wrap',
+              }}
+            >
+              {diagnosticsLines.join('\n')}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              flexWrap: 'wrap',
+              marginBottom: 10,
+              padding: '8px 0',
+              borderBottom: '1px solid #2a3a4a',
+            }}
+          >
+            <DialogButton onClick={cycleSortMode} style={controlButtonStyle(true)}>
+              SORT: {SORT_LABELS[sortMode]}
+            </DialogButton>
+            <DialogButton
+              onClick={() => {
+                const idx = FILTER_ORDER.indexOf(filter);
+                const nextFilter = FILTER_ORDER[(idx + 1) % FILTER_ORDER.length];
+                setFilterMode(nextFilter);
+              }}
+              style={controlButtonStyle()}
+            >
+              GPU: {FILTER_LABELS[filter]}
+            </DialogButton>
+            <div style={{ flex: 1 }} />
+            <div style={{ fontSize: 11, color: '#7a9bb5', whiteSpace: 'nowrap' }}>
+              {sortedReports.length} shown
+            </div>
+          </div>
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          flexWrap: 'wrap',
-          marginBottom: 10,
-          padding: '8px 0',
-          borderBottom: '1px solid #2a3a4a',
-        }}
-      >
-        <DialogButton onClick={cycleSortMode} style={controlButtonStyle(true)}>
-          SORT: {SORT_LABELS[sortMode]}
-        </DialogButton>
-        <DialogButton onClick={() => {
-          const idx = FILTER_ORDER.indexOf(filter);
-          const nextFilter = FILTER_ORDER[(idx + 1) % FILTER_ORDER.length];
-          setFilterMode(nextFilter);
-        }} style={controlButtonStyle()}>
-          GPU: {FILTER_LABELS[filter]}
-        </DialogButton>
-        <div style={{ flex: 1 }} />
-        <div
-          style={{
-            fontSize: 11,
-            color: '#7a9bb5',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {sortedReports.length} shown
-        </div>
-      </div>
-
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
-        {detailReport ? (
-          <Focusable onGamepadDirection={handleDetailDirection} style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+          {selected && (
             <div
               style={{
                 marginBottom: 12,
@@ -534,147 +507,133 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                 border: '1px solid #2a3a4a',
               }}
             >
-              <DialogButton
-                onClick={() => setDetailReport(null)}
-                style={{ ...controlButtonStyle(), marginBottom: 12 }}
-              >
-                ← BACK
-              </DialogButton>
-
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 4 }}>
-                  Report Details
+                  Selected Report
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
-                  {detailReport.protonVersion}
+                  {selected.protonVersion}
                 </div>
                 <div style={{ fontSize: 12, color: '#9dc4e8' }}>
-                  {detailReport.rating.toUpperCase()} · {detailConfidence}/10 confidence · {matchLabel(detailReport, sysInfo)}
+                  {selected.rating.toUpperCase()} · {selectedConfidence}/10 confidence · {matchLabel(selected, sysInfo)}
                 </div>
               </div>
 
-              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(0,0,0,0.22)' }}>
+              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(0,0,0,0.22)' }}>
                 <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>
                   Launch Option Preview
                 </div>
                 <div style={{ fontSize: 12, color: '#d8ebff', fontFamily: 'monospace', wordBreak: 'break-word' }}>
-                  {detailLaunchPreview}
+                  {selectedLaunchPreview}
                 </div>
               </div>
 
-              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
+              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
                 <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Current Launch Options</div>
                 <div style={{ fontSize: 12, color: currentLaunchOptions ? '#e8f4ff' : '#9db0c4', fontFamily: 'monospace', wordBreak: 'break-word' }}>
                   {currentLaunchOptions || 'No launch options set.'}
                 </div>
               </div>
 
-              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
+              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
                 <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Report Summary</div>
                 <div style={{ fontSize: 12, color: '#e8f4ff', lineHeight: 1.6 }}>
-                  <div>Submitted: {formatTimestamp(detailReport.timestamp)} · {formatAge(detailReport.recencyDays)}</div>
-                  <div>Community: {detailReport.upvotes} upvotes · GPU tier {detailReport.gpuTier}</div>
-                  <div>GPU / Driver: {detailReport.gpu || 'Unknown GPU'} · {detailReport.gpuDriver || 'Unknown driver'}</div>
-                  <div>OS / Kernel / RAM: {detailReport.os || 'Unknown OS'} · {detailReport.kernel || 'Unknown kernel'} · {detailReport.ram || 'Unknown RAM'}</div>
+                  <div>Submitted: {formatTimestamp(selected.timestamp)} · {formatAge(selected.recencyDays)}</div>
+                  <div>Community: {selected.upvotes} upvotes · GPU tier {selected.gpuTier}</div>
+                  <div>GPU / Driver: {selected.gpu || 'Unknown GPU'} · {selected.gpuDriver || 'Unknown driver'}</div>
+                  <div>OS / Kernel / RAM: {selected.os || 'Unknown OS'} · {selected.kernel || 'Unknown kernel'} · {selected.ram || 'Unknown RAM'}</div>
                 </div>
               </div>
 
-              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
+              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
                 <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Why this report ranks here</div>
                 <div style={{ fontSize: 12, color: '#d8ebff', lineHeight: 1.5 }}>
-                  {detailReport.score} score · {detailReport.rating} base rating · {detailReport.notesModifier >= 0 ? '+' : ''}{detailReport.notesModifier} notes modifier
+                  {selected.score} score · {selected.rating} base rating · {selected.notesModifier >= 0 ? '+' : ''}{selected.notesModifier} notes modifier
                 </div>
               </div>
 
-              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
+              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
                 <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Report Notes</div>
                 <div style={{ fontSize: 12, color: '#e8f4ff', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                  {detailReport.notes || 'No additional notes were provided for this report.'}
+                  {selected.notes || 'No additional notes were provided for this report.'}
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingTop: 6, borderTop: '1px solid #2a3a4a' }}>
                 <DialogButton
                   onClick={handleApply}
-                  disabled={!detailReport || applying}
-                  style={controlButtonStyle(!!detailReport)}
+                  disabled={!selected || applying}
+                  style={controlButtonStyle(!!selected)}
                 >
                   {applying ? 'APPLYING…' : 'APPLY THIS REPORT'}
                 </DialogButton>
                 <DialogButton
                   onClick={handleUpvote}
-                  disabled={!detailReport || upvoting}
+                  disabled={!selected || upvoting}
                   style={{ ...controlButtonStyle(), color: '#ffd700' }}
                 >
                   {upvoting ? '★ …' : '★ UPVOTE REPORT'}
                 </DialogButton>
               </div>
             </div>
-          </Focusable>
-        ) : (
-          <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
-            Select a report row, then press `A` / OK to open the full report detail view.
-          </div>
-        )}
-
-        <div style={{ padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid #2a3a4a' }}>
-          {sortedReports.length === 0 ? (
-            <div style={{ color: '#666', fontSize: 12, padding: 12, textAlign: 'center' }}>
-              No reports for this GPU tier.
-            </div>
-          ) : (
-            sortedReports.map((r) => (
-              <DialogButton
-                key={reportKey(r)}
-                onClick={() => {
-                  setSelected(r);
-                  void logFrontendEvent('DEBUG', 'Changed selected ProtonDB report', {
-                    appId,
-                    protonVersion: r.protonVersion,
-                    total: sortedReports.length,
-                  });
-                }}
-                onOKButton={() => {
-                  setSelected(r);
-                  setDetailReport(r);
-                  void logFrontendEvent('INFO', 'Opened ProtonDB report detail view', {
-                    appId,
-                    protonVersion: r.protonVersion,
-                  });
-                }}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '10px 12px',
-                  marginBottom: 8,
-                  borderRadius: 6,
-                  border: `1px solid ${selected !== null && reportKey(selected) === reportKey(r) ? '#4c9eff' : '#2a3a4a'}`,
-                  background: selected !== null && reportKey(selected) === reportKey(r)
-                    ? 'rgba(76,158,255,0.10)'
-                    : 'rgba(255,255,255,0.03)',
-                  cursor: 'pointer',
-                }}
-                >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>{r.protonVersion}</div>
-                    <div style={{ fontSize: 11, color: '#7a9bb5' }}>
-                      {[r.gpu, r.os].filter(Boolean).join(' · ') || 'Hardware details unavailable'}
-                    </div>
-                    <div style={{ fontSize: 10, color: '#9db0c4', marginTop: 4 }}>
-                      {r.rating.toUpperCase()} · {r.upvotes} votes · {formatAge(r.recencyDays)}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 11, color: '#9dc4e8', whiteSpace: 'nowrap' }}>
-                    Score {r.score} →
-                  </div>
-                </div>
-              </DialogButton>
-            ))
           )}
-        </div>
-      </div>
+
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
+            <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
+              Select a report row to preview and apply it.
+            </div>
+            <div style={{ padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid #2a3a4a' }}>
+              {sortedReports.length === 0 ? (
+                <div style={{ color: '#666', fontSize: 12, padding: 12, textAlign: 'center' }}>
+                  No reports for this GPU tier.
+                </div>
+              ) : (
+                sortedReports.map((r) => (
+                  <DialogButton
+                    key={reportKey(r)}
+                    onClick={() => {
+                      setSelected(r);
+                      void logFrontendEvent('DEBUG', 'Changed selected ProtonDB report', {
+                        appId,
+                        protonVersion: r.protonVersion,
+                        total: sortedReports.length,
+                      });
+                    }}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '10px 12px',
+                      marginBottom: 8,
+                      borderRadius: 6,
+                      border: `1px solid ${selected !== null && reportKey(selected) === reportKey(r) ? '#4c9eff' : '#2a3a4a'}`,
+                      background: selected !== null && reportKey(selected) === reportKey(r)
+                        ? 'rgba(76,158,255,0.10)'
+                        : 'rgba(255,255,255,0.03)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>{r.protonVersion}</div>
+                        <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+                          {[r.gpu, r.os].filter(Boolean).join(' · ') || 'Hardware details unavailable'}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#9db0c4', marginTop: 4 }}>
+                          {r.rating.toUpperCase()} · {r.upvotes} votes · {formatAge(r.recencyDays)}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#9dc4e8', whiteSpace: 'nowrap' }}>
+                        Score {r.score}
+                      </div>
+                    </div>
+                  </DialogButton>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </Focusable>
   );
 }

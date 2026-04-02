@@ -7,23 +7,16 @@ const SUMMARY_URL   = 'https://www.protondb.com/api/v1/reports/summaries/{id}.js
 const APP_INDEX_URL = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/index.json';
 const YEAR_URL      = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/{year}.json';
 const VOTES_URL     = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/votes.json';
-const COUNTS_URL    = 'https://www.protondb.com/data/counts.json';
-const LIVE_REPORTS_URL = 'https://www.protondb.com/data/reports/{device}/app/{hash}.json';
 const REPOSITORY_DISPATCH_URL = 'https://api.github.com/repos/mdeguzis/proton-pulse-data/dispatches';
 const WORKFLOW_DISPATCH_URL   = 'https://api.github.com/repos/mdeguzis/proton-pulse-data/actions/workflows/upvote.yml/dispatches';
 const WORKFLOW_REF            = 'main';
 
 export interface ReportFetchDiagnostics {
-  source: 'mirror' | 'live-detailed' | 'live-summary' | 'none';
+  source: 'mirror' | 'live-summary' | 'none';
   indexUrl: string;
   indexStatus: number | null;
   years: string[];
   yearStatuses: Record<string, number | null>;
-  countsUrl: string;
-  countsStatus: number | null;
-  liveDetailedUrl: string | null;
-  liveDetailedStatus: number | null;
-  liveDetailedCount: number | null;
   liveSummaryUrl: string;
   liveSummaryStatus: number | null;
   liveSummaryTotal: number | null;
@@ -56,138 +49,7 @@ export async function getProtonDBSummary(appId: string): Promise<ProtonDBSummary
     return null;
   }
 }
-
 const VALID_RATINGS = new Set<string>(['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending']);
-const LIVE_REPORT_DEVICE = 'all-devices';
-const LIVE_REPORT_FAULT_KEYS = [
-  'audioFaults',
-  'graphicalFaults',
-  'inputFaults',
-  'performanceFaults',
-  'saveGameFaults',
-  'significantBugs',
-  'stabilityFaults',
-  'windowingFaults',
-] as const;
-
-interface ProtonCountsResponse {
-  reports: number;
-  timestamp: number;
-}
-
-interface LiveReportSteamInfo {
-  cpu?: string;
-  gpu?: string;
-  gpuDriver?: string;
-  kernel?: string;
-  os?: string;
-  ram?: string;
-}
-
-interface LiveReportResponsePayload {
-  verdict?: string;
-  verdictOob?: string;
-  protonVersion?: string;
-  notes?: {
-    concludingNotes?: string;
-    verdict?: string;
-  };
-  tinkerOverride?: string;
-  triedOob?: string;
-  [key: string]: unknown;
-}
-
-interface LiveDetailedReport {
-  timestamp?: number;
-  responses?: LiveReportResponsePayload;
-  device?: {
-    inferred?: {
-      steam?: LiveReportSteamInfo;
-    };
-  };
-  contributor?: {
-    steam?: {
-      playtime?: number;
-      playtimeLinux?: number;
-    };
-  };
-}
-
-interface LiveDetailedReportPage {
-  reports?: LiveDetailedReport[];
-}
-
-function computeJsHash(seed: string): number {
-  let hash = 0;
-  for (const ch of `${seed}m`) {
-    hash = ((hash << 5) - hash + ch.charCodeAt(0)) | 0;
-  }
-  return Math.abs(hash);
-}
-
-function computeLiveReportHash(appId: number, reportCount: number, timestamp: number, page: string | number): number {
-  const left = `${reportCount}p${appId * (reportCount % timestamp)}`;
-  const right = `${appId}p${Number(page) * (appId % timestamp)}`;
-  return computeJsHash(`p${left}*vRT${right}${String(undefined)}`);
-}
-
-function normalizeWhitespace(value: string | undefined): string {
-  return value?.trim() ?? '';
-}
-
-function inferDuration(playtimeMinutes?: number): string {
-  if (!playtimeMinutes || playtimeMinutes <= 0) return 'unreported';
-  if (playtimeMinutes < 60) return 'underOneHour';
-  if (playtimeMinutes < 240) return 'oneToFourHours';
-  if (playtimeMinutes < 900) return 'severalHours';
-  return 'allTheTime';
-}
-
-function inferLiveRating(responses: LiveReportResponsePayload | undefined): ProtonRating {
-  const verdict = normalizeWhitespace(responses?.verdict).toLowerCase();
-  if (!verdict) return 'pending';
-  if (verdict === 'no') return 'borked';
-  if (verdict !== 'yes') return 'pending';
-
-  const faultCount = LIVE_REPORT_FAULT_KEYS.reduce((count, key) => (
-    responses?.[key] === 'yes' ? count + 1 : count
-  ), 0);
-
-  if (faultCount >= 3) return 'bronze';
-  if (faultCount === 2) return 'silver';
-  if (faultCount === 1) return 'gold';
-  return responses?.triedOob === 'yes' || responses?.verdictOob === 'yes' ? 'platinum' : 'gold';
-}
-
-function normalizeLiveDetailedReports(appId: string, raw: LiveDetailedReport[]): CdnReport[] {
-  return raw
-    .map((report) => {
-      const responses = report.responses;
-      const steam = report.device?.inferred?.steam;
-      const playtime = report.contributor?.steam?.playtimeLinux ?? report.contributor?.steam?.playtime;
-      const notes = normalizeWhitespace(
-        responses?.notes?.concludingNotes
-        ?? responses?.notes?.verdict
-        ?? (typeof responses?.notes === 'string' ? responses.notes : undefined)
-      );
-      return {
-        appId,
-        cpu: normalizeWhitespace(steam?.cpu),
-        duration: inferDuration(playtime),
-        gpu: normalizeWhitespace(steam?.gpu),
-        gpuDriver: normalizeWhitespace(steam?.gpuDriver),
-        kernel: normalizeWhitespace(steam?.kernel),
-        notes,
-        os: normalizeWhitespace(steam?.os),
-        protonVersion: normalizeWhitespace(responses?.protonVersion) || 'Unknown',
-        ram: normalizeWhitespace(steam?.ram),
-        rating: inferLiveRating(responses),
-        timestamp: typeof report.timestamp === 'number' ? report.timestamp : 0,
-        title: '',
-      } satisfies CdnReport;
-    })
-    .filter((report) => report.timestamp > 0);
-}
 
 function normalizeReports(raw: Array<CdnReport & { rating: string }>): CdnReport[] {
   return raw.map(r => {
@@ -213,11 +75,6 @@ export async function getProtonDBReportsWithDiagnostics(appId: string): Promise<
     indexStatus: null,
     years: [],
     yearStatuses: {},
-    countsUrl: COUNTS_URL,
-    countsStatus: null,
-    liveDetailedUrl: null,
-    liveDetailedStatus: null,
-    liveDetailedCount: null,
     liveSummaryUrl: SUMMARY_URL.replace('{id}', appId),
     liveSummaryStatus: null,
     liveSummaryTotal: null,
@@ -239,14 +96,14 @@ export async function getProtonDBReportsWithDiagnostics(appId: string): Promise<
         indexUrl,
         status: indexResp.status,
       });
-      return await fallbackToLiveDetailed(appId, diagnostics, 'mirror-index-miss');
+      return await fallbackToLiveSummary(appId, diagnostics, 'mirror-index-miss');
     }
     const years = await indexResp.json() as string[];
     diagnostics.years = years;
     await logFrontendEvent('INFO', 'Proton Pulse report index loaded', { appId, years });
     if (!years.length) {
       await logFrontendEvent('WARNING', 'Proton Pulse report index was empty', { appId, indexUrl });
-      return await fallbackToLiveDetailed(appId, diagnostics, 'mirror-index-empty');
+      return await fallbackToLiveSummary(appId, diagnostics, 'mirror-index-empty');
     }
 
     // Fetch all year files in parallel
@@ -299,7 +156,7 @@ export async function getProtonDBReportsWithDiagnostics(appId: string): Promise<
         appId,
         years: years.length,
       });
-      return await fallbackToLiveDetailed(appId, diagnostics, 'mirror-years-empty');
+      return await fallbackToLiveSummary(appId, diagnostics, 'mirror-years-empty');
     }
     diagnostics.source = 'mirror';
     await logFrontendEvent('INFO', 'Finished Proton Pulse report fetch', {
@@ -315,7 +172,7 @@ export async function getProtonDBReportsWithDiagnostics(appId: string): Promise<
       indexUrl,
       error: error instanceof Error ? error.message : String(error),
     });
-    return await fallbackToLiveDetailed(appId, diagnostics, 'mirror-index-error');
+    return await fallbackToLiveSummary(appId, diagnostics, 'mirror-index-error');
   }
 }
 
@@ -372,103 +229,6 @@ async function fallbackToLiveSummary(
       error: error instanceof Error ? error.message : String(error),
     });
     return { reports: [], diagnostics };
-  }
-}
-
-async function fallbackToLiveDetailed(
-  appId: string,
-  diagnostics: ReportFetchDiagnostics,
-  reason: string,
-): Promise<{
-  reports: CdnReport[];
-  diagnostics: ReportFetchDiagnostics;
-}> {
-  try {
-    await logFrontendEvent('INFO', 'Falling back to live ProtonDB detailed reports', {
-      appId,
-      reason,
-      countsUrl: diagnostics.countsUrl,
-    });
-    const countsResp = await fetchNoCors(diagnostics.countsUrl);
-    diagnostics.countsStatus = countsResp.status;
-    await logFrontendEvent('DEBUG', 'Live ProtonDB counts response received', {
-      appId,
-      reason,
-      countsUrl: diagnostics.countsUrl,
-      status: countsResp.status,
-    });
-    if (countsResp.status !== 200) {
-      await logFrontendEvent('WARNING', 'Live ProtonDB counts returned non-200', {
-        appId,
-        reason,
-        countsUrl: diagnostics.countsUrl,
-        status: countsResp.status,
-      });
-      return await fallbackToLiveSummary(appId, diagnostics, `${reason}-counts-miss`);
-    }
-
-    const counts = await countsResp.json() as ProtonCountsResponse;
-    const hash = computeLiveReportHash(Number(appId), counts.reports, counts.timestamp, 'all');
-    const liveDetailedUrl = LIVE_REPORTS_URL
-      .replace('{device}', LIVE_REPORT_DEVICE)
-      .replace('{hash}', String(hash));
-    diagnostics.liveDetailedUrl = liveDetailedUrl;
-    await logFrontendEvent('INFO', 'Fetching live ProtonDB detailed report page', {
-      appId,
-      reason,
-      liveDetailedUrl,
-      hash,
-      reportCountSeed: counts.reports,
-      timestampSeed: counts.timestamp,
-    });
-
-    const liveResp = await fetchNoCors(liveDetailedUrl);
-    diagnostics.liveDetailedStatus = liveResp.status;
-    await logFrontendEvent('DEBUG', 'Live ProtonDB detailed report response received', {
-      appId,
-      reason,
-      liveDetailedUrl,
-      status: liveResp.status,
-    });
-    if (liveResp.status !== 200) {
-      await logFrontendEvent('WARNING', 'Live ProtonDB detailed report returned non-200', {
-        appId,
-        reason,
-        liveDetailedUrl,
-        status: liveResp.status,
-      });
-      return await fallbackToLiveSummary(appId, diagnostics, `${reason}-live-detailed-miss`);
-    }
-
-    const livePage = await liveResp.json() as LiveDetailedReportPage;
-    const reports = normalizeLiveDetailedReports(appId, livePage.reports ?? []);
-    diagnostics.liveDetailedCount = reports.length;
-    if (!reports.length) {
-      await logFrontendEvent('WARNING', 'Live ProtonDB detailed report page returned no usable rows', {
-        appId,
-        reason,
-        liveDetailedUrl,
-      });
-      return await fallbackToLiveSummary(appId, diagnostics, `${reason}-live-detailed-empty`);
-    }
-
-    diagnostics.source = 'live-detailed';
-    await logFrontendEvent('INFO', 'Live ProtonDB detailed fallback succeeded', {
-      appId,
-      reason,
-      liveDetailedUrl,
-      reports: reports.length,
-    });
-    return { reports, diagnostics };
-  } catch (error) {
-    await logFrontendEvent('ERROR', 'Live ProtonDB detailed fallback failed', {
-      appId,
-      reason,
-      countsUrl: diagnostics.countsUrl,
-      liveDetailedUrl: diagnostics.liveDetailedUrl,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return await fallbackToLiveSummary(appId, diagnostics, `${reason}-live-detailed-error`);
   }
 }
 
