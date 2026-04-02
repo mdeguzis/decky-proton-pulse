@@ -47,6 +47,9 @@ yalc.lock
 .vscode/settings.json
 .cline/
 
+# Local planning / scratch docs
+docs/superpowers/specs/
+
 # Ignore output folder
 
 backend/out
