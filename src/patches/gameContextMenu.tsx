@@ -89,11 +89,15 @@ const injectMenuItem = (items: any[]): void => {
     <MenuItem
       key="proton-pulse-configure"
       onSelected={() => {
+        const focusedAppId = pageState.focusedAppId ?? 0;
+        const focusedAppName = pageState.focusedAppName ?? '';
         const routeAppId = resolveAppIdFromRoute();
         const treeAppId = resolveAppIdFromItems(items);
-        const appid = routeAppId || treeAppId;
-        const appName =
+        const appid = focusedAppId || routeAppId || treeAppId;
+        const lookedUpAppName =
           (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appid)?.display_name ?? '';
+        const appName =
+          focusedAppName || lookedUpAppName;
         if (!appid) {
           void logFrontendEvent('WARNING', 'Game context menu selection missing app id');
           return;
@@ -101,6 +105,7 @@ const injectMenuItem = (items: any[]): void => {
         void logFrontendEvent('INFO', 'Game context menu selected', {
           appId: appid,
           appName,
+          focusedAppId: focusedAppId || null,
           routeAppId: routeAppId || null,
           treeAppId: treeAppId || null,
           pathname: globalThis.location?.pathname ?? '',

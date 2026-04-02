@@ -22,8 +22,12 @@ export const pageState: {
   initialPage: PageId;
   appId: number | null;
   appName: string;
+  focusedAppId: number | null;
+  focusedAppName: string;
 } = {
   initialPage: 'manage',
   appId: null,
   appName: '',
+  focusedAppId: null,
+  focusedAppName: '',
 };
