@@ -1,6 +1,7 @@
 // src/components/tabs/ConfigureTab.tsx
 import { Component, type ErrorInfo, type ReactNode, useState, useEffect } from 'react';
-import { DialogButton, Focusable } from '@decky/ui';
+import { DialogButton, Focusable, GamepadButton } from '@decky/ui';
+import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '@decky/api';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
 import {
@@ -20,6 +21,8 @@ interface Props {
   appId: number | null;
   appName: string;
   sysInfo: SystemInfo | null;
+  isActive?: boolean;
+  loadNonce?: number;
 }
 
 type FilterTier = GpuVendor | 'all';
@@ -179,11 +182,12 @@ class ConfigureTabErrorBoundary extends Component<ConfigureTabBoundaryProps, Con
   }
 }
 
-function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
+function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNonce = 0 }: Props) {
   const [reports, setReports]   = useState<CdnReport[]>([]);
   const [votes, setVotes]       = useState<Record<string, number>>({});
   const [loading, setLoading]   = useState(false);
   const [selected, setSelected] = useState<ScoredReport | null>(null);
+  const [detailReport, setDetailReport] = useState<ScoredReport | null>(null);
   const [applying, setApplying] = useState(false);
   const [upvoting, setUpvoting] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('score');
@@ -225,7 +229,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       : visibleReports;
 
   useEffect(() => {
-    if (!appId) return;
+    if (!appId || !isActive) return;
     logFrontendEvent('INFO', 'Opening Manage This Game', {
       appId,
       appName,
@@ -236,6 +240,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     setReports([]);
     setVotes({});
     setSelected(null);
+    setDetailReport(null);
     setReportDiagnostics(null);
     setVoteDiagnostics(null);
     Promise.all([getProtonDBReportsWithDiagnostics(String(appId)), getVotesWithDiagnostics(String(appId))])
@@ -262,11 +267,12 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         console.error(error);
       })
       .finally(() => setLoading(false));
-  }, [appId, appName]);
+  }, [appId, appName, isActive, loadNonce]);
 
   useEffect(() => {
     if (!sortedReports.length) {
       setSelected(null);
+      setDetailReport(null);
       return;
     }
     if (!selected) {
@@ -276,6 +282,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     const stillVisible = sortedReports.find((report) => reportKey(report) === reportKey(selected));
     if (!stillVisible) {
       setSelected(sortedReports[0]);
+      setDetailReport(null);
     }
   }, [selected, sortedReports]);
 
@@ -376,11 +383,12 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   };
 
   const handleApply = async () => {
-    if (!selected || !appId) return;
+    const targetReport = detailReport ?? selected;
+    if (!targetReport || !appId) return;
     void logFrontendEvent('INFO', 'Apply launch option requested', {
       appId,
       appName,
-      protonVersion: selected.protonVersion,
+      protonVersion: targetReport.protonVersion,
     });
     const running = (SteamClient.GameSessions as any)?.GetRunningApps?.() ?? [];
     if (running.length > 0) {
@@ -391,7 +399,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     setApplying(true);
     try {
       await SteamClient.Apps.SetAppLaunchOptions(
-        appId, `PROTON_VERSION="${selected.protonVersion}" %command%`
+        appId, `PROTON_VERSION="${targetReport.protonVersion}" %command%`
       );
       const detailsResult = await getSteamAppDetails(appId);
       const appliedLaunchOptions = getLaunchOptionsFromDetails(detailsResult.details);
@@ -399,7 +407,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       void logFrontendEvent('INFO', 'Launch options applied', {
         appId,
         appName,
-        protonVersion: selected.protonVersion,
+        protonVersion: targetReport.protonVersion,
         appliedLaunchOptions,
       });
       toaster.toast({
@@ -410,7 +418,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       void logFrontendEvent('ERROR', 'Failed to apply launch options', {
         appId,
         appName,
-        protonVersion: selected.protonVersion,
+        protonVersion: targetReport.protonVersion,
         error: e instanceof Error ? e.message : String(e),
       });
       console.error('Proton Pulse: apply failed', e);
@@ -421,7 +429,8 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   };
 
   const handleUpvote = async () => {
-    if (!selected || !appId) return;
+    const targetReport = detailReport ?? selected;
+    if (!targetReport || !appId) return;
     const token = getSetting<string>('gh-votes-token', '');
     if (!token) {
       void logFrontendEvent('WARNING', 'Upvote blocked because GitHub token is missing', { appId, appName });
@@ -431,12 +440,12 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     void logFrontendEvent('INFO', 'Upvote requested', {
       appId,
       appName,
-      protonVersion: selected.protonVersion,
-      reportTimestamp: selected.timestamp,
+      protonVersion: targetReport.protonVersion,
+      reportTimestamp: targetReport.timestamp,
     });
     setUpvoting(true);
     try {
-      const ok = await postUpvote(String(appId), reportKey(selected), token);
+      const ok = await postUpvote(String(appId), reportKey(targetReport), token);
       if (ok) {
         void logFrontendEvent('INFO', 'Upvote accepted by remote endpoint', { appId, appName });
         toaster.toast({ title: 'Proton Pulse', body: 'Vote submitted! Count updates in ~60s.' });
@@ -466,8 +475,14 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     borderRadius: 4,
   });
 
-  const selectedLaunchPreview = selected ? buildLaunchOptionPreview(selected.protonVersion) : '';
-  const selectedConfidence = selected ? (Math.min(100, selected.score) / 10).toFixed(1) : null;
+  const detailLaunchPreview = detailReport ? buildLaunchOptionPreview(detailReport.protonVersion) : '';
+  const detailConfidence = detailReport ? (Math.min(100, detailReport.score) / 10).toFixed(1) : null;
+
+  const handleDetailDirection = (evt: GamepadEvent) => {
+    if (evt.detail.button === GamepadButton.DIR_LEFT && detailReport) {
+      setDetailReport(null);
+    }
+  };
 
   return (
     <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -508,86 +523,99 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
-        {selected ? (
-          <div
-            style={{
-              marginBottom: 12,
-              padding: 12,
-              borderRadius: 8,
-              background: 'linear-gradient(180deg, rgba(18, 31, 46, 0.92), rgba(9, 18, 28, 0.92))',
-              border: '1px solid #2a3a4a',
-            }}
-          >
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 4 }}>
-                Selected Report
-              </div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
-                {selected.protonVersion}
-              </div>
-              <div style={{ fontSize: 12, color: '#9dc4e8' }}>
-                {selected.rating.toUpperCase()} · {selectedConfidence}/10 confidence · {matchLabel(selected, sysInfo)}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(0,0,0,0.22)' }}>
-              <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>
-                Launch Option Preview
-              </div>
-              <div style={{ fontSize: 12, color: '#d8ebff', fontFamily: 'monospace', wordBreak: 'break-word' }}>
-                {selectedLaunchPreview}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
-              <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Current Launch Options</div>
-              <div style={{ fontSize: 12, color: currentLaunchOptions ? '#e8f4ff' : '#9db0c4', fontFamily: 'monospace', wordBreak: 'break-word' }}>
-                {currentLaunchOptions || 'No launch options set.'}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
-              <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Report Summary</div>
-              <div style={{ fontSize: 12, color: '#e8f4ff', lineHeight: 1.6 }}>
-                <div>Submitted: {formatTimestamp(selected.timestamp)} · {formatAge(selected.recencyDays)}</div>
-                <div>Community: {selected.upvotes} upvotes · GPU tier {selected.gpuTier}</div>
-                <div>GPU / Driver: {selected.gpu || 'Unknown GPU'} · {selected.gpuDriver || 'Unknown driver'}</div>
-                <div>OS / Kernel / RAM: {selected.os || 'Unknown OS'} · {selected.kernel || 'Unknown kernel'} · {selected.ram || 'Unknown RAM'}</div>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
-              <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Why this report ranks here</div>
-              <div style={{ fontSize: 12, color: '#d8ebff', lineHeight: 1.5 }}>
-                {selected.score} score · {selected.rating} base rating · {selected.notesModifier >= 0 ? '+' : ''}{selected.notesModifier} notes modifier
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
-              <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Report Notes</div>
-              <div style={{ fontSize: 12, color: '#e8f4ff', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                {selected.notes || 'No additional notes were provided for this report.'}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingTop: 6, borderTop: '1px solid #2a3a4a' }}>
+        {detailReport ? (
+          <Focusable onGamepadDirection={handleDetailDirection} style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+            <div
+              style={{
+                marginBottom: 12,
+                padding: 12,
+                borderRadius: 8,
+                background: 'linear-gradient(180deg, rgba(18, 31, 46, 0.96), rgba(9, 18, 28, 0.96))',
+                border: '1px solid #2a3a4a',
+              }}
+            >
               <DialogButton
-                onClick={handleApply}
-                disabled={!selected || applying}
-                style={controlButtonStyle(!!selected)}
+                onClick={() => setDetailReport(null)}
+                style={{ ...controlButtonStyle(), marginBottom: 12 }}
               >
-                {applying ? 'APPLYING…' : 'APPLY THIS REPORT'}
+                ← BACK
               </DialogButton>
-              <DialogButton
-                onClick={handleUpvote}
-                disabled={!selected || upvoting}
-                style={{ ...controlButtonStyle(), color: '#ffd700' }}
-              >
-                {upvoting ? '★ …' : '★ UPVOTE REPORT'}
-              </DialogButton>
+
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 4 }}>
+                  Report Details
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
+                  {detailReport.protonVersion}
+                </div>
+                <div style={{ fontSize: 12, color: '#9dc4e8' }}>
+                  {detailReport.rating.toUpperCase()} · {detailConfidence}/10 confidence · {matchLabel(detailReport, sysInfo)}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(0,0,0,0.22)' }}>
+                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>
+                  Launch Option Preview
+                </div>
+                <div style={{ fontSize: 12, color: '#d8ebff', fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                  {detailLaunchPreview}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
+                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Current Launch Options</div>
+                <div style={{ fontSize: 12, color: currentLaunchOptions ? '#e8f4ff' : '#9db0c4', fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                  {currentLaunchOptions || 'No launch options set.'}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
+                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Report Summary</div>
+                <div style={{ fontSize: 12, color: '#e8f4ff', lineHeight: 1.6 }}>
+                  <div>Submitted: {formatTimestamp(detailReport.timestamp)} · {formatAge(detailReport.recencyDays)}</div>
+                  <div>Community: {detailReport.upvotes} upvotes · GPU tier {detailReport.gpuTier}</div>
+                  <div>GPU / Driver: {detailReport.gpu || 'Unknown GPU'} · {detailReport.gpuDriver || 'Unknown driver'}</div>
+                  <div>OS / Kernel / RAM: {detailReport.os || 'Unknown OS'} · {detailReport.kernel || 'Unknown kernel'} · {detailReport.ram || 'Unknown RAM'}</div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
+                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Why this report ranks here</div>
+                <div style={{ fontSize: 12, color: '#d8ebff', lineHeight: 1.5 }}>
+                  {detailReport.score} score · {detailReport.rating} base rating · {detailReport.notesModifier >= 0 ? '+' : ''}{detailReport.notesModifier} notes modifier
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
+                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Report Notes</div>
+                <div style={{ fontSize: 12, color: '#e8f4ff', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                  {detailReport.notes || 'No additional notes were provided for this report.'}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingTop: 6, borderTop: '1px solid #2a3a4a' }}>
+                <DialogButton
+                  onClick={handleApply}
+                  disabled={!detailReport || applying}
+                  style={controlButtonStyle(!!detailReport)}
+                >
+                  {applying ? 'APPLYING…' : 'APPLY THIS REPORT'}
+                </DialogButton>
+                <DialogButton
+                  onClick={handleUpvote}
+                  disabled={!detailReport || upvoting}
+                  style={{ ...controlButtonStyle(), color: '#ffd700' }}
+                >
+                  {upvoting ? '★ …' : '★ UPVOTE REPORT'}
+                </DialogButton>
+              </div>
             </div>
+          </Focusable>
+        ) : (
+          <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
+            Select a report row, then press `A` / OK to open the full report detail view.
           </div>
-        ) : null}
+        )}
 
         <div style={{ padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid #2a3a4a' }}>
           {sortedReports.length === 0 ? (
@@ -604,6 +632,14 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                     appId,
                     protonVersion: r.protonVersion,
                     total: sortedReports.length,
+                  });
+                }}
+                onOKButton={() => {
+                  setSelected(r);
+                  setDetailReport(r);
+                  void logFrontendEvent('INFO', 'Opened ProtonDB report detail view', {
+                    appId,
+                    protonVersion: r.protonVersion,
                   });
                 }}
                 style={{
@@ -631,7 +667,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                     </div>
                   </div>
                   <div style={{ fontSize: 11, color: '#9dc4e8', whiteSpace: 'nowrap' }}>
-                    Score {r.score}
+                    Score {r.score} →
                   </div>
                 </div>
               </DialogButton>
