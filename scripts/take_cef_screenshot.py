@@ -4,12 +4,9 @@
 from __future__ import annotations
 
 import argparse
-import json
-import os
 import subprocess
 import sys
 from pathlib import Path
-
 
 REMOTE_PYTHON = r"""
 import asyncio
@@ -85,7 +82,9 @@ def main() -> int:
         description="Capture the Steam Big Picture CEF page and sync it into a local folder."
     )
     parser.add_argument("--deck-ip", required=True, help="Steam Deck IP address")
-    parser.add_argument("--deck-user", default="deck", help="SSH user for the Steam Deck")
+    parser.add_argument(
+        "--deck-user", default="deck", help="SSH user for the Steam Deck"
+    )
     parser.add_argument(
         "--output-dir",
         default="../screenshots",
@@ -116,8 +115,10 @@ def main() -> int:
     run(["rsync", "-av", f"{ssh_target}:{remote_path}", f"{output_dir}/"])
     run(["ssh", ssh_target, "rm", "-f", remote_path])
 
-    screenshots = sorted(output_dir.glob("*.png"), key=lambda path: path.stat().st_mtime, reverse=True)
-    for old_file in screenshots[10:]:
+    screenshots = sorted(
+        output_dir.glob("*.png"), key=lambda path: path.stat().st_mtime, reverse=True
+    )
+    for old_file in screenshots[20:]:
         old_file.unlink(missing_ok=True)
 
     return 0

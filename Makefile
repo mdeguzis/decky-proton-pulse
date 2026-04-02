@@ -105,7 +105,7 @@ logs:
 get-logs:
 	@mkdir -p ../logs
 	rsync -rav $(DECK_USER)@$(DECK_HOST):~/homebrew/logs/decky-proton-pulse/ ../logs/
-	@cd ../logs && ls -1t *.log 2>/dev/null | grep -v '^plugin-debug\.log$$' | tail -n +11 | xargs -r rm -f
+	@cd ../logs && ls -1t *.log 2>/dev/null | grep -v '^plugin-debug\.log$$' | tail -n +20 | xargs -r rm -f
 
 take-screenshot:
 	$(call require_deck_ip)
