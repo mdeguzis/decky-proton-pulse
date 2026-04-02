@@ -25,76 +25,6 @@ const fakeSummary: ProtonDBSummary = {
   trendingTier: 'platinum', bestReportedTier: 'platinum', confidence: 'good',
 };
 
-const fakeCounts = {
-  reports: 415099,
-  timestamp: 1775051127,
-};
-
-const fakeLiveDetailed = {
-  reports: [
-    {
-      timestamp: 1774621739,
-      responses: {
-        verdict: 'yes',
-        triedOob: 'yes',
-        verdictOob: 'yes',
-        protonVersion: '10.0-3',
-        notes: { concludingNotes: 'Runs great.' },
-        audioFaults: 'no',
-        graphicalFaults: 'no',
-        inputFaults: 'no',
-        performanceFaults: 'no',
-        saveGameFaults: 'no',
-        significantBugs: 'no',
-        stabilityFaults: 'no',
-        windowingFaults: 'no',
-      },
-      device: {
-        inferred: {
-          steam: {
-            cpu: 'AMD Ryzen 5 7600 6-Core',
-            gpu: 'NVIDIA GeForce RTX 5060 Ti',
-            gpuDriver: 'NVIDIA 580.105.08',
-            kernel: '6.12.60-1-lts',
-            os: 'Arch Linux',
-            ram: '31 GB',
-          },
-        },
-      },
-      contributor: {
-        steam: {
-          playtime: 625,
-        },
-      },
-    },
-    {
-      timestamp: 1730388057,
-      responses: {
-        verdict: 'no',
-        protonVersion: '9.0-3',
-        notes: { verdict: 'PSN requirement was a mistake' },
-      },
-      device: {
-        inferred: {
-          steam: {
-            cpu: 'AMD Ryzen 7 5800X3D 8-Core',
-            gpu: 'AMD Radeon RX 6700 XT',
-            gpuDriver: 'Mesa 24.2.4',
-            kernel: '6.11.4',
-            os: 'NixOS 24.11',
-            ram: '32 GB',
-          },
-        },
-      },
-      contributor: {
-        steam: {
-          playtime: 1,
-        },
-      },
-    },
-  ],
-};
-
 // CDN returns capitalized ratings — the fetch layer must lowercase them
 const fakeCdnRaw = [
   {
@@ -181,64 +111,45 @@ describe('getProtonDBReports', () => {
   });
 
   it('returns empty array when index 404s', async () => {
-    mockFetch
-      .mockResolvedValueOnce(makeResponse(404, null))
-      .mockResolvedValueOnce(makeResponse(200, fakeSummary));
+    mockFetch.mockResolvedValueOnce(makeResponse(404, null));
     expect(await getProtonDBReports('0')).toEqual([]);
   });
 
   it('falls back to live ProtonDB summary when mirror index 404s', async () => {
     mockFetch
       .mockResolvedValueOnce(makeResponse(404, null))
-      .mockResolvedValueOnce(makeResponse(200, fakeCounts))
-      .mockResolvedValueOnce(makeResponse(404, null))
       .mockResolvedValueOnce(makeResponse(200, fakeSummary));
     const result = await getProtonDBReportsWithDiagnostics('1145350');
     expect(result.reports).toEqual([]);
     expect(result.diagnostics.source).toBe('live-summary');
-    expect(result.diagnostics.countsStatus).toBe(200);
-    expect(result.diagnostics.liveDetailedStatus).toBe(404);
     expect(result.diagnostics.liveSummaryStatus).toBe(200);
     expect(result.diagnostics.liveSummaryTotal).toBe(fakeSummary.total);
     expect(mockFetch).toHaveBeenNthCalledWith(1,
       'https://mdeguzis.github.io/proton-pulse-data/data/1145350/index.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(2,
-      'https://www.protondb.com/data/counts.json'
-    );
-    expect(mockFetch).toHaveBeenNthCalledWith(3,
-      'https://www.protondb.com/data/reports/all-devices/app/1070226472.json'
-    );
-    expect(mockFetch).toHaveBeenNthCalledWith(4,
       'https://www.protondb.com/api/v1/reports/summaries/1145350.json'
     );
   });
 
-  it('falls back to live ProtonDB detailed reports when mirror misses', async () => {
+  it('falls back to live ProtonDB summary when mirror years are empty', async () => {
     mockFetch
-      .mockResolvedValueOnce(makeResponse(404, null))
-      .mockResolvedValueOnce(makeResponse(200, fakeCounts))
-      .mockResolvedValueOnce(makeResponse(200, fakeLiveDetailed));
+      .mockResolvedValueOnce(makeResponse(200, ['2023']))
+      .mockResolvedValueOnce(makeResponse(200, []))
+      .mockResolvedValueOnce(makeResponse(200, fakeSummary));
 
     const result = await getProtonDBReportsWithDiagnostics('2561580');
 
-    expect(result.diagnostics.source).toBe('live-detailed');
-    expect(result.diagnostics.countsStatus).toBe(200);
-    expect(result.diagnostics.liveDetailedStatus).toBe(200);
-    expect(result.diagnostics.liveDetailedCount).toBe(2);
-    expect(result.reports).toHaveLength(2);
-    expect(result.reports[0].protonVersion).toBe('10.0-3');
-    expect(result.reports[0].rating).toBe('platinum');
-    expect(result.reports[0].notes).toBe('Runs great.');
-    expect(result.reports[1].rating).toBe('borked');
+    expect(result.diagnostics.source).toBe('live-summary');
+    expect(result.reports).toHaveLength(0);
     expect(mockFetch).toHaveBeenNthCalledWith(1,
       'https://mdeguzis.github.io/proton-pulse-data/data/2561580/index.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(2,
-      'https://www.protondb.com/data/counts.json'
+      'https://mdeguzis.github.io/proton-pulse-data/data/2561580/2023.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(3,
-      'https://www.protondb.com/data/reports/all-devices/app/2043109714.json'
+      'https://www.protondb.com/api/v1/reports/summaries/2561580.json'
     );
   });
 
