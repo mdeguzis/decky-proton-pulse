@@ -22,6 +22,7 @@ import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextM
 import { getSetting, setSetting } from './lib/settings';
 import { logFrontendEvent } from './lib/logger';
 import { BrandLogo } from './components/BrandLogo';
+import { BrandGlyph } from './components/BrandGlyph';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -129,6 +130,21 @@ export default definePlugin(() => {
   });
 
   routerHook.addRoute('/proton-pulse', ProtonPulsePage);
+  const gamePagePatch = routerHook.addPatch('/library/app/:appid', (props: { appid?: string }) => {
+    const focusedAppId = props.appid ? parseInt(props.appid, 10) : null;
+    const focusedAppName = focusedAppId
+      ? (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(focusedAppId)?.display_name ?? ''
+      : '';
+
+    pageState.focusedAppId = focusedAppId;
+    pageState.focusedAppName = focusedAppName;
+    void logFrontendEvent('DEBUG', 'Observed focused library app route', {
+      focusedAppId,
+      focusedAppName,
+      pathname: globalThis.location?.pathname ?? '',
+    });
+    return props;
+  });
   const menuPatch = patchGameContextMenu(LibraryContextMenu);
 
   return {
@@ -138,16 +154,17 @@ export default definePlugin(() => {
         className={staticClasses.Title}
         style={{ display: 'flex', alignItems: 'center', gap: 8 }}
       >
-        <BrandLogo size={22} />
         <span>Proton Pulse</span>
+        <BrandLogo size={22} />
       </div>
     ),
     content: <Content />,
-    icon: <BrandLogo size={20} />,
+    icon: <BrandGlyph size={20} />,
     onDismount() {
       console.log('Proton Pulse unloading');
       void logFrontendEvent('INFO', 'Plugin frontend unloading');
       routerHook.removeRoute('/proton-pulse');
+      routerHook.removePatch('/library/app/:appid', gamePagePatch);
       menuPatch.unpatch();
     },
   };
