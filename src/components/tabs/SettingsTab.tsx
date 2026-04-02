@@ -1,8 +1,9 @@
 // src/components/tabs/SettingsTab.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ToggleField, Focusable } from '@decky/ui';
 import { callable } from '@decky/api';
 import { getSetting, setSetting } from '../../lib/settings';
+import { logFrontendEvent } from '../../lib/logger';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 
@@ -11,18 +12,35 @@ export function SettingsTab() {
   const [showBadge, setShowBadge] = useState(() => getSetting('showBadge', true));
   const [ghToken, setGhToken] = useState(() => getSetting<string>('gh-votes-token', ''));
 
+  useEffect(() => {
+    void setLogLevel(debugEnabled ? 'DEBUG' : 'INFO').catch((error) => {
+      console.error('Proton Pulse: failed to sync debug setting from Settings tab', error);
+    });
+  }, [debugEnabled]);
+
   const handleDebugToggle = async (enabled: boolean) => {
+    void logFrontendEvent('INFO', 'Debug logging toggle changed', {
+      previousValue: debugEnabled,
+      nextValue: enabled,
+    });
     setDebugEnabled(enabled);
     setSetting('debugEnabled', enabled);
-    await setLogLevel(enabled ? 'DEBUG' : 'INFO');
   };
 
   const handleShowBadgeToggle = (enabled: boolean) => {
+    void logFrontendEvent('INFO', 'Show badge toggle changed', {
+      previousValue: showBadge,
+      nextValue: enabled,
+    });
     setShowBadge(enabled);
     setSetting('showBadge', enabled);
   };
 
   const handleTokenChange = (value: string) => {
+    void logFrontendEvent('DEBUG', 'GitHub token field updated', {
+      hasToken: value.trim().length > 0,
+      length: value.length,
+    });
     setGhToken(value);
     setSetting('gh-votes-token', value);
   };

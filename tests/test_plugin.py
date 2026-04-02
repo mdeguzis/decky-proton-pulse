@@ -102,6 +102,7 @@ def test_get_log_contents_returns_last_200_lines():
     with patch("builtins.open", mock_open(read_data=content)):
         result = asyncio.run(Plugin().get_log_contents())
     # Last 200 lines — should contain "line 100" through "line 299"
+    assert "===== " in result
     assert "line 299" in result
     assert "line 100" in result
     assert "line 99\n" not in result
@@ -111,6 +112,7 @@ def test_get_log_contents_fewer_than_200_lines():
     content = "line A\nline B\nline C\n"
     with patch("builtins.open", mock_open(read_data=content)):
         result = asyncio.run(Plugin().get_log_contents())
+    assert "===== " in result
     assert "line A" in result
     assert "line C" in result
 
@@ -119,6 +121,23 @@ def test_get_log_contents_missing_file_returns_empty():
     with patch("builtins.open", side_effect=FileNotFoundError):
         result = asyncio.run(Plugin().get_log_contents())
     assert result == ""
+
+
+def test_get_log_contents_includes_debug_log_when_present():
+    def fake_open(path, *_args, **_kwargs):
+        handle = mock_open(read_data={
+            decky.DECKY_PLUGIN_LOG: "info line\n",
+            os.path.join(decky.DECKY_PLUGIN_LOG_DIR, "plugin-debug.log"): "debug line\n",
+        }[path]).return_value
+        return handle
+
+    with patch("builtins.open", side_effect=fake_open):
+        result = asyncio.run(Plugin().get_log_contents())
+
+    assert f"===== {os.path.basename(decky.DECKY_PLUGIN_LOG)} =====" in result
+    assert "===== plugin-debug.log =====" in result
+    assert "info line" in result
+    assert "debug line" in result
 
 
 # ─── _read_cpu ────────────────────────────────────────────────────────────────
