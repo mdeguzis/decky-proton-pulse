@@ -1,6 +1,7 @@
 // src/components/tabs/ManageTab.tsx
 import { DialogButton, Focusable } from '@decky/ui';
 import { toaster } from '@decky/api';
+import { logFrontendEvent } from '../../lib/logger';
 
 interface Props {
   appId: number | null;
@@ -18,10 +19,17 @@ export function ManageTab({ appId, appName }: Props) {
   }
 
   const handleClear = async () => {
+    void logFrontendEvent('INFO', 'Clear launch options requested', { appId, appName });
     try {
       await SteamClient.Apps.SetAppLaunchOptions(appId, '');
+      void logFrontendEvent('INFO', 'Launch options cleared', { appId, appName });
       toaster.toast({ title: 'Proton Pulse', body: 'Launch options cleared.' });
     } catch (e) {
+      void logFrontendEvent('ERROR', 'Failed to clear launch options', {
+        appId,
+        appName,
+        error: e instanceof Error ? e.message : String(e),
+      });
       console.error('Proton Pulse: failed to clear launch options', e);
       toaster.toast({ title: 'Proton Pulse', body: 'Failed to clear — check logs.' });
     }
