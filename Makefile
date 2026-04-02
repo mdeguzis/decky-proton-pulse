@@ -11,10 +11,12 @@ endif
 
 DECK_IP   ?=
 DECK_USER ?= deck
+DECK_HOST ?= $(if $(DECK_IP),$(DECK_IP),steamdeck)
 TARGET    ?= stable
+UV_CACHE_DIR ?= /tmp/uv-cache
 
 .PHONY: help build watch test test-ts test-py setup deploy deploy-reload build-and-deploy clean \
-        logs logs-loader reload cef-debug-enable live-reload-enable
+        logs get-logs logs-loader reload cef-debug-enable live-reload-enable
 
 help:
 	@echo "Usage: make <target>"
@@ -38,6 +40,7 @@ help:
 	@echo ""
 	@echo "On-device debugging (require DECK_IP):"
 	@echo "  logs              Follow plugin app log in real time"
+	@echo "  get-logs          Sync plugin logs from the Steam Deck into the project root"
 	@echo "  logs-loader       Follow plugin_loader journal in real time"
 	@echo "  reload            Restart plugin_loader on the Deck (equivalent to Decky UI reload)"
 	@echo "  cef-debug-enable  Enable remote CEF debugging (React DevTools on port 8081)"
@@ -55,11 +58,11 @@ test-ts:
 	pnpm test
 
 test-py:
-	uv run pytest tests/ -v
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m pytest tests/ -v
 
 setup:
 	pnpm i
-	uv sync
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv sync --group dev
 
 deploy: build
 ifndef DECK_IP
@@ -88,9 +91,15 @@ logs:
 	$(call require_deck_ip)
 	ssh $(DECK_USER)@$(DECK_IP) "tail -f ~/homebrew/logs/decky-proton-pulse/plugin.log"
 
+get-logs:
+	@mkdir -p ../logs
+	rsync -rav $(DECK_USER)@$(DECK_HOST):~/homebrew/logs/decky-proton-pulse/ ../logs/
+
 reload:
+	@echo "Reloading Steam Deck decky plugin service..."
+	@sleep 2
 	$(call require_deck_ip)
-	ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart plugin_loader"
+	@ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart plugin_loader"
 
 logs-loader:
 	$(call require_deck_ip)
