@@ -21,6 +21,7 @@ export function ProtonPulsePage() {
   const [appId, setAppId]           = useState<number | null>(pageState.appId);
   const [appName, setAppName]       = useState<string>(pageState.appName);
   const [sysInfo, setSysInfo]       = useState<SystemInfo | null>(null);
+  const [manageGameLoadNonce, setManageGameLoadNonce] = useState(0);
 
   useEffect(() => {
     getSystemInfo()
@@ -47,6 +48,9 @@ export function ProtonPulsePage() {
       setAppId(id);
       setAppName(name);
       setActivePage(tab);
+      if (tab === 'manage-game' && id) {
+        setManageGameLoadNonce((value) => value + 1);
+      }
     };
     window.addEventListener(NAVIGATE_EVENT, handler);
     return () => window.removeEventListener(NAVIGATE_EVENT, handler);
@@ -60,13 +64,27 @@ export function ProtonPulsePage() {
     }
   }, [appId, activePage]);
 
+  useEffect(() => {
+    if (activePage === 'manage-game' && appId) {
+      setManageGameLoadNonce((value) => value + 1);
+    }
+  }, [activePage, appId]);
+
   const hasGame = !!appId;
 
   const pages: SidebarNavigationPage[] = [
     ...(hasGame ? [{
       title: 'Manage This Game',
       identifier: 'manage-game',
-      content: <ConfigureTab appId={appId} appName={appName} sysInfo={sysInfo} />,
+      content: (
+        <ConfigureTab
+          appId={appId}
+          appName={appName}
+          sysInfo={sysInfo}
+          isActive={activePage === 'manage-game'}
+          loadNonce={manageGameLoadNonce}
+        />
+      ),
     }] : []),
     {
       title: 'Manage Configurations',
