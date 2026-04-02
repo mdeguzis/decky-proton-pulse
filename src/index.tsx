@@ -27,6 +27,13 @@ import { BrandGlyph } from './components/BrandGlyph';
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
 
+function extractLibraryAppId(pathname: string): number | null {
+  const match = pathname.match(/\/(?:routes\/)?library\/app\/(\d+)/);
+  if (!match) return null;
+  const parsed = parseInt(match[1], 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 // ─── Sidebar panel ────────────────────────────────────────────────────────────
 function Content() {
   const [version, setVersion] = useState('...');
@@ -130,19 +137,26 @@ export default definePlugin(() => {
   });
 
   routerHook.addRoute('/proton-pulse', ProtonPulsePage);
-  const gamePagePatch = routerHook.addPatch('/library/app/:appid', (props: { appid?: string }) => {
-    const focusedAppId = props.appid ? parseInt(props.appid, 10) : null;
-    const focusedAppName = focusedAppId
-      ? (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(focusedAppId)?.display_name ?? ''
-      : '';
+  const syncFocusedGameFromPath = () => {
+    const pathname = globalThis.location?.pathname ?? '';
+    const focusedAppId = extractLibraryAppId(pathname);
+    if (!focusedAppId || focusedAppId === pageState.focusedAppId) return;
 
+    const focusedAppName =
+      (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(focusedAppId)?.display_name ?? '';
     pageState.focusedAppId = focusedAppId;
     pageState.focusedAppName = focusedAppName;
     void logFrontendEvent('DEBUG', 'Observed focused library app route', {
       focusedAppId,
       focusedAppName,
-      pathname: globalThis.location?.pathname ?? '',
+      pathname,
     });
+  };
+
+  syncFocusedGameFromPath();
+  const focusedGamePoll = setInterval(syncFocusedGameFromPath, 1000);
+  const gamePagePatch = routerHook.addPatch('/library/app/:appid', (props: { appid?: string }) => {
+    syncFocusedGameFromPath();
     return props;
   });
   const menuPatch = patchGameContextMenu(LibraryContextMenu);
@@ -165,6 +179,7 @@ export default definePlugin(() => {
       void logFrontendEvent('INFO', 'Plugin frontend unloading');
       routerHook.removeRoute('/proton-pulse');
       routerHook.removePatch('/library/app/:appid', gamePagePatch);
+      clearInterval(focusedGamePoll);
       menuPatch.unpatch();
     },
   };

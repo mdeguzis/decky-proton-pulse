@@ -1,6 +1,6 @@
 // src/components/tabs/LogsTab.tsx
 import { useEffect, useRef, useState } from 'react';
-import { Focusable, GamepadButton, DialogButton } from '@decky/ui';
+import { Focusable, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { callable } from '@decky/api';
 
@@ -11,11 +11,14 @@ const SCROLL_STEP = 80;
 export function LogsTab() {
   const [logs, setLogs] = useState<string>('');
   const [focused, setFocused] = useState(false);
+  const [paneActive, setPaneActive] = useState(false);
   const [autoFollow, setAutoFollow] = useState(true);
+  const [showJumpHint, setShowJumpHint] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const focusScrollPane = () => {
+    setPaneActive(true);
     setFocused(true);
     scrollRef.current?.focus();
   };
@@ -39,63 +42,71 @@ export function LogsTab() {
   }, []);
 
   useEffect(() => {
-    if (!autoFollow) return;
+    if (!autoFollow || !paneActive) return;
+    setShowJumpHint(false);
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs, autoFollow]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => focusScrollPane(), 75);
-    return () => clearTimeout(timer);
-  }, []);
+  }, [logs, autoFollow, paneActive]);
 
   // Dpad / left-stick up-down scroll while the log pane has gamepad focus.
   const handleDirection = (evt: GamepadEvent) => {
     if (!scrollRef.current) return;
+    if (evt.detail.button === GamepadButton.DIR_RIGHT) {
+      focusScrollPane();
+      if (autoFollow) {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+    if (evt.detail.button === GamepadButton.DIR_LEFT) {
+      setPaneActive(false);
+      setFocused(false);
+      return;
+    }
+    if (!paneActive) return;
     if (evt.detail.button === GamepadButton.DIR_UP) {
       setAutoFollow(false);
+      setShowJumpHint(true);
       scrollRef.current.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
     } else if (evt.detail.button === GamepadButton.DIR_DOWN) {
       setAutoFollow(false);
+      setShowJumpHint(true);
       scrollRef.current.scrollBy({ top: SCROLL_STEP, behavior: 'smooth' });
     }
   };
 
+  const handleJumpToLatest = () => {
+    setPaneActive(true);
+    setAutoFollow(true);
+    setShowJumpHint(false);
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    focusScrollPane();
+  };
+
   // Give the scroll div real DOM focus so Steam's right-stick-to-scroll fires.
-  const handleFocus = () => focusScrollPane();
+  const handleFocus = () => setFocused(true);
   const handleBlur = () => setFocused(false);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <div
-          style={{
-            flex: 1,
-            paddingLeft: 2,
-            fontSize: 11,
-            color: '#7a9bb5',
-          }}
-        >
-          Move right to focus the log output. Use the right stick or D-pad up/down to scroll.
-        </div>
-        <DialogButton
-          onClick={() => {
-            setAutoFollow(true);
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-            focusScrollPane();
-          }}
-          style={{
-            minWidth: 0,
-            padding: '2px 10px',
-            fontSize: 10,
-          }}
-        >
-          {autoFollow ? 'FOLLOWING' : 'JUMP TO LATEST'}
-        </DialogButton>
+      <div
+        style={{
+          marginBottom: 8,
+          paddingLeft: 2,
+          fontSize: 11,
+          color: '#7a9bb5',
+        }}
+      >
+        {autoFollow
+          ? paneActive
+            ? 'Logs focused. Right stick or D-pad scrolls.'
+            : 'Move right to focus logs.'
+          : 'Manual scroll active.'}
       </div>
       <Focusable
         onGamepadDirection={handleDirection}
         onGamepadFocus={handleFocus}
         onGamepadBlur={handleBlur}
+        onOKButton={handleJumpToLatest}
         style={{ flex: 1 }}
       >
         <div
@@ -103,7 +114,11 @@ export function LogsTab() {
           tabIndex={0}
           onFocus={() => setFocused(true)}
           onBlur={handleBlur}
-          onWheel={() => setAutoFollow(false)}
+          onWheel={() => {
+            setAutoFollow(false);
+            setShowJumpHint(true);
+          }}
+          onClick={() => focusScrollPane()}
           style={{
             height: '100%',
             minHeight: 460,
@@ -119,6 +134,23 @@ export function LogsTab() {
             outline: focused ? '2px solid rgba(255,255,255,0.3)' : 'none',
           }}
         >
+          {!autoFollow && showJumpHint && (
+            <div
+              style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 1,
+                marginBottom: 8,
+                padding: '4px 8px',
+                borderRadius: 6,
+                background: 'rgba(17, 31, 47, 0.92)',
+                color: '#9dc4e8',
+                fontSize: 10,
+              }}
+            >
+              Manual scroll active. Press A/OK to jump to latest log output.
+            </div>
+          )}
           {logs || <span style={{ color: '#666' }}>No logs yet.</span>}
           <div ref={bottomRef} />
         </div>
