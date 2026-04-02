@@ -1,5 +1,7 @@
 // src/components/tabs/AboutTab.tsx
 
+import { BrandLogo } from '../BrandLogo';
+
 const LINKS: Array<{ label: string; url: string }> = [
   { label: 'GitHub', url: 'https://github.com/mdeguzis/decky-proton-pulse' },
   { label: 'ProtonDB', url: 'https://www.protondb.com' },
@@ -8,8 +10,13 @@ const LINKS: Array<{ label: string; url: string }> = [
 export function AboutTab() {
   return (
     <div style={{ padding: 8, fontSize: 12, color: '#ccc' }}>
-      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Proton Pulse</div>
-      <div style={{ color: '#888', marginBottom: 12 }}>v0.1.0</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <BrandLogo size={42} />
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Proton Pulse</div>
+          <div style={{ color: '#888' }}>v0.1.0</div>
+        </div>
+      </div>
       <div style={{ marginBottom: 16, lineHeight: 1.5 }}>
         Ranks ProtonDB community reports by system compatibility and applies the best-matching
         Proton launch options to your Steam games — all from the Decky sidebar.
