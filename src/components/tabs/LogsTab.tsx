@@ -58,8 +58,6 @@ export function LogsTab() {
       return;
     }
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
-      setPaneActive(false);
-      setFocused(false);
       return;
     }
     if (!paneActive) return;

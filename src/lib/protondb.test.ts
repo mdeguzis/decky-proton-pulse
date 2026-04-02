@@ -115,7 +115,7 @@ describe('getProtonDBReports', () => {
     expect(await getProtonDBReports('0')).toEqual([]);
   });
 
-  it('falls back to live ProtonDB summary when mirror index 404s', async () => {
+  it('falls back to live ProtonDB summary when CDN index 404s', async () => {
     mockFetch
       .mockResolvedValueOnce(makeResponse(404, null))
       .mockResolvedValueOnce(makeResponse(200, fakeSummary));
@@ -132,7 +132,7 @@ describe('getProtonDBReports', () => {
     );
   });
 
-  it('falls back to live ProtonDB summary when mirror years are empty', async () => {
+  it('falls back to live ProtonDB summary when CDN years are empty', async () => {
     mockFetch
       .mockResolvedValueOnce(makeResponse(200, ['2023']))
       .mockResolvedValueOnce(makeResponse(200, []))
@@ -153,12 +153,12 @@ describe('getProtonDBReports', () => {
     );
   });
 
-  it('keeps mirror as source when year files return report rows', async () => {
+  it('keeps CDN as source when year files return report rows', async () => {
     mockFetch
       .mockResolvedValueOnce(makeResponse(200, ['2023']))
       .mockResolvedValueOnce(makeResponse(200, fakeCdnRaw));
     const result = await getProtonDBReportsWithDiagnostics('730');
-    expect(result.diagnostics.source).toBe('mirror');
+    expect(result.diagnostics.source).toBe('cdn');
     expect(result.diagnostics.liveSummaryStatus).toBeNull();
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });

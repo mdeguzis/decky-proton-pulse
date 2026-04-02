@@ -1,5 +1,6 @@
 // src/components/tabs/ManageTab.tsx
-import { DialogButton, Focusable } from '@decky/ui';
+import { DialogButton, Focusable, GamepadButton } from '@decky/ui';
+import type { GamepadEvent } from '@decky/ui';
 import { useEffect, useState } from 'react';
 import { toaster } from '@decky/api';
 import { logFrontendEvent } from '../../lib/logger';
@@ -61,7 +62,7 @@ export function ManageTab({ appId, appName }: Props) {
   };
 
   return (
-    <Focusable style={{ padding: 8 }}>
+    <Focusable onGamepadDirection={handleRootDirection} style={{ padding: 8 }}>
       <div style={{ marginBottom: 12, fontSize: 13, color: '#ccc' }}>
         <strong>{appName || `App ${appId}`}</strong>
       </div>
@@ -90,3 +91,8 @@ export function ManageTab({ appId, appName }: Props) {
     </Focusable>
   );
 }
+  const handleRootDirection = (evt: GamepadEvent) => {
+    if (evt.detail.button === GamepadButton.DIR_LEFT) {
+      return;
+    }
+  };

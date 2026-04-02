@@ -1,6 +1,7 @@
 // src/components/tabs/SettingsTab.tsx
 import { useEffect, useState } from 'react';
-import { ToggleField, Focusable } from '@decky/ui';
+import { ToggleField, Focusable, GamepadButton } from '@decky/ui';
+import type { GamepadEvent } from '@decky/ui';
 import { callable } from '@decky/api';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
@@ -46,7 +47,7 @@ export function SettingsTab() {
   };
 
   return (
-    <Focusable>
+    <Focusable onGamepadDirection={handleRootDirection}>
       <ToggleField
         label="Debug Logs"
         description="Enable verbose logging in plugin activity log"
@@ -82,3 +83,8 @@ export function SettingsTab() {
     </Focusable>
   );
 }
+  const handleRootDirection = (evt: GamepadEvent) => {
+    if (evt.detail.button === GamepadButton.DIR_LEFT) {
+      return;
+    }
+  };

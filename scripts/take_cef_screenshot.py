@@ -77,6 +77,32 @@ def run(
     )
 
 
+def copy_to_clipboard(image_path: Path) -> str | None:
+    commands: list[list[str]] = [
+        ["wl-copy", "--type", "image/png"],
+        ["xclip", "-selection", "clipboard", "-t", "image/png", "-i"],
+        ["xsel", "--clipboard", "--input"],
+    ]
+
+    image_bytes = image_path.read_bytes()
+
+    for cmd in commands:
+        try:
+            subprocess.run(
+                cmd,
+                check=True,
+                input=image_bytes,
+                capture_output=True,
+            )
+            return " ".join(cmd)
+        except FileNotFoundError:
+            continue
+        except subprocess.CalledProcessError:
+            continue
+
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Capture the Steam Big Picture CEF page and sync it into a local folder."
@@ -89,6 +115,11 @@ def main() -> int:
         "--output-dir",
         default="../screenshots",
         help="Local directory to store the pulled screenshot",
+    )
+    parser.add_argument(
+        "--filename-base",
+        default="",
+        help="Optional local filename base, e.g. manage-this-game",
     )
     args = parser.parse_args()
 
@@ -112,8 +143,24 @@ def main() -> int:
         print("Remote screenshot command did not return a file path.", file=sys.stderr)
         return 1
 
-    run(["rsync", "-av", f"{ssh_target}:{remote_path}", f"{output_dir}/"])
+    remote_name = Path(remote_path).name
+    local_name = remote_name
+    if args.filename_base:
+        suffix = remote_name.removeprefix("proton-pulse-screenshot-")
+        local_name = f"{args.filename_base}-{suffix}"
+
+    run(["rsync", "-av", f"{ssh_target}:{remote_path}", str(output_dir / local_name)])
     run(["ssh", ssh_target, "rm", "-f", remote_path])
+
+    local_path = output_dir / local_name
+    clipboard_command = copy_to_clipboard(local_path)
+    if clipboard_command:
+        print(f"Copied screenshot to clipboard via: {clipboard_command}")
+    else:
+        print(
+            "Saved screenshot, but did not copy to clipboard "
+            "(no supported clipboard tool was available)."
+        )
 
     screenshots = sorted(
         output_dir.glob("*.png"), key=lambda path: path.stat().st_mtime, reverse=True

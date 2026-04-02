@@ -19,6 +19,7 @@ PROTONDB_PROJECT_REPO_DIR := $(abspath ../protondb-data)
 PROTONDB_REPO_DIR ?= $(if $(wildcard $(PROTONDB_PROJECT_REPO_DIR)/.git),$(PROTONDB_PROJECT_REPO_DIR),$(HOME)/src/protondb-data)
 PROTONDB_LOCAL_OUTPUT ?= /tmp/proton-pulse-protondb-data
 APP_ID ?=
+SCREENSHOT_BASE ?=
 
 .PHONY: help build watch test test-ts test-py setup deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
@@ -47,6 +48,8 @@ help:
 	@echo "  logs              Follow plugin app log in real time"
 	@echo "  get-logs          Sync plugin logs from the Steam Deck into the project root"
 	@echo "  take-screenshot   Capture the current Steam UI into ../screenshots/"
+	@echo "                    Optional: SCREENSHOT_BASE=my-name make take-screenshot"
+	@echo "                    Also copies the saved PNG to the local clipboard when supported."
 	@echo "                    Warning: this may capture private on-screen content such as account, chat, or store UI."
 	@echo "  fetch-protondb    Clone or update upstream protondb-data for local inspection"
 	@echo "                    Prefers ../protondb-data when present, otherwise uses ~/src/protondb-data"
@@ -111,7 +114,7 @@ take-screenshot:
 	$(call require_deck_ip)
 	@echo "Capturing the current Steam UI via CEF remote debugging..."
 	@echo "This may include private on-screen content visible on the Steam Deck."
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),)
 
 fetch-protondb:
 	@mkdir -p "$(dir $(PROTONDB_REPO_DIR))"
