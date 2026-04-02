@@ -12,7 +12,7 @@ const WORKFLOW_DISPATCH_URL   = 'https://api.github.com/repos/mdeguzis/proton-pu
 const WORKFLOW_REF            = 'main';
 
 export interface ReportFetchDiagnostics {
-  source: 'mirror' | 'live-summary' | 'none';
+  source: 'cdn' | 'live-summary' | 'none';
   indexUrl: string;
   indexStatus: number | null;
   years: string[];
@@ -96,14 +96,14 @@ export async function getProtonDBReportsWithDiagnostics(appId: string): Promise<
         indexUrl,
         status: indexResp.status,
       });
-      return await fallbackToLiveSummary(appId, diagnostics, 'mirror-index-miss');
+      return await fallbackToLiveSummary(appId, diagnostics, 'cdn-index-miss');
     }
     const years = await indexResp.json() as string[];
     diagnostics.years = years;
     await logFrontendEvent('INFO', 'Proton Pulse report index loaded', { appId, years });
     if (!years.length) {
       await logFrontendEvent('WARNING', 'Proton Pulse report index was empty', { appId, indexUrl });
-      return await fallbackToLiveSummary(appId, diagnostics, 'mirror-index-empty');
+      return await fallbackToLiveSummary(appId, diagnostics, 'cdn-index-empty');
     }
 
     // Fetch all year files in parallel
@@ -152,13 +152,13 @@ export async function getProtonDBReportsWithDiagnostics(appId: string): Promise<
 
     const reports = yearResults.flat();
     if (!reports.length) {
-      await logFrontendEvent('WARNING', 'Mirror returned no report rows after year fetches', {
+      await logFrontendEvent('WARNING', 'CDN returned no report rows after year fetches', {
         appId,
         years: years.length,
       });
-      return await fallbackToLiveSummary(appId, diagnostics, 'mirror-years-empty');
+      return await fallbackToLiveSummary(appId, diagnostics, 'cdn-years-empty');
     }
-    diagnostics.source = 'mirror';
+    diagnostics.source = 'cdn';
     await logFrontendEvent('INFO', 'Finished Proton Pulse report fetch', {
       appId,
       source: diagnostics.source,
@@ -172,7 +172,7 @@ export async function getProtonDBReportsWithDiagnostics(appId: string): Promise<
       indexUrl,
       error: error instanceof Error ? error.message : String(error),
     });
-    return await fallbackToLiveSummary(appId, diagnostics, 'mirror-index-error');
+    return await fallbackToLiveSummary(appId, diagnostics, 'cdn-index-error');
   }
 }
 

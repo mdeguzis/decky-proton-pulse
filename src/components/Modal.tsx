@@ -131,6 +131,26 @@ export function ProtonPulsePage() {
           Proton Pulse
         </span>
       </div>
+      <div
+        style={{
+          position: 'absolute',
+          top: 10,
+          right: 138,
+          zIndex: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '4px 10px',
+          borderRadius: 999,
+          background: 'rgba(14, 22, 35, 0.78)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+          pointerEvents: 'none',
+        }}
+      >
+        <span style={{ fontSize: 10, color: '#f4fbff', letterSpacing: 0.3 }}>
+          B Back
+        </span>
+      </div>
       <SidebarNavigation
         title="Proton Pulse"
         showTitle={true}

@@ -30,8 +30,9 @@ export interface ProtonDBSummary {
 }
 
 // ─── CDN Report ───────────────────────────────────────────────────────────────
-// Shape served by https://mdeguzis.github.io/proton-pulse-data/data/{appId}.json
-// rating is normalized to lowercase at fetch time ("Silver" → "silver")
+// Shape served by the Proton Pulse CDN year files under
+// https://mdeguzis.github.io/proton-pulse-data/data/{appId}/{year}.json
+// rating is normalized to lowercase at fetch time ("Silver" -> "silver")
 
 export interface CdnReport {
   appId: string;

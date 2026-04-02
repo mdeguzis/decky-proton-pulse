@@ -1,5 +1,7 @@
 // src/components/tabs/AboutTab.tsx
 
+import { Focusable, GamepadButton } from '@decky/ui';
+import type { GamepadEvent } from '@decky/ui';
 import { BrandLogo } from '../BrandLogo';
 
 const LINKS: Array<{ label: string; url: string }> = [
@@ -8,8 +10,14 @@ const LINKS: Array<{ label: string; url: string }> = [
 ];
 
 export function AboutTab() {
+  const handleRootDirection = (evt: GamepadEvent) => {
+    if (evt.detail.button === GamepadButton.DIR_LEFT) {
+      return;
+    }
+  };
+
   return (
-    <div style={{ padding: 8, fontSize: 12, color: '#ccc' }}>
+    <Focusable onGamepadDirection={handleRootDirection} style={{ padding: 8, fontSize: 12, color: '#ccc' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
         <BrandLogo size={42} />
         <div>
@@ -34,6 +42,6 @@ export function AboutTab() {
           </a>
         ))}
       </div>
-    </div>
+    </Focusable>
   );
 }
