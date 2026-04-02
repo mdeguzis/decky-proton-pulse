@@ -14,6 +14,11 @@ export function LogsTab() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const focusScrollPane = () => {
+    setFocused(true);
+    scrollRef.current?.focus();
+  };
+
   useEffect(() => {
     let active = true;
     const poll = async () => {
@@ -36,6 +41,11 @@ export function LogsTab() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => focusScrollPane(), 75);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Dpad / left-stick up-down scroll while the log pane has gamepad focus.
   const handleDirection = (evt: GamepadEvent) => {
     if (!scrollRef.current) return;
@@ -47,38 +57,50 @@ export function LogsTab() {
   };
 
   // Give the scroll div real DOM focus so Steam's right-stick-to-scroll fires.
-  const handleFocus = () => {
-    setFocused(true);
-    scrollRef.current?.focus();
-  };
+  const handleFocus = () => focusScrollPane();
   const handleBlur = () => setFocused(false);
 
   return (
-    <Focusable
-      onGamepadDirection={handleDirection}
-      onGamepadFocus={handleFocus}
-      onGamepadBlur={handleBlur}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div
-        ref={scrollRef}
-        tabIndex={0}
         style={{
-          height: 460,
-          overflowY: 'auto',
-          background: 'rgba(0,0,0,0.4)',
-          borderRadius: 4,
-          padding: 8,
-          fontSize: 10,
-          fontFamily: 'monospace',
-          color: '#bbb',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-all',
-          outline: focused ? '2px solid rgba(255,255,255,0.3)' : 'none',
+          padding: '0 0 8px 2px',
+          fontSize: 11,
+          color: '#7a9bb5',
         }}
       >
-        {logs || <span style={{ color: '#666' }}>No logs yet.</span>}
-        <div ref={bottomRef} />
+        Move right to focus the log output. Use the right stick or D-pad up/down to scroll.
       </div>
-    </Focusable>
+      <Focusable
+        onGamepadDirection={handleDirection}
+        onGamepadFocus={handleFocus}
+        onGamepadBlur={handleBlur}
+        style={{ flex: 1 }}
+      >
+        <div
+          ref={scrollRef}
+          tabIndex={0}
+          onFocus={() => setFocused(true)}
+          onBlur={handleBlur}
+          style={{
+            height: '100%',
+            minHeight: 460,
+            overflowY: 'auto',
+            background: 'rgba(0,0,0,0.4)',
+            borderRadius: 4,
+            padding: 8,
+            fontSize: 10,
+            fontFamily: 'monospace',
+            color: '#bbb',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all',
+            outline: focused ? '2px solid rgba(255,255,255,0.3)' : 'none',
+          }}
+        >
+          {logs || <span style={{ color: '#666' }}>No logs yet.</span>}
+          <div ref={bottomRef} />
+        </div>
+      </Focusable>
+    </div>
   );
 }

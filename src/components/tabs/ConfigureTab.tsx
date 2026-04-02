@@ -7,6 +7,7 @@ import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
 import { getProtonDBReports, getVotes, postUpvote } from '../../lib/protondb';
 import { getSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
+import { logFrontendEvent } from '../../lib/logger';
 
 interface Props {
   appId: number | null;
@@ -43,15 +44,37 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
 
   useEffect(() => {
     if (!appId) return;
+    logFrontendEvent('INFO', 'Opening Manage This Game', {
+      appId,
+      appName,
+      hasSystemInfo: !!sysInfo,
+      gpuVendor: sysInfo?.gpu_vendor ?? null,
+    });
     setLoading(true);
     setReports([]);
     setVotes({});
     setSelected(null);
     Promise.all([getProtonDBReports(String(appId)), getVotes(String(appId))])
-      .then(([r, v]) => { setReports(r); setVotes(v); })
-      .catch(console.error)
+      .then(([r, v]) => {
+        logFrontendEvent('INFO', 'Manage This Game data loaded', {
+          appId,
+          appName,
+          reportCount: r.length,
+          voteCount: Object.keys(v).length,
+        });
+        setReports(r);
+        setVotes(v);
+      })
+      .catch((error) => {
+        logFrontendEvent('ERROR', 'Manage This Game load failed', {
+          appId,
+          appName,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        console.error(error);
+      })
       .finally(() => setLoading(false));
-  }, [appId]);
+  }, [appId, appName]);
 
   if (!appId) {
     return (
@@ -98,13 +121,21 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
 
   const cycleFilter = () => {
     const idx = FILTER_ORDER.indexOf(filter);
-    setFilter(FILTER_ORDER[(idx + 1) % FILTER_ORDER.length]);
+    const nextFilter = FILTER_ORDER[(idx + 1) % FILTER_ORDER.length];
+    void logFrontendEvent('DEBUG', 'Changed report filter', { appId, previousFilter: filter, nextFilter });
+    setFilter(nextFilter);
   };
 
   const handleApply = async () => {
     if (!selected || !appId) return;
+    void logFrontendEvent('INFO', 'Apply launch option requested', {
+      appId,
+      appName,
+      protonVersion: selected.protonVersion,
+    });
     const running = (SteamClient.GameSessions as any).GetRunningApps();
     if (running.length > 0) {
+      void logFrontendEvent('WARNING', 'Apply blocked because a game is running', { appId, runningCount: running.length });
       toaster.toast({ title: 'Proton Pulse', body: 'Quit your game first.' });
       return;
     }
@@ -113,8 +144,19 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
       await SteamClient.Apps.SetAppLaunchOptions(
         appId, `PROTON_VERSION="${selected.protonVersion}" %command%`
       );
+      void logFrontendEvent('INFO', 'Launch options applied', {
+        appId,
+        appName,
+        protonVersion: selected.protonVersion,
+      });
       toaster.toast({ title: 'Proton Pulse', body: `Applied for ${appName}` });
     } catch (e) {
+      void logFrontendEvent('ERROR', 'Failed to apply launch options', {
+        appId,
+        appName,
+        protonVersion: selected.protonVersion,
+        error: e instanceof Error ? e.message : String(e),
+      });
       console.error('Proton Pulse: apply failed', e);
       toaster.toast({ title: 'Proton Pulse', body: 'Failed to apply — check logs.' });
     } finally {
@@ -126,19 +168,31 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
     if (!selected || !appId) return;
     const token = getSetting<string>('gh-votes-token', '');
     if (!token) {
+      void logFrontendEvent('WARNING', 'Upvote blocked because GitHub token is missing', { appId, appName });
       toaster.toast({ title: 'Proton Pulse', body: 'Set a GitHub token in Settings to upvote.' });
       return;
     }
+    void logFrontendEvent('INFO', 'Upvote requested', {
+      appId,
+      appName,
+      protonVersion: selected.protonVersion,
+      reportTimestamp: selected.timestamp,
+    });
     setUpvoting(true);
     try {
       const ok = await postUpvote(String(appId), reportKey(selected), token);
       if (ok) {
+        void logFrontendEvent('INFO', 'Upvote accepted by remote endpoint', { appId, appName });
         toaster.toast({ title: 'Proton Pulse', body: 'Vote submitted! Count updates in ~60s.' });
         const capturedAppId = appId;
         setTimeout(() => {
-          if (capturedAppId) getVotes(String(capturedAppId)).then(setVotes).catch(console.error);
+          if (capturedAppId) {
+            void logFrontendEvent('DEBUG', 'Refreshing votes after upvote delay', { appId: capturedAppId });
+            getVotes(String(capturedAppId)).then(setVotes).catch(console.error);
+          }
         }, 90_000);
       } else {
+        void logFrontendEvent('WARNING', 'Upvote request failed at remote endpoint', { appId, appName });
         toaster.toast({ title: 'Proton Pulse', body: 'Vote failed. Check the token value and its repo/actions permissions.' });
       }
     } finally {
@@ -194,11 +248,17 @@ export function ConfigureTab({ appId, appName, sysInfo }: Props) {
         display: 'flex', gap: 4, flexWrap: 'wrap',
         paddingTop: 6, borderTop: '1px solid #2a3a4a',
       }}>
-        <DialogButton onClick={() => setSortMode('votes')} style={btnStyle(sortMode === 'votes')}>
-          SORT BY VOTES
-        </DialogButton>
-        <DialogButton onClick={() => setSortMode('score')} style={btnStyle(sortMode === 'score')}>
+        <DialogButton onClick={() => {
+          void logFrontendEvent('DEBUG', 'Changed sort mode', { appId, sortMode: 'score' });
+          setSortMode('score');
+        }} style={btnStyle(sortMode === 'score')}>
           SORT BY SCORE
+        </DialogButton>
+        <DialogButton onClick={() => {
+          void logFrontendEvent('DEBUG', 'Changed sort mode', { appId, sortMode: 'votes' });
+          setSortMode('votes');
+        }} style={btnStyle(sortMode === 'votes')}>
+          SORT BY VOTES
         </DialogButton>
         <DialogButton onClick={cycleFilter} style={btnStyle()}>
           FILTER: {FILTER_LABELS[filter]}

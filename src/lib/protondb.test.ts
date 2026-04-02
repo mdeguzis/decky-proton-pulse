@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@decky/api', () => ({
   fetchNoCors: vi.fn(),
+  callable: vi.fn(() => vi.fn().mockResolvedValue(true)),
 }));
 
 import { fetchNoCors } from '@decky/api';

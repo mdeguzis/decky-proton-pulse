@@ -3,6 +3,7 @@ import os
 import logging
 import logging.handlers
 import subprocess
+import json
 
 import decky
 
@@ -42,10 +43,17 @@ class Plugin:
         if level not in valid:
             return False
         numeric = valid[level]
+        previous_level = logging.getLevelName(decky.logger.level)
         decky.logger.setLevel(numeric)
         if numeric == logging.DEBUG:
             self._enable_debug_log()
+            decky.logger.info(
+                f"Log level changed from {previous_level} to DEBUG; verbose frontend/backend logging enabled"
+            )
         else:
+            decky.logger.info(
+                f"Log level changed from {previous_level} to {level}; verbose debug logging disabled"
+            )
             self._disable_debug_log()
         return True
 
@@ -76,12 +84,47 @@ class Plugin:
         return self._sync_set_log_level(level)
 
     async def get_log_contents(self) -> str:
-        try:
-            with open(decky.DECKY_PLUGIN_LOG, "r") as f:
-                lines = f.readlines()
-            return "".join(lines[-200:])
-        except FileNotFoundError:
-            return ""
+        log_paths = [
+            decky.DECKY_PLUGIN_LOG,
+            os.path.join(decky.DECKY_PLUGIN_LOG_DIR, 'plugin-debug.log'),
+        ]
+        chunks: list[str] = []
+
+        for path in log_paths:
+            try:
+                with open(path, "r") as f:
+                    lines = f.readlines()
+                if lines:
+                    chunks.append(f"===== {os.path.basename(path)} =====\n")
+                    chunks.append("".join(lines[-200:]))
+            except FileNotFoundError:
+                continue
+
+        return "\n".join(chunks)
+
+    async def log_frontend_event(self, level: str, message: str, context: dict | None = None) -> bool:
+        valid = {
+            "DEBUG": logging.DEBUG,
+            "INFO": logging.INFO,
+            "WARNING": logging.WARNING,
+            "ERROR": logging.ERROR,
+        }
+        numeric = valid.get(level.upper())
+        if numeric is None:
+            return False
+
+        suffix = ""
+        if context:
+            try:
+                suffix = f" | context={json.dumps(context, sort_keys=True)}"
+            except TypeError:
+                suffix = f" | context={str(context)}"
+
+        decky.logger.log(numeric, f"[frontend] {message}{suffix}")
+        return True
+
+    async def get_plugin_version(self) -> str:
+        return getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
 
     # ─── Game Guard ───────────────────────────────────────────────────────────
 
