@@ -14,9 +14,14 @@ DECK_USER ?= deck
 DECK_HOST ?= $(if $(DECK_IP),$(DECK_IP),steamdeck)
 TARGET    ?= stable
 UV_CACHE_DIR ?= /tmp/uv-cache
+PROTONDB_REPO_URL ?= https://github.com/bdefore/protondb-data
+PROTONDB_PROJECT_REPO_DIR := $(abspath ../protondb-data)
+PROTONDB_REPO_DIR ?= $(if $(wildcard $(PROTONDB_PROJECT_REPO_DIR)/.git),$(PROTONDB_PROJECT_REPO_DIR),$(HOME)/src/protondb-data)
+PROTONDB_LOCAL_OUTPUT ?= /tmp/proton-pulse-protondb-data
+APP_ID ?=
 
 .PHONY: help build watch test test-ts test-py setup deploy deploy-reload build-and-deploy clean \
-        logs get-logs logs-loader reload cef-debug-enable live-reload-enable
+        logs get-logs take-screenshot fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
 
 help:
 	@echo "Usage: make <target>"
@@ -41,6 +46,12 @@ help:
 	@echo "On-device debugging (require DECK_IP):"
 	@echo "  logs              Follow plugin app log in real time"
 	@echo "  get-logs          Sync plugin logs from the Steam Deck into the project root"
+	@echo "  take-screenshot   Capture the current Steam UI into ../screenshots/"
+	@echo "                    Warning: this may capture private on-screen content such as account, chat, or store UI."
+	@echo "  fetch-protondb    Clone or update upstream protondb-data for local inspection"
+	@echo "                    Prefers ../protondb-data when present, otherwise uses ~/src/protondb-data"
+	@echo "  check-protondb-data  Run the proton-pulse-data splitter against the local upstream repo into /tmp"
+	@echo "                    Optional: APP_ID=1145350 make check-protondb-data"
 	@echo "  logs-loader       Follow plugin_loader journal in real time"
 	@echo "  reload            Restart plugin_loader on the Deck (equivalent to Decky UI reload)"
 	@echo "  cef-debug-enable  Enable remote CEF debugging (React DevTools on port 8081)"
@@ -94,6 +105,46 @@ logs:
 get-logs:
 	@mkdir -p ../logs
 	rsync -rav $(DECK_USER)@$(DECK_HOST):~/homebrew/logs/decky-proton-pulse/ ../logs/
+	@cd ../logs && ls -1t *.log 2>/dev/null | grep -v '^plugin-debug\.log$$' | tail -n +11 | xargs -r rm -f
+
+take-screenshot:
+	$(call require_deck_ip)
+	@echo "Capturing the current Steam UI via CEF remote debugging..."
+	@echo "This may include private on-screen content visible on the Steam Deck."
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots
+
+fetch-protondb:
+	@mkdir -p "$(dir $(PROTONDB_REPO_DIR))"
+	@if [ -d "$(PROTONDB_REPO_DIR)/.git" ] && git -C "$(PROTONDB_REPO_DIR)" rev-parse --verify HEAD >/dev/null 2>&1; then \
+		echo "Updating $(PROTONDB_REPO_DIR)..."; \
+		git -C "$(PROTONDB_REPO_DIR)" sparse-checkout set reports; \
+		git -C "$(PROTONDB_REPO_DIR)" pull --rebase; \
+	elif [ -e "$(PROTONDB_REPO_DIR)" ]; then \
+		echo "Resetting incomplete checkout at $(PROTONDB_REPO_DIR)..."; \
+		rm -rf "$(PROTONDB_REPO_DIR)"; \
+		echo "Cloning $(PROTONDB_REPO_URL) -> $(PROTONDB_REPO_DIR)"; \
+		git clone --depth=1 --filter=blob:none --sparse "$(PROTONDB_REPO_URL)" "$(PROTONDB_REPO_DIR)"; \
+		git -C "$(PROTONDB_REPO_DIR)" sparse-checkout set reports; \
+	else \
+		echo "Cloning $(PROTONDB_REPO_URL) -> $(PROTONDB_REPO_DIR)"; \
+		git clone --depth=1 --filter=blob:none --sparse "$(PROTONDB_REPO_URL)" "$(PROTONDB_REPO_DIR)"; \
+		git -C "$(PROTONDB_REPO_DIR)" sparse-checkout set reports; \
+	fi
+
+check-protondb-data: fetch-protondb
+	@mkdir -p "$(PROTONDB_LOCAL_OUTPUT)"
+	@OUT_DIR="$$(mktemp -d "$(PROTONDB_LOCAL_OUTPUT).XXXXXX")"; \
+		echo "Using upstream repo: $(PROTONDB_REPO_DIR)"; \
+		echo "Writing split output to $$OUT_DIR"; \
+		UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --with ijson python ../proton-pulse-data/scripts/split_reports.py "$(PROTONDB_REPO_DIR)/reports" "$$OUT_DIR"; \
+		if [ -n "$(APP_ID)" ]; then \
+			if [ -f "$$OUT_DIR/data/$(APP_ID)/index.json" ]; then \
+				echo "Found AppID $(APP_ID) in split output:"; \
+				ls -1 "$$OUT_DIR/data/$(APP_ID)"; \
+			else \
+				echo "AppID $(APP_ID) was not found in split output."; \
+			fi; \
+		fi
 
 reload:
 	@echo "Reloading Steam Deck decky plugin service..."

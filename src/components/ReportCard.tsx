@@ -4,6 +4,7 @@ import type { ScoredReport } from '../types';
 interface Props {
   report: ScoredReport;
   selected: boolean;
+  active?: boolean;
   onSelect: (report: ScoredReport) => void;
 }
 
@@ -27,7 +28,7 @@ function truncate(str: string, maxLen: number): string {
   return str.length > maxLen ? str.slice(0, maxLen) + '…' : str;
 }
 
-export function ReportCard({ report, selected, onSelect }: Props) {
+export function ReportCard({ report, selected, active = false, onSelect }: Props) {
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
   const cappedScore = Math.min(100, report.score);
   const confScore = (cappedScore / 10).toFixed(1);
@@ -36,11 +37,16 @@ export function ReportCard({ report, selected, onSelect }: Props) {
   return (
     <div
       style={{
-        border: `2px solid ${selected ? '#4c9eff' : '#2a3a4a'}`,
-        borderRadius: 4,
+        border: `2px solid ${active ? '#9ed0ff' : selected ? '#4c9eff' : '#2a3a4a'}`,
+        borderRadius: 6,
         padding: '10px 14px',
-        marginBottom: 6,
-        background: selected ? 'rgba(76,158,255,0.08)' : 'rgba(255,255,255,0.03)',
+        marginBottom: 8,
+        background: active
+          ? 'rgba(158, 208, 255, 0.16)'
+          : selected
+            ? 'rgba(76,158,255,0.10)'
+            : 'rgba(255,255,255,0.03)',
+        boxShadow: active ? '0 0 0 1px rgba(255,255,255,0.12) inset' : 'none',
         cursor: 'pointer',
         userSelect: 'none',
         display: 'flex',
@@ -55,6 +61,9 @@ export function ReportCard({ report, selected, onSelect }: Props) {
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 6 }}>
           {[report.gpu, report.os].filter(Boolean).join(' · ')}
+        </div>
+        <div style={{ fontSize: 10, color: '#7f8ea3', marginBottom: 6 }}>
+          {report.recencyDays}d ago · {report.upvotes} votes
         </div>
         {report.notes && (
           <div style={{ fontSize: 11, color: '#aaa', lineHeight: 1.4 }}>
@@ -76,10 +85,10 @@ export function ReportCard({ report, selected, onSelect }: Props) {
           {report.rating}
         </span>
         <span style={{ fontSize: 11, color: '#aaa' }}>
-          Votes: {report.upvotes}
+          {report.gpuTier.toUpperCase()}
         </span>
         <span style={{ fontSize: 11, fontWeight: 700, color: confColor }}>
-          ⚡ {confScore}/10
+          {confScore}/10
         </span>
       </div>
     </div>
