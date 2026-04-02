@@ -1,6 +1,6 @@
 # Current Handoff
 
-Last updated: 2026-04-01
+Last updated: 2026-04-02
 
 This file is the lightweight checkpoint for the next coding session.
 Use it to track what is working, what still needs on-device testing, and what polish work is still open.
@@ -8,29 +8,23 @@ Use it to track what is working, what still needs on-device testing, and what po
 ## Current State
 
 - ProtonDB lookup now uses:
-  1. Proton Pulse mirror
-  2. ProtonDB live detailed fallback
-  3. ProtonDB live summary fallback
+  1. Proton Pulse CDN on GitHub Pages
+  2. ProtonDB live summary fallback
 - Horizon Zero Dawn Remastered is now treated as app ID `2561580`, which is confirmed correct.
-- The plugin can now fetch real live detailed ProtonDB report rows for mirror-miss cases.
+- The current prototype prefers CDN report data and only falls back to live ProtonDB summary when CDN report data is unavailable.
 - `Manage This Game` was simplified back toward a safer single-column layout after a render crash on Steam beta.
 - `make take-screenshot` now uses the CEF screenshot path through `scripts/take_cef_screenshot.py`.
 
 ## Current Blocker
 
-- `Manage This Game` is still crashing on Steam beta even after removing the nested two-pane focus layout.
-- Logs confirm the data path is healthy before the crash:
-  - `2561580` resolves correctly for Horizon Zero Dawn Remastered
-  - mirror returns `404`
-  - live detailed fallback returns `200`
-  - `81` reports load successfully
-- That strongly suggests the remaining issue is a UI/component compatibility problem with SharedSteamUI / Steam beta rather than ProtonDB fetching.
+- No known data-source blocker at the moment.
+- The next architecture step is planning a production-grade CDN primary with GitHub Pages retained as backup.
 
 ## Verified Working
 
 - `pnpm test` passed before the latest checkpoint push.
 - `make build` passed before the latest checkpoint push.
-- ProtonDB live detailed fallback was confirmed against real ProtonDB data for `2561580`.
+- CDN-first report fetch behavior is now the intended plugin model.
 - The top toolbar now groups:
   - sort controls
   - GPU filter controls
@@ -51,18 +45,17 @@ Use it to track what is working, what still needs on-device testing, and what po
 ### ProtonDB Behavior
 
 - Re-test Horizon Zero Dawn Remastered (`2561580`) end-to-end after deploy:
-  - confirm cards render from `live-detailed`
+  - confirm cards render from `cdn`
   - confirm the header, preview pane, and apply action all use the same selected report
-- Re-test a known mirror-hit game to make sure the `mirror` path still behaves correctly.
-- Re-test a mirror-miss game besides Horizon, like Hades II, to confirm the fallback path is generally sound.
+- Re-test a known CDN-hit game to make sure the `cdn` path behaves correctly.
+- Re-test a CDN-miss game besides Horizon, like Hades II, to confirm live summary fallback is generally sound.
 
 ### Logs / Diagnostics
 
 - Confirm the `Manage This Game` diagnostics reflect the actual source used:
-  - `mirror`
-  - `live-detailed`
+  - `cdn`
   - `live-summary`
-- Confirm the new live-detailed logs are visible in the plugin Logs tab after deploy.
+- Confirm the CDN and live-summary logs are visible in the plugin Logs tab after deploy.
 
 ## UI / UX Polish Still Open
 
@@ -75,6 +68,7 @@ Use it to track what is working, what still needs on-device testing, and what po
 
 ## Likely Next Feature Work
 
+- Spec and implement a real CDN primary with GitHub Pages as secondary backup.
 - Add a fuller report-details page / subview that feels closer to Valve’s controller configuration preview flow.
 - Improve sorting / filtering controls using stronger Steam-like visual grouping and focus treatment.
 - Consider adding more meaningful report metadata in the detail pane:

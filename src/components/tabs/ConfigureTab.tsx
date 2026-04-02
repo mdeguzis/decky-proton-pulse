@@ -1,6 +1,7 @@
 // src/components/tabs/ConfigureTab.tsx
-import { Component, type ErrorInfo, type ReactNode, useState, useEffect } from 'react';
-import { DialogButton, Focusable } from '@decky/ui';
+import { Component, type ErrorInfo, type ReactNode, useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { Focusable, GamepadButton, DialogButton, DropdownItem } from '@decky/ui';
+import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '@decky/api';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
 import {
@@ -11,10 +12,12 @@ import {
   type ReportFetchDiagnostics,
   type VotesFetchDiagnostics,
 } from '../../lib/protondb';
-import { getSetting } from '../../lib/settings';
+import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
 import { getLaunchOptionsFromDetails, getSteamAppDetails } from '../../lib/steamApps';
+import { ReportCard, type DisplayReportCard } from '../ReportCard';
+import { BrandLogo } from '../BrandLogo';
 
 interface Props {
   appId: number | null;
@@ -31,14 +34,33 @@ const STEAM_HEADER_URL = (id: number) =>
 
 const reportKey = (r: CdnReport) => `${r.timestamp}_${r.protonVersion}`;
 
-const FILTER_ORDER: FilterTier[] = ['nvidia', 'amd', 'other', 'all'];
+const FILTER_ORDER: FilterTier[] = ['nvidia', 'amd', 'intel', 'other', 'all'];
 const FILTER_LABELS: Record<FilterTier, string> = {
   nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel', other: 'Other', all: 'All',
 };
-const SORT_LABELS: Record<SortMode, string> = {
-  score: 'Best Match',
-  votes: 'Most Votes',
-};
+const DETAIL_SCROLL_STEP = 100;
+const EDIT_STORAGE_PREFIX = 'edited-reports:';
+
+interface EditedReportEntry {
+  id: string;
+  label: string;
+  baseReportKey: string;
+  report: CdnReport;
+  updatedAt: number;
+}
+
+interface EditableReportFields {
+  label: string;
+  protonVersion: string;
+  rating: CdnReport['rating'];
+  title: string;
+  gpu: string;
+  gpuDriver: string;
+  os: string;
+  kernel: string;
+  ram: string;
+  notes: string;
+}
 
 function GameSummaryHeader({
   appId,
@@ -73,20 +95,216 @@ function buildLaunchOptionPreview(protonVersion: string): string {
   return `PROTON_VERSION="${protonVersion}" %command%`;
 }
 
-function formatAge(days: number): string {
-  if (days < 1) return 'today';
-  if (days < 30) return `${days}d ago`;
-  if (days < 365) return `${Math.round(days / 30)}mo ago`;
-  return `${Math.round(days / 365)}y ago`;
+function formatTimestamp(timestamp: number): string {
+  return new Date(timestamp * 1000).toISOString().slice(0, 10);
 }
 
-function formatTimestamp(timestamp: number): string {
-  return new Date(timestamp * 1000).toLocaleDateString();
+function gamepadButtonLabel(button: number): string {
+  const labels: Partial<Record<GamepadButton, string>> = {
+    [GamepadButton.DIR_UP]: 'DIR_UP',
+    [GamepadButton.DIR_DOWN]: 'DIR_DOWN',
+    [GamepadButton.DIR_LEFT]: 'DIR_LEFT',
+    [GamepadButton.DIR_RIGHT]: 'DIR_RIGHT',
+    [GamepadButton.OK]: 'OK',
+    [GamepadButton.CANCEL]: 'CANCEL',
+  };
+
+  return labels[button as GamepadButton] ?? `BUTTON_${button}`;
+}
+
+function describeActiveElement(): string {
+  if (typeof document === 'undefined') return 'no-document';
+  const active = document.activeElement;
+  if (!active) return 'none';
+
+  const parts = [active.tagName.toLowerCase()];
+  if (active.id) parts.push(`#${active.id}`);
+  if (active.className && typeof active.className === 'string') {
+    const className = active.className.trim().replace(/\s+/g, '.');
+    if (className) parts.push(`.${className}`);
+  }
+
+  const text = active.textContent?.trim().replace(/\s+/g, ' ').slice(0, 48);
+  if (text) parts.push(`"${text}"`);
+
+  return parts.join('');
 }
 
 function matchLabel(report: ScoredReport, sysInfo: SystemInfo | null): string {
   if (!sysInfo?.gpu_vendor || report.gpuTier === 'unknown') return 'Unknown GPU match';
   return report.gpuTier === sysInfo.gpu_vendor ? 'Matches your GPU vendor' : 'Different GPU vendor';
+}
+
+function effectiveAutoFilter(gpuVendor: GpuVendor | null): FilterTier {
+  if (gpuVendor === 'nvidia' || gpuVendor === 'amd') return gpuVendor;
+  if (gpuVendor === 'intel') return 'intel';
+  return 'all';
+}
+
+function editStorageKey(appId: number): string {
+  return `${EDIT_STORAGE_PREFIX}${appId}`;
+}
+
+function loadEditedReports(appId: number): EditedReportEntry[] {
+  return getSetting<EditedReportEntry[]>(editStorageKey(appId), []);
+}
+
+function makeEditableFields(report: CdnReport, label = ''): EditableReportFields {
+  return {
+    label,
+    protonVersion: report.protonVersion,
+    rating: report.rating,
+    title: report.title,
+    gpu: report.gpu,
+    gpuDriver: report.gpuDriver,
+    os: report.os,
+    kernel: report.kernel,
+    ram: report.ram,
+    notes: report.notes,
+  };
+}
+
+function applyEditableFields(base: CdnReport, fields: EditableReportFields): CdnReport {
+  return {
+    ...base,
+    protonVersion: fields.protonVersion,
+    rating: fields.rating,
+    title: fields.title,
+    gpu: fields.gpu,
+    gpuDriver: fields.gpuDriver,
+    os: fields.os,
+    kernel: fields.kernel,
+    ram: fields.ram,
+    notes: fields.notes,
+  };
+}
+
+function detailPanelStyle() {
+  return {
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 12,
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025))',
+    border: '1px solid rgba(255,255,255,0.08)',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset',
+  };
+}
+
+function bareDetailSectionStyle() {
+  return {
+    padding: '2px 0',
+    color: '#dce9f6',
+  };
+}
+
+function FilterIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      style={{ display: 'block', flex: '0 0 auto' }}
+    >
+      <path
+        d="M4 6h16l-6 7v5l-4 2v-7L4 6z"
+        fill="none"
+        stroke="#f4fbff"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ProtonDbIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      style={{ display: 'block', flex: '0 0 auto' }}
+    >
+      <circle cx="12" cy="12" r="9" fill="none" stroke="#f4fbff" strokeWidth="1.8" />
+      <path
+        d="M9 16V8h4.5a2.5 2.5 0 0 1 0 5H9"
+        fill="none"
+        stroke="#f4fbff"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+interface CompactButtonProps {
+  label: string;
+  onPress: () => void;
+  focused: boolean;
+  active?: boolean;
+  accent?: boolean;
+  disabled?: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  cancelAction?: () => void;
+}
+
+function CompactButton({
+  label,
+  onPress,
+  focused,
+  active = false,
+  accent = false,
+  disabled = false,
+  onFocus,
+  onBlur,
+  cancelAction,
+}: CompactButtonProps) {
+  return (
+    <DialogButton
+      onClick={disabled ? undefined : onPress}
+      onOKButton={disabled ? undefined : onPress}
+      onCancelButton={cancelAction}
+      onGamepadFocus={onFocus}
+      onGamepadBlur={onBlur}
+      style={{
+        minHeight: 26,
+        height: 26,
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
+        padding: '0 10px',
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        fontSize: 9,
+        fontWeight: 700,
+        letterSpacing: 0.2,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        color: disabled ? '#6d7b88' : accent ? '#ffe37a' : '#eef6ff',
+        background: active
+          ? 'linear-gradient(180deg, #4f97eb, #3f7ecc)'
+          : 'linear-gradient(180deg, rgba(58, 66, 77, 0.96), rgba(48, 54, 63, 0.96))',
+        border: focused
+          ? '1px solid rgba(255,255,255,0.9)'
+          : '1px solid rgba(255,255,255,0.08)',
+        boxShadow: focused
+          ? '0 0 0 1px rgba(255,255,255,0.28) inset, 0 0 16px rgba(255,255,255,0.18)'
+          : '0 1px 0 rgba(255,255,255,0.04) inset',
+        opacity: disabled ? 0.55 : 1,
+        animation: focused ? 'proton-pulse-toolbar-glow 1.7s ease-in-out infinite' : 'none',
+      }}
+    >
+      {label}
+    </DialogButton>
+  );
 }
 
 function LoadingIndicator({ label }: { label: string }) {
@@ -183,38 +401,61 @@ class ConfigureTabErrorBoundary extends Component<ConfigureTabBoundaryProps, Con
 
 function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNonce = 0 }: Props) {
   const [reports, setReports]   = useState<CdnReport[]>([]);
+  const [editedReports, setEditedReports] = useState<EditedReportEntry[]>([]);
   const [votes, setVotes]       = useState<Record<string, number>>({});
   const [loading, setLoading]   = useState(false);
-  const [selected, setSelected] = useState<ScoredReport | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [focusedCardKey, setFocusedCardKey] = useState<string | null>(null);
+  const [overlayMode, setOverlayMode] = useState<'list' | 'detail' | 'edit'>('list');
   const [applying, setApplying] = useState(false);
   const [upvoting, setUpvoting] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('score');
+  const [filterTouched, setFilterTouched] = useState(false);
+  const [focusedToolbarControl, setFocusedToolbarControl] = useState<'sort' | 'filter' | null>(null);
+  const [focusedActionControl, setFocusedActionControl] = useState<'apply' | 'edit' | 'upvote' | 'back' | 'save' | 'cancel' | null>(null);
   const [reportDiagnostics, setReportDiagnostics] = useState<ReportFetchDiagnostics | null>(null);
   const [voteDiagnostics, setVoteDiagnostics] = useState<VotesFetchDiagnostics | null>(null);
   const [currentLaunchOptions, setCurrentLaunchOptions] = useState('');
+  const [editDraft, setEditDraft] = useState<EditableReportFields | null>(null);
+  const detailScrollRef = useRef<HTMLDivElement>(null);
 
   const gpuVendor = sysInfo?.gpu_vendor ?? null;
-  const initialFilter: FilterTier =
-    gpuVendor === 'nvidia' || gpuVendor === 'amd' || gpuVendor === 'intel' ? gpuVendor : 'other';
-  const [filter, setFilter] = useState<FilterTier>(initialFilter);
+  const [filter, setFilter] = useState<FilterTier>('all');
 
-  const scored: ScoredReport[] = reports.map(r => ({
-    ...scoreReport(r, sysInfo ?? {
-      cpu: null,
-      ram_gb: null,
-      gpu: null,
-      gpu_vendor: null,
-      driver_version: null,
-      kernel: null,
-      distro: null,
-      proton_custom: null,
-    }),
+  const scoreContext = sysInfo ?? {
+    cpu: null,
+    ram_gb: null,
+    gpu: null,
+    gpu_vendor: null,
+    driver_version: null,
+    kernel: null,
+    distro: null,
+    proton_custom: null,
+  };
+
+  const baseDisplayReports: DisplayReportCard[] = reports.map(r => ({
+    ...scoreReport(r, scoreContext),
     upvotes: votes[reportKey(r)] ?? 0,
+    displayKey: `cdn:${reportKey(r)}`,
   }));
 
-  const buckets = bucketByGpuTier(scored);
+  const editedDisplayReports: DisplayReportCard[] = editedReports.map((entry) => ({
+    ...scoreReport(entry.report, scoreContext),
+    upvotes: votes[reportKey(entry.report)] ?? 0,
+    displayKey: `edited:${entry.id}`,
+    isEdited: true,
+    editLabel: entry.label,
+  }));
 
-  const visibleReports: ScoredReport[] =
+  const scored: DisplayReportCard[] = [...editedDisplayReports, ...baseDisplayReports];
+
+  const buckets = bucketByGpuTier(scored as ScoredReport[]) as {
+    nvidia: DisplayReportCard[];
+    amd: DisplayReportCard[];
+    other: DisplayReportCard[];
+  };
+
+  const visibleReports: DisplayReportCard[] =
     filter === 'all'                       ? [...buckets.nvidia, ...buckets.amd, ...buckets.other] :
     filter === 'nvidia'                    ? buckets.nvidia :
     filter === 'amd'                       ? buckets.amd :
@@ -225,26 +466,76 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     sortMode === 'votes'
       ? [...visibleReports].sort((a, b) => b.upvotes - a.upvotes)
       : visibleReports;
+  const selected = sortedReports.find((report) => report.displayKey === selectedKey)
+    ?? scored.find((report) => report.displayKey === selectedKey)
+    ?? null;
+
+  const debugMovement = (event: string, context: Record<string, unknown> = {}) => {
+    const payload = {
+      appId,
+      appName,
+      overlayMode,
+      selectedKey,
+      focusedCardKey,
+      focusedToolbarControl,
+      focusedActionControl,
+      filter,
+      sortMode,
+      activeElement: describeActiveElement(),
+      detailScrollTop: detailScrollRef.current?.scrollTop ?? null,
+      detailScrollHeight: detailScrollRef.current?.scrollHeight ?? null,
+      detailClientHeight: detailScrollRef.current?.clientHeight ?? null,
+      ...context,
+    };
+    console.log(`[Proton Pulse movement] ${event}`, payload);
+    void logFrontendEvent('DEBUG', `Movement: ${event}`, payload);
+  };
 
   useEffect(() => {
-    if (!appId || !isActive) return;
-    logFrontendEvent('INFO', 'Opening Manage This Game', {
+    if (!appId) {
+      setLoading(false);
+      setReports([]);
+      setEditedReports([]);
+      setVotes({});
+      setSelectedKey(null);
+      setFocusedCardKey(null);
+      setOverlayMode('list');
+      setFilterTouched(false);
+      setFilter('all');
+      setReportDiagnostics(null);
+      setVoteDiagnostics(null);
+      setEditDraft(null);
+      return;
+    }
+
+    let cancelled = false;
+    void logFrontendEvent('INFO', 'Loading Manage This Game data', {
       appId,
       appName,
       hasSystemInfo: !!sysInfo,
       gpuVendor: sysInfo?.gpu_vendor ?? null,
+      isActive,
+      loadNonce,
     });
     setLoading(true);
     setReports([]);
+    setEditedReports(loadEditedReports(appId));
     setVotes({});
-    setSelected(null);
+    setSelectedKey(null);
+    setFocusedCardKey(null);
+    setOverlayMode('list');
+    setFilterTouched(false);
+    setFilter('all');
     setReportDiagnostics(null);
     setVoteDiagnostics(null);
-    Promise.all([getProtonDBReportsWithDiagnostics(String(appId)), getVotesWithDiagnostics(String(appId))])
+    setEditDraft(null);
+
+    void Promise.all([getProtonDBReportsWithDiagnostics(String(appId)), getVotesWithDiagnostics(String(appId))])
       .then(([reportResult, voteResult]) => {
+        if (cancelled) return;
         const r = reportResult.reports;
         const v = voteResult.votes;
-        logFrontendEvent('INFO', 'Manage This Game data loaded', {
+        void logFrontendEvent('INFO', 'Manage This Game data loaded', {
           appId,
           appName,
           reportCount: r.length,
@@ -256,30 +547,48 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
         setVoteDiagnostics(voteResult.diagnostics);
       })
       .catch((error) => {
-        logFrontendEvent('ERROR', 'Manage This Game load failed', {
+        if (cancelled) return;
+        void logFrontendEvent('ERROR', 'Manage This Game load failed', {
           appId,
           appName,
           error: error instanceof Error ? error.message : String(error),
         });
         console.error(error);
       })
-      .finally(() => setLoading(false));
-  }, [appId, appName, isActive, loadNonce]);
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [appId, appName, loadNonce, sysInfo, isActive]);
+
+  useEffect(() => {
+    if (filterTouched) return;
+    setFilter(effectiveAutoFilter(gpuVendor));
+  }, [gpuVendor, filterTouched]);
 
   useEffect(() => {
     if (!sortedReports.length) {
-      setSelected(null);
+      setSelectedKey(null);
+      setFocusedCardKey(null);
+      setOverlayMode('list');
       return;
     }
-    if (!selected) {
-      setSelected(sortedReports[0]);
+    if (!selectedKey) {
+      setSelectedKey(sortedReports[0].displayKey);
+      setFocusedCardKey(sortedReports[0].displayKey);
       return;
     }
-    const stillVisible = sortedReports.find((report) => reportKey(report) === reportKey(selected));
+    const stillVisible = sortedReports.find((report) => report.displayKey === selectedKey);
     if (!stillVisible) {
-      setSelected(sortedReports[0]);
+      setSelectedKey(sortedReports[0].displayKey);
+      setFocusedCardKey(sortedReports[0].displayKey);
+      setOverlayMode('list');
     }
-  }, [selected, sortedReports]);
+  }, [selectedKey, sortedReports]);
 
   useEffect(() => {
     if (!appId) {
@@ -292,9 +601,34 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     });
   }, [appId, appName]);
 
+  useEffect(() => {
+    if (!appId) return;
+    setSetting(editStorageKey(appId), editedReports);
+  }, [appId, editedReports]);
+
+  useLayoutEffect(() => {
+    if (overlayMode !== 'detail' && overlayMode !== 'edit') return;
+    const pane = detailScrollRef.current;
+    if (!pane) return;
+    pane.scrollTop = 0;
+    requestAnimationFrame(() => {
+      pane.scrollTop = 0;
+      pane.focus();
+      debugMovement('detail-overlay-open-focus', {
+        selectedDisplayKey: selectedKey,
+      });
+    });
+  }, [overlayMode, selectedKey]);
+
+  useEffect(() => {
+    debugMovement('overlay-mode-changed', { nextOverlayMode: overlayMode });
+  }, [overlayMode]);
+
   const setFilterMode = (nextFilter: FilterTier) => {
     void logFrontendEvent('DEBUG', 'Changed report filter', { appId, previousFilter: filter, nextFilter });
+    setFilterTouched(true);
     setFilter(nextFilter);
+    setOverlayMode('list');
   };
 
   const setSortPreference = (nextSortMode: SortMode) => {
@@ -302,8 +636,92 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     setSortMode(nextSortMode);
   };
 
-  const cycleSortMode = () => {
-    setSortPreference(sortMode === 'score' ? 'votes' : 'score');
+  const openReportDetail = (report: DisplayReportCard) => {
+    setSelectedKey(report.displayKey);
+    setFocusedCardKey(report.displayKey);
+    setOverlayMode('detail');
+    debugMovement('open-report-detail', {
+      reportDisplayKey: report.displayKey,
+      protonVersion: report.protonVersion,
+    });
+    void logFrontendEvent('DEBUG', 'Opened ProtonDB report detail', {
+      appId,
+      protonVersion: report.protonVersion,
+      displayKey: report.displayKey,
+      total: sortedReports.length,
+    });
+  };
+
+  const openEditView = () => {
+    if (!selected) return;
+    debugMovement('open-edit-view', {
+      reportDisplayKey: selected.displayKey,
+    });
+    setEditDraft(makeEditableFields(selected, selected.editLabel ?? ''));
+    setOverlayMode('edit');
+  };
+
+  const saveEditedReport = () => {
+    if (!appId || !selected || !editDraft) return;
+    const nextEntry: EditedReportEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      label: editDraft.label.trim(),
+      baseReportKey: reportKey(selected),
+      report: applyEditableFields(selected, editDraft),
+      updatedAt: Date.now(),
+    };
+    setEditedReports((current) => [nextEntry, ...current]);
+    const nextKey = `edited:${nextEntry.id}`;
+    setSelectedKey(nextKey);
+    setFocusedCardKey(nextKey);
+    setOverlayMode('list');
+    setEditDraft(null);
+    void logFrontendEvent('INFO', 'Saved edited report variant', {
+      appId,
+      baseDisplayKey: selected.displayKey,
+      newDisplayKey: nextKey,
+      label: nextEntry.label,
+    });
+    toaster.toast({
+      title: 'Proton Pulse',
+      body: nextEntry.label ? `Saved edited report: ${nextEntry.label}` : 'Saved edited report.',
+    });
+  };
+
+  const handleDetailDirection = (evt: GamepadEvent) => {
+    debugMovement('detail-direction', {
+      button: gamepadButtonLabel(evt.detail.button),
+    });
+    if (!detailScrollRef.current) return;
+    if (evt.detail.button === GamepadButton.DIR_UP) {
+      detailScrollRef.current.scrollBy({ top: -DETAIL_SCROLL_STEP, behavior: 'smooth' });
+      debugMovement('detail-scroll', {
+        button: 'DIR_UP',
+        nextScrollTop: detailScrollRef.current.scrollTop - DETAIL_SCROLL_STEP,
+      });
+      return;
+    }
+    if (evt.detail.button === GamepadButton.DIR_DOWN) {
+      detailScrollRef.current.scrollBy({ top: DETAIL_SCROLL_STEP, behavior: 'smooth' });
+      debugMovement('detail-scroll', {
+        button: 'DIR_DOWN',
+        nextScrollTop: detailScrollRef.current.scrollTop + DETAIL_SCROLL_STEP,
+      });
+      return;
+    }
+  };
+
+  const handleRootDirection = (evt: GamepadEvent) => {
+    debugMovement('root-direction', {
+      button: gamepadButtonLabel(evt.detail.button),
+      overlayOpen: overlayMode === 'detail' || overlayMode === 'edit',
+    });
+    if (evt.detail.button === GamepadButton.DIR_LEFT) {
+      debugMovement('root-direction-trapped-left', {
+        overlayOpen: overlayMode === 'detail' || overlayMode === 'edit',
+      });
+      return;
+    }
   };
 
   const handleApply = async () => {
@@ -389,14 +807,14 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     }
   };
 
-  const controlButtonStyle = (active?: boolean) => ({
-    padding: '4px 10px',
-    minWidth: 0,
-    flex: '0 0 auto',
-    fontSize: 10,
-    background: active ? '#4c9eff' : '#333',
-    color: active ? '#fff' : '#b8c8d8',
-    borderRadius: 4,
+  const toolbarShellStyle = (focused?: boolean) => ({
+    borderRadius: 8,
+    padding: focused ? 2 : 1,
+    background: focused ? 'rgba(255,255,255,0.12)' : 'transparent',
+    boxShadow: focused
+      ? '0 0 0 2px rgba(255,255,255,0.34) inset, 0 0 18px rgba(255,255,255,0.18), 0 0 30px rgba(255,255,255,0.14)'
+      : 'none',
+    animation: focused ? 'proton-pulse-toolbar-glow 1.7s ease-in-out infinite' : 'none',
   });
 
   if (!appId) {
@@ -431,11 +849,22 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
 
   const selectedLaunchPreview = selected ? buildLaunchOptionPreview(selected.protonVersion) : '';
   const selectedConfidence = selected ? (Math.min(100, selected.score) / 10).toFixed(1) : null;
-  const showDiagnosticsState = !loading && (!sysInfo || reports.length === 0);
+  const showDiagnosticsState = !loading && (!sysInfo || (reports.length === 0 && editedReports.length === 0));
+  const detectingGpu = !gpuVendor && !filterTouched;
+  const overlayOpen = overlayMode === 'detail' || overlayMode === 'edit';
+  const protonDbUrl = `https://www.protondb.com/app/${appId}`;
 
   return (
-    <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <GameSummaryHeader appId={appId} appName={appName} reportsCount={reports.length} />
+    <Focusable
+      onGamepadDirection={handleRootDirection}
+      onGamepadFocus={() => debugMovement('root-focus')}
+      onGamepadBlur={() => debugMovement('root-blur')}
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
+    >
+      <style>
+        {'@keyframes proton-pulse-toolbar-glow { 0% { box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset, 0 0 10px rgba(255,255,255,0.1); } 50% { box-shadow: 0 0 0 1px rgba(255,255,255,0.3) inset, 0 0 18px rgba(255,255,255,0.18); } 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.18) inset, 0 0 10px rgba(255,255,255,0.1); } }'}
+      </style>
+      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} />
       {loading ? (
         <LoadingIndicator label="Fetching ProtonDB reports…" />
       ) : showDiagnosticsState ? (
@@ -445,7 +874,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
           </div>
           {reportDiagnostics?.source === 'live-summary' && (
             <div style={{ padding: '0 16px 12px', color: '#9dc4e8', fontSize: 11, textAlign: 'center' }}>
-              ProtonDB live summary exists, but detailed report cards were not available from the mirror or live detailed fallback.
+              ProtonDB live summary exists, but detailed report cards were not available from the CDN.
             </div>
           )}
           {!!diagnosticsLines.length && (
@@ -478,160 +907,464 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
               borderBottom: '1px solid #2a3a4a',
             }}
           >
-            <DialogButton onClick={cycleSortMode} style={controlButtonStyle(true)}>
-              SORT: {SORT_LABELS[sortMode]}
-            </DialogButton>
-            <DialogButton
-              onClick={() => {
-                const idx = FILTER_ORDER.indexOf(filter);
-                const nextFilter = FILTER_ORDER[(idx + 1) % FILTER_ORDER.length];
-                setFilterMode(nextFilter);
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '0 4px 0 0',
+                color: '#f4fbff',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 0.35,
+                whiteSpace: 'nowrap',
               }}
-              style={controlButtonStyle()}
             >
-              GPU: {FILTER_LABELS[filter]}
-            </DialogButton>
+              <FilterIcon />
+              <span>Filters</span>
+            </div>
+            <div
+              style={{
+                ...toolbarShellStyle(focusedToolbarControl === 'sort'),
+                width: 172,
+                transform: 'scale(0.86)',
+                transformOrigin: 'left center',
+                marginRight: -20,
+              }}
+              onFocusCapture={() => {
+                setFocusedToolbarControl('sort');
+                debugMovement('toolbar-focus', { control: 'sort' });
+              }}
+              onBlurCapture={() => {
+                setFocusedToolbarControl((current) => current === 'sort' ? null : current);
+                debugMovement('toolbar-blur', { control: 'sort' });
+              }}
+            >
+              <DropdownItem
+                rgOptions={[
+                  { data: 'score', label: 'Sort: Best Match' },
+                  { data: 'votes', label: 'Sort: Most Votes' },
+                ]}
+                selectedOption={sortMode}
+                onChange={(option) => {
+                  setSortPreference(option.data as SortMode);
+                  setOverlayMode('list');
+                }}
+              />
+            </div>
+            <div
+              style={{
+                ...toolbarShellStyle(focusedToolbarControl === 'filter'),
+                width: 148,
+                opacity: detectingGpu ? 0.7 : 1,
+                transform: 'scale(0.86)',
+                transformOrigin: 'left center',
+                marginRight: -14,
+              }}
+              onFocusCapture={() => {
+                setFocusedToolbarControl('filter');
+                debugMovement('toolbar-focus', { control: 'filter' });
+              }}
+              onBlurCapture={() => {
+                setFocusedToolbarControl((current) => current === 'filter' ? null : current);
+                debugMovement('toolbar-blur', { control: 'filter' });
+              }}
+            >
+              <DropdownItem
+                rgOptions={FILTER_ORDER.map((tier) => ({
+                  data: tier,
+                  label: tier === 'all' ? 'GPU: All' : `GPU: ${FILTER_LABELS[tier]}`,
+                }))}
+                selectedOption={filter}
+                onChange={(option) => setFilterMode(option.data as FilterTier)}
+                disabled={detectingGpu}
+              />
+            </div>
             <div style={{ flex: 1 }} />
             <div style={{ fontSize: 11, color: '#7a9bb5', whiteSpace: 'nowrap' }}>
               {sortedReports.length} shown
             </div>
           </div>
-
-          {selected && (
-            <div
-              style={{
-                marginBottom: 12,
-                padding: 12,
-                borderRadius: 8,
-                background: 'linear-gradient(180deg, rgba(18, 31, 46, 0.96), rgba(9, 18, 28, 0.96))',
-                border: '1px solid #2a3a4a',
-              }}
-            >
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 4 }}>
-                  Selected Report
-                </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
-                  {selected.protonVersion}
-                </div>
-                <div style={{ fontSize: 12, color: '#9dc4e8' }}>
-                  {selected.rating.toUpperCase()} · {selectedConfidence}/10 confidence · {matchLabel(selected, sysInfo)}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(0,0,0,0.22)' }}>
-                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>
-                  Launch Option Preview
-                </div>
-                <div style={{ fontSize: 12, color: '#d8ebff', fontFamily: 'monospace', wordBreak: 'break-word' }}>
-                  {selectedLaunchPreview}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
-                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Current Launch Options</div>
-                <div style={{ fontSize: 12, color: currentLaunchOptions ? '#e8f4ff' : '#9db0c4', fontFamily: 'monospace', wordBreak: 'break-word' }}>
-                  {currentLaunchOptions || 'No launch options set.'}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
-                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Report Summary</div>
-                <div style={{ fontSize: 12, color: '#e8f4ff', lineHeight: 1.6 }}>
-                  <div>Submitted: {formatTimestamp(selected.timestamp)} · {formatAge(selected.recencyDays)}</div>
-                  <div>Community: {selected.upvotes} upvotes · GPU tier {selected.gpuTier}</div>
-                  <div>GPU / Driver: {selected.gpu || 'Unknown GPU'} · {selected.gpuDriver || 'Unknown driver'}</div>
-                  <div>OS / Kernel / RAM: {selected.os || 'Unknown OS'} · {selected.kernel || 'Unknown kernel'} · {selected.ram || 'Unknown RAM'}</div>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
-                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Why this report ranks here</div>
-                <div style={{ fontSize: 12, color: '#d8ebff', lineHeight: 1.5 }}>
-                  {selected.score} score · {selected.rating} base rating · {selected.notesModifier >= 0 ? '+' : ''}{selected.notesModifier} notes modifier
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }}>
-                <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6 }}>Report Notes</div>
-                <div style={{ fontSize: 12, color: '#e8f4ff', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                  {selected.notes || 'No additional notes were provided for this report.'}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingTop: 6, borderTop: '1px solid #2a3a4a' }}>
-                <DialogButton
-                  onClick={handleApply}
-                  disabled={!selected || applying}
-                  style={controlButtonStyle(!!selected)}
-                >
-                  {applying ? 'APPLYING…' : 'APPLY THIS REPORT'}
-                </DialogButton>
-                <DialogButton
-                  onClick={handleUpvote}
-                  disabled={!selected || upvoting}
-                  style={{ ...controlButtonStyle(), color: '#ffd700' }}
-                >
-                  {upvoting ? '★ …' : '★ UPVOTE REPORT'}
-                </DialogButton>
-              </div>
-            </div>
-          )}
-
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4, opacity: overlayOpen ? 0.25 : 1 }}>
             <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
-              Select a report row to preview and apply it.
+              {detectingGpu
+                ? 'Detecting your GPU tier before narrowing the list. Showing all reports for now.'
+                : 'Select a report card to open the full-screen detail view.'}
             </div>
             <div style={{ padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid #2a3a4a' }}>
               {sortedReports.length === 0 ? (
                 <div style={{ color: '#666', fontSize: 12, padding: 12, textAlign: 'center' }}>
-                  No reports for this GPU tier.
+                  {detectingGpu ? 'Detecting GPU tier…' : 'No reports for this GPU tier.'}
                 </div>
               ) : (
                 sortedReports.map((r) => (
-                  <DialogButton
-                    key={reportKey(r)}
-                    onClick={() => {
-                      setSelected(r);
-                      void logFrontendEvent('DEBUG', 'Changed selected ProtonDB report', {
-                        appId,
-                        protonVersion: r.protonVersion,
-                        total: sortedReports.length,
+                  <ReportCard
+                    key={r.displayKey}
+                    report={r}
+                    selected={selectedKey === r.displayKey}
+                    focused={focusedCardKey === r.displayKey}
+                    onFocus={(report) => {
+                      setFocusedCardKey(report.displayKey);
+                      setSelectedKey(report.displayKey);
+                      debugMovement('card-focus', {
+                        reportDisplayKey: report.displayKey,
+                        protonVersion: report.protonVersion,
                       });
                     }}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '10px 12px',
-                      marginBottom: 8,
-                      borderRadius: 6,
-                      border: `1px solid ${selected !== null && reportKey(selected) === reportKey(r) ? '#4c9eff' : '#2a3a4a'}`,
-                      background: selected !== null && reportKey(selected) === reportKey(r)
-                        ? 'rgba(76,158,255,0.10)'
-                        : 'rgba(255,255,255,0.03)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>{r.protonVersion}</div>
-                        <div style={{ fontSize: 11, color: '#7a9bb5' }}>
-                          {[r.gpu, r.os].filter(Boolean).join(' · ') || 'Hardware details unavailable'}
-                        </div>
-                        <div style={{ fontSize: 10, color: '#9db0c4', marginTop: 4 }}>
-                          {r.rating.toUpperCase()} · {r.upvotes} votes · {formatAge(r.recencyDays)}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 11, color: '#9dc4e8', whiteSpace: 'nowrap' }}>
-                        Score {r.score}
-                      </div>
-                    </div>
-                  </DialogButton>
+                    onSelect={openReportDetail}
+                  />
                 ))
               )}
             </div>
           </div>
+
+          {overlayOpen && selected && (
+            <Focusable
+              onGamepadDirection={handleDetailDirection}
+              onGamepadFocus={() => {
+                detailScrollRef.current?.focus();
+                debugMovement('detail-overlay-focus');
+              }}
+              onGamepadBlur={() => debugMovement('detail-overlay-blur')}
+              onClick={() => {
+                detailScrollRef.current?.focus();
+                debugMovement('detail-overlay-click-focus');
+              }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+                overflow: 'hidden',
+                background: 'radial-gradient(circle at top left, rgba(73, 114, 158, 0.24), transparent 28%), linear-gradient(180deg, rgba(12, 18, 28, 0.992), rgba(7, 12, 20, 0.995))',
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
+                padding: '22px 24px 12px',
+              }}
+            >
+              <div
+                ref={detailScrollRef}
+                tabIndex={0}
+                onFocus={() => debugMovement('detail-scroll-focus')}
+                onBlur={() => debugMovement('detail-scroll-blur')}
+                onScroll={() => debugMovement('detail-scroll-dom')}
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  overflowY: 'auto',
+                  outline: 'none',
+                  borderRadius: 14,
+                  paddingRight: 8,
+                  paddingBottom: 18,
+                  scrollBehavior: 'smooth',
+                }}
+              >
+                <div
+                  style={{
+                    padding: 14,
+                    borderRadius: 16,
+                    background: 'linear-gradient(180deg, rgba(24, 34, 46, 0.96), rgba(12, 19, 28, 0.98))',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.24)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(260px, 1fr)', gap: 14, alignItems: 'stretch', marginBottom: 12 }}>
+                    <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <BrandLogo size={18} />
+                          <div style={{ fontSize: 11, color: '#89a9c6', letterSpacing: 0.45 }}>
+                            {overlayMode === 'edit' ? 'Edited Config' : 'Report Detail'}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 22, fontWeight: 700, color: '#f3fbff', marginBottom: 6 }}>
+                          {selected.protonVersion}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#c0d8ee', lineHeight: 1.45 }}>
+                          {selected.rating.toUpperCase()} · {selectedConfidence}/10 confidence · {matchLabel(selected, sysInfo)}
+                        </div>
+                        {selected.isEdited && (
+                          <div style={{ marginTop: 8, fontSize: 10, color: '#eaf4ff' }}>
+                            Edited* {selected.editLabel ? `· ${selected.editLabel}` : ''}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <img
+                        src={STEAM_HEADER_URL(appId)}
+                        style={{
+                          width: '100%',
+                          height: 104,
+                          borderRadius: 8,
+                          objectFit: 'cover',
+                          border: '1px solid rgba(120, 170, 220, 0.3)',
+                          boxShadow: '0 10px 24px rgba(0,0,0,0.24)',
+                        }}
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <div style={{ padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, whiteSpace: 'nowrap' }}>
+                          {selected.gpuTier.toUpperCase()}
+                        </div>
+                        <div style={{ padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, whiteSpace: 'nowrap' }}>
+                          {selected.upvotes} votes
+                        </div>
+                        <div style={{ padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, whiteSpace: 'nowrap' }}>
+                          {formatTimestamp(selected.timestamp)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      ...detailPanelStyle(),
+                      marginBottom: 12,
+                      display: 'grid',
+                      gap: 8,
+                      gridTemplateColumns: overlayMode === 'edit'
+                        ? 'repeat(2, minmax(0, 1fr))'
+                        : 'repeat(4, minmax(0, 1fr))',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {overlayMode === 'edit' ? (
+                      <>
+                        <CompactButton
+                          label="Save Edits"
+                          onPress={saveEditedReport}
+                          focused={focusedActionControl === 'save'}
+                          active
+                          onFocus={() => {
+                            setFocusedActionControl('save');
+                            debugMovement('action-focus', { control: 'save' });
+                          }}
+                          onBlur={() => {
+                            setFocusedActionControl((current) => current === 'save' ? null : current);
+                            debugMovement('action-blur', { control: 'save' });
+                          }}
+                        />
+                        <CompactButton
+                          label="Cancel"
+                          onPress={() => setOverlayMode('detail')}
+                          focused={focusedActionControl === 'cancel'}
+                          onFocus={() => {
+                            setFocusedActionControl('cancel');
+                            debugMovement('action-focus', { control: 'cancel' });
+                          }}
+                          onBlur={() => {
+                            setFocusedActionControl((current) => current === 'cancel' ? null : current);
+                            debugMovement('action-blur', { control: 'cancel' });
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <CompactButton
+                          label={applying ? 'Applying…' : 'Apply Config'}
+                          onPress={handleApply}
+                          focused={focusedActionControl === 'apply'}
+                          active
+                          disabled={!selected || applying}
+                          onFocus={() => {
+                            setFocusedActionControl('apply');
+                            debugMovement('action-focus', { control: 'apply' });
+                          }}
+                          onBlur={() => {
+                            setFocusedActionControl((current) => current === 'apply' ? null : current);
+                            debugMovement('action-blur', { control: 'apply' });
+                          }}
+                        />
+                        <CompactButton
+                          label="Edit Config"
+                          onPress={openEditView}
+                          focused={focusedActionControl === 'edit'}
+                          onFocus={() => {
+                            setFocusedActionControl('edit');
+                            debugMovement('action-focus', { control: 'edit' });
+                          }}
+                          onBlur={() => {
+                            setFocusedActionControl((current) => current === 'edit' ? null : current);
+                            debugMovement('action-blur', { control: 'edit' });
+                          }}
+                        />
+                        <CompactButton
+                          label={upvoting ? '★ …' : '★ Upvote Report'}
+                          onPress={handleUpvote}
+                          focused={focusedActionControl === 'upvote'}
+                          accent
+                          disabled={!selected || upvoting}
+                          onFocus={() => {
+                            setFocusedActionControl('upvote');
+                            debugMovement('action-focus', { control: 'upvote' });
+                          }}
+                          onBlur={() => {
+                            setFocusedActionControl((current) => current === 'upvote' ? null : current);
+                            debugMovement('action-blur', { control: 'upvote' });
+                          }}
+                        />
+                        <CompactButton
+                          label="Back"
+                          onPress={() => setOverlayMode('list')}
+                          focused={focusedActionControl === 'back'}
+                          onFocus={() => {
+                            setFocusedActionControl('back');
+                            debugMovement('action-focus', { control: 'back' });
+                          }}
+                          onBlur={() => {
+                            setFocusedActionControl((current) => current === 'back' ? null : current);
+                            debugMovement('action-blur', { control: 'back' });
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gap: 12,
+                      gridTemplateColumns: '1fr',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div style={{ ...detailPanelStyle(), marginBottom: 0 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start' }}>
+                        <div style={{ fontSize: 10, color: '#7a9bb5' }}>Game</div>
+                        <div style={{ fontSize: 12, color: '#eef7ff', fontWeight: 600 }}>{appName || `App ${appId}`}</div>
+                      </div>
+                    </div>
+                    <div style={{ ...detailPanelStyle(), marginBottom: 0 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start' }}>
+                        <div style={{ fontSize: 10, color: '#7a9bb5' }}>Launch Preview</div>
+                        <div style={{ fontSize: 11, color: '#d8ebff', fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                          {selectedLaunchPreview}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ ...detailPanelStyle(), marginBottom: 0 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start' }}>
+                        <div style={{ fontSize: 10, color: '#7a9bb5' }}>Current Launch Options</div>
+                        <div style={{ fontSize: 11, color: currentLaunchOptions ? '#e8f4ff' : '#9db0c4', fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                          {currentLaunchOptions || 'No launch options set.'}
+                        </div>
+                      </div>
+                    </div>
+                    {overlayMode === 'edit' && editDraft ? (
+                      <div style={{ ...detailPanelStyle(), display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+                        {[
+                          ['Label', 'label'],
+                          ['Proton Version', 'protonVersion'],
+                          ['Title', 'title'],
+                          ['GPU', 'gpu'],
+                          ['GPU Driver', 'gpuDriver'],
+                          ['OS', 'os'],
+                          ['Kernel', 'kernel'],
+                          ['RAM', 'ram'],
+                        ].map(([label, key]) => (
+                          <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11, color: '#a9c2d7' }}>
+                            {label}
+                            <input
+                              value={editDraft[key as keyof EditableReportFields] as string}
+                              onChange={(e) => setEditDraft({ ...editDraft, [key]: e.target.value })}
+                              style={{
+                                borderRadius: 8,
+                                border: '1px solid #44627f',
+                                background: 'rgba(5,10,18,0.42)',
+                                color: '#f1f7ff',
+                                padding: '10px 12px',
+                              }}
+                            />
+                          </label>
+                        ))}
+                        <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11, color: '#a9c2d7' }}>
+                          Rating
+                          <select
+                            value={editDraft.rating}
+                            onChange={(e) => setEditDraft({ ...editDraft, rating: e.target.value as CdnReport['rating'] })}
+                            style={{
+                              borderRadius: 8,
+                              border: '1px solid #44627f',
+                              background: 'rgba(5,10,18,0.42)',
+                              color: '#f1f7ff',
+                              padding: '10px 12px',
+                            }}
+                          >
+                            {['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending'].map((rating) => (
+                              <option key={rating} value={rating}>{rating}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <div />
+                        <label style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1', fontSize: 11, color: '#a9c2d7' }}>
+                          Notes
+                          <textarea
+                            value={editDraft.notes}
+                            onChange={(e) => setEditDraft({ ...editDraft, notes: e.target.value })}
+                            rows={8}
+                            style={{
+                              borderRadius: 8,
+                              border: '1px solid #44627f',
+                              background: 'rgba(5,10,18,0.42)',
+                              color: '#f1f7ff',
+                              padding: '10px 12px',
+                              resize: 'vertical',
+                            }}
+                          />
+                        </label>
+                      </div>
+                    ) : (
+                    <div style={{ display: 'grid', gap: 18, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', flex: 1, alignItems: 'start', paddingTop: 4 }}>
+                      <div style={bareDetailSectionStyle()}>
+                        <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Hardware Match</div>
+                        <div style={{ fontSize: 11, color: '#e8f4ff', lineHeight: 1.72 }}>
+                          <div>GPU / Driver: {selected.gpu || 'Unknown GPU'} · {selected.gpuDriver || 'Unknown driver'}</div>
+                          <div>OS / Kernel / RAM: {selected.os || 'Unknown OS'} · {selected.kernel || 'Unknown kernel'} · {selected.ram || 'Unknown RAM'}</div>
+                          <div>Community: {selected.upvotes} upvotes · GPU tier {selected.gpuTier}</div>
+                        </div>
+                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                            <ProtonDbIcon />
+                            <a
+                              href={protonDbUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: '#dff0ff', fontSize: 11, textDecoration: 'none' }}
+                            >
+                              Open on ProtonDB
+                            </a>
+                          </div>
+                          <div style={{ fontSize: 11, color: '#d8ebff', lineHeight: 1.66, whiteSpace: 'pre-wrap' }}>
+                            {selected.notes || 'No additional notes were provided for this report.'}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={bareDetailSectionStyle()}>
+                        <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Scoring</div>
+                        <div style={{ fontSize: 11, color: '#e8f4ff', lineHeight: 1.72 }}>
+                          <div>Submitted: {formatTimestamp(selected.timestamp)}</div>
+                          <div>Score: {selected.score}</div>
+                          <div>{selected.rating} base rating · {selected.notesModifier >= 0 ? '+' : ''}{selected.notesModifier} notes modifier</div>
+                        </div>
+                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                          <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Full Report Text</div>
+                          <div style={{ fontSize: 11, color: '#d8ebff', lineHeight: 1.66, whiteSpace: 'pre-wrap' }}>
+                            {selected.notes || 'No additional notes were provided for this report.'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Focusable>
+          )}
         </>
       )}
     </Focusable>
