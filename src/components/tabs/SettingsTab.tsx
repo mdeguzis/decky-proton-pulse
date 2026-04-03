@@ -14,12 +14,13 @@ const AUTO_UPDATE_KEY = 'compat-auto-update-proton-ge';
 
 function sectionStyle(): React.CSSProperties {
   return {
-    margin: '10px 0',
-    padding: 14,
-    borderRadius: 12,
-    background: 'linear-gradient(180deg, rgba(33, 43, 56, 0.92), rgba(21, 29, 39, 0.96))',
-    border: '1px solid rgba(255,255,255,0.07)',
-    boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset',
+    margin: '0',
+    padding: '16px 0 18px',
+    borderRadius: 0,
+    background: 'transparent',
+    border: 0,
+    borderTop: '1px solid rgba(255,255,255,0.07)',
+    boxShadow: 'none',
     overflow: 'hidden',
   };
 }
@@ -32,6 +33,14 @@ function rowStyle(): React.CSSProperties {
     alignItems: 'center',
     padding: '10px 0',
     borderBottom: '1px solid rgba(255,255,255,0.06)',
+  };
+}
+
+function focusClipRowStyle(): React.CSSProperties {
+  return {
+    borderRadius: 10,
+    overflow: 'hidden',
+    margin: '0 8px',
   };
 }
 
@@ -112,7 +121,6 @@ function SelectMenuButton({
 
 export function SettingsTab() {
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
-  const [showBadge, setShowBadge] = useState(() => getSetting('showBadge', true));
   const [ghToken, setGhToken] = useState(() => getSetting<string>('gh-votes-token', ''));
   const [autoUpdateCurrent, setAutoUpdateCurrent] = useState(() => getSetting(AUTO_UPDATE_KEY, false));
   const [managerState, setManagerState] = useState<ProtonGeManagerState | null>(null);
@@ -194,15 +202,6 @@ export function SettingsTab() {
     setSetting('debugEnabled', enabled);
   };
 
-  const handleShowBadgeToggle = (enabled: boolean) => {
-    void logFrontendEvent('INFO', 'Show badge toggle changed', {
-      previousValue: showBadge,
-      nextValue: enabled,
-    });
-    setShowBadge(enabled);
-    setSetting('showBadge', enabled);
-  };
-
   const handleTokenChange = (value: string) => {
     void logFrontendEvent('DEBUG', 'GitHub token field updated', {
       hasToken: value.trim().length > 0,
@@ -247,18 +246,14 @@ export function SettingsTab() {
         <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
           General
         </div>
-        <ToggleField
-          label="Debug Logs"
-          description="Enable verbose logging in plugin activity log"
-          checked={debugEnabled}
-          onChange={handleDebugToggle}
-        />
-        <ToggleField
-          label="Show Badge"
-          description="Display Proton Pulse badge in the sidebar"
-          checked={showBadge}
-          onChange={handleShowBadgeToggle}
-        />
+        <div style={focusClipRowStyle()}>
+          <ToggleField
+            label="Debug Logs"
+            description="Enable verbose logging in plugin activity log"
+            checked={debugEnabled}
+            onChange={handleDebugToggle}
+          />
+        </div>
         <div style={{ padding: '8px 16px 0 16px' }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f4ff', marginBottom: 2 }}>
             GitHub Votes Token
@@ -307,17 +302,19 @@ export function SettingsTab() {
 
         <div
           style={{
-            padding: '10px 12px',
-            borderRadius: 10,
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            marginBottom: 12,
+            padding: '12px 0',
+            borderRadius: 0,
+            background: 'transparent',
+            border: 0,
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            marginBottom: 10,
           }}
         >
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#dbe8f4', marginBottom: 6 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#dbe8f4', marginBottom: 6, padding: '0 18px' }}>
             Proton versions available
           </div>
-          <div style={{ fontSize: 11, color: '#9eb7cc', lineHeight: 1.7 }}>
+          <div style={{ fontSize: 11, color: '#9eb7cc', lineHeight: 1.7, padding: '0 18px' }}>
             {managerState && managerState.releases.length > 0
               ? managerState.releases.slice(0, 10).map((release) => release.tag_name).join('  ·  ')
               : loadingManager
@@ -328,14 +325,15 @@ export function SettingsTab() {
 
         <div
           style={{
-            padding: 12,
-            borderRadius: 10,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            padding: '12px 0 6px',
+            borderRadius: 0,
+            background: 'transparent',
+            border: 0,
+            borderTop: '1px solid rgba(255,255,255,0.06)',
             marginBottom: 14,
           }}
         >
-          <div style={{ ...rowStyle(), gridTemplateColumns: 'minmax(0, 1fr) auto', paddingTop: 0 }}>
+          <div style={{ ...rowStyle(), gridTemplateColumns: 'minmax(0, 1fr) auto', padding: '0 18px 12px' }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#eef7ff' }}>Install Version</div>
               <div style={{ fontSize: 11, color: '#9eb7cc', marginTop: 4 }}>
@@ -351,7 +349,7 @@ export function SettingsTab() {
               onSelect={(value) => setSelectedInstallTag(value)}
             />
           </div>
-          <div style={{ ...rowStyle(), gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 0.8fr) auto', paddingTop: 0 }}>
+          <div style={{ ...rowStyle(), gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 0.8fr) auto', padding: '12px 18px' }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#eef7ff' }}>Current Version</div>
               <div style={{ fontSize: 11, color: '#9eb7cc', marginTop: 4 }}>
@@ -378,12 +376,14 @@ export function SettingsTab() {
               disabled={(!managerState?.current_release && !selectedInstallTag) || installingTag !== null}
             />
           </div>
-          <ToggleField
-            label="Auto-update Current Version"
-            description="Keep the pinned latest Proton-GE release installed whenever Settings opens and refreshes."
-            checked={autoUpdateCurrent}
-            onChange={handleAutoUpdateToggle}
-          />
+          <div style={{ ...focusClipRowStyle(), margin: '6px 10px 0' }}>
+            <ToggleField
+              label="Auto-update Current Version"
+              description="Keep the pinned latest Proton-GE release installed whenever Settings opens and refreshes."
+              checked={autoUpdateCurrent}
+              onChange={handleAutoUpdateToggle}
+            />
+          </div>
         </div>
 
         <div style={{ fontSize: 12, fontWeight: 700, color: '#dbe8f4', marginBottom: 8 }}>
