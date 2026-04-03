@@ -16,13 +16,12 @@ import {
 } from '@decky/api';
 
 import { ProtonPulsePage } from './components/Modal';
+import { BrandGlyph } from './components/BrandGlyph';
 import { pageState, dispatchNavigate } from './lib/pageState';
 import type { PageId } from './lib/pageState';
 import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextMenu';
 import { getSetting, setSetting } from './lib/settings';
 import { logFrontendEvent } from './lib/logger';
-import { BrandLogo } from './components/BrandLogo';
-import { BrandGlyph } from './components/BrandGlyph';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -166,10 +165,9 @@ export default definePlugin(() => {
     titleView: (
       <div
         className={staticClasses.Title}
-        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+        style={{ display: 'flex', alignItems: 'center' }}
       >
         <span>Proton Pulse</span>
-        <BrandLogo size={22} />
       </div>
     ),
     content: <Content />,
