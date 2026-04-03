@@ -50,6 +50,7 @@ help:
 	@echo "  take-screenshot   Capture the current Steam UI into ../screenshots/"
 	@echo "                    Optional: SCREENSHOT_BASE=my-name make take-screenshot"
 	@echo "                    Also copies the saved PNG to the local clipboard when supported."
+	@echo "                    Linux tip: install wl-clipboard for Wayland clipboard copy."
 	@echo "                    Warning: this may capture private on-screen content such as account, chat, or store UI."
 	@echo "  fetch-protondb    Clone or update upstream protondb-data for local inspection"
 	@echo "                    Prefers ../protondb-data when present, otherwise uses ~/src/protondb-data"
@@ -150,7 +151,7 @@ check-protondb-data: fetch-protondb
 		fi
 
 reload:
-	@echo "Reloading Steam Deck decky plugin service..."
+	@echo "⏱ Reloading Steam Deck decky plugin service..."
 	@sleep 2
 	$(call require_deck_ip)
 	@ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart plugin_loader"
