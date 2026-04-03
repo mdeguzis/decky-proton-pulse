@@ -218,18 +218,18 @@ function FilterIcon() {
   );
 }
 
-function ProtonDbIcon() {
+function ProtonDbBrandIcon() {
   return (
     <svg
-      width="14"
-      height="14"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       aria-hidden="true"
       style={{ display: 'block', flex: '0 0 auto' }}
     >
-      <circle cx="12" cy="12" r="9" fill="none" stroke="#f4fbff" strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="10" fill="#16a34a" />
       <path
-        d="M9 16V8h4.5a2.5 2.5 0 0 1 0 5H9"
+        d="M8.5 16V8h4.7a2.9 2.9 0 0 1 0 5.8h-2.6V16"
         fill="none"
         stroke="#f4fbff"
         strokeWidth="1.8"
@@ -639,7 +639,12 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   const openReportDetail = (report: DisplayReportCard) => {
     setSelectedKey(report.displayKey);
     setFocusedCardKey(report.displayKey);
+    setFocusedActionControl(null);
     setOverlayMode('detail');
+    requestAnimationFrame(() => {
+      detailScrollRef.current?.scrollTo({ top: 0 });
+      detailScrollRef.current?.focus();
+    });
     debugMovement('open-report-detail', {
       reportDisplayKey: report.displayKey,
       protonVersion: report.protonVersion,
@@ -716,6 +721,16 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       button: gamepadButtonLabel(evt.detail.button),
       overlayOpen: overlayMode === 'detail' || overlayMode === 'edit',
     });
+    if ((overlayMode === 'detail' || overlayMode === 'edit') && detailScrollRef.current) {
+      if (evt.detail.button === GamepadButton.DIR_UP) {
+        detailScrollRef.current.scrollBy({ top: -DETAIL_SCROLL_STEP, behavior: 'smooth' });
+        return;
+      }
+      if (evt.detail.button === GamepadButton.DIR_DOWN) {
+        detailScrollRef.current.scrollBy({ top: DETAIL_SCROLL_STEP, behavior: 'smooth' });
+        return;
+      }
+    }
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
       debugMovement('root-direction-trapped-left', {
         overlayOpen: overlayMode === 'detail' || overlayMode === 'edit',
@@ -898,10 +913,10 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
         <>
           <div
             style={{
-              display: 'flex',
+              display: 'grid',
+              gridTemplateColumns: '92px minmax(0, 1fr) minmax(0, 0.78fr) auto',
               alignItems: 'center',
-              gap: 8,
-              flexWrap: 'wrap',
+              gap: 10,
               marginBottom: 10,
               padding: '8px 0',
               borderBottom: '1px solid #2a3a4a',
@@ -926,10 +941,8 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
             <div
               style={{
                 ...toolbarShellStyle(focusedToolbarControl === 'sort'),
-                width: 172,
-                transform: 'scale(0.86)',
-                transformOrigin: 'left center',
-                marginRight: -20,
+                width: '100%',
+                minWidth: 0,
               }}
               onFocusCapture={() => {
                 setFocusedToolbarControl('sort');
@@ -955,11 +968,9 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
             <div
               style={{
                 ...toolbarShellStyle(focusedToolbarControl === 'filter'),
-                width: 148,
+                width: '100%',
+                minWidth: 0,
                 opacity: detectingGpu ? 0.7 : 1,
-                transform: 'scale(0.86)',
-                transformOrigin: 'left center',
-                marginRight: -14,
               }}
               onFocusCapture={() => {
                 setFocusedToolbarControl('filter');
@@ -980,8 +991,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                 disabled={detectingGpu}
               />
             </div>
-            <div style={{ flex: 1 }} />
-            <div style={{ fontSize: 11, color: '#7a9bb5', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 11, color: '#7a9bb5', whiteSpace: 'nowrap', textAlign: 'right' }}>
               {sortedReports.length} shown
             </div>
           </div>
@@ -1039,13 +1049,14 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                 minHeight: 0,
                 overflow: 'hidden',
                 background: 'radial-gradient(circle at top left, rgba(73, 114, 158, 0.24), transparent 28%), linear-gradient(180deg, rgba(12, 18, 28, 0.992), rgba(7, 12, 20, 0.995))',
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: 0,
                 boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-                padding: '22px 24px 12px',
+                padding: '8px 8px 8px 4px',
               }}
             >
               <div
                 ref={detailScrollRef}
+                className="pp-detail-scroll"
                 tabIndex={0}
                 onFocus={() => debugMovement('detail-scroll-focus')}
                 onBlur={() => debugMovement('detail-scroll-blur')}
@@ -1056,17 +1067,25 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                   overflowY: 'auto',
                   outline: 'none',
                   borderRadius: 14,
-                  paddingRight: 8,
-                  paddingBottom: 18,
+                  paddingRight: 2,
+                  paddingBottom: 8,
                   scrollBehavior: 'smooth',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(173, 216, 255, 0.55) rgba(255,255,255,0.08)',
                 }}
               >
+                <style>
+                  {'.pp-detail-scroll::-webkit-scrollbar { width: 10px; } .pp-detail-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.06); border-radius: 999px; } .pp-detail-scroll::-webkit-scrollbar-thumb { background: rgba(173,216,255,0.45); border-radius: 999px; border: 2px solid rgba(8,14,22,0.4); }'}
+                </style>
                 <div
                   style={{
-                    padding: 14,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    minHeight: '100%',
+                    padding: 12,
                     borderRadius: 16,
                     background: 'linear-gradient(180deg, rgba(24, 34, 46, 0.96), rgba(12, 19, 28, 0.98))',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    border: 0,
                     boxShadow: '0 10px 30px rgba(0,0,0,0.24)',
                     display: 'flex',
                     flexDirection: 'column',
@@ -1117,6 +1136,24 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                         <div style={{ padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, whiteSpace: 'nowrap' }}>
                           {formatTimestamp(selected.timestamp)}
                         </div>
+                        <a
+                          href={protonDbUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 30,
+                            height: 30,
+                            borderRadius: 999,
+                            background: 'rgba(255,255,255,0.08)',
+                            color: '#dff0ff',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <ProtonDbBrandIcon />
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -1319,29 +1356,13 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                         </label>
                       </div>
                     ) : (
-                    <div style={{ display: 'grid', gap: 18, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', flex: 1, alignItems: 'start', paddingTop: 4 }}>
+                    <div style={{ display: 'grid', gap: 20, gridTemplateColumns: '1fr', flex: 1, alignItems: 'start', paddingTop: 10 }}>
                       <div style={bareDetailSectionStyle()}>
                         <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Hardware Match</div>
                         <div style={{ fontSize: 11, color: '#e8f4ff', lineHeight: 1.72 }}>
                           <div>GPU / Driver: {selected.gpu || 'Unknown GPU'} · {selected.gpuDriver || 'Unknown driver'}</div>
                           <div>OS / Kernel / RAM: {selected.os || 'Unknown OS'} · {selected.kernel || 'Unknown kernel'} · {selected.ram || 'Unknown RAM'}</div>
                           <div>Community: {selected.upvotes} upvotes · GPU tier {selected.gpuTier}</div>
-                        </div>
-                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                            <ProtonDbIcon />
-                            <a
-                              href={protonDbUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ color: '#dff0ff', fontSize: 11, textDecoration: 'none' }}
-                            >
-                              Open on ProtonDB
-                            </a>
-                          </div>
-                          <div style={{ fontSize: 11, color: '#d8ebff', lineHeight: 1.66, whiteSpace: 'pre-wrap' }}>
-                            {selected.notes || 'No additional notes were provided for this report.'}
-                          </div>
                         </div>
                       </div>
                       <div style={bareDetailSectionStyle()}>
@@ -1351,11 +1372,11 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                           <div>Score: {selected.score}</div>
                           <div>{selected.rating} base rating · {selected.notesModifier >= 0 ? '+' : ''}{selected.notesModifier} notes modifier</div>
                         </div>
-                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                          <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Full Report Text</div>
-                          <div style={{ fontSize: 11, color: '#d8ebff', lineHeight: 1.66, whiteSpace: 'pre-wrap' }}>
-                            {selected.notes || 'No additional notes were provided for this report.'}
-                          </div>
+                      </div>
+                      <div style={bareDetailSectionStyle()}>
+                        <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Full Report Text</div>
+                        <div style={{ fontSize: 11, color: '#d8ebff', lineHeight: 1.72, whiteSpace: 'pre-wrap' }}>
+                          {selected.notes || 'No additional notes were provided for this report.'}
                         </div>
                       </div>
                     </div>

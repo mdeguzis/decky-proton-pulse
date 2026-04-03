@@ -62,7 +62,7 @@ echo "✓ Packaged: ${ZIP_NAME}"
 
 # Deploy via rsync if DECK_IP is set
 if [[ -n "$DECK_IP" ]]; then
-  echo "Deploying to Steam Deck at $DECK_IP..."
+  echo "⏱ Deploying to Steam Deck at $DECK_IP..."
   REMOTE_PLUGIN_DIR="${DECK_PLUGIN_DIR}/${PLUGIN_NAME}"
   if ! ssh "${DECK_USER}@${DECK_IP}" "sudo -n mkdir -p ${REMOTE_PLUGIN_DIR}"; then
     echo "ERROR: remote sudo mkdir failed."

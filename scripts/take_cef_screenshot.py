@@ -78,13 +78,32 @@ def run(
 
 
 def copy_to_clipboard(image_path: Path) -> str | None:
+    image_bytes = image_path.read_bytes()
+
+    try:
+        proc = subprocess.Popen(
+            ["wl-copy", "--type", "image/png"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        try:
+            proc.communicate(image_bytes, timeout=0.75)
+        except subprocess.TimeoutExpired:
+            if proc.stdin:
+                proc.stdin.close()
+            return "wl-copy --type image/png"
+
+        if proc.returncode == 0:
+            return "wl-copy --type image/png"
+    except FileNotFoundError:
+        pass
+
     commands: list[list[str]] = [
-        ["wl-copy", "--type", "image/png"],
         ["xclip", "-selection", "clipboard", "-t", "image/png", "-i"],
         ["xsel", "--clipboard", "--input"],
     ]
-
-    image_bytes = image_path.read_bytes()
 
     for cmd in commands:
         try:
@@ -153,6 +172,8 @@ def main() -> int:
     run(["ssh", ssh_target, "rm", "-f", remote_path])
 
     local_path = output_dir / local_name
+    print(f"Saved screenshot locally to: {local_path}")
+    print("Copying screenshot to clipboard...")
     clipboard_command = copy_to_clipboard(local_path)
     if clipboard_command:
         print(f"Copied screenshot to clipboard via: {clipboard_command}")
