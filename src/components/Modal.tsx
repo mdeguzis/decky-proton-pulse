@@ -153,7 +153,7 @@ export function ProtonPulsePage() {
       </div>
       <SidebarNavigation
         title="Proton Pulse"
-        showTitle={true}
+        showTitle={false}
         pages={pages}
         page={activePage}
         onPageRequested={(page) => {

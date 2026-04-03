@@ -1,6 +1,6 @@
 // src/components/tabs/ConfigureTab.tsx
 import { Component, type ErrorInfo, type ReactNode, useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { Focusable, GamepadButton, DialogButton, DropdownItem } from '@decky/ui';
+import { Focusable, GamepadButton, DialogButton, ConfirmModal, showModal, Menu, MenuItem, showContextMenu } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '@decky/api';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
@@ -16,6 +16,7 @@ import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
 import { getLaunchOptionsFromDetails, getSteamAppDetails } from '../../lib/steamApps';
+import { checkProtonVersionAvailability, installProtonGe } from '../../lib/compatTools';
 import { ReportCard, type DisplayReportCard } from '../ReportCard';
 import { BrandLogo } from '../BrandLogo';
 
@@ -29,6 +30,7 @@ interface Props {
 
 type FilterTier = GpuVendor | 'all';
 type SortMode = 'score' | 'votes';
+type DetailRowKey = 'actions' | 'game' | 'launch' | 'current' | 'hardware' | 'scoring' | 'report';
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
@@ -97,6 +99,17 @@ function buildLaunchOptionPreview(protonVersion: string): string {
 
 function formatTimestamp(timestamp: number): string {
   return new Date(timestamp * 1000).toISOString().slice(0, 10);
+}
+
+function findMainPaneManageTitle(): HTMLElement | null {
+  if (typeof document === 'undefined') return null;
+
+  const elements = Array.from(document.querySelectorAll<HTMLElement>('div, span, h1, h2, h3'));
+  return elements.find((element) => {
+    if (element.textContent?.trim() !== 'Manage This Game') return false;
+    const rect = element.getBoundingClientRect();
+    return rect.left > 240 && rect.width > 120;
+  }) ?? null;
 }
 
 function gamepadButtonLabel(button: number): string {
@@ -221,21 +234,42 @@ function FilterIcon() {
 function ProtonDbBrandIcon() {
   return (
     <svg
-      width="16"
-      height="16"
+      width="18"
+      height="18"
       viewBox="0 0 24 24"
       aria-hidden="true"
       style={{ display: 'block', flex: '0 0 auto' }}
     >
-      <circle cx="12" cy="12" r="10" fill="#16a34a" />
-      <path
-        d="M8.5 16V8h4.7a2.9 2.9 0 0 1 0 5.8h-2.6V16"
+      <ellipse
+        cx="12"
+        cy="12"
+        rx="8.9"
+        ry="4.2"
         fill="none"
-        stroke="#f4fbff"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        stroke="#ff0f64"
+        strokeWidth="1.6"
       />
+      <ellipse
+        cx="12"
+        cy="12"
+        rx="8.9"
+        ry="4.2"
+        transform="rotate(60 12 12)"
+        fill="none"
+        stroke="#ff0f64"
+        strokeWidth="1.6"
+      />
+      <ellipse
+        cx="12"
+        cy="12"
+        rx="8.9"
+        ry="4.2"
+        transform="rotate(-60 12 12)"
+        fill="none"
+        stroke="#ff0f64"
+        strokeWidth="1.6"
+      />
+      <circle cx="12" cy="12" r="2.35" fill="#f4f6f8" />
     </svg>
   );
 }
@@ -303,6 +337,65 @@ function CompactButton({
       }}
     >
       {label}
+    </DialogButton>
+  );
+}
+
+function FilterMenuButton({
+  label,
+  focused,
+  options,
+  onSelect,
+  onFocus,
+  onBlur,
+}: {
+  label: string;
+  focused: boolean;
+  options: Array<{ label: string; value: string }>;
+  onSelect: (value: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+}) {
+  return (
+    <DialogButton
+      onClick={(e: MouseEvent) =>
+        showContextMenu(
+          <Menu label="Filter Options">
+            {options.map((option) => (
+              <MenuItem key={option.value} onClick={() => onSelect(option.value)}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Menu>,
+          e.currentTarget ?? window,
+        )
+      }
+      onGamepadFocus={onFocus}
+      onGamepadBlur={onBlur}
+      style={{
+        minHeight: 34,
+        height: 34,
+        minWidth: 0,
+        width: '100%',
+        padding: '0 12px',
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 10,
+        color: '#eef6ff',
+        fontSize: 11,
+        fontWeight: 600,
+        background: 'linear-gradient(180deg, rgba(58, 66, 77, 0.96), rgba(48, 54, 63, 0.96))',
+        border: focused ? '1px solid rgba(110, 180, 255, 0.55)' : '1px solid rgba(255,255,255,0.08)',
+        boxShadow: focused ? '0 0 0 1px rgba(110, 180, 255, 0.22) inset, 0 0 14px rgba(110, 180, 255, 0.18)' : '0 1px 0 rgba(255,255,255,0.04) inset',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
+    >
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+      <span style={{ fontSize: 10, opacity: 0.9 }}>▼</span>
     </DialogButton>
   );
 }
@@ -413,11 +506,22 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   const [filterTouched, setFilterTouched] = useState(false);
   const [focusedToolbarControl, setFocusedToolbarControl] = useState<'sort' | 'filter' | null>(null);
   const [focusedActionControl, setFocusedActionControl] = useState<'apply' | 'edit' | 'upvote' | 'back' | 'save' | 'cancel' | null>(null);
+  const [focusedDetailRow, setFocusedDetailRow] = useState<DetailRowKey | null>(null);
   const [reportDiagnostics, setReportDiagnostics] = useState<ReportFetchDiagnostics | null>(null);
   const [voteDiagnostics, setVoteDiagnostics] = useState<VotesFetchDiagnostics | null>(null);
   const [currentLaunchOptions, setCurrentLaunchOptions] = useState('');
   const [editDraft, setEditDraft] = useState<EditableReportFields | null>(null);
   const detailScrollRef = useRef<HTMLDivElement>(null);
+  const actionStripRef = useRef<HTMLDivElement>(null);
+  const sortControlRef = useRef<HTMLDivElement>(null);
+  const filterControlRef = useRef<HTMLDivElement>(null);
+  const reportListRef = useRef<HTMLDivElement>(null);
+  const gameRowRef = useRef<HTMLDivElement>(null);
+  const launchRowRef = useRef<HTMLDivElement>(null);
+  const currentRowRef = useRef<HTMLDivElement>(null);
+  const hardwareRowRef = useRef<HTMLDivElement>(null);
+  const scoringRowRef = useRef<HTMLDivElement>(null);
+  const reportRowRef = useRef<HTMLDivElement>(null);
 
   const gpuVendor = sysInfo?.gpu_vendor ?? null;
   const [filter, setFilter] = useState<FilterTier>('all');
@@ -479,6 +583,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       focusedCardKey,
       focusedToolbarControl,
       focusedActionControl,
+      focusedDetailRow,
       filter,
       sortMode,
       activeElement: describeActiveElement(),
@@ -505,6 +610,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       setReportDiagnostics(null);
       setVoteDiagnostics(null);
       setEditDraft(null);
+      setFocusedDetailRow(null);
       return;
     }
 
@@ -529,6 +635,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     setReportDiagnostics(null);
     setVoteDiagnostics(null);
     setEditDraft(null);
+    setFocusedDetailRow(null);
 
     void Promise.all([getProtonDBReportsWithDiagnostics(String(appId)), getVotesWithDiagnostics(String(appId))])
       .then(([reportResult, voteResult]) => {
@@ -575,6 +682,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       setSelectedKey(null);
       setFocusedCardKey(null);
       setOverlayMode('list');
+      setFocusedDetailRow(null);
       return;
     }
     if (!selectedKey) {
@@ -587,6 +695,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       setSelectedKey(sortedReports[0].displayKey);
       setFocusedCardKey(sortedReports[0].displayKey);
       setOverlayMode('list');
+      setFocusedDetailRow(null);
     }
   }, [selectedKey, sortedReports]);
 
@@ -620,6 +729,20 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     });
   }, [overlayMode, selectedKey]);
 
+  useLayoutEffect(() => {
+    if (overlayMode !== 'detail' && overlayMode !== 'edit') return;
+
+    const heading = findMainPaneManageTitle();
+    if (!heading) return;
+
+    const previousDisplay = heading.style.display;
+    heading.style.display = 'none';
+
+    return () => {
+      heading.style.display = previousDisplay;
+    };
+  }, [overlayMode]);
+
   useEffect(() => {
     debugMovement('overlay-mode-changed', { nextOverlayMode: overlayMode });
   }, [overlayMode]);
@@ -640,10 +763,16 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     setSelectedKey(report.displayKey);
     setFocusedCardKey(report.displayKey);
     setFocusedActionControl(null);
+    setFocusedDetailRow('actions');
     setOverlayMode('detail');
     requestAnimationFrame(() => {
       detailScrollRef.current?.scrollTo({ top: 0 });
-      detailScrollRef.current?.focus();
+      const firstAction = actionStripRef.current?.querySelector<HTMLElement>('button, [tabindex="0"]');
+      if (firstAction) {
+        firstAction.focus();
+      } else {
+        detailScrollRef.current?.focus();
+      }
     });
     debugMovement('open-report-detail', {
       reportDisplayKey: report.displayKey,
@@ -681,6 +810,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     setFocusedCardKey(nextKey);
     setOverlayMode('list');
     setEditDraft(null);
+    setFocusedDetailRow(null);
     void logFrontendEvent('INFO', 'Saved edited report variant', {
       appId,
       baseDisplayKey: selected.displayKey,
@@ -691,29 +821,6 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       title: 'Proton Pulse',
       body: nextEntry.label ? `Saved edited report: ${nextEntry.label}` : 'Saved edited report.',
     });
-  };
-
-  const handleDetailDirection = (evt: GamepadEvent) => {
-    debugMovement('detail-direction', {
-      button: gamepadButtonLabel(evt.detail.button),
-    });
-    if (!detailScrollRef.current) return;
-    if (evt.detail.button === GamepadButton.DIR_UP) {
-      detailScrollRef.current.scrollBy({ top: -DETAIL_SCROLL_STEP, behavior: 'smooth' });
-      debugMovement('detail-scroll', {
-        button: 'DIR_UP',
-        nextScrollTop: detailScrollRef.current.scrollTop - DETAIL_SCROLL_STEP,
-      });
-      return;
-    }
-    if (evt.detail.button === GamepadButton.DIR_DOWN) {
-      detailScrollRef.current.scrollBy({ top: DETAIL_SCROLL_STEP, behavior: 'smooth' });
-      debugMovement('detail-scroll', {
-        button: 'DIR_DOWN',
-        nextScrollTop: detailScrollRef.current.scrollTop + DETAIL_SCROLL_STEP,
-      });
-      return;
-    }
   };
 
   const handleRootDirection = (evt: GamepadEvent) => {
@@ -730,6 +837,11 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
         detailScrollRef.current.scrollBy({ top: DETAIL_SCROLL_STEP, behavior: 'smooth' });
         return;
       }
+      if (evt.detail.button === GamepadButton.DIR_RIGHT && !focusedActionControl && !focusedDetailRow) {
+        const firstAction = actionStripRef.current?.querySelector<HTMLElement>('button, [tabindex="0"]');
+        firstAction?.focus();
+        return;
+      }
     }
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
       debugMovement('root-direction-trapped-left', {
@@ -737,6 +849,16 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       });
       return;
     }
+  };
+
+  const focusFirstReportCard = () => {
+    const firstCard = reportListRef.current?.querySelector<HTMLElement>('[tabindex="0"]');
+    firstCard?.focus();
+  };
+
+  const focusToolbarControl = (ref: React.RefObject<HTMLDivElement | null>) => {
+    const target = ref.current?.querySelector<HTMLElement>('button, [tabindex="0"]');
+    target?.focus();
   };
 
   const handleApply = async () => {
@@ -755,6 +877,46 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     }
     setApplying(true);
     try {
+      const availability = await checkProtonVersionAvailability(targetReport.protonVersion);
+      if (availability.managed && !availability.installed) {
+        const confirmed = await new Promise<boolean>((resolve) => {
+          const modal = showModal(
+            <ConfirmModal
+              strTitle={`Install ${availability.normalized_version}`}
+              strDescription={`This config requires ${availability.normalized_version} which is not currently installed. Install it now?`}
+              strOKButtonText="Install"
+              strCancelButtonText="Cancel"
+              onOK={() => {
+                resolve(true);
+                modal.Close();
+              }}
+              onCancel={() => {
+                resolve(false);
+                modal.Close();
+              }}
+            />,
+          );
+        });
+
+        if (!confirmed) {
+          toaster.toast({ title: 'Proton Pulse', body: 'Apply cancelled. Required Proton-GE version was not installed.' });
+          return;
+        }
+
+        const installResult = await installProtonGe(availability.normalized_version);
+        if (!installResult.success) {
+          toaster.toast({ title: 'Proton Pulse', body: installResult.message });
+          return;
+        }
+
+        toaster.toast({
+          title: 'Proton Pulse',
+          body: installResult.already_installed
+            ? `${availability.normalized_version} is already installed.`
+            : `Installed ${availability.normalized_version}.`,
+        });
+      }
+
       await SteamClient.Apps.SetAppLaunchOptions(
         appId, `PROTON_VERSION="${targetReport.protonVersion}" %command%`
       );
@@ -822,16 +984,6 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     }
   };
 
-  const toolbarShellStyle = (focused?: boolean) => ({
-    borderRadius: 8,
-    padding: focused ? 2 : 1,
-    background: focused ? 'rgba(255,255,255,0.12)' : 'transparent',
-    boxShadow: focused
-      ? '0 0 0 2px rgba(255,255,255,0.34) inset, 0 0 18px rgba(255,255,255,0.18), 0 0 30px rgba(255,255,255,0.14)'
-      : 'none',
-    animation: focused ? 'proton-pulse-toolbar-glow 1.7s ease-in-out infinite' : 'none',
-  });
-
   if (!appId) {
     return (
       <div style={{ padding: 16, color: '#888', fontSize: 12, textAlign: 'center' }}>
@@ -868,10 +1020,25 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   const detectingGpu = !gpuVendor && !filterTouched;
   const overlayOpen = overlayMode === 'detail' || overlayMode === 'edit';
   const protonDbUrl = `https://www.protondb.com/app/${appId}`;
+  const handleBackOneLevel = () => {
+    if (overlayMode === 'edit') {
+      setOverlayMode('detail');
+      setFocusedActionControl('edit');
+      setFocusedDetailRow('actions');
+      return;
+    }
+    if (overlayMode === 'detail') {
+      setOverlayMode('list');
+      requestAnimationFrame(() => {
+        detailScrollRef.current?.blur();
+      });
+    }
+  };
 
   return (
     <Focusable
       onGamepadDirection={handleRootDirection}
+      onCancelButton={overlayOpen ? handleBackOneLevel : undefined}
       onGamepadFocus={() => debugMovement('root-focus')}
       onGamepadBlur={() => debugMovement('root-blur')}
       style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}
@@ -914,11 +1081,11 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '92px minmax(0, 1fr) minmax(0, 0.78fr) auto',
+              gridTemplateColumns: '92px auto minmax(0, 220px) auto minmax(0, 170px) auto',
               alignItems: 'center',
               gap: 10,
-              marginBottom: 10,
-              padding: '8px 0',
+              marginBottom: 8,
+              padding: '6px 0',
               borderBottom: '1px solid #2a3a4a',
             }}
           >
@@ -939,58 +1106,84 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
               <span>Filters</span>
             </div>
             <div
-              style={{
-                ...toolbarShellStyle(focusedToolbarControl === 'sort'),
-                width: '100%',
-                minWidth: 0,
-              }}
-              onFocusCapture={() => {
-                setFocusedToolbarControl('sort');
-                debugMovement('toolbar-focus', { control: 'sort' });
-              }}
-              onBlurCapture={() => {
-                setFocusedToolbarControl((current) => current === 'sort' ? null : current);
-                debugMovement('toolbar-blur', { control: 'sort' });
+              style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
+            >
+              Sort
+            </div>
+            <Focusable
+              style={{ width: '100%', minWidth: 0, boxShadow: 'none' }}
+              onGamepadDirection={(evt) => {
+                if (evt.detail.button === GamepadButton.DIR_RIGHT) {
+                  focusToolbarControl(filterControlRef);
+                  return;
+                }
+                if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                  focusFirstReportCard();
+                  return;
+                }
               }}
             >
-              <DropdownItem
-                rgOptions={[
-                  { data: 'score', label: 'Sort: Best Match' },
-                  { data: 'votes', label: 'Sort: Most Votes' },
+            <div ref={sortControlRef} style={{ width: '100%', minWidth: 0 }}>
+              <FilterMenuButton
+                label={sortMode === 'score' ? 'Best Match' : 'Most Votes'}
+                focused={focusedToolbarControl === 'sort'}
+                options={[
+                  { value: 'score', label: 'Best Match' },
+                  { value: 'votes', label: 'Most Votes' },
                 ]}
-                selectedOption={sortMode}
-                onChange={(option) => {
-                  setSortPreference(option.data as SortMode);
+                onSelect={(value) => {
+                  setSortPreference(value as SortMode);
                   setOverlayMode('list');
+                }}
+                onFocus={() => {
+                  setFocusedToolbarControl('sort');
+                  debugMovement('toolbar-focus', { control: 'sort' });
+                }}
+                onBlur={() => {
+                  setFocusedToolbarControl((current) => current === 'sort' ? null : current);
+                  debugMovement('toolbar-blur', { control: 'sort' });
                 }}
               />
             </div>
+            </Focusable>
             <div
-              style={{
-                ...toolbarShellStyle(focusedToolbarControl === 'filter'),
-                width: '100%',
-                minWidth: 0,
-                opacity: detectingGpu ? 0.7 : 1,
-              }}
-              onFocusCapture={() => {
-                setFocusedToolbarControl('filter');
-                debugMovement('toolbar-focus', { control: 'filter' });
-              }}
-              onBlurCapture={() => {
-                setFocusedToolbarControl((current) => current === 'filter' ? null : current);
-                debugMovement('toolbar-blur', { control: 'filter' });
+              style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
+            >
+              GPU
+            </div>
+            <Focusable
+              style={{ width: '100%', minWidth: 0, opacity: detectingGpu ? 0.7 : 1, boxShadow: 'none' }}
+              onGamepadDirection={(evt) => {
+                if (evt.detail.button === GamepadButton.DIR_LEFT) {
+                  focusToolbarControl(sortControlRef);
+                  return;
+                }
+                if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                  focusFirstReportCard();
+                  return;
+                }
               }}
             >
-              <DropdownItem
-                rgOptions={FILTER_ORDER.map((tier) => ({
-                  data: tier,
-                  label: tier === 'all' ? 'GPU: All' : `GPU: ${FILTER_LABELS[tier]}`,
+            <div ref={filterControlRef} style={{ width: '100%', minWidth: 0, opacity: detectingGpu ? 0.7 : 1 }}>
+              <FilterMenuButton
+                label={filter === 'all' ? 'All' : FILTER_LABELS[filter]}
+                focused={focusedToolbarControl === 'filter'}
+                options={FILTER_ORDER.map((tier) => ({
+                  value: tier,
+                  label: tier === 'all' ? 'All' : FILTER_LABELS[tier],
                 }))}
-                selectedOption={filter}
-                onChange={(option) => setFilterMode(option.data as FilterTier)}
-                disabled={detectingGpu}
+                onSelect={(value) => setFilterMode(value as FilterTier)}
+                onFocus={() => {
+                  setFocusedToolbarControl('filter');
+                  debugMovement('toolbar-focus', { control: 'filter' });
+                }}
+                onBlur={() => {
+                  setFocusedToolbarControl((current) => current === 'filter' ? null : current);
+                  debugMovement('toolbar-blur', { control: 'filter' });
+                }}
               />
             </div>
+            </Focusable>
             <div style={{ fontSize: 11, color: '#7a9bb5', whiteSpace: 'nowrap', textAlign: 'right' }}>
               {sortedReports.length} shown
             </div>
@@ -1001,7 +1194,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                 ? 'Detecting your GPU tier before narrowing the list. Showing all reports for now.'
                 : 'Select a report card to open the full-screen detail view.'}
             </div>
-            <div style={{ padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid #2a3a4a' }}>
+            <div ref={reportListRef} style={{ padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid #2a3a4a' }}>
               {sortedReports.length === 0 ? (
                 <div style={{ color: '#666', fontSize: 12, padding: 12, textAlign: 'center' }}>
                   {detectingGpu ? 'Detecting GPU tier…' : 'No reports for this GPU tier.'}
@@ -1029,13 +1222,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
           </div>
 
           {overlayOpen && selected && (
-            <Focusable
-              onGamepadDirection={handleDetailDirection}
-              onGamepadFocus={() => {
-                detailScrollRef.current?.focus();
-                debugMovement('detail-overlay-focus');
-              }}
-              onGamepadBlur={() => debugMovement('detail-overlay-blur')}
+            <div
               onClick={() => {
                 detailScrollRef.current?.focus();
                 debugMovement('detail-overlay-click-focus');
@@ -1048,10 +1235,10 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                 flexDirection: 'column',
                 minHeight: 0,
                 overflow: 'hidden',
-                background: 'radial-gradient(circle at top left, rgba(73, 114, 158, 0.24), transparent 28%), linear-gradient(180deg, rgba(12, 18, 28, 0.992), rgba(7, 12, 20, 0.995))',
+                background: 'transparent',
                 border: 0,
-                boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-                padding: '8px 8px 8px 4px',
+                boxShadow: 'none',
+                padding: '0 0 0 0',
               }}
             >
               <div
@@ -1066,8 +1253,8 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                   minHeight: 0,
                   overflowY: 'auto',
                   outline: 'none',
-                  borderRadius: 14,
-                  paddingRight: 2,
+                  borderRadius: 0,
+                  paddingRight: 0,
                   paddingBottom: 8,
                   scrollBehavior: 'smooth',
                   scrollbarWidth: 'thin',
@@ -1081,25 +1268,18 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                   style={{
                     width: '100%',
                     boxSizing: 'border-box',
-                    minHeight: '100%',
-                    padding: 12,
-                    borderRadius: 16,
+                    padding: '0 0 0 0',
+                    borderRadius: 0,
                     background: 'linear-gradient(180deg, rgba(24, 34, 46, 0.96), rgba(12, 19, 28, 0.98))',
                     border: 0,
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.24)',
+                    boxShadow: 'none',
                     display: 'flex',
                     flexDirection: 'column',
                   }}
                 >
-                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(260px, 1fr)', gap: 14, alignItems: 'stretch', marginBottom: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(260px, 1fr)', gap: 12, alignItems: 'stretch', marginBottom: 10 }}>
                     <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <BrandLogo size={18} />
-                          <div style={{ fontSize: 11, color: '#89a9c6', letterSpacing: 0.45 }}>
-                            {overlayMode === 'edit' ? 'Edited Config' : 'Report Detail'}
-                          </div>
-                        </div>
                         <div style={{ fontSize: 22, fontWeight: 700, color: '#f3fbff', marginBottom: 6 }}>
                           {selected.protonVersion}
                         </div>
@@ -1113,7 +1293,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                         )}
                       </div>
                     </div>
-                    <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <img
                         src={STEAM_HEADER_URL(appId)}
                         style={{
@@ -1126,14 +1306,14 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                         }}
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       />
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <div style={{ padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', gap: 7, flexWrap: 'nowrap', alignItems: 'stretch', width: '100%', marginTop: -4, marginBottom: -2 }}>
+                        <div style={{ padding: '4px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, lineHeight: 1, whiteSpace: 'nowrap' }}>
                           {selected.gpuTier.toUpperCase()}
                         </div>
-                        <div style={{ padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, whiteSpace: 'nowrap' }}>
+                        <div style={{ padding: '4px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, lineHeight: 1, whiteSpace: 'nowrap' }}>
                           {selected.upvotes} votes
                         </div>
-                        <div style={{ padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, whiteSpace: 'nowrap' }}>
+                        <div style={{ padding: '4px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: '#d9e8f4', fontSize: 10, lineHeight: 1, whiteSpace: 'nowrap' }}>
                           {formatTimestamp(selected.timestamp)}
                         </div>
                         <a
@@ -1144,13 +1324,18 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            width: 30,
-                            height: 30,
+                            minWidth: 42,
+                            flex: 1,
+                            height: 26,
                             borderRadius: 999,
-                            background: 'rgba(255,255,255,0.08)',
+                            background: 'linear-gradient(180deg, rgba(255, 15, 100, 0.24), rgba(255, 15, 100, 0.14))',
+                            border: '1px solid rgba(255, 15, 100, 0.34)',
                             color: '#dff0ff',
                             textDecoration: 'none',
+                            boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset',
                           }}
+                          aria-label="Open on ProtonDB"
+                          title="Open on ProtonDB"
                         >
                           <ProtonDbBrandIcon />
                         </a>
@@ -1159,9 +1344,10 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                   </div>
 
                   <div
+                    ref={actionStripRef}
                     style={{
                       ...detailPanelStyle(),
-                      marginBottom: 12,
+                      marginBottom: 10,
                       display: 'grid',
                       gap: 8,
                       gridTemplateColumns: overlayMode === 'edit'
@@ -1172,12 +1358,16 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                   >
                     {overlayMode === 'edit' ? (
                       <>
+                        <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#9eb7cc', marginBottom: 2 }}>
+                          Any new edits will be saved as a personalized report under your account.
+                        </div>
                         <CompactButton
                           label="Save Edits"
                           onPress={saveEditedReport}
                           focused={focusedActionControl === 'save'}
                           active
                           onFocus={() => {
+                            setFocusedDetailRow('actions');
                             setFocusedActionControl('save');
                             debugMovement('action-focus', { control: 'save' });
                           }}
@@ -1191,6 +1381,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                           onPress={() => setOverlayMode('detail')}
                           focused={focusedActionControl === 'cancel'}
                           onFocus={() => {
+                            setFocusedDetailRow('actions');
                             setFocusedActionControl('cancel');
                             debugMovement('action-focus', { control: 'cancel' });
                           }}
@@ -1209,6 +1400,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                           active
                           disabled={!selected || applying}
                           onFocus={() => {
+                            setFocusedDetailRow('actions');
                             setFocusedActionControl('apply');
                             debugMovement('action-focus', { control: 'apply' });
                           }}
@@ -1222,6 +1414,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                           onPress={openEditView}
                           focused={focusedActionControl === 'edit'}
                           onFocus={() => {
+                            setFocusedDetailRow('actions');
                             setFocusedActionControl('edit');
                             debugMovement('action-focus', { control: 'edit' });
                           }}
@@ -1237,6 +1430,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                           accent
                           disabled={!selected || upvoting}
                           onFocus={() => {
+                            setFocusedDetailRow('actions');
                             setFocusedActionControl('upvote');
                             debugMovement('action-focus', { control: 'upvote' });
                           }}
@@ -1250,6 +1444,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                           onPress={() => setOverlayMode('list')}
                           focused={focusedActionControl === 'back'}
                           onFocus={() => {
+                            setFocusedDetailRow('actions');
                             setFocusedActionControl('back');
                             debugMovement('action-focus', { control: 'back' });
                           }}
@@ -1265,27 +1460,36 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                   <div
                     style={{
                       display: 'grid',
-                      gap: 12,
+                      gap: 10,
                       gridTemplateColumns: '1fr',
                       marginBottom: 12,
                     }}
                   >
-                    <div style={{ ...detailPanelStyle(), marginBottom: 0 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start' }}>
+                    <div
+                      ref={gameRowRef}
+                      style={{ ...detailPanelStyle(), marginBottom: 0, padding: '10px 14px' }}
+                    >
+                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'center' }}>
                         <div style={{ fontSize: 10, color: '#7a9bb5' }}>Game</div>
                         <div style={{ fontSize: 12, color: '#eef7ff', fontWeight: 600 }}>{appName || `App ${appId}`}</div>
                       </div>
                     </div>
-                    <div style={{ ...detailPanelStyle(), marginBottom: 0 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start' }}>
+                    <div
+                      ref={launchRowRef}
+                      style={{ ...detailPanelStyle(), marginBottom: 0, padding: '10px 14px' }}
+                    >
+                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'center' }}>
                         <div style={{ fontSize: 10, color: '#7a9bb5' }}>Launch Preview</div>
                         <div style={{ fontSize: 11, color: '#d8ebff', fontFamily: 'monospace', wordBreak: 'break-word' }}>
                           {selectedLaunchPreview}
                         </div>
                       </div>
                     </div>
-                    <div style={{ ...detailPanelStyle(), marginBottom: 0 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start' }}>
+                    <div
+                      ref={currentRowRef}
+                      style={{ ...detailPanelStyle(), marginBottom: 0, padding: '10px 14px' }}
+                    >
+                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'center' }}>
                         <div style={{ fontSize: 10, color: '#7a9bb5' }}>Current Launch Options</div>
                         <div style={{ fontSize: 11, color: currentLaunchOptions ? '#e8f4ff' : '#9db0c4', fontFamily: 'monospace', wordBreak: 'break-word' }}>
                           {currentLaunchOptions || 'No launch options set.'}
@@ -1357,7 +1561,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                       </div>
                     ) : (
                     <div style={{ display: 'grid', gap: 20, gridTemplateColumns: '1fr', flex: 1, alignItems: 'start', paddingTop: 10 }}>
-                      <div style={bareDetailSectionStyle()}>
+                      <div ref={hardwareRowRef} style={{ ...bareDetailSectionStyle(), padding: '12px 14px' }}>
                         <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Hardware Match</div>
                         <div style={{ fontSize: 11, color: '#e8f4ff', lineHeight: 1.72 }}>
                           <div>GPU / Driver: {selected.gpu || 'Unknown GPU'} · {selected.gpuDriver || 'Unknown driver'}</div>
@@ -1365,7 +1569,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                           <div>Community: {selected.upvotes} upvotes · GPU tier {selected.gpuTier}</div>
                         </div>
                       </div>
-                      <div style={bareDetailSectionStyle()}>
+                      <div ref={scoringRowRef} style={{ ...bareDetailSectionStyle(), padding: '12px 14px' }}>
                         <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Scoring</div>
                         <div style={{ fontSize: 11, color: '#e8f4ff', lineHeight: 1.72 }}>
                           <div>Submitted: {formatTimestamp(selected.timestamp)}</div>
@@ -1373,7 +1577,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                           <div>{selected.rating} base rating · {selected.notesModifier >= 0 ? '+' : ''}{selected.notesModifier} notes modifier</div>
                         </div>
                       </div>
-                      <div style={bareDetailSectionStyle()}>
+                      <div ref={reportRowRef} style={{ ...bareDetailSectionStyle(), padding: '12px 14px' }}>
                         <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Full Report Text</div>
                         <div style={{ fontSize: 11, color: '#d8ebff', lineHeight: 1.72, whiteSpace: 'pre-wrap' }}>
                           {selected.notes || 'No additional notes were provided for this report.'}
@@ -1384,7 +1588,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                   </div>
                 </div>
               </div>
-            </Focusable>
+            </div>
           )}
         </>
       )}

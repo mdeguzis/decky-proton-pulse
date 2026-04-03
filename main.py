@@ -4,11 +4,21 @@ import logging
 import logging.handlers
 import subprocess
 import json
+import re
+import shutil
+import tarfile
+import tempfile
+import time
+from pathlib import Path
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
 
 import decky
 
 
 class Plugin:
+    PROTON_GE_REPO_API = "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases?per_page=30"
+    PROTON_GE_CACHE_TTL_SECONDS = 6 * 60 * 60
 
     # ─── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -248,3 +258,308 @@ class Plugin:
         entries = [d for d in os.listdir(compat_dir)
                    if os.path.isdir(os.path.join(compat_dir, d))]
         return entries[0] if len(entries) == 1 else (", ".join(entries) if entries else None)
+
+    # ─── Compatibility Tools / Proton-GE ─────────────────────────────────────
+
+    def _compat_tools_dirs(self) -> list[Path]:
+        candidates = [
+            Path(decky.DECKY_USER_HOME) / ".steam" / "root" / "compatibilitytools.d",
+            Path(decky.DECKY_USER_HOME) / ".steam" / "steam" / "compatibilitytools.d",
+            Path(decky.DECKY_USER_HOME) / ".local" / "share" / "Steam" / "compatibilitytools.d",
+            Path(decky.DECKY_USER_HOME) / ".var" / "app" / "com.valvesoftware.Steam" / ".steam" / "steam" / "compatibilitytools.d",
+        ]
+        seen: set[str] = set()
+        result: list[Path] = []
+        for candidate in candidates:
+          key = str(candidate)
+          if key in seen:
+              continue
+          seen.add(key)
+          candidate.mkdir(parents=True, exist_ok=True)
+          result.append(candidate)
+        return result
+
+    def _compat_tools_dir(self) -> Path:
+        return self._compat_tools_dirs()[0]
+
+    def _compat_tools_cache_dir(self) -> Path:
+        cache_dir = Path(decky.DECKY_USER_HOME) / ".config" / "decky-proton-pulse"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir
+
+    def _proton_ge_cache_path(self) -> Path:
+        return self._compat_tools_cache_dir() / "proton-ge-releases-cache.json"
+
+    def _normalize_proton_ge_tag(self, version: str) -> str | None:
+        cleaned = version.strip()
+        if not cleaned:
+            return None
+
+        cleaned = cleaned.replace("_", "-")
+        cleaned = re.sub(r"\s+", "", cleaned)
+        match = re.search(r"(?:GE-?)?Proton(\d+(?:-\d+)*)", cleaned, re.IGNORECASE)
+        if not match:
+            return None
+        return f"GE-Proton{match.group(1)}"
+
+    def _read_vdf_value(self, text: str, key: str) -> str | None:
+        match = re.search(rf'"{re.escape(key)}"\s+"([^"]+)"', text)
+        return match.group(1).strip() if match else None
+
+    def _installed_tool_matches_version(self, tool: dict, version: str) -> bool:
+        normalized = self._normalize_proton_ge_tag(version)
+        if not normalized:
+            return False
+
+        fields = [
+            tool.get("directory_name") or "",
+            tool.get("display_name") or "",
+            tool.get("internal_name") or "",
+        ]
+        lowered = normalized.lower()
+        return any(lowered in field.lower() for field in fields)
+
+    def _simplify_release(self, release: dict) -> dict | None:
+        if release.get("draft") or release.get("prerelease"):
+            return None
+
+        asset = next(
+            (
+                candidate
+                for candidate in release.get("assets", [])
+                if isinstance(candidate.get("name"), str)
+                and candidate["name"].startswith("GE-Proton")
+                and (
+                    candidate["name"].endswith(".tar.gz")
+                    or candidate["name"].endswith(".tar.xz")
+                )
+            ),
+            None,
+        )
+        if not asset:
+            return None
+
+        return {
+            "tag_name": release.get("tag_name"),
+            "name": release.get("name") or release.get("tag_name"),
+            "published_at": release.get("published_at"),
+            "prerelease": bool(release.get("prerelease")),
+            "asset_name": asset.get("name"),
+            "download_url": asset.get("browser_download_url"),
+        }
+
+    def _fetch_proton_ge_releases(self) -> list[dict]:
+        cache_path = self._proton_ge_cache_path()
+        now = int(time.time())
+
+        if cache_path.exists():
+            try:
+                cached = json.loads(cache_path.read_text())
+                if now - int(cached.get("fetched_at", 0)) < self.PROTON_GE_CACHE_TTL_SECONDS:
+                    return cached.get("releases", [])
+            except Exception as err:
+                decky.logger.warning(f"Failed to read Proton-GE cache: {err}")
+
+        request = Request(
+            self.PROTON_GE_REPO_API,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "decky-proton-pulse",
+            },
+        )
+        with urlopen(request, timeout=20) as response:
+            releases = json.loads(response.read().decode("utf-8"))
+
+        simplified = [item for item in (self._simplify_release(release) for release in releases) if item]
+        cache_path.write_text(json.dumps({"fetched_at": now, "releases": simplified}))
+        return simplified
+
+    def _list_installed_compatibility_tools(self) -> list[dict]:
+        tools: list[dict] = []
+        seen_dirs: set[str] = set()
+        for compat_dir in self._compat_tools_dirs():
+            for entry in sorted(compat_dir.iterdir(), key=lambda path: path.name.lower()):
+                if not entry.is_dir():
+                    continue
+                if entry.name in seen_dirs:
+                    continue
+                seen_dirs.add(entry.name)
+
+                vdf_path = entry / "compatibilitytool.vdf"
+                display_name = entry.name
+                internal_name = entry.name
+
+                if vdf_path.exists():
+                    try:
+                        vdf_text = vdf_path.read_text()
+                        display_name = self._read_vdf_value(vdf_text, "display_name") or display_name
+                        internal_name = self._read_vdf_value(vdf_text, "internal_name") or internal_name
+                    except Exception as err:
+                        decky.logger.warning(f"Failed to read compatibilitytool.vdf for {entry.name}: {err}")
+
+                tools.append(
+                    {
+                        "directory_name": entry.name,
+                        "display_name": display_name,
+                        "internal_name": internal_name,
+                        "path": str(entry),
+                        "source": "custom",
+                    }
+                )
+
+        steam_common_dirs = [
+            Path(decky.DECKY_USER_HOME) / ".steam" / "root" / "steamapps" / "common",
+            Path(decky.DECKY_USER_HOME) / ".steam" / "steam" / "steamapps" / "common",
+            Path(decky.DECKY_USER_HOME) / ".local" / "share" / "Steam" / "steamapps" / "common",
+            Path(decky.DECKY_USER_HOME) / ".var" / "app" / "com.valvesoftware.Steam" / ".local" / "share" / "Steam" / "steamapps" / "common",
+        ]
+        for common_dir in steam_common_dirs:
+            if not common_dir.is_dir():
+                continue
+            for entry in sorted(common_dir.iterdir(), key=lambda path: path.name.lower()):
+                if not entry.is_dir():
+                    continue
+                name = entry.name
+                lower = name.lower()
+                if not (lower.startswith("proton") or lower.startswith("ge-proton")):
+                    continue
+                if name in seen_dirs:
+                    continue
+                seen_dirs.add(name)
+                tools.append(
+                    {
+                        "directory_name": name,
+                        "display_name": name,
+                        "internal_name": name,
+                        "path": str(entry),
+                        "source": "valve",
+                    }
+                )
+
+        return tools
+
+    async def list_installed_compatibility_tools(self) -> list[dict]:
+        return self._list_installed_compatibility_tools()
+
+    async def get_proton_ge_releases(self, force_refresh: bool = False) -> list[dict]:
+        cache_path = self._proton_ge_cache_path()
+        if force_refresh and cache_path.exists():
+            cache_path.unlink()
+
+        try:
+            return self._fetch_proton_ge_releases()
+        except (HTTPError, URLError, TimeoutError, OSError) as err:
+            decky.logger.error(f"Failed to fetch Proton-GE releases: {err}")
+            if cache_path.exists():
+                try:
+                    cached = json.loads(cache_path.read_text())
+                    return cached.get("releases", [])
+                except Exception:
+                    pass
+            return []
+
+    async def get_proton_ge_manager_state(self, force_refresh: bool = False) -> dict:
+        releases = await self.get_proton_ge_releases(force_refresh)
+        installed = self._list_installed_compatibility_tools()
+        current_release = releases[0] if releases else None
+        current_installed = bool(
+            current_release
+            and any(self._installed_tool_matches_version(tool, current_release["tag_name"]) for tool in installed)
+        )
+        return {
+            "current_release": current_release,
+            "current_installed": current_installed,
+            "installed_tools": installed,
+            "releases": releases,
+        }
+
+    async def check_proton_version_availability(self, version: str) -> dict:
+        normalized = self._normalize_proton_ge_tag(version)
+        installed = self._list_installed_compatibility_tools()
+
+        if not normalized:
+            return {
+                "managed": False,
+                "installed": True,
+                "normalized_version": None,
+                "matched_tool_name": None,
+                "release": None,
+                "message": "Version is not managed by Proton Pulse.",
+            }
+
+        matched_tool = next((tool for tool in installed if self._installed_tool_matches_version(tool, normalized)), None)
+        releases = await self.get_proton_ge_releases(False)
+        release = next((item for item in releases if item.get("tag_name") == normalized), None)
+
+        return {
+            "managed": True,
+            "installed": matched_tool is not None,
+            "normalized_version": normalized,
+            "matched_tool_name": matched_tool["display_name"] if matched_tool else None,
+            "release": release,
+            "message": (
+                f"{normalized} is already installed."
+                if matched_tool
+                else (
+                    f"{normalized} is available to install."
+                    if release
+                    else f"{normalized} was not found in the Proton-GE release feed."
+                )
+            ),
+        }
+
+    async def install_proton_ge(self, version: str | None = None) -> dict:
+        releases = await self.get_proton_ge_releases(False)
+        release = None
+
+        if version:
+            normalized = self._normalize_proton_ge_tag(version)
+            release = next((item for item in releases if item.get("tag_name") == normalized), None)
+            if not release:
+                return {"success": False, "message": f"Could not find release for {version}.", "release": None}
+        else:
+            release = releases[0] if releases else None
+            normalized = release.get("tag_name") if release else None
+
+        if not release or not normalized:
+            return {"success": False, "message": "No Proton-GE release is available right now.", "release": None}
+
+        installed = self._list_installed_compatibility_tools()
+        if any(self._installed_tool_matches_version(tool, normalized) for tool in installed):
+            return {"success": True, "already_installed": True, "message": f"{normalized} is already installed.", "release": release}
+
+        download_url = release.get("download_url")
+        if not download_url:
+            return {"success": False, "message": f"{normalized} did not expose a downloadable archive.", "release": release}
+
+        compat_dir = self._compat_tools_dir()
+        with tempfile.TemporaryDirectory(prefix="proton-pulse-install-") as tmp_dir:
+            archive_path = Path(tmp_dir) / (release.get("asset_name") or f"{normalized}.tar.gz")
+            request = Request(download_url, headers={"User-Agent": "decky-proton-pulse"})
+
+            try:
+                with urlopen(request, timeout=60) as response, open(archive_path, "wb") as archive_file:
+                    shutil.copyfileobj(response, archive_file)
+
+                extract_dir = Path(tmp_dir) / "extract"
+                extract_dir.mkdir(parents=True, exist_ok=True)
+                with tarfile.open(archive_path, "r:*") as archive:
+                    archive.extractall(extract_dir)
+
+                extracted_entries = [entry for entry in extract_dir.iterdir()]
+                source_dir = next((entry for entry in extracted_entries if entry.is_dir()), None)
+                if source_dir is None:
+                    source_dir = extract_dir / normalized
+                    source_dir.mkdir(parents=True, exist_ok=True)
+                    for entry in extracted_entries:
+                        shutil.move(str(entry), source_dir / entry.name)
+
+                destination = compat_dir / source_dir.name
+                if destination.exists():
+                    return {"success": True, "already_installed": True, "message": f"{destination.name} is already installed.", "release": release}
+
+                shutil.move(str(source_dir), str(destination))
+                return {"success": True, "message": f"Installed {destination.name}.", "release": release}
+            except Exception as err:
+                decky.logger.error(f"Failed to install Proton-GE {normalized}: {err}")
+                return {"success": False, "message": f"Install failed for {normalized}: {err}", "release": release}
