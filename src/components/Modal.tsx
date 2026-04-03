@@ -12,7 +12,6 @@ import { LogsTab } from './tabs/LogsTab';
 import { SettingsTab } from './tabs/SettingsTab';
 import { AboutTab } from './tabs/AboutTab';
 import { logFrontendEvent } from '../lib/logger';
-import { BrandLogo } from './BrandLogo';
 
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
 
@@ -22,6 +21,7 @@ export function ProtonPulsePage() {
   const [appName, setAppName]       = useState<string>(pageState.appName);
   const [sysInfo, setSysInfo]       = useState<SystemInfo | null>(null);
   const [manageGameLoadNonce, setManageGameLoadNonce] = useState(0);
+  const [manageGameOverlayOpen, setManageGameOverlayOpen] = useState(false);
 
   useEffect(() => {
     getSystemInfo()
@@ -83,6 +83,7 @@ export function ProtonPulsePage() {
           sysInfo={sysInfo}
           isActive={activePage === 'manage-game'}
           loadNonce={manageGameLoadNonce}
+          onOverlayOpenChange={setManageGameOverlayOpen}
         />
       ),
     }] : []),
@@ -110,27 +111,21 @@ export function ProtonPulsePage() {
 
   return (
     <div style={{ position: 'relative', height: '100%' }}>
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          right: 12,
-          zIndex: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '4px 8px',
-          borderRadius: 999,
-          background: 'rgba(14, 22, 35, 0.78)',
-          border: '1px solid rgba(110, 180, 255, 0.18)',
-          pointerEvents: 'none',
-        }}
-      >
-        <BrandLogo size={18} />
-        <span style={{ fontSize: 10, color: '#9dc4e8', letterSpacing: 0.3 }}>
-          Proton Pulse
-        </span>
-      </div>
+      {activePage === 'manage-game' && manageGameOverlayOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 362,
+            zIndex: 3,
+            background: '#151c22',
+            borderRight: '1px solid rgba(255,255,255,0.05)',
+            pointerEvents: 'auto',
+          }}
+        />
+      )}
       <div
         style={{
           position: 'absolute',
@@ -157,6 +152,14 @@ export function ProtonPulsePage() {
         pages={pages}
         page={activePage}
         onPageRequested={(page) => {
+          if (activePage === 'manage-game' && manageGameOverlayOpen) {
+            void logFrontendEvent('INFO', 'Ignored sidebar page request while report detail overlay is open', {
+              page,
+              appId,
+              appName,
+            });
+            return;
+          }
           void logFrontendEvent('INFO', 'Sidebar page requested', {
             page,
             appId,

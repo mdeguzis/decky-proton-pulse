@@ -261,22 +261,40 @@ class Plugin:
 
     # ─── Compatibility Tools / Proton-GE ─────────────────────────────────────
 
+    def _find_steam_root(self) -> Path | None:
+        possible_roots = [
+            ".local/share/Steam",
+            ".steam/root",
+            ".steam/steam",
+            ".steam/debian-installation",
+            ".var/app/com.valvesoftware.Steam/data/Steam",
+        ]
+        user_home = Path(decky.DECKY_USER_HOME)
+        for root in possible_roots:
+            candidate = user_home / root
+            config_dir = candidate / "config"
+            if (config_dir / "config.vdf").exists() and (config_dir / "libraryfolders.vdf").exists():
+                return candidate
+        return None
+
     def _compat_tools_dirs(self) -> list[Path]:
-        candidates = [
+        detected_root = self._find_steam_root()
+        candidates = [detected_root / "compatibilitytools.d"] if detected_root else []
+        candidates.extend([
             Path(decky.DECKY_USER_HOME) / ".steam" / "root" / "compatibilitytools.d",
             Path(decky.DECKY_USER_HOME) / ".steam" / "steam" / "compatibilitytools.d",
             Path(decky.DECKY_USER_HOME) / ".local" / "share" / "Steam" / "compatibilitytools.d",
-            Path(decky.DECKY_USER_HOME) / ".var" / "app" / "com.valvesoftware.Steam" / ".steam" / "steam" / "compatibilitytools.d",
-        ]
+            Path(decky.DECKY_USER_HOME) / ".var" / "app" / "com.valvesoftware.Steam" / "data" / "Steam" / "compatibilitytools.d",
+        ])
         seen: set[str] = set()
         result: list[Path] = []
         for candidate in candidates:
-          key = str(candidate)
-          if key in seen:
-              continue
-          seen.add(key)
-          candidate.mkdir(parents=True, exist_ok=True)
-          result.append(candidate)
+            key = str(candidate)
+            if key in seen:
+                continue
+            seen.add(key)
+            candidate.mkdir(parents=True, exist_ok=True)
+            result.append(candidate)
         return result
 
     def _compat_tools_dir(self) -> Path:
@@ -367,8 +385,52 @@ class Plugin:
                 "User-Agent": "decky-proton-pulse",
             },
         )
-        with urlopen(request, timeout=20) as response:
-            releases = json.loads(response.read().decode("utf-8"))
+        try:
+            with urlopen(request, timeout=20) as response:
+                releases = json.loads(response.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError, OSError) as err:
+            decky.logger.warning(f"Python fetch for Proton-GE releases failed, trying curl fallback: {err}")
+            curl_commands = [
+                [
+                    "curl",
+                    "-LfsS",
+                    self.PROTON_GE_REPO_API,
+                    "-H",
+                    "Accept: application/vnd.github+json",
+                    "-H",
+                    "User-Agent: decky-proton-pulse",
+                ],
+                [
+                    "curl",
+                    "-kLfsS",
+                    self.PROTON_GE_REPO_API,
+                    "-H",
+                    "Accept: application/vnd.github+json",
+                    "-H",
+                    "User-Agent: decky-proton-pulse",
+                ],
+            ]
+            releases = None
+            curl_errors: list[str] = []
+            for command in curl_commands:
+                curl_result = subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True,
+                    timeout=25,
+                )
+                if curl_result.returncode == 0:
+                    if command[1].startswith("-k"):
+                        decky.logger.warning("Proton-GE release fetch succeeded via insecure curl fallback (-k)")
+                    releases = json.loads(curl_result.stdout)
+                    break
+                curl_errors.append(
+                    f"{' '.join(command[:2])} -> code {curl_result.returncode}: {curl_result.stderr.strip()}"
+                )
+            if releases is None:
+                raise RuntimeError(
+                    "curl fallback failed: " + " | ".join(curl_errors)
+                ) from err
 
         simplified = [item for item in (self._simplify_release(release) for release in releases) if item]
         cache_path.write_text(json.dumps({"fetched_at": now, "releases": simplified}))
@@ -407,12 +469,14 @@ class Plugin:
                     }
                 )
 
-        steam_common_dirs = [
+        detected_root = self._find_steam_root()
+        steam_common_dirs = [detected_root / "steamapps" / "common"] if detected_root else []
+        steam_common_dirs.extend([
             Path(decky.DECKY_USER_HOME) / ".steam" / "root" / "steamapps" / "common",
             Path(decky.DECKY_USER_HOME) / ".steam" / "steam" / "steamapps" / "common",
             Path(decky.DECKY_USER_HOME) / ".local" / "share" / "Steam" / "steamapps" / "common",
-            Path(decky.DECKY_USER_HOME) / ".var" / "app" / "com.valvesoftware.Steam" / ".local" / "share" / "Steam" / "steamapps" / "common",
-        ]
+            Path(decky.DECKY_USER_HOME) / ".var" / "app" / "com.valvesoftware.Steam" / "data" / "Steam" / "steamapps" / "common",
+        ])
         for common_dir in steam_common_dirs:
             if not common_dir.is_dir():
                 continue
@@ -448,7 +512,7 @@ class Plugin:
 
         try:
             return self._fetch_proton_ge_releases()
-        except (HTTPError, URLError, TimeoutError, OSError) as err:
+        except Exception as err:
             decky.logger.error(f"Failed to fetch Proton-GE releases: {err}")
             if cache_path.exists():
                 try:
