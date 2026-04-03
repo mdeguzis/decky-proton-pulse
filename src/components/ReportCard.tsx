@@ -36,6 +36,17 @@ function truncate(str: string, maxLen: number): string {
   return str.length > maxLen ? `${str.slice(0, maxLen)}...` : str;
 }
 
+function formatProtonLabel(version: string): string {
+  const trimmed = version.trim();
+  if (/^ge-proton/i.test(trimmed)) {
+    return `Proton: ${trimmed.replace(/^ge-proton/i, 'Proton GE ')}`;
+  }
+  if (/^proton/i.test(trimmed)) {
+    return `Proton: ${trimmed}`;
+  }
+  return `Proton: ${trimmed}`;
+}
+
 export function ReportCard({ report, selected, focused = false, onSelect, onFocus }: Props) {
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
   const cappedScore = Math.min(100, report.score);
@@ -102,7 +113,7 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
           )}
 
           <div style={{ fontSize: 15, fontWeight: 700, color: '#f4fbff', marginBottom: 4 }}>
-            {report.protonVersion}
+            {formatProtonLabel(report.protonVersion)}
           </div>
           <div style={{ fontSize: 11, color: '#8fb4d5', marginBottom: 8 }}>
             {[report.gpu, report.os].filter(Boolean).join(' · ') || 'Hardware details unavailable'}
