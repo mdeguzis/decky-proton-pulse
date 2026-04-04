@@ -213,8 +213,13 @@ export function ReportDetailModal({
     }
   };
 
+  const handleScrollWheel = () => {
+    void logFrontendEvent('DEBUG', 'ReportDetail: wheel/touch scroll detected');
+  };
+
   // Give the scroll div real DOM focus so right-stick scrolling works.
   const focusScrollPane = () => {
+    void logFrontendEvent('DEBUG', 'ReportDetail: focusScrollPane called');
     scrollRef.current?.focus();
   };
 
@@ -340,19 +345,31 @@ export function ReportDetailModal({
         <Focusable
           onGamepadDirection={handleContentDirection}
           onGamepadFocus={focusScrollPane}
-          onOKButton={() => { /* noop — keeps Focusable interactive for gamepad */ }}
-          style={{ flex: 1, minHeight: 0 }}
+          ref={scrollRef as React.RefObject<HTMLDivElement>}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            padding: '0 16px 16px',
+            outline: 'none',
+          }}
+          onWheel={handleScrollWheel}
+          onTouchMove={handleScrollWheel}
+          tabIndex={0}
         >
-          <div
-            ref={scrollRef}
-            tabIndex={0}
-            style={{
-              height: '100%',
-              overflowY: 'auto',
-              padding: '0 16px 16px',
-              outline: 'none',
-            }}
-          >
+            {/* Focus anchor — Steam needs a focusable child to navigate here */}
+            <DialogButton
+              onOKActionDescription="Scroll report details"
+              style={{
+                height: 0,
+                minHeight: 0,
+                padding: 0,
+                margin: 0,
+                border: 'none',
+                overflow: 'hidden',
+                opacity: 0,
+              }}
+            />
             <InfoSection title="Launch">
               <InfoRow
                 label="Launch Preview"
@@ -409,7 +426,6 @@ export function ReportDetailModal({
                 <InfoRow label="Notes" value={report.notes} />
               )}
             </InfoSection>
-          </div>
         </Focusable>
 
       </div>
