@@ -9,7 +9,7 @@ import {
   SteamSpinner,
   showModal,
 } from '@decky/ui';
-import type { SystemInfo } from '../types';
+import type { CdnReport, SystemInfo } from '../types';
 import type { DisplayReportCard } from './ReportCard';
 import { EditReportModal } from './EditReportModal';
 
@@ -18,7 +18,7 @@ export interface EditedReportEntry {
   id: string;
   label: string;
   baseReportKey: string;
-  report: import('../types').CdnReport;
+  report: CdnReport;
   updatedAt: number;
 }
 
