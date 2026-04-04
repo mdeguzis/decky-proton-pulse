@@ -12,23 +12,25 @@ import {
   formatProtonLabel,
   formatTimestamp,
   buildLaunchOptionPreview,
-  matchLabel,
 } from '../lib/reportFormatters';
 import { getSteamAppDetails, getLaunchOptionsFromDetails } from '../lib/steamApps';
 import { checkProtonVersionAvailability } from '../lib/compatTools';
 import { logFrontendEvent } from '../lib/logger';
+import { t } from '../lib/i18n';
 
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
 const SCROLL_STEP = 50;
 
-const VERSION_STATUS_STYLES: Record<string, { bg: string; label: string }> = {
-  installed:   { bg: '#4caf50', label: 'Installed' },
-  installable: { bg: '#f59e0b', label: 'Not Installed' },
-  unavailable: { bg: '#6b7280', label: 'Unavailable' },
-  unmanaged:   { bg: '#4a6a8a', label: 'Valve Proton' },
-};
+function getVersionStatusStyles(): Record<string, { bg: string; label: string }> {
+  return {
+    installed:   { bg: '#4caf50', label: t().detail.installed },
+    installable: { bg: '#f59e0b', label: t().detail.notInstalled },
+    unavailable: { bg: '#6b7280', label: t().detail.unavailable },
+    unmanaged:   { bg: '#4a6a8a', label: t().detail.valveProton },
+  };
+}
 
 function InfoSection({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -190,20 +192,20 @@ export function ReportDetailModal({
       await SteamClient.Apps.SetAppLaunchOptions(appId, '');
       setLaunchOptionsDisplay('');
       void logFrontendEvent('INFO', 'ReportDetail: Launch options cleared', { appId });
-      toaster.toast({ title: 'Proton Pulse', body: 'Launch options cleared.' });
+      toaster.toast({ title: 'Proton Pulse', body: t().toast.cleared });
     } catch (e) {
       void logFrontendEvent('ERROR', 'ReportDetail: Failed to clear launch options', {
         appId, error: e instanceof Error ? e.message : String(e),
       });
       toaster.toast({
         title: 'Proton Pulse',
-        body: `Failed to clear: ${e instanceof Error ? e.message : String(e)}`,
+        body: t().toast.clearFailed(e instanceof Error ? e.message : String(e)),
       });
     }
   };
 
   const statusEntry = versionStatus !== 'loading'
-    ? VERSION_STATUS_STYLES[versionStatus]
+    ? getVersionStatusStyles()[versionStatus]
     : null;
 
   // Handle all gamepad directions from the button bar.
@@ -308,7 +310,11 @@ export function ReportDetailModal({
             <span>
               {formatProtonLabel(report.protonVersion)}
               {' · '}
-              {matchLabel(report.gpuTier, sysInfo?.gpu_vendor)}
+              {(!sysInfo?.gpu_vendor || report.gpuTier === 'unknown')
+                ? t().detail.unknownGpu
+                : report.gpuTier === sysInfo.gpu_vendor
+                  ? t().detail.matchesGpu
+                  : t().detail.differentGpu}
               {' · '}
               {confScore}/10 confidence
             </span>
@@ -324,11 +330,11 @@ export function ReportDetailModal({
                   whiteSpace: 'nowrap',
                 }}
               >
-                Proton version: {statusEntry.label}
+                {t().detail.protonVersion}: {statusEntry.label}
               </span>
             )}
             {versionStatus === 'loading' && (
-              <span style={{ fontSize: 9, color: '#7a9bb5' }}>checking…</span>
+              <span style={{ fontSize: 9, color: '#7a9bb5' }}>{t().detail.checking}</span>
             )}
           </div>
         </div>
@@ -349,32 +355,32 @@ export function ReportDetailModal({
             disabled={applying}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
-            {applying ? <SteamSpinner /> : 'Apply'}
+            {applying ? <SteamSpinner /> : t().detail.apply}
           </DialogButton>
           <DialogButton
             onClick={handleEditConfig}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
-            Edit
+            {t().detail.edit}
           </DialogButton>
           <DialogButton
             onClick={handleUpvote}
             disabled={upvoting}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
-            {upvoting ? <SteamSpinner /> : 'Upvote'}
+            {upvoting ? <SteamSpinner /> : t().detail.upvote}
           </DialogButton>
           <DialogButton
             onClick={() => {
               if (!launchOptionsDisplay) {
-                toaster.toast({ title: 'Proton Pulse', body: 'No launch options set.' });
+                toaster.toast({ title: 'Proton Pulse', body: t().toast.noOptionsSet });
                 return;
               }
               void handleClearLaunchOptions();
             }}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
-            Clear
+            {t().detail.clear}
           </DialogButton>
         </Focusable>
 
@@ -390,34 +396,34 @@ export function ReportDetailModal({
             outline: 'none',
           }}
         >
-            <InfoSection title="Launch">
+            <InfoSection title={t().detail.launchPreview}>
               <InfoRow
-                label="Launch Preview"
+                label={t().detail.launchPreview}
                 value={buildLaunchOptionPreview(report.protonVersion)}
               />
               <InfoRow
-                label="Current Launch Options"
-                value={launchOptionsDisplay || 'No launch options set.'}
+                label={t().detail.currentLaunchOptions}
+                value={launchOptionsDisplay || t().detail.noLaunchOptions}
               />
             </InfoSection>
 
-            <InfoSection title="Hardware Match">
-              <InfoRow label="GPU" value={report.gpu || '—'} />
-              <InfoRow label="OS" value={report.os || '—'} />
-              <InfoRow label="Kernel" value={report.kernel || '—'} />
-              <InfoRow label="Driver" value={report.gpuDriver || '—'} />
+            <InfoSection title={t().detail.hardwareMatch}>
+              <InfoRow label={t().detail.gpu} value={report.gpu || '—'} />
+              <InfoRow label={t().detail.os} value={report.os || '—'} />
+              <InfoRow label={t().detail.kernel} value={report.kernel || '—'} />
+              <InfoRow label={t().detail.driver} value={report.gpuDriver || '—'} />
             </InfoSection>
 
-            <InfoSection title="Report">
-              <InfoRow label="Confidence" value={`${confScore}/10`} />
-              <InfoRow label="GPU Tier" value={report.gpuTier.toUpperCase()} />
-              <InfoRow label="Votes" value={String(report.upvotes)} />
-              <InfoRow label="Submitted" value={formatTimestamp(report.timestamp)} />
+            <InfoSection title={t().detail.report}>
+              <InfoRow label={t().reports.confidence} value={`${confScore}/10`} />
+              <InfoRow label={t().detail.gpuTier} value={report.gpuTier.toUpperCase()} />
+              <InfoRow label={t().reports.votes} value={String(report.upvotes)} />
+              <InfoRow label={t().reports.submitted} value={formatTimestamp(report.timestamp)} />
               {report.isEdited && (
-                <InfoRow label="Edited" value={report.editLabel || 'Custom variant'} />
+                <InfoRow label={t().detail.edited} value={report.editLabel || t().detail.customVariant} />
               )}
               {report.notes && (
-                <InfoRow label="Notes" value={report.notes} />
+                <InfoRow label={t().reports.notes} value={report.notes} />
               )}
             </InfoSection>
 
