@@ -199,28 +199,20 @@ export function ReportDetailModal({
     ? VERSION_STATUS_STYLES[versionStatus]
     : null;
 
-  const handleContentDirection = (evt: GamepadEvent) => {
-    void logFrontendEvent('DEBUG', 'ReportDetail: gamepad direction in content area', {
-      button: evt.detail.button,
-      hasScrollRef: !!scrollRef.current,
-    });
-    const el = scrollRef.current;
-    if (!el) return;
-    if (evt.detail.button === GamepadButton.DIR_DOWN) {
-      el.scrollBy({ top: SCROLL_STEP, behavior: 'smooth' });
-    } else if (evt.detail.button === GamepadButton.DIR_UP) {
-      el.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
+  // Handle all gamepad directions from the button bar.
+  // UP/DOWN scroll the content area directly (Steam can't focus-navigate to
+  // plain content, so we handle it here). LEFT/RIGHT navigate between buttons.
+  const handleButtonBarDirection = (evt: GamepadEvent) => {
+    const btn = evt.detail.button;
+    void logFrontendEvent('DEBUG', 'ReportDetail: gamepad direction', { button: btn });
+
+    if (btn === GamepadButton.DIR_DOWN || btn === GamepadButton.DIR_UP) {
+      const el = scrollRef.current;
+      if (!el) return;
+      const step = btn === GamepadButton.DIR_DOWN ? SCROLL_STEP : -SCROLL_STEP;
+      el.scrollBy({ top: step, behavior: 'smooth' });
     }
-  };
-
-  const handleScrollWheel = () => {
-    void logFrontendEvent('DEBUG', 'ReportDetail: wheel/touch scroll detected');
-  };
-
-  // Give the scroll div real DOM focus so right-stick scrolling works.
-  const focusScrollPane = () => {
-    void logFrontendEvent('DEBUG', 'ReportDetail: focusScrollPane called');
-    scrollRef.current?.focus();
+    // LEFT/RIGHT: don't interfere — let Steam navigate between buttons
   };
 
   return (
@@ -306,11 +298,7 @@ export function ReportDetailModal({
 
         {/* ── Action buttons (fixed, horizontal) ── */}
         <Focusable
-          onGamepadDirection={(evt: GamepadEvent) => {
-            void logFrontendEvent('DEBUG', 'ReportDetail: gamepad direction in button bar', {
-              button: evt.detail.button,
-            });
-          }}
+          onGamepadDirection={handleButtonBarDirection}
           style={{
             flexShrink: 0,
             display: 'flex',
@@ -341,11 +329,10 @@ export function ReportDetailModal({
           </DialogButton>
         </Focusable>
 
-        {/* ── Scrollable info area ── */}
-        <Focusable
-          onGamepadDirection={handleContentDirection}
-          onGamepadFocus={focusScrollPane}
-          ref={scrollRef as React.RefObject<HTMLDivElement>}
+        {/* ── Scrollable info area (scrolled by button bar D-pad) ── */}
+        <div
+          ref={scrollRef}
+          tabIndex={0}
           style={{
             flex: 1,
             minHeight: 0,
@@ -353,23 +340,7 @@ export function ReportDetailModal({
             padding: '0 16px 16px',
             outline: 'none',
           }}
-          onWheel={handleScrollWheel}
-          onTouchMove={handleScrollWheel}
-          tabIndex={0}
         >
-            {/* Focus anchor — Steam needs a focusable child to navigate here */}
-            <DialogButton
-              onOKActionDescription="Scroll report details"
-              style={{
-                height: 0,
-                minHeight: 0,
-                padding: 0,
-                margin: 0,
-                border: 'none',
-                overflow: 'hidden',
-                opacity: 0,
-              }}
-            />
             <InfoSection title="Launch">
               <InfoRow
                 label="Launch Preview"
@@ -426,7 +397,7 @@ export function ReportDetailModal({
                 <InfoRow label="Notes" value={report.notes} />
               )}
             </InfoSection>
-        </Focusable>
+        </div>
 
       </div>
     </ModalRoot>
