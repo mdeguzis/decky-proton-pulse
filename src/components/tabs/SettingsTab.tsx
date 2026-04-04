@@ -980,7 +980,7 @@ export function SettingsTab() {
               )}
             </div>
             {managerState && availableCompatibilityRows.length > 8 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 10, padding: '12px 0 0' }}>
+              <Focusable style={{ display: 'flex', gap: 10, padding: '12px 0 0' }}>
                 <CompactActionButton
                   label={`Other version (${availableCompatibilityRows.length - 8} more)`}
                   onClick={handleOpenVersionBrowser}
@@ -993,7 +993,7 @@ export function SettingsTab() {
                   disabled={installingTag !== null || removingTool !== null}
                   fullWidth
                 />
-              </div>
+              </Focusable>
             ) : (
               <div style={{ padding: '10px 0 0' }}>
                 <CompactActionButton
