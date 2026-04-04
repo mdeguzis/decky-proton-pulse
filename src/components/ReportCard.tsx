@@ -54,7 +54,7 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
             ? 'linear-gradient(180deg, rgba(72, 104, 142, 0.36), rgba(17, 26, 38, 0.96))'
             : 'linear-gradient(180deg, rgba(26, 36, 49, 0.92), rgba(13, 19, 28, 0.96))',
           boxShadow: highlighted
-            ? '0 0 0 1px rgba(255,255,255,0.2) inset, 0 0 18px rgba(255,255,255,0.18), 0 0 34px rgba(149,191,255,0.2)'
+            ? '0 0 18px rgba(255,255,255,0.18), 0 0 34px rgba(149,191,255,0.2)'
             : '0 0 0 1px rgba(255,255,255,0.04) inset',
           cursor: 'pointer',
           userSelect: 'none',
@@ -64,7 +64,7 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
         }}
       >
         <style>
-          {'@keyframes proton-pulse-card-glow { 0% { box-shadow: 0 0 0 1px rgba(255,255,255,0.24) inset, 0 0 12px rgba(255,255,255,0.12), 0 0 22px rgba(149,191,255,0.16); } 50% { box-shadow: 0 0 0 1px rgba(255,255,255,0.34) inset, 0 0 22px rgba(255,255,255,0.2), 0 0 40px rgba(149,191,255,0.28); } 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.24) inset, 0 0 12px rgba(255,255,255,0.12), 0 0 22px rgba(149,191,255,0.16); } }'}
+          {'@keyframes proton-pulse-card-glow { 0% { box-shadow: 0 0 12px rgba(255,255,255,0.12), 0 0 22px rgba(149,191,255,0.16); } 50% { box-shadow: 0 0 22px rgba(255,255,255,0.2), 0 0 40px rgba(149,191,255,0.28); } 100% { box-shadow: 0 0 12px rgba(255,255,255,0.12), 0 0 22px rgba(149,191,255,0.16); } }'}
         </style>
 
         <div style={{ flex: 1, minWidth: 0 }}>

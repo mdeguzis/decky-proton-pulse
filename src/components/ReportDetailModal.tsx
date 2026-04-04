@@ -209,8 +209,13 @@ export function ReportDetailModal({
     if (btn === GamepadButton.DIR_DOWN || btn === GamepadButton.DIR_UP) {
       const el = scrollRef.current;
       if (!el) return;
-      const step = btn === GamepadButton.DIR_DOWN ? SCROLL_STEP : -SCROLL_STEP;
-      el.scrollBy({ top: step, behavior: 'smooth' });
+      if (btn === GamepadButton.DIR_DOWN) {
+        // If near bottom, snap to end; otherwise step
+        const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+        el.scrollBy({ top: remaining <= SCROLL_STEP ? remaining : SCROLL_STEP, behavior: 'auto' });
+      } else {
+        el.scrollBy({ top: el.scrollTop <= SCROLL_STEP ? -el.scrollTop : -SCROLL_STEP, behavior: 'auto' });
+      }
     }
     // LEFT/RIGHT: don't interfere — let Steam navigate between buttons
   };
