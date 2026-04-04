@@ -115,6 +115,7 @@ export interface ProtonVersionAvailability {
   installed: boolean;
   normalized_version: string | null;
   matched_tool_name: string | null;
+  closest_tool_name: string | null;
   release: CompatToolRelease | null;
   message: string;
 }

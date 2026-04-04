@@ -16,6 +16,7 @@ import {
 } from '../lib/reportFormatters';
 import { getSteamAppDetails, getLaunchOptionsFromDetails } from '../lib/steamApps';
 import { checkProtonVersionAvailability } from '../lib/compatTools';
+import { logFrontendEvent } from '../lib/logger';
 
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
@@ -102,33 +103,57 @@ export function ReportDetailModal({
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
 
   useEffect(() => {
+    void logFrontendEvent('DEBUG', 'Checking Proton version availability', {
+      appId, protonVersion: report.protonVersion,
+    });
     checkProtonVersionAvailability(report.protonVersion)
       .then((av) => {
-        if (!av.managed) {
-          setVersionStatus('unmanaged');
-        } else if (av.installed) {
-          setVersionStatus('installed');
-        } else if (av.release) {
-          setVersionStatus('installable');
-        } else {
-          setVersionStatus('unavailable');
-        }
+        const status = !av.managed ? 'unmanaged'
+          : av.installed ? 'installed'
+          : av.release ? 'installable'
+          : 'unavailable';
+        void logFrontendEvent('INFO', 'Proton version availability resolved', {
+          appId,
+          protonVersion: report.protonVersion,
+          normalized: av.normalized_version,
+          status,
+          matchedTool: av.matched_tool_name,
+          closestTool: av.closest_tool_name,
+          message: av.message,
+        });
+        setVersionStatus(status);
       })
-      .catch(() => setVersionStatus('unavailable'));
-  }, [report.protonVersion]);
+      .catch((err) => {
+        void logFrontendEvent('ERROR', 'Proton version availability check failed', {
+          appId, protonVersion: report.protonVersion,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        setVersionStatus('unavailable');
+      });
+  }, [report.protonVersion, appId]);
 
   const handleApply = async () => {
+    void logFrontendEvent('INFO', 'ReportDetail: Apply requested', {
+      appId, appName, protonVersion: report.protonVersion,
+    });
     setApplying(true);
     try {
       await onApply(report);
       const result = await getSteamAppDetails(appId);
-      setLaunchOptionsDisplay(getLaunchOptionsFromDetails(result.details));
+      const newOptions = getLaunchOptionsFromDetails(result.details);
+      setLaunchOptionsDisplay(newOptions);
+      void logFrontendEvent('INFO', 'ReportDetail: Launch options refreshed after apply', {
+        appId, launchOptions: newOptions,
+      });
     } finally {
       setApplying(false);
     }
   };
 
   const handleUpvote = async () => {
+    void logFrontendEvent('INFO', 'ReportDetail: Upvote requested', {
+      appId, appName, protonVersion: report.protonVersion,
+    });
     setUpvoting(true);
     try {
       await onUpvote(report);
@@ -138,6 +163,9 @@ export function ReportDetailModal({
   };
 
   const handleEditConfig = () => {
+    void logFrontendEvent('INFO', 'ReportDetail: Opening edit modal', {
+      appId, appName, protonVersion: report.protonVersion,
+    });
     showModal(
       <EditReportModal
         report={report}
@@ -150,11 +178,16 @@ export function ReportDetailModal({
   };
 
   const handleClearLaunchOptions = async () => {
+    void logFrontendEvent('INFO', 'ReportDetail: Clearing launch options', { appId, appName });
     try {
       await SteamClient.Apps.SetAppLaunchOptions(appId, '');
       setLaunchOptionsDisplay('');
+      void logFrontendEvent('INFO', 'ReportDetail: Launch options cleared', { appId });
       toaster.toast({ title: 'Proton Pulse', body: 'Launch options cleared.' });
     } catch (e) {
+      void logFrontendEvent('ERROR', 'ReportDetail: Failed to clear launch options', {
+        appId, error: e instanceof Error ? e.message : String(e),
+      });
       toaster.toast({
         title: 'Proton Pulse',
         body: `Failed to clear: ${e instanceof Error ? e.message : String(e)}`,
@@ -178,8 +211,7 @@ export function ReportDetailModal({
 
   return (
     <ModalRoot onCancel={closeModal} bAllowFullSize>
-      {/* position:absolute locks to the ModalRoot bounds so height is real */}
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
 
         {/* ── Fixed header ── */}
         <div
