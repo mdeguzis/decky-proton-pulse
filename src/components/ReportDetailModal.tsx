@@ -208,9 +208,17 @@ export function ReportDetailModal({
 
     if (btn === GamepadButton.DIR_DOWN || btn === GamepadButton.DIR_UP) {
       const el = scrollRef.current;
-      if (!el) return;
+      if (!el) {
+        void logFrontendEvent('DEBUG', 'ReportDetail: scrollRef is null');
+        return;
+      }
+      void logFrontendEvent('DEBUG', 'ReportDetail: scroll state', {
+        scrollTop: Math.round(el.scrollTop),
+        scrollHeight: el.scrollHeight,
+        clientHeight: el.clientHeight,
+        canScroll: el.scrollHeight > el.clientHeight,
+      });
       if (btn === GamepadButton.DIR_DOWN) {
-        // If near bottom, snap to end; otherwise step
         const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
         el.scrollBy({ top: remaining <= SCROLL_STEP ? remaining : SCROLL_STEP, behavior: 'auto' });
       } else {
@@ -386,12 +394,12 @@ export function ReportDetailModal({
             </InfoSection>
         </div>
 
-        {/* Fixed bottom ruler — always visible */}
+        {/* Fixed bottom ruler — always visible above Steam nav bar */}
         <div style={{
           flexShrink: 0,
           height: 2,
           background: 'rgba(255,255,255,0.4)',
-          margin: '0 16px',
+          margin: '4px 16px 40px',
           borderRadius: 1,
         }} />
 
