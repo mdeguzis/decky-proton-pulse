@@ -230,7 +230,7 @@ export function ReportDetailModal({
 
   return (
     <ModalRoot onCancel={closeModal} bAllowFullSize>
-      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
 
         {/* ── Fixed header ── */}
         <div
@@ -340,14 +340,18 @@ export function ReportDetailModal({
           >
             {upvoting ? <SteamSpinner /> : 'Upvote'}
           </DialogButton>
-          {launchOptionsDisplay && (
-            <DialogButton
-              onClick={handleClearLaunchOptions}
-              style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
-            >
-              Clear Options
-            </DialogButton>
-          )}
+          <DialogButton
+            onClick={() => {
+              if (!launchOptionsDisplay) {
+                toaster.toast({ title: 'Proton Pulse', body: 'No launch options set.' });
+                return;
+              }
+              handleClearLaunchOptions();
+            }}
+            style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
+          >
+            Clear Options
+          </DialogButton>
         </Focusable>
 
         {/* ── Scrollable info area (scrolled by button bar D-pad) ── */}
@@ -358,7 +362,7 @@ export function ReportDetailModal({
             flex: 1,
             minHeight: 0,
             overflowY: 'auto',
-            padding: '0 16px 24px',
+            padding: '0 16px 60px',
             outline: 'none',
           }}
         >
@@ -392,16 +396,15 @@ export function ReportDetailModal({
                 <InfoRow label="Notes" value={report.notes} />
               )}
             </InfoSection>
-        </div>
 
-        {/* Fixed bottom ruler — always visible above Steam nav bar */}
-        <div style={{
-          flexShrink: 0,
-          height: 2,
-          background: 'rgba(255,255,255,0.4)',
-          margin: '4px 16px 40px',
-          borderRadius: 1,
-        }} />
+            {/* End-of-content ruler */}
+            <div style={{
+              height: 2,
+              background: 'rgba(255,255,255,0.4)',
+              marginTop: 12,
+              borderRadius: 1,
+            }} />
+        </div>
 
       </div>
     </ModalRoot>
