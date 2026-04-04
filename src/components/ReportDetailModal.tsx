@@ -1,6 +1,7 @@
 // src/components/ReportDetailModal.tsx
-import { useState, useEffect, type ReactNode } from 'react';
-import { ModalRoot, Focusable, DialogButton, SteamSpinner, showModal } from '@decky/ui';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { ModalRoot, Focusable, DialogButton, SteamSpinner, GamepadButton, showModal } from '@decky/ui';
+import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '@decky/api';
 import type { SystemInfo } from '../types';
 import type { DisplayReportCard } from './ReportCard';
@@ -20,10 +21,13 @@ import { logFrontendEvent } from '../lib/logger';
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
+const SCROLL_STEP = 120;
+
 const VERSION_STATUS_STYLES: Record<string, { bg: string; label: string }> = {
   installed:   { bg: '#4caf50', label: 'Installed' },
   installable: { bg: '#f59e0b', label: 'Not Installed' },
   unavailable: { bg: '#6b7280', label: 'Unavailable' },
+  unmanaged:   { bg: '#4a6a8a', label: 'Valve Proton' },
 };
 
 function InfoSection({ title, children }: { title: string; children: ReactNode }) {
@@ -93,6 +97,7 @@ export function ReportDetailModal({
   const [upvoting, setUpvoting] = useState(false);
   const [launchOptionsDisplay, setLaunchOptionsDisplay] = useState(currentLaunchOptions);
   const [versionStatus, setVersionStatus] = useState<'loading' | 'installed' | 'installable' | 'unavailable' | 'unmanaged'>('loading');
+  const scrollRef = useRef<HTMLDivElement>(null);
   const cappedScore = Math.min(100, report.score);
   const confScore = (cappedScore / 10).toFixed(1);
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
@@ -190,9 +195,19 @@ export function ReportDetailModal({
     }
   };
 
-  const statusEntry = (versionStatus !== 'loading' && versionStatus !== 'unmanaged')
+  const statusEntry = versionStatus !== 'loading'
     ? VERSION_STATUS_STYLES[versionStatus]
     : null;
+
+  const handleContentDirection = (evt: GamepadEvent) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (evt.detail.button === GamepadButton.DIR_DOWN) {
+      el.scrollBy({ top: SCROLL_STEP, behavior: 'smooth' });
+    } else if (evt.detail.button === GamepadButton.DIR_UP) {
+      el.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
+    }
+  };
 
   return (
     <ModalRoot onCancel={closeModal} bAllowFullSize>
@@ -275,8 +290,41 @@ export function ReportDetailModal({
           </div>
         </div>
 
-        {/* ── Scrollable body ── */}
+        {/* ── Action buttons (fixed, horizontal) ── */}
+        <Focusable
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            gap: 8,
+            padding: '8px 16px',
+            borderBottom: '1px solid #2a3a4a',
+          }}
+        >
+          <DialogButton
+            onClick={handleApply}
+            disabled={applying}
+            style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
+          >
+            {applying ? <SteamSpinner /> : 'Apply Config'}
+          </DialogButton>
+          <DialogButton
+            onClick={handleEditConfig}
+            style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
+          >
+            Edit Config
+          </DialogButton>
+          <DialogButton
+            onClick={handleUpvote}
+            disabled={upvoting}
+            style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
+          >
+            {upvoting ? <SteamSpinner /> : 'Upvote'}
+          </DialogButton>
+        </Focusable>
+
+        {/* ── Scrollable info area ── */}
         <div
+          ref={scrollRef}
           style={{
             flex: 1,
             minHeight: 0,
@@ -284,94 +332,64 @@ export function ReportDetailModal({
             padding: '0 16px 16px',
           }}
         >
-          {/* Action buttons — horizontal Focusable so LEFT/RIGHT navigates between them */}
-          <Focusable
-            style={{
-              display: 'flex',
-              gap: 8,
-              padding: '10px 0',
-              borderBottom: '1px solid #2a3a4a',
-            }}
-          >
-            <DialogButton
-              onClick={handleApply}
-              disabled={applying}
-              style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
-            >
-              {applying ? <SteamSpinner /> : 'Apply Config'}
-            </DialogButton>
-            <DialogButton
-              onClick={handleEditConfig}
-              style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
-            >
-              Edit Config
-            </DialogButton>
-            <DialogButton
-              onClick={handleUpvote}
-              disabled={upvoting}
-              style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
-            >
-              {upvoting ? <SteamSpinner /> : 'Upvote'}
-            </DialogButton>
-          </Focusable>
+          <Focusable onGamepadDirection={handleContentDirection}>
+            <InfoSection title="Launch">
+              <InfoRow
+                label="Launch Preview"
+                value={buildLaunchOptionPreview(report.protonVersion)}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  padding: '5px 0',
+                  borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  fontSize: 12,
+                  gap: 8,
+                }}
+              >
+                <span style={{ color: '#9db0c4', flexShrink: 0 }}>Current Launch Options</span>
+                <span style={{ color: '#e8f4ff', textAlign: 'right', wordBreak: 'break-word', flex: 1 }}>
+                  {launchOptionsDisplay || 'No launch options set.'}
+                </span>
+                {launchOptionsDisplay && (
+                  <DialogButton
+                    onClick={handleClearLaunchOptions}
+                    style={{
+                      fontSize: 9,
+                      padding: '2px 8px',
+                      minWidth: 0,
+                      width: 'auto',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Clear
+                  </DialogButton>
+                )}
+              </div>
+            </InfoSection>
 
-          {/* Info sections — right joystick scrolls this container natively */}
-          <InfoSection title="Launch">
-            <InfoRow
-              label="Launch Preview"
-              value={buildLaunchOptionPreview(report.protonVersion)}
-            />
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                padding: '5px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                fontSize: 12,
-                gap: 8,
-              }}
-            >
-              <span style={{ color: '#9db0c4', flexShrink: 0 }}>Current Launch Options</span>
-              <span style={{ color: '#e8f4ff', textAlign: 'right', wordBreak: 'break-word', flex: 1 }}>
-                {launchOptionsDisplay || 'No launch options set.'}
-              </span>
-              {launchOptionsDisplay && (
-                <DialogButton
-                  onClick={handleClearLaunchOptions}
-                  style={{
-                    fontSize: 9,
-                    padding: '2px 8px',
-                    minWidth: 0,
-                    width: 'auto',
-                    flexShrink: 0,
-                  }}
-                >
-                  Clear
-                </DialogButton>
+            <InfoSection title="Hardware Match">
+              <InfoRow label="GPU" value={report.gpu || '—'} />
+              <InfoRow label="OS" value={report.os || '—'} />
+              <InfoRow label="Kernel" value={report.kernel || '—'} />
+              <InfoRow label="Driver" value={report.gpuDriver || '—'} />
+            </InfoSection>
+
+            <InfoSection title="Report">
+              <InfoRow label="Confidence" value={`${confScore}/10`} />
+              <InfoRow label="GPU Tier" value={report.gpuTier.toUpperCase()} />
+              <InfoRow label="Votes" value={String(report.upvotes)} />
+              <InfoRow label="Submitted" value={formatTimestamp(report.timestamp)} />
+              {report.isEdited && (
+                <InfoRow label="Edited" value={report.editLabel || 'Custom variant'} />
               )}
-            </div>
-          </InfoSection>
-
-          <InfoSection title="Hardware Match">
-            <InfoRow label="GPU" value={report.gpu || '—'} />
-            <InfoRow label="OS" value={report.os || '—'} />
-            <InfoRow label="Kernel" value={report.kernel || '—'} />
-            <InfoRow label="Driver" value={report.gpuDriver || '—'} />
-          </InfoSection>
-
-          <InfoSection title="Report">
-            <InfoRow label="Confidence" value={`${confScore}/10`} />
-            <InfoRow label="GPU Tier" value={report.gpuTier.toUpperCase()} />
-            <InfoRow label="Votes" value={String(report.upvotes)} />
-            <InfoRow label="Submitted" value={formatTimestamp(report.timestamp)} />
-            {report.isEdited && (
-              <InfoRow label="Edited" value={report.editLabel || 'Custom variant'} />
-            )}
-            {report.notes && (
-              <InfoRow label="Notes" value={report.notes} />
-            )}
-          </InfoSection>
+              {report.notes && (
+                <InfoRow label="Notes" value={report.notes} />
+              )}
+            </InfoSection>
+          </Focusable>
         </div>
 
       </div>
