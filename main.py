@@ -640,7 +640,7 @@ class Plugin:
             tool.get("internal_name") or "",
         ]
         lowered = normalized.lower()
-        return any(lowered in field.lower() for field in fields)
+        return any(field.lower() == lowered for field in fields)
 
     def _is_proton_ge_tool(self, tool: dict) -> bool:
         if tool.get("managed_slot") == "latest":
@@ -862,25 +862,62 @@ class Plugin:
         normalized = self._normalize_proton_ge_tag(version)
         installed = self._list_installed_compatibility_tools()
 
+        decky.logger.info(
+            f"check_proton_version_availability: raw='{version}' normalized='{normalized}' "
+            f"installed_count={len(installed)}"
+        )
+
         if not normalized:
+            decky.logger.info(f"  → not managed (could not normalize '{version}')")
             return {
                 "managed": False,
                 "installed": True,
                 "normalized_version": None,
                 "matched_tool_name": None,
+                "closest_tool_name": None,
                 "release": None,
                 "message": "Version is not managed by Proton Pulse.",
             }
 
-        matched_tool = next((tool for tool in installed if self._installed_tool_matches_version(tool, normalized)), None)
+        # Exact match check with logging
+        matched_tool = None
+        for tool in installed:
+            tool_name = tool.get("display_name") or tool.get("directory_name") or "?"
+            if self._installed_tool_matches_version(tool, normalized):
+                matched_tool = tool
+                decky.logger.info(f"  → exact match: '{tool_name}'")
+                break
+            else:
+                decky.logger.debug(
+                    f"  × no match: '{tool_name}' "
+                    f"(dir={tool.get('directory_name')!r} int={tool.get('internal_name')!r})"
+                )
+
+        # Find closest installed tool for diagnostics even if no exact match
+        closest_tool = None
+        if not matched_tool and installed:
+            closest_tool = self._find_closest_installed_tool(installed, normalized)
+            if closest_tool:
+                decky.logger.info(
+                    f"  → no exact match; closest installed: "
+                    f"'{closest_tool.get('display_name')}'"
+                )
+            else:
+                decky.logger.info(f"  → no exact match; no close installed version found")
+
         releases = await self.get_proton_ge_releases(False)
         release = next((item for item in releases if item.get("tag_name") == normalized), None)
+        decky.logger.info(
+            f"  → release_found={release is not None} "
+            f"release_count={len(releases)}"
+        )
 
         return {
             "managed": True,
             "installed": matched_tool is not None,
             "normalized_version": normalized,
             "matched_tool_name": matched_tool["display_name"] if matched_tool else None,
+            "closest_tool_name": closest_tool["display_name"] if closest_tool else None,
             "release": release,
             "message": (
                 f"{normalized} is already installed."
@@ -892,6 +929,34 @@ class Plugin:
                 )
             ),
         }
+
+    def _find_closest_installed_tool(self, installed: list[dict], normalized: str) -> dict | None:
+        """Find the installed tool whose version is closest to the target."""
+        target = self._extract_version_parts(normalized)
+        if not target:
+            return None
+
+        best_tool = None
+        best_distance = float("inf")
+        for tool in installed:
+            for field in ("internal_name", "directory_name", "display_name"):
+                parts = self._extract_version_parts(tool.get(field) or "")
+                if parts:
+                    distance = abs(parts[0] - target[0]) * 1000 + abs(parts[1] - target[1])
+                    if distance < best_distance:
+                        best_distance = distance
+                        best_tool = tool
+                    break
+        return best_tool
+
+    @staticmethod
+    def _extract_version_parts(version: str) -> tuple[int, int] | None:
+        match = re.search(r"(?:GE-?)?Proton(\d+)-(\d+)", version, re.IGNORECASE)
+        if not match:
+            match = re.search(r"(\d+)\.0-(\d+)", version)
+        if not match:
+            return None
+        return (int(match.group(1)), int(match.group(2)))
 
     def _install_proton_ge_sync(self, version: str | None = None, install_as_latest: bool = False) -> dict:
         releases = self._get_proton_ge_releases_sync(False)
