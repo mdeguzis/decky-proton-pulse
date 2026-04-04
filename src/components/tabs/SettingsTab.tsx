@@ -7,6 +7,7 @@ import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
 import { cancelProtonGeInstall, getProtonGeManagerState, installCompatibilityToolArchive, installProtonGe, uninstallCompatibilityTool } from '../../lib/compatTools';
 import type { CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
+import { t } from '../../lib/i18n';
 
 const AUTO_UPDATE_KEY = 'compat-auto-update-proton-ge';
 const RESTART_HINT = ' Steam may need a restart before the new compatibility tool appears everywhere.';
@@ -982,13 +983,13 @@ export function SettingsTab() {
             {managerState && availableCompatibilityRows.length > 8 ? (
               <Focusable style={{ display: 'flex', gap: 10, padding: '12px 0 0' }}>
                 <CompactActionButton
-                  label={`Other version (${availableCompatibilityRows.length - 8} more)`}
+                  label={`${t().compatTools.otherVersion} (${availableCompatibilityRows.length - 8} more)`}
                   onClick={handleOpenVersionBrowser}
                   disabled={installingTag !== null || removingTool !== null}
                   fullWidth
                 />
                 <CompactActionButton
-                  label="Install from ZIP"
+                  label={t().compatTools.installFromZip}
                   onClick={handleOpenArchiveInstaller}
                   disabled={installingTag !== null || removingTool !== null}
                   fullWidth
@@ -997,7 +998,7 @@ export function SettingsTab() {
             ) : (
               <div style={{ padding: '10px 0 0' }}>
                 <CompactActionButton
-                  label="Install from ZIP"
+                  label={t().compatTools.installFromZip}
                   onClick={handleOpenArchiveInstaller}
                   disabled={installingTag !== null || removingTool !== null}
                   fullWidth
