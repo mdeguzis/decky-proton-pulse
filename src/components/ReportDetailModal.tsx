@@ -332,7 +332,11 @@ export function ReportDetailModal({
             padding: '0 16px 16px',
           }}
         >
-          <Focusable onGamepadDirection={handleContentDirection}>
+          <Focusable
+            //@ts-expect-error -- focusWithin is valid at runtime but missing from type defs
+            focusWithin={false}
+            onGamepadDirection={handleContentDirection}
+          >
             <InfoSection title="Launch">
               <InfoRow
                 label="Launch Preview"
