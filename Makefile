@@ -22,7 +22,7 @@ APP_ID ?=
 SCREENSHOT_BASE ?=
 
 .PHONY: help build watch test test-ts test-py setup deploy deploy-reload build-and-deploy clean \
-        logs get-logs take-screenshot fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
+        logs get-logs take-screenshot take-video fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
 
 help:
 	@echo "Usage: make <target>"
@@ -52,6 +52,9 @@ help:
 	@echo "                    Also copies the saved PNG to the local clipboard when supported."
 	@echo "                    Linux tip: install wl-clipboard for Wayland clipboard copy."
 	@echo "                    Warning: this may capture private on-screen content such as account, chat, or store UI."
+	@echo "  take-video        Record the current Steam UI into ../videos/ until Ctrl+C"
+	@echo "                    Optional: SCREENSHOT_BASE=my-name make take-video"
+	@echo "                    Note: press Enter to stop and finalize cleanly."
 	@echo "  fetch-protondb    Clone or update upstream protondb-data for local inspection"
 	@echo "                    Prefers ../protondb-data when present, otherwise uses ~/src/protondb-data"
 	@echo "  check-protondb-data  Run the proton-pulse-data splitter against the local upstream repo into /tmp"
@@ -116,6 +119,14 @@ take-screenshot:
 	@echo "Capturing the current Steam UI via CEF remote debugging..."
 	@echo "This may include private on-screen content visible on the Steam Deck."
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),)
+
+take-video:
+	$(call require_deck_ip)
+	@echo "Recording the current Steam UI via the Deck's native gamescope video source..."
+	@echo "This may include private on-screen content visible on the Steam Deck."
+	@echo "Press Enter in this terminal to stop and process the video cleanly."
+	@echo "Ctrl+C may interrupt make before the video finalizes."
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --with aiohttp python scripts/take_cef_video.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../videos $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),)
 
 fetch-protondb:
 	@mkdir -p "$(dir $(PROTONDB_REPO_DIR))"
