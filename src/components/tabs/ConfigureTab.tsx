@@ -391,7 +391,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     }
 
     let cancelled = false;
-    void logFrontendEvent('INFO', 'Loading Manage This Game data', {
+    void logFrontendEvent('DEBUG', 'Loading Manage This Game data', {
       appId,
       appName,
       hasSystemInfo: !!sysInfo,
@@ -413,7 +413,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         if (cancelled) return;
         const r = reportResult.reports;
         const v = voteResult.votes;
-        void logFrontendEvent('INFO', 'Manage This Game data loaded', {
+        void logFrontendEvent('DEBUG', 'Manage This Game data loaded', {
           appId,
           appName,
           reportCount: r.length,
@@ -508,6 +508,17 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     }
     try {
       const availability = await checkProtonVersionAvailability(targetReport.protonVersion);
+      void logFrontendEvent('INFO', 'Proton version availability check result', {
+        appId,
+        rawVersion: targetReport.protonVersion,
+        managed: availability.managed,
+        installed: availability.installed,
+        normalized: availability.normalized_version,
+        matchedTool: availability.matched_tool_name,
+        closestTool: availability.closest_tool_name,
+        hasRelease: !!availability.release,
+        message: availability.message,
+      });
       let launchProtonVersion = availability.managed
         ? (availability.normalized_version ?? targetReport.protonVersion)
         : targetReport.protonVersion;

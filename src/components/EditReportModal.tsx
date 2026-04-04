@@ -139,6 +139,9 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
   }, [report.protonVersion]);
 
   const handleVersionChange = (nextVersion: string) => {
+    void logFrontendEvent('DEBUG', 'EditReport: Proton version changed', {
+      previousVersion: protonVersion, nextVersion,
+    });
     setProtonVersion(nextVersion);
     const opt = versionOptions.find((o) => o.value === nextVersion);
     if (opt && !opt.installed) {
@@ -176,6 +179,9 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
   };
 
   const handleClearEdits = () => {
+    void logFrontendEvent('INFO', 'EditReport: Reset to original values', {
+      protonVersion: report.protonVersion,
+    });
     setLabel('');
     setProtonVersion(report.protonVersion);
     setRating(report.rating);
@@ -188,6 +194,9 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
   };
 
   const handleSave = () => {
+    void logFrontendEvent('INFO', 'EditReport: Saving edited report', {
+      label: label.trim(), protonVersion, rating,
+    });
     const entry: EditedReportEntry = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       label: label.trim(),

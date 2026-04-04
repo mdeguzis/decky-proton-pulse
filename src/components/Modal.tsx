@@ -25,7 +25,7 @@ export function ProtonPulsePage() {
   useEffect(() => {
     getSystemInfo()
       .then((info) => {
-        void logFrontendEvent('DEBUG', 'System info loaded for modal', {
+        void logFrontendEvent('INFO', 'System info loaded for modal', {
           gpuVendor: info.gpu_vendor,
           kernel: info.kernel,
         });
@@ -43,7 +43,7 @@ export function ProtonPulsePage() {
   useEffect(() => {
     const handler = (e: Event) => {
       const { tab, appId: id, appName: name } = (e as CustomEvent<NavigatePayload>).detail;
-      void logFrontendEvent('INFO', 'Navigation event received', { tab, appId: id, appName: name });
+      void logFrontendEvent('DEBUG', 'Navigation event received', { tab, appId: id, appName: name });
       setAppId(id);
       setAppName(name);
       setActivePage(tab);
@@ -108,7 +108,7 @@ export function ProtonPulsePage() {
       pages={pages}
       page={activePage}
       onPageRequested={(page) => {
-        void logFrontendEvent('INFO', 'Sidebar page requested', {
+        void logFrontendEvent('DEBUG', 'Sidebar page requested', {
           page,
           appId,
           appName,
