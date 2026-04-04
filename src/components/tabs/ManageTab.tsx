@@ -93,6 +93,6 @@ export function ManageTab({ appId, appName }: Props) {
 }
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
-      return;
+      evt.preventDefault();
     }
   };

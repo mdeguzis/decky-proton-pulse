@@ -58,6 +58,7 @@ export function LogsTab() {
       return;
     }
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
+      evt.preventDefault();
       return;
     }
     if (!paneActive) return;

@@ -21,12 +21,6 @@ export function ProtonPulsePage() {
   const [appId, setAppId]           = useState<number | null>(pageState.appId);
   const [appName, setAppName]       = useState<string>(pageState.appName);
   const [sysInfo, setSysInfo]       = useState<SystemInfo | null>(null);
-  const [manageGameLoadNonce, setManageGameLoadNonce] = useState(0);
-  const [manageGameOverlayOpen, setManageGameOverlayOpen] = useState(false);
-  const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null);
-  const overlayLocked =
-    activePage === 'manage-game' &&
-    (manageGameOverlayOpen || ((overlayHost?.childElementCount ?? 0) > 0));
 
   useEffect(() => {
     getSystemInfo()
@@ -53,9 +47,6 @@ export function ProtonPulsePage() {
       setAppId(id);
       setAppName(name);
       setActivePage(tab);
-      if (tab === 'manage-game' && id) {
-        setManageGameLoadNonce((value) => value + 1);
-      }
     };
     window.addEventListener(NAVIGATE_EVENT, handler);
     return () => window.removeEventListener(NAVIGATE_EVENT, handler);
@@ -69,12 +60,6 @@ export function ProtonPulsePage() {
     }
   }, [appId, activePage]);
 
-  useEffect(() => {
-    if (activePage === 'manage-game' && appId) {
-      setManageGameLoadNonce((value) => value + 1);
-    }
-  }, [activePage, appId]);
-
   const hasGame = !!appId;
 
   const pages: SidebarNavigationPage[] = [
@@ -86,10 +71,6 @@ export function ProtonPulsePage() {
           appId={appId}
           appName={appName}
           sysInfo={sysInfo}
-          isActive={activePage === 'manage-game'}
-          loadNonce={manageGameLoadNonce}
-          onOverlayOpenChange={setManageGameOverlayOpen}
-          overlayHost={overlayHost}
         />
       ),
     }] : []),
@@ -121,74 +102,20 @@ export function ProtonPulsePage() {
   ];
 
   return (
-    <div style={{ position: 'relative', height: '100%' }}>
-      <div
-        ref={setOverlayHost}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 50,
-          pointerEvents: overlayLocked ? 'auto' : 'none',
-        }}
-      />
-      {activePage === 'manage-game' && overlayLocked && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 362,
-            zIndex: 3,
-            background: '#151c22',
-            borderRight: '1px solid rgba(255,255,255,0.05)',
-            pointerEvents: 'auto',
-          }}
-        />
-      )}
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          right: 138,
-          zIndex: 2,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '4px 10px',
-          borderRadius: 999,
-          background: 'rgba(14, 22, 35, 0.78)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          pointerEvents: 'none',
-        }}
-      >
-        <span style={{ fontSize: 10, color: '#f4fbff', letterSpacing: 0.3 }}>
-          B Back
-        </span>
-      </div>
-      <SidebarNavigation
-        title="Proton Pulse"
-        showTitle={false}
-        pages={pages}
-        page={activePage}
-        onPageRequested={(page) => {
-          if (overlayLocked) {
-            void logFrontendEvent('INFO', 'Ignored sidebar page request while report detail overlay is open', {
-              page,
-              appId,
-              appName,
-            });
-            return;
-          }
-          void logFrontendEvent('INFO', 'Sidebar page requested', {
-            page,
-            appId,
-            appName,
-          });
-          setActivePage(page);
-        }}
-        disableRouteReporting={true}
-      />
-    </div>
+    <SidebarNavigation
+      title="Proton Pulse"
+      showTitle={false}
+      pages={pages}
+      page={activePage}
+      onPageRequested={(page) => {
+        void logFrontendEvent('INFO', 'Sidebar page requested', {
+          page,
+          appId,
+          appName,
+        });
+        setActivePage(page);
+      }}
+      disableRouteReporting={true}
+    />
   );
 }

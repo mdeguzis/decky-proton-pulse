@@ -1,5 +1,5 @@
 // src/components/EditReportModal.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ModalRoot,
   PanelSection,
@@ -7,11 +7,82 @@ import {
   TextField,
   DialogButton,
   DropdownItem,
+  SteamSpinner,
 } from '@decky/ui';
+import { toaster } from '@decky/api';
 import type { DisplayReportCard } from './ReportCard';
-import type { EditedReportEntry } from './ReportDetailModal';
+import type { EditedReportEntry } from './tabs/ConfigureTab';
+import { getProtonGeManagerState, installProtonGe } from '../lib/compatTools';
+import { formatProtonLabel } from '../lib/reportFormatters';
+import { logFrontendEvent } from '../lib/logger';
 
 const RATING_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending'] as const;
+
+interface VersionOption {
+  value: string;          // tag_name or internal_name — used as dropdown data
+  displayName: string;    // human label, e.g. "Proton GE 9-27"
+  installed: boolean;
+}
+
+function buildVersionOptions(
+  releases: { tag_name: string }[],
+  installedTools: { directory_name: string; display_name: string; internal_name: string }[],
+): VersionOption[] {
+  // Build a lookup of installed tag_names for fast matching
+  const installedTagSet = new Set<string>();
+  for (const tool of installedTools) {
+    if (tool.internal_name) installedTagSet.add(tool.internal_name.toLowerCase());
+    if (tool.directory_name) installedTagSet.add(tool.directory_name.toLowerCase());
+  }
+  const isInstalled = (tag: string) => installedTagSet.has(tag.toLowerCase());
+
+  // Releases → options
+  const releaseOptions: VersionOption[] = releases.map((r) => ({
+    value: r.tag_name,
+    displayName: formatProtonLabel(r.tag_name),
+    installed: isInstalled(r.tag_name),
+  }));
+
+  // Installed tools that don't appear in releases (custom / Valve builds)
+  const releaseTagSet = new Set(releases.map((r) => r.tag_name.toLowerCase()));
+  const extraInstalled: VersionOption[] = installedTools
+    .filter((t) => !releaseTagSet.has((t.internal_name || t.directory_name).toLowerCase()))
+    .map((t) => ({
+      value: t.internal_name || t.directory_name,
+      displayName: t.display_name || t.directory_name,
+      installed: true,
+    }));
+
+  // Combine: installed first, then available
+  const combined = [...extraInstalled, ...releaseOptions];
+  combined.sort((a, b) => {
+    if (a.installed !== b.installed) return a.installed ? -1 : 1;
+    return 0;
+  });
+  return combined;
+}
+
+function VersionOptionLabel({ name, installed }: { name: string; installed: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 8 }}>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {name}
+      </span>
+      <span
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          color: installed ? '#4caf50' : '#f59e0b',
+          flexShrink: 0,
+          textTransform: 'uppercase',
+          letterSpacing: 0.3,
+        }}
+      >
+        {installed ? 'Installed' : 'Available'}
+      </span>
+    </div>
+  );
+}
 
 export interface EditReportModalProps {
   closeModal?: () => void;
@@ -29,6 +100,92 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
   const [kernel, setKernel]             = useState(report.kernel);
   const [ram, setRam]                   = useState(report.ram);
   const [notes, setNotes]               = useState(report.notes);
+
+  const [versionOptions, setVersionOptions] = useState<VersionOption[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(true);
+  const [installing, setInstalling] = useState<string | null>(null);
+
+  useEffect(() => {
+    getProtonGeManagerState(false)
+      .then((state) => {
+        const opts = buildVersionOptions(state.releases, state.installed_tools);
+
+        // If the report's current version isn't in the list, add it at the top
+        const currentNorm = report.protonVersion.toLowerCase();
+        const found = opts.some((o) => o.value.toLowerCase() === currentNorm);
+        if (!found) {
+          opts.unshift({
+            value: report.protonVersion,
+            displayName: formatProtonLabel(report.protonVersion),
+            installed: false,
+          });
+        }
+
+        setVersionOptions(opts);
+        setLoadingVersions(false);
+      })
+      .catch((err) => {
+        void logFrontendEvent('WARNING', 'Failed to load Proton versions for EditReportModal', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        // Fallback: just the report's current version
+        setVersionOptions([{
+          value: report.protonVersion,
+          displayName: formatProtonLabel(report.protonVersion),
+          installed: false,
+        }]);
+        setLoadingVersions(false);
+      });
+  }, [report.protonVersion]);
+
+  const handleVersionChange = (nextVersion: string) => {
+    setProtonVersion(nextVersion);
+    const opt = versionOptions.find((o) => o.value === nextVersion);
+    if (opt && !opt.installed) {
+      setInstalling(nextVersion);
+      void logFrontendEvent('INFO', 'Auto-installing Proton version from edit modal', {
+        version: nextVersion,
+      });
+      installProtonGe(nextVersion)
+        .then((result) => {
+          if (result.success) {
+            toaster.toast({
+              title: 'Proton Pulse',
+              body: result.already_installed
+                ? `${nextVersion} was already installed.`
+                : `Installed ${nextVersion}.`,
+            });
+            setVersionOptions((prev) =>
+              prev.map((o) => (o.value === nextVersion ? { ...o, installed: true } : o)),
+            );
+          } else {
+            toaster.toast({
+              title: 'Proton Pulse',
+              body: `Install failed: ${result.message}`,
+            });
+          }
+        })
+        .catch((err) => {
+          toaster.toast({
+            title: 'Proton Pulse',
+            body: `Install failed: ${err instanceof Error ? err.message : String(err)}`,
+          });
+        })
+        .finally(() => setInstalling(null));
+    }
+  };
+
+  const handleClearEdits = () => {
+    setLabel('');
+    setProtonVersion(report.protonVersion);
+    setRating(report.rating);
+    setGpu(report.gpu);
+    setGpuDriver(report.gpuDriver);
+    setOs(report.os);
+    setKernel(report.kernel);
+    setRam(report.ram);
+    setNotes(report.notes);
+  };
 
   const handleSave = () => {
     const entry: EditedReportEntry = {
@@ -56,9 +213,23 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
     closeModal?.();
   };
 
+  const dropdownOptions = versionOptions.map((opt) => ({
+    data: opt.value,
+    label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} />,
+  }));
+
   return (
     <ModalRoot onCancel={closeModal}>
-      <PanelSection title="Edit Report">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>Edit Report</div>
+        <DialogButton
+          onClick={handleClearEdits}
+          style={{ fontSize: 10, padding: '3px 10px', minWidth: 0, width: 'auto' }}
+        >
+          Reset to Original
+        </DialogButton>
+      </div>
+      <PanelSection>
         <PanelSectionRow>
           <TextField
             label="Label"
@@ -69,11 +240,20 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
           />
         </PanelSectionRow>
         <PanelSectionRow>
-          <TextField
-            label="Proton Version"
-            value={protonVersion}
-            onChange={(e) => setProtonVersion(e.target.value)}
-          />
+          {loadingVersions ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+              <SteamSpinner style={{ width: 16, height: 16 }} />
+              <span style={{ fontSize: 11, color: '#7a9bb5' }}>Loading Proton versions…</span>
+            </div>
+          ) : (
+            <DropdownItem
+              label={installing ? `Proton Version (installing ${installing}…)` : 'Proton Version'}
+              rgOptions={dropdownOptions}
+              selectedOption={protonVersion}
+              onChange={(opt) => handleVersionChange(opt.data)}
+              disabled={!!installing}
+            />
+          )}
         </PanelSectionRow>
         <PanelSectionRow>
           <DropdownItem
@@ -129,8 +309,8 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
       </PanelSection>
       <PanelSection>
         <PanelSectionRow>
-          <DialogButton onClick={handleSave}>
-            Save Edits
+          <DialogButton onClick={handleSave} disabled={!!installing}>
+            {installing ? 'Installing…' : 'Save Edits'}
           </DialogButton>
         </PanelSectionRow>
       </PanelSection>

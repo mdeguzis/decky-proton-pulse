@@ -12,7 +12,7 @@ const LINKS: Array<{ label: string; url: string }> = [
 export function AboutTab() {
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
-      return;
+      evt.preventDefault();
     }
   };
 

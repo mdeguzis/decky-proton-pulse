@@ -1,6 +1,7 @@
 // src/components/ReportCard.tsx
 import { Focusable } from '@decky/ui';
 import type { ScoredReport } from '../types';
+import { RATING_COLORS, formatProtonLabel } from '../lib/reportFormatters';
 
 export interface DisplayReportCard extends ScoredReport {
   displayKey: string;
@@ -16,15 +17,6 @@ interface Props {
   onFocus?: (report: DisplayReportCard) => void;
 }
 
-const RATING_COLORS: Record<string, string> = {
-  platinum: '#b0e0e6',
-  gold: '#ffd700',
-  silver: '#c0c0c0',
-  bronze: '#cd7f32',
-  borked: '#ff4444',
-  pending: '#888888',
-};
-
 function confidenceColor(score: number): string {
   if (score >= 80) return '#4caf50';
   if (score >= 60) return '#ffeb3b';
@@ -34,17 +26,6 @@ function confidenceColor(score: number): string {
 
 function truncate(str: string, maxLen: number): string {
   return str.length > maxLen ? `${str.slice(0, maxLen)}...` : str;
-}
-
-function formatProtonLabel(version: string): string {
-  const trimmed = version.trim();
-  if (/^ge-proton/i.test(trimmed)) {
-    return `Proton: ${trimmed.replace(/^ge-proton/i, 'Proton GE ')}`;
-  }
-  if (/^proton/i.test(trimmed)) {
-    return `Proton: ${trimmed}`;
-  }
-  return `Proton: ${trimmed}`;
 }
 
 export function ReportCard({ report, selected, focused = false, onSelect, onFocus }: Props) {
