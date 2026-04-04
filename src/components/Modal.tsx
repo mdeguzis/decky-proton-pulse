@@ -9,7 +9,8 @@ import type { SystemInfo } from '../types';
 import { ConfigureTab } from './tabs/ConfigureTab';
 import { ManageTab } from './tabs/ManageTab';
 import { LogsTab } from './tabs/LogsTab';
-import { SettingsTab } from './tabs/SettingsTab';
+import { CompatibilityToolsTab } from './tabs/CompatibilityToolsTab';
+import { GeneralSettingsTab } from './tabs/GeneralSettingsTab';
 import { AboutTab } from './tabs/AboutTab';
 import { logFrontendEvent } from '../lib/logger';
 
@@ -22,6 +23,10 @@ export function ProtonPulsePage() {
   const [sysInfo, setSysInfo]       = useState<SystemInfo | null>(null);
   const [manageGameLoadNonce, setManageGameLoadNonce] = useState(0);
   const [manageGameOverlayOpen, setManageGameOverlayOpen] = useState(false);
+  const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null);
+  const overlayLocked =
+    activePage === 'manage-game' &&
+    (manageGameOverlayOpen || ((overlayHost?.childElementCount ?? 0) > 0));
 
   useEffect(() => {
     getSystemInfo()
@@ -84,6 +89,7 @@ export function ProtonPulsePage() {
           isActive={activePage === 'manage-game'}
           loadNonce={manageGameLoadNonce}
           onOverlayOpenChange={setManageGameOverlayOpen}
+          overlayHost={overlayHost}
         />
       ),
     }] : []),
@@ -98,9 +104,14 @@ export function ProtonPulsePage() {
       content: <LogsTab />,
     },
     {
+      title: 'Compatibility Tools',
+      identifier: 'compatibility-tools',
+      content: <CompatibilityToolsTab />,
+    },
+    {
       title: 'Settings',
       identifier: 'settings',
-      content: <SettingsTab />,
+      content: <GeneralSettingsTab />,
     },
     {
       title: 'About',
@@ -111,7 +122,16 @@ export function ProtonPulsePage() {
 
   return (
     <div style={{ position: 'relative', height: '100%' }}>
-      {activePage === 'manage-game' && manageGameOverlayOpen && (
+      <div
+        ref={setOverlayHost}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 50,
+          pointerEvents: overlayLocked ? 'auto' : 'none',
+        }}
+      />
+      {activePage === 'manage-game' && overlayLocked && (
         <div
           style={{
             position: 'absolute',
@@ -152,7 +172,7 @@ export function ProtonPulsePage() {
         pages={pages}
         page={activePage}
         onPageRequested={(page) => {
-          if (activePage === 'manage-game' && manageGameOverlayOpen) {
+          if (overlayLocked) {
             void logFrontendEvent('INFO', 'Ignored sidebar page request while report detail overlay is open', {
               page,
               appId,

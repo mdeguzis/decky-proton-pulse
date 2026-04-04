@@ -77,6 +77,7 @@ export interface CompatToolRelease {
   prerelease: boolean;
   asset_name: string;
   download_url: string;
+  asset_size?: number | null;
 }
 
 export interface InstalledCompatTool {
@@ -85,13 +86,28 @@ export interface InstalledCompatTool {
   internal_name: string;
   path: string;
   source?: 'custom' | 'valve';
+  managed_slot?: 'latest' | 'versioned' | null;
+  latest_tag?: string | null;
 }
 
 export interface ProtonGeManagerState {
   current_release: CompatToolRelease | null;
   current_installed: boolean;
+  current_latest_slot_installed: boolean;
   installed_tools: InstalledCompatTool[];
   releases: CompatToolRelease[];
+  install_status: {
+    state: 'idle' | 'running' | 'success' | 'error';
+    tag_name: string | null;
+    message: string | null;
+    stage: string | null;
+    downloaded_bytes: number | null;
+    total_bytes: number | null;
+    progress_fraction: number | null;
+    started_at: number | null;
+    finished_at: number | null;
+    install_as_latest: boolean;
+  };
 }
 
 export interface ProtonVersionAvailability {

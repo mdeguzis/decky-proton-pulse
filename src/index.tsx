@@ -75,8 +75,17 @@ function Content() {
         <PanelSectionRow>
           <ButtonItem
             layout="below"
+            onClick={() => navigateTo('compatibility-tools')}
+            description="Install, remove, and manage compatibility tools"
+          >
+            Compatibility Tools
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
             onClick={() => navigateTo('settings')}
-            description="Debug mode and display options"
+            description="Plugin preferences and tokens"
           >
             Settings
           </ButtonItem>

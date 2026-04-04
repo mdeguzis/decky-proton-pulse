@@ -64,20 +64,25 @@ echo "✓ Packaged: ${ZIP_NAME}"
 if [[ -n "$DECK_IP" ]]; then
   echo "⏱ Deploying to Steam Deck at $DECK_IP..."
   REMOTE_PLUGIN_DIR="${DECK_PLUGIN_DIR}/${PLUGIN_NAME}"
-  if ! ssh "${DECK_USER}@${DECK_IP}" "sudo -n mkdir -p ${REMOTE_PLUGIN_DIR}"; then
-    echo "ERROR: remote sudo mkdir failed."
-    echo "To keep the plugin directory root-owned and still deploy without prompts,"
-    echo "allow passwordless sudo for the deploy commands on the Deck:"
+  if ssh "${DECK_USER}@${DECK_IP}" "sudo -n mkdir -p ${REMOTE_PLUGIN_DIR}"; then
+    rsync -rlptz --delete --omit-dir-times --chown=root:root \
+      --rsync-path="sudo -n rsync" \
+      "${STAGING_DIR}/${PLUGIN_NAME}/" \
+      "${DECK_USER}@${DECK_IP}:${REMOTE_PLUGIN_DIR}/"
+    echo "✓ Deployed with root-owned files. Restart Decky Loader on your Deck to reload the plugin."
+  else
+    echo "WARNING: remote sudo mkdir failed."
+    echo "Falling back to user-owned deploy so you can still iterate without sudo setup."
+    echo "If you want root-owned plugin files later, run this once on the Deck:"
     echo "  echo 'deck ALL=(root) NOPASSWD: /usr/bin/mkdir -p ${REMOTE_PLUGIN_DIR}, /usr/bin/rsync' | sudo tee /etc/sudoers.d/plugin-deploy"
     echo "  sudo chmod 440 /etc/sudoers.d/plugin-deploy"
     echo "  sudo visudo -cf /etc/sudoers.d/plugin-deploy"
-    exit 1
+    ssh "${DECK_USER}@${DECK_IP}" "mkdir -p ${REMOTE_PLUGIN_DIR}"
+    rsync -rlptz --delete --omit-dir-times \
+      "${STAGING_DIR}/${PLUGIN_NAME}/" \
+      "${DECK_USER}@${DECK_IP}:${REMOTE_PLUGIN_DIR}/"
+    echo "✓ Deployed with user-owned files. Restart Decky Loader on your Deck to reload the plugin."
   fi
-  rsync -rlptz --delete --omit-dir-times --chown=root:root \
-    --rsync-path="sudo -n rsync" \
-    "${STAGING_DIR}/${PLUGIN_NAME}/" \
-    "${DECK_USER}@${DECK_IP}:${REMOTE_PLUGIN_DIR}/"
-  echo "✓ Deployed. Restart Decky Loader on your Deck to reload the plugin."
 else
   echo "No --deck-ip provided — skipping rsync."
 fi

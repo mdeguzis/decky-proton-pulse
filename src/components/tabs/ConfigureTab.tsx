@@ -1,6 +1,6 @@
 // src/components/tabs/ConfigureTab.tsx
-import { Component, type ErrorInfo, type ReactNode, useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { Focusable, GamepadButton, DialogButton, ConfirmModal, showModal, Menu, MenuItem, showContextMenu } from '@decky/ui';
+import { Component, type ErrorInfo, type ReactNode, type RefObject, useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
+import { Focusable, GamepadButton, DialogButton, ConfirmModal, showModal, Menu, MenuItem, showContextMenu, PanelSection, PanelSectionRow } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '@decky/api';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
@@ -16,7 +16,7 @@ import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
 import { getLaunchOptionsFromDetails, getSteamAppDetails } from '../../lib/steamApps';
-import { checkProtonVersionAvailability, installProtonGe } from '../../lib/compatTools';
+import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
 import { ReportCard, type DisplayReportCard } from '../ReportCard';
 
 interface Props {
@@ -26,11 +26,13 @@ interface Props {
   isActive?: boolean;
   loadNonce?: number;
   onOverlayOpenChange?: (open: boolean) => void;
+  overlayHost?: HTMLElement | null;
 }
 
 type FilterTier = GpuVendor | 'all';
 type SortMode = 'score' | 'votes';
 type DetailRowKey = 'actions' | 'game' | 'launch' | 'current' | 'hardware' | 'scoring' | 'report';
+type ActionControlKey = 'apply' | 'edit' | 'upvote' | 'back' | 'save' | 'cancel';
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
@@ -62,6 +64,157 @@ interface EditableReportFields {
   kernel: string;
   ram: string;
   notes: string;
+}
+
+type MissingVersionChoice = 'install' | 'pick' | 'latest' | 'closest' | 'cancel';
+
+function launchVersionValueForTool(tool: { internal_name: string; directory_name: string }): string {
+  return tool.internal_name || tool.directory_name;
+}
+
+function findLatestInstalledTool(
+  managerState: Awaited<ReturnType<typeof getProtonGeManagerState>>,
+) {
+  for (const release of managerState.releases) {
+    const matched = managerState.installed_tools.find((tool) =>
+      [tool.directory_name, tool.display_name, tool.internal_name].some((field) =>
+        field.toLowerCase().includes(release.tag_name.toLowerCase()),
+      ),
+    );
+    if (matched) return matched;
+  }
+  return managerState.installed_tools[0] ?? null;
+}
+
+function extractProtonVersionParts(version: string): { major: number; minor: number } | null {
+  const normalized = version.trim();
+  const match = normalized.match(/(?:GE-?)?Proton(\d+)-(\d+)/i) ?? normalized.match(/(\d+)\.0-(\d+)/i);
+  if (!match) return null;
+  return {
+    major: Number.parseInt(match[1], 10),
+    minor: Number.parseInt(match[2], 10),
+  };
+}
+
+function findClosestInstalledTool(
+  managerState: Awaited<ReturnType<typeof getProtonGeManagerState>>,
+  targetVersion: string,
+) {
+  const target = extractProtonVersionParts(targetVersion);
+  if (!target) return null;
+
+  const ranked = managerState.installed_tools
+    .map((tool) => {
+      const parts = extractProtonVersionParts(tool.internal_name || tool.directory_name || tool.display_name);
+      if (!parts) return null;
+      const majorDistance = Math.abs(parts.major - target.major);
+      const minorDistance = Math.abs(parts.minor - target.minor);
+      return {
+        tool,
+        score: majorDistance * 1000 + minorDistance,
+      };
+    })
+    .filter((entry): entry is { tool: Awaited<ReturnType<typeof getProtonGeManagerState>>['installed_tools'][number]; score: number } => !!entry)
+    .sort((a, b) => a.score - b.score);
+
+  return ranked[0]?.tool ?? null;
+}
+
+function MissingVersionModal({
+  requiredVersion,
+  latestInstalledLabel,
+  closestInstalledLabel,
+  onResolve,
+  onCancel,
+}: {
+  requiredVersion: string;
+  latestInstalledLabel: string | null;
+  closestInstalledLabel: string | null;
+  onResolve: (choice: MissingVersionChoice) => void;
+  onCancel: () => void;
+}) {
+  return (
+    <ConfirmModal
+      strTitle="Required Proton Version"
+      strDescription={`This profile config requires ${requiredVersion}, but it is not currently installed.`}
+      strOKButtonText="Cancel"
+      onOK={onCancel}
+      onCancel={onCancel}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 420, maxWidth: 520 }}>
+        <div style={{ fontSize: 11, color: '#9eb7cc', lineHeight: 1.45 }}>
+          Choose how you want to apply this profile.
+        </div>
+        <DialogButton onClick={() => onResolve('install')}>Install {requiredVersion}</DialogButton>
+        <DialogButton onClick={() => onResolve('pick')}>Pick Installed Version</DialogButton>
+        <DialogButton onClick={() => onResolve('closest')} disabled={!closestInstalledLabel && !latestInstalledLabel}>
+          {closestInstalledLabel
+            ? `Search Closest Version (${closestInstalledLabel})`
+            : 'Search Closest Version'}
+        </DialogButton>
+        <DialogButton onClick={() => onResolve('latest')} disabled={!latestInstalledLabel}>
+          {latestInstalledLabel ? `Use Latest Installed (${latestInstalledLabel})` : 'Use Latest Installed'}
+        </DialogButton>
+      </div>
+    </ConfirmModal>
+  );
+}
+
+function InstalledVersionPickerModal({
+  tools,
+  onPick,
+  onCancel,
+}: {
+  tools: Array<{ display_name: string; internal_name: string; directory_name: string; source?: 'custom' | 'valve' }>;
+  onPick: (version: string) => void;
+  onCancel: () => void;
+}) {
+  const sortedTools = useMemo(
+    () => [...tools].sort((a, b) => a.display_name.localeCompare(b.display_name, undefined, { sensitivity: 'base' })),
+    [tools],
+  );
+  const [selectedValue, setSelectedValue] = useState<string>(
+    sortedTools[0] ? launchVersionValueForTool(sortedTools[0]) : '',
+  );
+
+  return (
+    <ConfirmModal
+      strTitle="Pick Installed Version"
+      strDescription="Choose an installed compatibility tool for this profile."
+      strOKButtonText="Cancel"
+      onOK={onCancel}
+      onCancel={onCancel}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <select
+          value={selectedValue}
+          onChange={(e) => setSelectedValue(e.target.value)}
+          style={{
+            width: '100%',
+            boxSizing: 'border-box',
+            background: '#162535',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 8,
+            color: '#e8f4ff',
+            fontSize: 12,
+            padding: '8px 10px',
+          }}
+        >
+          {sortedTools.map((tool) => {
+            const value = launchVersionValueForTool(tool);
+            return (
+              <option key={`${tool.directory_name}-${tool.internal_name}`} value={value}>
+                {tool.display_name}
+              </option>
+            );
+          })}
+        </select>
+        <DialogButton onClick={() => selectedValue && onPick(selectedValue)} disabled={!selectedValue}>
+          Use Selected Version
+        </DialogButton>
+      </div>
+    </ConfirmModal>
+  );
 }
 
 function GameSummaryHeader({
@@ -143,6 +296,12 @@ function describeActiveElement(): string {
   return parts.join('');
 }
 
+function consumeGamepadEvent(evt: GamepadEvent): void {
+  evt.preventDefault?.();
+  evt.stopPropagation?.();
+  (evt as GamepadEvent & { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
+}
+
 function matchLabel(report: ScoredReport, sysInfo: SystemInfo | null): string {
   if (!sysInfo?.gpu_vendor || report.gpuTier === 'unknown') return 'Unknown GPU match';
   return report.gpuTier === sysInfo.gpu_vendor ? 'Matches your GPU vendor' : 'Different GPU vendor';
@@ -189,26 +348,6 @@ function applyEditableFields(base: CdnReport, fields: EditableReportFields): Cdn
     kernel: fields.kernel,
     ram: fields.ram,
     notes: fields.notes,
-  };
-}
-
-function detailPanelStyle() {
-  return {
-    marginBottom: 0,
-    padding: '12px 0',
-    borderRadius: 0,
-    background: 'transparent',
-    border: 0,
-    borderTop: '1px solid rgba(255,255,255,0.07)',
-    boxShadow: 'none',
-  };
-}
-
-function bareDetailSectionStyle() {
-  return {
-    padding: '10px 0 12px',
-    color: '#dce9f6',
-    borderTop: '1px solid rgba(255,255,255,0.06)',
   };
 }
 
@@ -294,7 +433,7 @@ interface CompactButtonProps {
 function CompactButton({
   label,
   onPress,
-  focused,
+  focused: _focused,
   active = false,
   accent = false,
   disabled = false,
@@ -312,35 +451,15 @@ function CompactButton({
       onGamepadFocus={onFocus}
       onGamepadBlur={onBlur}
       style={{
-        minHeight: 26,
-        height: 26,
+        minHeight: 34,
+        height: 34,
         width: '100%',
         maxWidth: '100%',
         minWidth: 0,
-        padding: '0 10px',
-        borderRadius: 8,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        fontSize: 9,
-        fontWeight: 700,
-        letterSpacing: 0.2,
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        color: disabled ? '#6d7b88' : accent ? '#ffe37a' : '#eef6ff',
-        background: active
-          ? 'linear-gradient(180deg, #4f97eb, #3f7ecc)'
-          : 'linear-gradient(180deg, rgba(58, 66, 77, 0.96), rgba(48, 54, 63, 0.96))',
-        border: focused
-          ? '1px solid rgba(110, 180, 255, 0.72)'
-          : '1px solid rgba(255,255,255,0.08)',
-        boxShadow: focused
-          ? '0 0 0 1px rgba(110, 180, 255, 0.24) inset, 0 0 14px rgba(110, 180, 255, 0.16)'
-          : '0 1px 0 rgba(255,255,255,0.04) inset',
+        padding: '0 12px',
         opacity: disabled ? 0.55 : 1,
-        animation: focused ? 'proton-pulse-toolbar-glow 1.7s ease-in-out infinite' : 'none',
+        color: disabled ? '#6d7b88' : accent ? '#ffe37a' : undefined,
+        boxShadow: active ? '0 0 0 1px rgba(83, 158, 236, 0.28) inset' : undefined,
       }}
     >
       {label}
@@ -423,6 +542,31 @@ function LoadingIndicator({ label }: { label: string }) {
       <div style={{ color: '#9db0c4', fontSize: 12, textAlign: 'center' }}>{label}</div>
       <style>{'@keyframes proton-pulse-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }'}</style>
     </div>
+  );
+}
+
+function NativeDetailBlock({
+  title,
+  rowRef,
+  children,
+}: {
+  title: string;
+  rowRef?: RefObject<HTMLDivElement | null>;
+  children: ReactNode;
+}) {
+  return (
+    <PanelSection>
+      <PanelSectionRow>
+        <div ref={rowRef} tabIndex={-1} style={{ width: '100%', padding: '4px 0', outline: 'none' }}>
+          <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>
+            {title}
+          </div>
+          <div style={{ fontSize: 11, color: '#e8f4ff', lineHeight: 1.72 }}>
+            {children}
+          </div>
+        </div>
+      </PanelSectionRow>
+    </PanelSection>
   );
 }
 
@@ -512,7 +656,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   const [sortMode, setSortMode] = useState<SortMode>('score');
   const [filterTouched, setFilterTouched] = useState(false);
   const [focusedToolbarControl, setFocusedToolbarControl] = useState<'sort' | 'filter' | null>(null);
-  const [focusedActionControl, setFocusedActionControl] = useState<'apply' | 'edit' | 'upvote' | 'back' | 'save' | 'cancel' | null>(null);
+  const [focusedActionControl, setFocusedActionControl] = useState<ActionControlKey | null>(null);
   const [focusedDetailRow, setFocusedDetailRow] = useState<DetailRowKey | null>(null);
   const [reportDiagnostics, setReportDiagnostics] = useState<ReportFetchDiagnostics | null>(null);
   const [voteDiagnostics, setVoteDiagnostics] = useState<VotesFetchDiagnostics | null>(null);
@@ -529,6 +673,14 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   const hardwareRowRef = useRef<HTMLDivElement>(null);
   const scoringRowRef = useRef<HTMLDivElement>(null);
   const reportRowRef = useRef<HTMLDivElement>(null);
+  const detailRowRefs: Record<Exclude<DetailRowKey, 'actions'>, RefObject<HTMLDivElement | null>> = {
+    game: gameRowRef,
+    launch: launchRowRef,
+    current: currentRowRef,
+    hardware: hardwareRowRef,
+    scoring: scoringRowRef,
+    report: reportRowRef,
+  };
 
   const gpuVendor = sysInfo?.gpu_vendor ?? null;
   const [filter, setFilter] = useState<FilterTier>('all');
@@ -732,11 +884,9 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       requestAnimationFrame(() => {
         pane.scrollTo({ top: 0, behavior: 'auto' });
         const firstAction = actionStripRef.current?.querySelector<HTMLElement>('button, [tabindex="0"]');
-        if (firstAction) {
-          firstAction.focus();
-        } else {
-          pane.focus();
-        }
+        firstAction?.focus();
+        setFocusedActionControl(actionOrder[0] ?? null);
+        setFocusedDetailRow('actions');
         debugMovement('detail-overlay-open-focus', {
           selectedDisplayKey: selectedKey,
           finalScrollTop: pane.scrollTop,
@@ -836,6 +986,66 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       overlayOpen: overlayMode === 'detail' || overlayMode === 'edit',
     });
     if ((overlayMode === 'detail' || overlayMode === 'edit') && detailScrollRef.current) {
+      const activeElement = typeof document !== 'undefined' ? document.activeElement : null;
+      const detailRowActive = Object.values(detailRowRefs).some((ref) => ref.current === activeElement);
+      const detailPaneActive = !!(
+        activeElement &&
+        (activeElement === detailScrollRef.current || detailScrollRef.current.contains(activeElement) || detailRowActive)
+      );
+      const detailNavigationActive = detailPaneActive || !!focusedActionControl || !!focusedDetailRow;
+
+      if (evt.detail.button === GamepadButton.DIR_LEFT && !focusedActionControl) {
+        consumeGamepadEvent(evt);
+        debugMovement('root-direction-trapped-left', {
+          overlayOpen: true,
+          detailPaneActive,
+          detailNavigationActive,
+        });
+        return;
+      }
+
+      if (!detailNavigationActive) {
+        return;
+      }
+
+      consumeGamepadEvent(evt);
+      if (focusedActionControl) {
+        const currentIndex = actionOrder.indexOf(focusedActionControl);
+        if (evt.detail.button === GamepadButton.DIR_RIGHT && currentIndex >= 0 && currentIndex < actionOrder.length - 1) {
+          focusActionByName(actionOrder[currentIndex + 1]);
+          return;
+        }
+        if (evt.detail.button === GamepadButton.DIR_LEFT && currentIndex > 0) {
+          focusActionByName(actionOrder[currentIndex - 1]);
+          return;
+        }
+        if (evt.detail.button === GamepadButton.DIR_DOWN) {
+          nudgeIntoDetailContent();
+          return;
+        }
+        return;
+      }
+
+      if (focusedDetailRow && focusedDetailRow !== 'actions') {
+        const currentIndex = detailRowOrder.indexOf(focusedDetailRow);
+        if (evt.detail.button === GamepadButton.DIR_UP) {
+          if (currentIndex <= 0) {
+            focusActionByName(actionOrder[0]);
+          } else {
+            focusDetailRow(detailRowOrder[currentIndex - 1]);
+          }
+          return;
+        }
+        if (evt.detail.button === GamepadButton.DIR_DOWN) {
+          if (currentIndex >= 0 && currentIndex < detailRowOrder.length - 1) {
+            focusDetailRow(detailRowOrder[currentIndex + 1]);
+          } else {
+            detailScrollRef.current.scrollBy({ top: DETAIL_SCROLL_STEP, behavior: 'smooth' });
+          }
+          return;
+        }
+      }
+
       if (evt.detail.button === GamepadButton.DIR_UP) {
         detailScrollRef.current.scrollBy({ top: -DETAIL_SCROLL_STEP, behavior: 'smooth' });
         return;
@@ -845,15 +1055,47 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
         return;
       }
       if (evt.detail.button === GamepadButton.DIR_RIGHT && !focusedActionControl && !focusedDetailRow) {
-        const firstAction = actionStripRef.current?.querySelector<HTMLElement>('button, [tabindex="0"]');
-        firstAction?.focus();
+        focusActionByName(actionOrder[0]);
         return;
       }
+      return;
     }
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
       debugMovement('root-direction-trapped-left', {
         overlayOpen: overlayMode === 'detail' || overlayMode === 'edit',
       });
+      consumeGamepadEvent(evt);
+      return;
+    }
+  };
+
+  const handleOverlayDirection = (evt: GamepadEvent) => {
+    if (!overlayOpen) return;
+    debugMovement('overlay-direction', {
+      button: gamepadButtonLabel(evt.detail.button),
+      focusedActionControl,
+      focusedDetailRow,
+    });
+
+    if (evt.detail.button === GamepadButton.DIR_LEFT) {
+      consumeGamepadEvent(evt);
+      debugMovement('overlay-direction-trapped-left');
+      return;
+    }
+
+    if (focusedActionControl) {
+      return;
+    }
+
+    if (evt.detail.button === GamepadButton.DIR_UP) {
+      consumeGamepadEvent(evt);
+      detailScrollRef.current?.scrollBy({ top: -DETAIL_SCROLL_STEP, behavior: 'smooth' });
+      return;
+    }
+
+    if (evt.detail.button === GamepadButton.DIR_DOWN) {
+      consumeGamepadEvent(evt);
+      detailScrollRef.current?.scrollBy({ top: DETAIL_SCROLL_STEP, behavior: 'smooth' });
       return;
     }
   };
@@ -885,47 +1127,135 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
     setApplying(true);
     try {
       const availability = await checkProtonVersionAvailability(targetReport.protonVersion);
+      let launchProtonVersion = availability.managed
+        ? (availability.normalized_version ?? targetReport.protonVersion)
+        : targetReport.protonVersion;
       if (availability.managed && !availability.installed) {
-        const confirmed = await new Promise<boolean>((resolve) => {
+        const managerState = await getProtonGeManagerState(false);
+        const latestInstalledTool = findLatestInstalledTool(managerState);
+        const closestInstalledTool = findClosestInstalledTool(
+          managerState,
+          availability.normalized_version ?? targetReport.protonVersion,
+        );
+        const installedTools = managerState.installed_tools;
+
+        const choice = await new Promise<MissingVersionChoice>((resolve) => {
           const modal = showModal(
-            <ConfirmModal
-              strTitle={`Install ${availability.normalized_version}`}
-              strDescription={`This config requires ${availability.normalized_version} which is not currently installed. Install it now?`}
-              strOKButtonText="Install"
-              strCancelButtonText="Cancel"
-              onOK={() => {
-                resolve(true);
+            <MissingVersionModal
+              requiredVersion={availability.normalized_version ?? targetReport.protonVersion}
+              latestInstalledLabel={latestInstalledTool?.display_name ?? null}
+              closestInstalledLabel={closestInstalledTool?.display_name ?? null}
+              onResolve={(nextChoice) => {
+                resolve(nextChoice);
                 modal.Close();
               }}
               onCancel={() => {
-                resolve(false);
+                resolve('cancel');
                 modal.Close();
               }}
             />,
           );
         });
 
-        if (!confirmed) {
-          toaster.toast({ title: 'Proton Pulse', body: 'Apply cancelled. Required Proton-GE version was not installed.' });
+        if (choice === 'cancel') {
+          toaster.toast({ title: 'Proton Pulse', body: 'Apply cancelled.' });
           return;
         }
 
-        const installResult = await installProtonGe(availability.normalized_version);
-        if (!installResult.success) {
-          toaster.toast({ title: 'Proton Pulse', body: installResult.message });
-          return;
+        if (choice === 'pick') {
+          if (installedTools.length === 0) {
+            toaster.toast({ title: 'Proton Pulse', body: 'No installed compatibility tools were available. Using the required version instead.' });
+          } else {
+            const pickedVersion = await new Promise<string | null>((resolve) => {
+              const modal = showModal(
+                <InstalledVersionPickerModal
+                  tools={installedTools}
+                  onPick={(version) => {
+                    resolve(version);
+                    modal.Close();
+                  }}
+                  onCancel={() => {
+                    resolve(null);
+                    modal.Close();
+                  }}
+                />,
+              );
+            });
+
+            if (!pickedVersion) {
+              toaster.toast({ title: 'Proton Pulse', body: 'Apply cancelled.' });
+              return;
+            }
+            launchProtonVersion = pickedVersion;
+          }
+        } else if (choice === 'closest') {
+          if (closestInstalledTool) {
+            launchProtonVersion = launchVersionValueForTool(closestInstalledTool);
+            toaster.toast({
+              title: 'Proton Pulse',
+              body: `Using closest installed version: ${closestInstalledTool.display_name}`,
+            });
+          } else if (latestInstalledTool) {
+            launchProtonVersion = launchVersionValueForTool(latestInstalledTool);
+            toaster.toast({
+              title: 'Proton Pulse',
+              body: `No close match found. Using latest installed: ${latestInstalledTool.display_name}`,
+            });
+          } else {
+            const installResult = await installProtonGe(availability.normalized_version);
+            if (!installResult.success) {
+              toaster.toast({
+                title: 'Proton Pulse',
+                body: `Closest-version search failed, and install failed for ${availability.normalized_version}.`,
+              });
+            } else if (availability.normalized_version) {
+              launchProtonVersion = availability.normalized_version;
+            }
+          }
+        } else if (choice === 'latest') {
+          if (latestInstalledTool) {
+            launchProtonVersion = launchVersionValueForTool(latestInstalledTool);
+          } else {
+            toaster.toast({ title: 'Proton Pulse', body: 'No installed compatibility tools were available. Using the required version instead.' });
+          }
+        } else {
+          const installResult = await installProtonGe(availability.normalized_version);
+          if (!installResult.success) {
+            if (latestInstalledTool) {
+              launchProtonVersion = launchVersionValueForTool(latestInstalledTool);
+              toaster.toast({
+                title: 'Proton Pulse',
+                body: `Install failed for ${availability.normalized_version}. Using ${latestInstalledTool.display_name} instead.`,
+              });
+            } else {
+              toaster.toast({
+                title: 'Proton Pulse',
+                body: `Install failed for ${availability.normalized_version}. Applying with the requested version anyway.`,
+              });
+            }
+          } else {
+            toaster.toast({
+              title: 'Proton Pulse',
+              body: installResult.already_installed
+                ? `${availability.normalized_version} is already installed.`
+                : `Installed ${availability.normalized_version}. Steam may need a restart before the new compatibility tool appears everywhere.`,
+            });
+            launchProtonVersion = availability.normalized_version ?? targetReport.protonVersion;
+          }
         }
 
-        toaster.toast({
-          title: 'Proton Pulse',
-          body: installResult.already_installed
-            ? `${availability.normalized_version} is already installed.`
-            : `Installed ${availability.normalized_version}.`,
+        void logFrontendEvent('INFO', 'Apply resolved missing Proton version choice', {
+          appId,
+          appName,
+          requiredVersion: availability.normalized_version ?? targetReport.protonVersion,
+          selectedLaunchVersion: launchProtonVersion,
+          choice,
+          latestInstalledTool: latestInstalledTool?.display_name ?? null,
         });
       }
 
       await SteamClient.Apps.SetAppLaunchOptions(
-        appId, `PROTON_VERSION="${targetReport.protonVersion}" %command%`
+        appId, `PROTON_VERSION="${launchProtonVersion}" %command%`
       );
       const detailsResult = await getSteamAppDetails(appId);
       const appliedLaunchOptions = getLaunchOptionsFromDetails(detailsResult.details);
@@ -933,7 +1263,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
       void logFrontendEvent('INFO', 'Launch options applied', {
         appId,
         appName,
-        protonVersion: targetReport.protonVersion,
+        protonVersion: launchProtonVersion,
         appliedLaunchOptions,
       });
       toaster.toast({
@@ -1027,23 +1357,38 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   const detectingGpu = !gpuVendor && !filterTouched;
   const overlayOpen = overlayMode === 'detail' || overlayMode === 'edit';
   const protonDbUrl = `https://www.protondb.com/app/${appId}`;
+  const actionOrder: ActionControlKey[] = overlayMode === 'edit'
+    ? ['save', 'cancel']
+    : ['apply', 'edit', 'upvote', 'back'];
+  const detailRowOrder: Exclude<DetailRowKey, 'actions'>[] = ['game', 'launch', 'current', 'hardware', 'scoring', 'report'];
+  const focusActionByName = (control: ActionControlKey) => {
+    const controls = actionStripRef.current?.querySelectorAll<HTMLElement>('button, [tabindex="0"]');
+    if (!controls?.length) return;
+    const index = actionOrder.indexOf(control);
+    if (index < 0) return;
+    controls[index]?.focus();
+    setFocusedDetailRow('actions');
+    setFocusedActionControl(control);
+  };
+  const focusDetailRow = (row: Exclude<DetailRowKey, 'actions'>) => {
+    const target = detailRowRefs[row].current;
+    if (!target) return;
+    target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    requestAnimationFrame(() => {
+      target.focus();
+      setFocusedActionControl(null);
+      setFocusedDetailRow(row);
+    });
+  };
   const focusDetailScroll = () => {
-    const pane = detailScrollRef.current;
-    if (!pane) return;
-    pane.focus();
-    setFocusedActionControl(null);
-    setFocusedDetailRow('hardware');
+    focusDetailRow('hardware');
   };
 
   const nudgeIntoDetailContent = () => {
     const pane = detailScrollRef.current;
     if (!pane) return;
     pane.scrollBy({ top: 120, behavior: 'smooth' });
-    requestAnimationFrame(() => {
-      setFocusedActionControl(null);
-      setFocusedDetailRow('hardware');
-      pane.focus();
-    });
+    focusDetailRow('hardware');
   };
 
   const handleBackOneLevel = () => {
@@ -1064,6 +1409,15 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
   useEffect(() => {
     onOverlayOpenChange?.(overlayOpen);
   }, [onOverlayOpenChange, overlayOpen]);
+
+  useEffect(() => {
+    if (!overlayOpen) return;
+    if (focusedActionControl || (focusedDetailRow && focusedDetailRow !== 'actions')) return;
+    const timer = window.setTimeout(() => {
+      focusActionByName(actionOrder[0] ?? 'apply');
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [actionOrder, focusedActionControl, focusedDetailRow, overlayOpen]);
 
   return (
     <Focusable
@@ -1108,6 +1462,7 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
         </>
       ) : (
         <>
+          {!overlayOpen && (
           <div
             style={{
               display: 'grid',
@@ -1218,7 +1573,9 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
               {sortedReports.length} shown
             </div>
           </div>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4, display: overlayOpen ? 'none' : 'block' }}>
+          )}
+          {!overlayOpen ? (
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
             <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
               {detectingGpu
                 ? 'Detecting your GPU tier before narrowing the list. Showing all reports for now.'
@@ -1250,68 +1607,95 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
               )}
             </div>
           </div>
-
-          {overlayOpen && selected && (
-            <div
-              onClick={() => {
-                const firstAction = actionStripRef.current?.querySelector<HTMLElement>('button, [tabindex="0"]');
-                firstAction?.focus();
-                debugMovement('detail-overlay-click-focus');
-              }}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 6,
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-                minHeight: 0,
-                overflow: 'hidden',
-                background: FLAT_DETAIL_BG,
-                border: 0,
-                boxShadow: 'none',
-                padding: '0 0 0 0',
-              }}
-            >
-                <div
-                  ref={detailScrollRef}
-                  className="pp-detail-scroll"
-                  tabIndex={0}
-                  onFocus={() => debugMovement('detail-scroll-focus')}
-                  onBlur={() => debugMovement('detail-scroll-blur')}
-                  onScroll={() => debugMovement('detail-scroll-dom')}
-                style={{
-                  height: '100%',
-                  flex: 1,
-                  minHeight: 0,
-                  maxHeight: '100%',
-                  overflowY: 'auto',
-                  outline: 'none',
-                  borderRadius: 0,
-                  paddingRight: 0,
-                  paddingBottom: 8,
-                  scrollBehavior: 'smooth',
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(173, 216, 255, 0.55) rgba(255,255,255,0.08)',
-                }}
-              >
-                <style>
-                  {'.pp-detail-scroll::-webkit-scrollbar { width: 10px; } .pp-detail-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.06); border-radius: 999px; } .pp-detail-scroll::-webkit-scrollbar-thumb { background: rgba(173,216,255,0.45); border-radius: 999px; border: 2px solid rgba(8,14,22,0.4); }'}
-                </style>
-                <div
+          ) : (
+            selected && (
+                <Focusable
+                  onGamepadDirection={handleOverlayDirection}
                   style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    minHeight: '100%',
-                    padding: '0 12px 12px',
-                    borderRadius: 0,
-                    background: FLAT_DETAIL_BG,
-                    border: 0,
-                    boxShadow: 'none',
                     display: 'flex',
                     flexDirection: 'column',
+                    minHeight: 0,
+                    flex: 1,
                   }}
                 >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      padding: '0 8px 10px',
+                      flex: '0 0 auto',
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 11, color: '#8fb4d5', letterSpacing: 0.35, textTransform: 'uppercase' }}>
+                        Manage This Game
+                      </div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: '#f3fbff', marginTop: 2 }}>
+                        Proton Report Detail
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '5px 10px',
+                        borderRadius: 999,
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        color: '#dce9f6',
+                        fontSize: 11,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <span style={{ fontWeight: 700 }}>B</span>
+                      <span>Back to Reports</span>
+                    </div>
+                  </div>
+                  <div
+                    ref={detailScrollRef}
+                    className="pp-detail-scroll"
+                    tabIndex={-1}
+                    onScroll={() => debugMovement('detail-scroll-dom')}
+                    style={{
+                      height: '100%',
+                      flex: 1,
+                      minHeight: 0,
+                      maxHeight: '100%',
+                      overflowY: 'auto',
+                      outline: 'none',
+                      borderRadius: 14,
+                      paddingRight: 0,
+                      paddingBottom: 8,
+                      scrollBehavior: 'smooth',
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'rgba(173, 216, 255, 0.55) rgba(255,255,255,0.08)',
+                      background: 'linear-gradient(180deg, rgba(15, 24, 36, 0.98), rgba(11, 18, 28, 0.98))',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      boxShadow: '0 18px 40px rgba(0,0,0,0.34)',
+                    }}
+                  >
+                    <style>
+                      {'.pp-detail-scroll::-webkit-scrollbar { width: 10px; } .pp-detail-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.06); border-radius: 999px; } .pp-detail-scroll::-webkit-scrollbar-thumb { background: rgba(173,216,255,0.45); border-radius: 999px; border: 2px solid rgba(8,14,22,0.4); }'}
+                    </style>
+                    <div
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        minHeight: '100%',
+                        maxWidth: 1180,
+                        margin: '0 auto',
+                        padding: '14px 18px 18px',
+                        borderRadius: 0,
+                        background: FLAT_DETAIL_BG,
+                        border: 0,
+                        boxShadow: 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}
+                    >
                   <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(260px, 1fr)', gap: 14, alignItems: 'start', marginBottom: 4 }}>
                     <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
@@ -1378,178 +1762,189 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                     </div>
                   </div>
 
-                  <div
-                    ref={actionStripRef}
-                    style={{
-                      ...detailPanelStyle(),
-                      marginBottom: 4,
-                      display: 'grid',
-                      gap: 8,
-                      gridTemplateColumns: overlayMode === 'edit'
-                        ? 'repeat(2, minmax(0, 1fr))'
-                        : 'repeat(4, minmax(0, 1fr))',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {overlayMode === 'edit' ? (
-                      <>
-                        <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#9eb7cc', marginBottom: 2 }}>
-                          Any new edits will be saved as a personalized report under your account.
-                        </div>
-                        <CompactButton
-                          label="Save Edits"
-                          onPress={saveEditedReport}
-                          focused={focusedActionControl === 'save'}
-                          active
-                          onDirection={(evt) => {
-                            if (evt.detail.button === GamepadButton.DIR_DOWN) {
-                              nudgeIntoDetailContent();
-                            }
-                          }}
-                          onFocus={() => {
-                            setFocusedDetailRow('actions');
-                            setFocusedActionControl('save');
-                            debugMovement('action-focus', { control: 'save' });
-                          }}
-                          onBlur={() => {
-                            setFocusedActionControl((current) => current === 'save' ? null : current);
-                            debugMovement('action-blur', { control: 'save' });
-                          }}
-                        />
-                        <CompactButton
-                          label="Cancel"
-                          onPress={() => setOverlayMode('detail')}
-                          focused={focusedActionControl === 'cancel'}
-                          onDirection={(evt) => {
-                            if (evt.detail.button === GamepadButton.DIR_DOWN) {
-                              focusDetailScroll();
-                            }
-                          }}
-                          onFocus={() => {
-                            setFocusedDetailRow('actions');
-                            setFocusedActionControl('cancel');
-                            debugMovement('action-focus', { control: 'cancel' });
-                          }}
-                          onBlur={() => {
-                            setFocusedActionControl((current) => current === 'cancel' ? null : current);
-                            debugMovement('action-blur', { control: 'cancel' });
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <CompactButton
-                          label={applying ? 'Applying…' : 'Apply Config'}
-                          onPress={handleApply}
-                          focused={focusedActionControl === 'apply'}
-                          active
-                          disabled={!selected || applying}
-                          onDirection={(evt) => {
-                            if (evt.detail.button === GamepadButton.DIR_DOWN) {
-                              nudgeIntoDetailContent();
-                            }
-                          }}
-                          onFocus={() => {
-                            setFocusedDetailRow('actions');
-                            setFocusedActionControl('apply');
-                            debugMovement('action-focus', { control: 'apply' });
-                          }}
-                          onBlur={() => {
-                            setFocusedActionControl((current) => current === 'apply' ? null : current);
-                            debugMovement('action-blur', { control: 'apply' });
-                          }}
-                        />
-                        <CompactButton
-                          label="Edit Config"
-                          onPress={openEditView}
-                          focused={focusedActionControl === 'edit'}
-                          onDirection={(evt) => {
-                            if (evt.detail.button === GamepadButton.DIR_DOWN) {
-                              nudgeIntoDetailContent();
-                            }
-                          }}
-                          onFocus={() => {
-                            setFocusedDetailRow('actions');
-                            setFocusedActionControl('edit');
-                            debugMovement('action-focus', { control: 'edit' });
-                          }}
-                          onBlur={() => {
-                            setFocusedActionControl((current) => current === 'edit' ? null : current);
-                            debugMovement('action-blur', { control: 'edit' });
-                          }}
-                        />
-                        <CompactButton
-                          label={upvoting ? '★ …' : '★ Upvote Report'}
-                          onPress={handleUpvote}
-                          focused={focusedActionControl === 'upvote'}
-                          accent
-                          disabled={!selected || upvoting}
-                          onDirection={(evt) => {
-                            if (evt.detail.button === GamepadButton.DIR_DOWN) {
-                              nudgeIntoDetailContent();
-                            }
-                          }}
-                          onFocus={() => {
-                            setFocusedDetailRow('actions');
-                            setFocusedActionControl('upvote');
-                            debugMovement('action-focus', { control: 'upvote' });
-                          }}
-                          onBlur={() => {
-                            setFocusedActionControl((current) => current === 'upvote' ? null : current);
-                            debugMovement('action-blur', { control: 'upvote' });
-                          }}
-                        />
-                        <CompactButton
-                          label="Back"
-                          onPress={() => setOverlayMode('list')}
-                          focused={focusedActionControl === 'back'}
-                          onDirection={(evt) => {
-                            if (evt.detail.button === GamepadButton.DIR_DOWN) {
-                              nudgeIntoDetailContent();
-                            }
-                          }}
-                          onFocus={() => {
-                            setFocusedDetailRow('actions');
-                            setFocusedActionControl('back');
-                            debugMovement('action-focus', { control: 'back' });
-                          }}
-                          onBlur={() => {
-                            setFocusedActionControl((current) => current === 'back' ? null : current);
-                            debugMovement('action-blur', { control: 'back' });
-                          }}
-                        />
-                      </>
-                    )}
-                  </div>
+                  <PanelSection>
+                    <PanelSectionRow>
+                      <div
+                        ref={actionStripRef}
+                        style={{
+                          width: '100%',
+                          display: 'grid',
+                          gap: 8,
+                          gridTemplateColumns: overlayMode === 'edit'
+                            ? 'repeat(2, minmax(0, 1fr))'
+                            : 'repeat(4, minmax(0, 1fr))',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {overlayMode === 'edit' ? (
+                          <>
+                            <div style={{ gridColumn: '1 / -1', fontSize: 11, color: '#9eb7cc', marginBottom: 2 }}>
+                              Any new edits will be saved as a personalized report under your account.
+                            </div>
+                            <CompactButton
+                              label="Save Edits"
+                              onPress={saveEditedReport}
+                              focused={focusedActionControl === 'save'}
+                              active
+                              onDirection={(evt) => {
+                                if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                                  nudgeIntoDetailContent();
+                                }
+                              }}
+                              onFocus={() => {
+                                setFocusedDetailRow('actions');
+                                setFocusedActionControl('save');
+                                debugMovement('action-focus', { control: 'save' });
+                              }}
+                              onBlur={() => {
+                                setFocusedActionControl((current) => current === 'save' ? null : current);
+                                debugMovement('action-blur', { control: 'save' });
+                              }}
+                            />
+                            <CompactButton
+                              label="Cancel"
+                              onPress={() => setOverlayMode('detail')}
+                              focused={focusedActionControl === 'cancel'}
+                              onDirection={(evt) => {
+                                if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                                  focusDetailScroll();
+                                }
+                              }}
+                              onFocus={() => {
+                                setFocusedDetailRow('actions');
+                                setFocusedActionControl('cancel');
+                                debugMovement('action-focus', { control: 'cancel' });
+                              }}
+                              onBlur={() => {
+                                setFocusedActionControl((current) => current === 'cancel' ? null : current);
+                                debugMovement('action-blur', { control: 'cancel' });
+                              }}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <CompactButton
+                              label={applying ? 'Applying…' : 'Apply'}
+                              onPress={handleApply}
+                              focused={focusedActionControl === 'apply'}
+                              active
+                              disabled={!selected || applying}
+                              onDirection={(evt) => {
+                                if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                                  nudgeIntoDetailContent();
+                                }
+                              }}
+                              onFocus={() => {
+                                setFocusedDetailRow('actions');
+                                setFocusedActionControl('apply');
+                                debugMovement('action-focus', { control: 'apply' });
+                              }}
+                              onBlur={() => {
+                                setFocusedActionControl((current) => current === 'apply' ? null : current);
+                                debugMovement('action-blur', { control: 'apply' });
+                              }}
+                            />
+                            <CompactButton
+                              label="Edit Config"
+                              onPress={openEditView}
+                              focused={focusedActionControl === 'edit'}
+                              onDirection={(evt) => {
+                                if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                                  nudgeIntoDetailContent();
+                                }
+                              }}
+                              onFocus={() => {
+                                setFocusedDetailRow('actions');
+                                setFocusedActionControl('edit');
+                                debugMovement('action-focus', { control: 'edit' });
+                              }}
+                              onBlur={() => {
+                                setFocusedActionControl((current) => current === 'edit' ? null : current);
+                                debugMovement('action-blur', { control: 'edit' });
+                              }}
+                            />
+                            <CompactButton
+                              label={upvoting ? 'Upvoting…' : 'Upvote'}
+                              onPress={handleUpvote}
+                              focused={focusedActionControl === 'upvote'}
+                              accent
+                              disabled={!selected || upvoting}
+                              onDirection={(evt) => {
+                                if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                                  nudgeIntoDetailContent();
+                                }
+                              }}
+                              onFocus={() => {
+                                setFocusedDetailRow('actions');
+                                setFocusedActionControl('upvote');
+                                debugMovement('action-focus', { control: 'upvote' });
+                              }}
+                              onBlur={() => {
+                                setFocusedActionControl((current) => current === 'upvote' ? null : current);
+                                debugMovement('action-blur', { control: 'upvote' });
+                              }}
+                            />
+                            <CompactButton
+                              label="Back"
+                              onPress={() => setOverlayMode('list')}
+                              focused={focusedActionControl === 'back'}
+                              onDirection={(evt) => {
+                                if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                                  nudgeIntoDetailContent();
+                                }
+                              }}
+                              onFocus={() => {
+                                setFocusedDetailRow('actions');
+                                setFocusedActionControl('back');
+                                debugMovement('action-focus', { control: 'back' });
+                              }}
+                              onBlur={() => {
+                                setFocusedActionControl((current) => current === 'back' ? null : current);
+                                debugMovement('action-blur', { control: 'back' });
+                              }}
+                            />
+                          </>
+                        )}
+                      </div>
+                    </PanelSectionRow>
+                  </PanelSection>
 
                   <div
                     style={{
                       display: 'grid',
-                      gap: 0,
+                      gap: 8,
                       gridTemplateColumns: '1fr',
                       marginBottom: 6,
                     }}
                   >
-                    <div style={{ ...detailPanelStyle(), paddingBottom: 0 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'center' }}>
-                        <div ref={gameRowRef} style={{ fontSize: 10, color: '#7a9bb5' }}>Game</div>
-                        <div style={{ fontSize: 12, color: '#eef7ff', fontWeight: 600 }}>{appName || `App ${appId}`}</div>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start', padding: '12px 0 0', marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div ref={launchRowRef} style={{ fontSize: 10, color: '#7a9bb5' }}>Launch Preview</div>
-                        <div style={{ fontSize: 11, color: '#d8ebff', fontFamily: 'monospace', wordBreak: 'break-word' }}>
-                          {selectedLaunchPreview}
+                    <PanelSection>
+                      <PanelSectionRow>
+                        <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'center', width: '100%' }}>
+                          <div ref={gameRowRef} style={{ fontSize: 10, color: '#7a9bb5' }}>Game</div>
+                          <div style={{ fontSize: 12, color: '#eef7ff', fontWeight: 600 }}>{appName || `App ${appId}`}</div>
                         </div>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start', padding: '12px 0 0', marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div ref={currentRowRef} style={{ fontSize: 10, color: '#7a9bb5' }}>Current Launch Options</div>
-                        <div style={{ fontSize: 11, color: currentLaunchOptions ? '#e8f4ff' : '#9db0c4', fontFamily: 'monospace', wordBreak: 'break-word' }}>
-                          {currentLaunchOptions || 'No launch options set.'}
+                      </PanelSectionRow>
+                      <PanelSectionRow>
+                        <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start', width: '100%' }}>
+                          <div ref={launchRowRef} style={{ fontSize: 10, color: '#7a9bb5' }}>Launch Preview</div>
+                          <div style={{ fontSize: 11, color: '#d8ebff', fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                            {selectedLaunchPreview}
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </PanelSectionRow>
+                      <PanelSectionRow>
+                        <div style={{ display: 'grid', gridTemplateColumns: '140px minmax(0, 1fr)', gap: 12, alignItems: 'start', width: '100%' }}>
+                          <div ref={currentRowRef} style={{ fontSize: 10, color: '#7a9bb5' }}>Current Launch Options</div>
+                          <div style={{ fontSize: 11, color: currentLaunchOptions ? '#e8f4ff' : '#9db0c4', fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                            {currentLaunchOptions || 'No launch options set.'}
+                          </div>
+                        </div>
+                      </PanelSectionRow>
+                    </PanelSection>
                     {overlayMode === 'edit' && editDraft ? (
-                      <div style={{ ...detailPanelStyle(), display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+                      <PanelSection>
+                        <PanelSectionRow>
+                          <div style={{ width: '100%', display: 'grid', gap: 12, gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
                         {[
                           ['Label', 'label'],
                           ['Proton Version', 'protonVersion'],
@@ -1610,37 +2005,33 @@ function ConfigureTabContent({ appId, appName, sysInfo, isActive = false, loadNo
                             }}
                           />
                         </label>
-                      </div>
+                          </div>
+                        </PanelSectionRow>
+                      </PanelSection>
                     ) : (
-                    <div style={{ display: 'grid', gap: 0, gridTemplateColumns: '1fr', flex: 1, alignItems: 'start', paddingTop: 2 }}>
-                      <div ref={hardwareRowRef} style={{ ...bareDetailSectionStyle(), padding: '12px 14px' }}>
-                        <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Hardware Match</div>
-                        <div style={{ fontSize: 11, color: '#e8f4ff', lineHeight: 1.72 }}>
-                          <div>GPU / Driver: {selected.gpu || 'Unknown GPU'} · {selected.gpuDriver || 'Unknown driver'}</div>
-                          <div>OS / Kernel / RAM: {selected.os || 'Unknown OS'} · {selected.kernel || 'Unknown kernel'} · {selected.ram || 'Unknown RAM'}</div>
-                          <div>Community: {selected.upvotes} upvotes · GPU tier {selected.gpuTier}</div>
-                        </div>
-                      </div>
-                      <div ref={scoringRowRef} style={{ ...bareDetailSectionStyle(), padding: '12px 14px' }}>
-                        <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Scoring</div>
-                        <div style={{ fontSize: 11, color: '#e8f4ff', lineHeight: 1.72 }}>
-                          <div>Submitted: {formatTimestamp(selected.timestamp)}</div>
-                          <div>Score: {selected.score}</div>
-                          <div>{selected.rating} base rating · {selected.notesModifier >= 0 ? '+' : ''}{selected.notesModifier} notes modifier</div>
-                        </div>
-                      </div>
-                      <div ref={reportRowRef} style={{ ...bareDetailSectionStyle(), padding: '12px 14px 4px' }}>
-                        <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 8, letterSpacing: 0.25 }}>Full Report Text</div>
-                        <div style={{ fontSize: 11, color: '#d8ebff', lineHeight: 1.72, whiteSpace: 'pre-wrap' }}>
+                    <div style={{ display: 'grid', gap: 8, gridTemplateColumns: '1fr', flex: 1, alignItems: 'start', paddingTop: 2 }}>
+                      <NativeDetailBlock title="Hardware Match" rowRef={hardwareRowRef}>
+                        <div>GPU / Driver: {selected.gpu || 'Unknown GPU'} · {selected.gpuDriver || 'Unknown driver'}</div>
+                        <div>OS / Kernel / RAM: {selected.os || 'Unknown OS'} · {selected.kernel || 'Unknown kernel'} · {selected.ram || 'Unknown RAM'}</div>
+                        <div>Community: {selected.upvotes} upvotes · GPU tier {selected.gpuTier}</div>
+                      </NativeDetailBlock>
+                      <NativeDetailBlock title="Scoring" rowRef={scoringRowRef}>
+                        <div>Submitted: {formatTimestamp(selected.timestamp)}</div>
+                        <div>Score: {selected.score}</div>
+                        <div>{selected.rating} base rating · {selected.notesModifier >= 0 ? '+' : ''}{selected.notesModifier} notes modifier</div>
+                      </NativeDetailBlock>
+                      <NativeDetailBlock title="Full Report Text" rowRef={reportRowRef}>
+                        <div style={{ whiteSpace: 'pre-wrap', color: '#d8ebff' }}>
                           {selected.notes || 'No additional notes were provided for this report.'}
                         </div>
-                      </div>
+                      </NativeDetailBlock>
                     </div>
                     )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+                </Focusable>
+            )
           )}
         </>
       )}
