@@ -59,7 +59,7 @@ export function GeneralSettingsTab() {
 
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
-      return;
+      evt.preventDefault();
     }
   };
 
