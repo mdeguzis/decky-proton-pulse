@@ -76,12 +76,12 @@ const tr: TranslationTree = {
   configure: {
     quitGameFirst: 'Lütfen önce oyundan çıkın',
     applyCancelled: 'Uygulama iptal edildi',
-    noCompatTools: 'Kullanılabilir uyumluluk aracı yok',
+    noCompatTools: 'Yüklü uyumluluk aracı bulunamadı. Bunun yerine gerekli sürüm kullanılacak.',
     applyFailed: (msg) => `Uygulama başarısız: ${msg}`,
     setTokenToUpvote: 'Oy vermek için bir GitHub token ayarlayın',
-    voteSubmitted: 'Oy gönderildi',
-    voteFailed: 'Oy başarısız',
-    upvoteFailed: 'Oy verme başarısız',
+    voteSubmitted: 'Oy gönderildi! Sayım ~60 saniyede güncellenir.',
+    voteFailed: 'Oy başarısız. Token değerini ve repo/actions izinlerini kontrol edin.',
+    upvoteFailed: 'Oy verme başarısız — günlükleri kontrol edin.',
   },
   toast: {
     installed: (v) => `${v} yüklendi.`,
