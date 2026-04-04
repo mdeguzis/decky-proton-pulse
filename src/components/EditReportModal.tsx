@@ -45,10 +45,27 @@ function buildVersionOptions(
     managed: true,
   }));
 
+  // Always include Proton-GE-Latest at the top if installed
+  const geLatest = installedTools.find(
+    (t) => t.directory_name === 'Proton-GE-Latest' || (t as any).managed_slot === 'latest',
+  );
+  const geLatestOption: VersionOption[] = geLatest
+    ? [{
+        value: 'Proton-GE-Latest',
+        displayName: 'Proton-GE-Latest',
+        installed: true,
+        managed: true, // treated as managed — always use latest GE
+      }]
+    : [];
+
   // Installed tools that don't appear in releases (custom / Valve builds)
   const releaseTagSet = new Set(releases.map((r) => r.tag_name.toLowerCase()));
   const extraInstalled: VersionOption[] = installedTools
-    .filter((t) => !releaseTagSet.has((t.internal_name || t.directory_name).toLowerCase()))
+    .filter((t) =>
+      !releaseTagSet.has((t.internal_name || t.directory_name).toLowerCase())
+      && t.directory_name !== 'Proton-GE-Latest'
+      && (t as any).managed_slot !== 'latest',
+    )
     .map((t) => ({
       value: t.internal_name || t.directory_name,
       displayName: t.display_name || t.directory_name,
@@ -56,8 +73,8 @@ function buildVersionOptions(
       managed: false, // Valve/custom builds — not installable via GE manager
     }));
 
-  // Combine: installed first, then available
-  const combined = [...extraInstalled, ...releaseOptions];
+  // Combine: GE-Latest first, then installed, then available
+  const combined = [...geLatestOption, ...extraInstalled, ...releaseOptions];
   combined.sort((a, b) => {
     if (a.installed !== b.installed) return a.installed ? -1 : 1;
     return 0;
