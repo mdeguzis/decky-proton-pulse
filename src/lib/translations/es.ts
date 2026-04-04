@@ -76,12 +76,12 @@ const es: TranslationTree = {
   configure: {
     quitGameFirst: 'Por favor, cierra el juego primero',
     applyCancelled: 'Aplicación cancelada',
-    noCompatTools: 'No hay herramientas de compatibilidad disponibles',
+    noCompatTools: 'No había herramientas de compatibilidad instaladas disponibles. Usando la versión requerida en su lugar.',
     applyFailed: (msg) => `Error al aplicar: ${msg}`,
     setTokenToUpvote: 'Establece un token de GitHub para votar',
-    voteSubmitted: 'Voto enviado',
-    voteFailed: 'Error al votar',
-    upvoteFailed: 'Error al votar a favor',
+    voteSubmitted: 'Voto enviado. El recuento se actualiza en ~60s.',
+    voteFailed: 'Error al votar. Comprueba el valor del token y sus permisos de repo/actions.',
+    upvoteFailed: 'Error al votar a favor — comprueba los registros.',
   },
   toast: {
     installed: (v) => `${v} instalado.`,

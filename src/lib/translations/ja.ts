@@ -76,12 +76,12 @@ const ja: TranslationTree = {
   configure: {
     quitGameFirst: '先にゲームを終了してください',
     applyCancelled: '適用がキャンセルされました',
-    noCompatTools: '利用可能な互換性ツールがありません',
+    noCompatTools: 'インストール済みの互換性ツールが見つかりません。代わりに必要なバージョンを使用します。',
     applyFailed: (msg) => `適用に失敗しました: ${msg}`,
     setTokenToUpvote: '賛成票を投じるには GitHub トークンを設定してください',
-    voteSubmitted: '投票が送信されました',
-    voteFailed: '投票に失敗しました',
-    upvoteFailed: '賛成票の投稿に失敗しました',
+    voteSubmitted: '投票が送信されました！カウントは約 60 秒後に更新されます。',
+    voteFailed: '投票に失敗しました。トークンの値とそのリポジトリ/Actions 権限を確認してください。',
+    upvoteFailed: '賛成票の投稿に失敗しました — ログを確認してください。',
   },
   toast: {
     installed: (v) => `${v} をインストールしました。`,
