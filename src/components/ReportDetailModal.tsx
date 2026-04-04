@@ -337,7 +337,7 @@ export function ReportDetailModal({
             flex: 1,
             minHeight: 0,
             overflowY: 'auto',
-            padding: '0 16px 48px',
+            padding: '0 16px 24px',
             outline: 'none',
           }}
         >
@@ -398,7 +398,12 @@ export function ReportDetailModal({
               )}
             </InfoSection>
             {/* End-of-content ruler */}
-            <div style={{ borderTop: '2px solid rgba(255,255,255,0.5)', marginTop: 12 }} />
+            <div style={{
+              height: 2,
+              background: 'rgba(255,255,255,0.4)',
+              margin: '16px 0 8px',
+              borderRadius: 1,
+            }} />
         </div>
 
       </div>
