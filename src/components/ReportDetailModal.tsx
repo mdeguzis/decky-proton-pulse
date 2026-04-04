@@ -21,7 +21,7 @@ import { logFrontendEvent } from '../lib/logger';
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
-const SCROLL_STEP = 120;
+const SCROLL_STEP = 50;
 
 const VERSION_STATUS_STYLES: Record<string, { bg: string; label: string }> = {
   installed:   { bg: '#4caf50', label: 'Installed' },
@@ -236,9 +236,23 @@ export function ReportDetailModal({
   };
 
   return (
-    <ModalRoot onCancel={closeModal} bAllowFullSize modalClassName="proton-pulse-detail-modal">
+    <ModalRoot
+      onCancel={closeModal}
+      bAllowFullSize
+      className="proton-pulse-detail-modal"
+      modalClassName="proton-pulse-detail-modal"
+    >
       <style>{`
-        .proton-pulse-detail-modal { padding: 0 !important; margin: 0 !important; max-width: 100% !important; width: 100% !important; }
+        .proton-pulse-detail-modal,
+        .proton-pulse-detail-modal > div,
+        .proton-pulse-detail-modal .DialogContent_InnerWidth {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100vw !important;
+          width: 100vw !important;
+          max-height: 100vh !important;
+        }
+        .proton-pulse-detail-modal .ModalPosition { inset: 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
 
@@ -372,7 +386,7 @@ export function ReportDetailModal({
             flex: 1,
             minHeight: 0,
             overflowY: 'auto',
-            padding: '0 16px 60px',
+            padding: '0 16px 120px',
             outline: 'none',
           }}
         >
