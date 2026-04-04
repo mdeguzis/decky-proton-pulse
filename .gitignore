@@ -10,7 +10,10 @@ lib-cov
 *.zip
 
 .codex
+.claude/
+.superpowers/
 AGENTS.md
+CLAUDE.md
 
 pids
 logs
