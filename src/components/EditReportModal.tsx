@@ -22,6 +22,7 @@ interface VersionOption {
   value: string;          // tag_name or internal_name — used as dropdown data
   displayName: string;    // human label, e.g. "Proton GE 9-27"
   installed: boolean;
+  managed: boolean;       // true for GE releases we can install; false for Valve/custom
 }
 
 function buildVersionOptions(
@@ -36,11 +37,12 @@ function buildVersionOptions(
   }
   const isInstalled = (tag: string) => installedTagSet.has(tag.toLowerCase());
 
-  // Releases → options
+  // Releases → options (all GE releases are managed/installable)
   const releaseOptions: VersionOption[] = releases.map((r) => ({
     value: r.tag_name,
     displayName: formatProtonLabel(r.tag_name),
     installed: isInstalled(r.tag_name),
+    managed: true,
   }));
 
   // Installed tools that don't appear in releases (custom / Valve builds)
@@ -51,6 +53,7 @@ function buildVersionOptions(
       value: t.internal_name || t.directory_name,
       displayName: t.display_name || t.directory_name,
       installed: true,
+      managed: false, // Valve/custom builds — not installable via GE manager
     }));
 
   // Combine: installed first, then available
@@ -62,7 +65,9 @@ function buildVersionOptions(
   return combined;
 }
 
-function VersionOptionLabel({ name, installed }: { name: string; installed: boolean }) {
+function VersionOptionLabel({ name, installed, managed }: { name: string; installed: boolean; managed: boolean }) {
+  const statusLabel = installed ? 'Installed' : managed ? 'Available' : 'Valve';
+  const statusColor = installed ? '#4caf50' : managed ? '#f59e0b' : '#4a6a8a';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 8 }}>
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -72,13 +77,13 @@ function VersionOptionLabel({ name, installed }: { name: string; installed: bool
         style={{
           fontSize: 9,
           fontWeight: 700,
-          color: installed ? '#4caf50' : '#f59e0b',
+          color: statusColor,
           flexShrink: 0,
           textTransform: 'uppercase',
           letterSpacing: 0.3,
         }}
       >
-        {installed ? 'Installed' : 'Available'}
+        {statusLabel}
       </span>
     </div>
   );
@@ -114,10 +119,12 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
         const currentNorm = report.protonVersion.toLowerCase();
         const found = opts.some((o) => o.value.toLowerCase() === currentNorm);
         if (!found) {
+          const isGe = /ge/i.test(report.protonVersion);
           opts.unshift({
             value: report.protonVersion,
             displayName: formatProtonLabel(report.protonVersion),
             installed: false,
+            managed: isGe, // only GE versions are installable
           });
         }
 
@@ -133,6 +140,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
           value: report.protonVersion,
           displayName: formatProtonLabel(report.protonVersion),
           installed: false,
+          managed: /ge/i.test(report.protonVersion),
         }]);
         setLoadingVersions(false);
       });
@@ -144,7 +152,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
     });
     setProtonVersion(nextVersion);
     const opt = versionOptions.find((o) => o.value === nextVersion);
-    if (opt && !opt.installed) {
+    if (opt && !opt.installed && opt.managed) {
       setInstalling(nextVersion);
       void logFrontendEvent('INFO', 'Auto-installing Proton version from edit modal', {
         version: nextVersion,
@@ -224,7 +232,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
 
   const dropdownOptions = versionOptions.map((opt) => ({
     data: opt.value,
-    label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} />,
+    label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
   }));
 
   return (

@@ -323,19 +323,19 @@ export function ReportDetailModal({
         </Focusable>
 
         {/* ── Scrollable info area ── */}
-        <div
-          ref={scrollRef}
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
-            padding: '0 16px 16px',
-          }}
+        <Focusable
+          onGamepadDirection={handleContentDirection}
+          style={{ flex: 1, minHeight: 0 }}
         >
-          <Focusable
-            //@ts-expect-error -- focusWithin is valid at runtime but missing from type defs
-            focusWithin={false}
-            onGamepadDirection={handleContentDirection}
+          <div
+            ref={scrollRef}
+            tabIndex={0}
+            style={{
+              height: '100%',
+              overflowY: 'auto',
+              padding: '0 16px 16px',
+              outline: 'none',
+            }}
           >
             <InfoSection title="Launch">
               <InfoRow
@@ -393,8 +393,8 @@ export function ReportDetailModal({
                 <InfoRow label="Notes" value={report.notes} />
               )}
             </InfoSection>
-          </Focusable>
-        </div>
+          </div>
+        </Focusable>
 
       </div>
     </ModalRoot>
