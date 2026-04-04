@@ -393,3 +393,4 @@ export function t(): TranslationTree {
   if (!tree) return en;
   return makeFallbackProxy(tree, en);
 }
+
