@@ -15,6 +15,7 @@ import type { EditedReportEntry } from './tabs/ConfigureTab';
 import { getProtonGeManagerState, installProtonGe } from '../lib/compatTools';
 import { formatProtonLabel } from '../lib/reportFormatters';
 import { logFrontendEvent } from '../lib/logger';
+import { t } from '../lib/i18n';
 
 const RATING_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending'] as const;
 
@@ -83,7 +84,7 @@ function buildVersionOptions(
 }
 
 function VersionOptionLabel({ name, installed, managed }: { name: string; installed: boolean; managed: boolean }) {
-  const statusLabel = installed ? 'Installed' : managed ? 'Available' : 'Valve';
+  const statusLabel = installed ? t().detail.installed : managed ? t().detail.notInstalled : t().detail.valveProton;
   const statusColor = installed ? '#4caf50' : managed ? '#f59e0b' : '#4a6a8a';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 8 }}>
@@ -180,8 +181,8 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
             toaster.toast({
               title: 'Proton Pulse',
               body: result.already_installed
-                ? `${nextVersion} was already installed.`
-                : `Installed ${nextVersion}.`,
+                ? t().toast.alreadyInstalled(nextVersion)
+                : t().toast.installed(nextVersion),
             });
             setVersionOptions((prev) =>
               prev.map((o) => (o.value === nextVersion ? { ...o, installed: true } : o)),
@@ -189,14 +190,14 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
           } else {
             toaster.toast({
               title: 'Proton Pulse',
-              body: `Install failed: ${result.message}`,
+              body: t().toast.installFailed(result.message),
             });
           }
         })
         .catch((err) => {
           toaster.toast({
             title: 'Proton Pulse',
-            body: `Install failed: ${err instanceof Error ? err.message : String(err)}`,
+            body: t().toast.installFailed(err instanceof Error ? err.message : String(err)),
           });
         })
         .finally(() => setInstalling(null));
@@ -255,19 +256,19 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
   return (
     <ModalRoot onCancel={closeModal}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>Edit Report</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>{t().editReport.title}</div>
         <DialogButton
           onClick={handleClearEdits}
           style={{ fontSize: 10, padding: '3px 10px', minWidth: 0, width: 'auto' }}
         >
-          Reset to Original
+          {t().editReport.resetToOriginal}
         </DialogButton>
       </div>
       <PanelSection>
         <PanelSectionRow>
           <TextField
-            label="Label"
-            description="Short name for this custom variant"
+            label={t().editReport.label}
+            description={t().editReport.labelDescription}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             bShowClearAction
@@ -277,11 +278,11 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
           {loadingVersions ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
               <SteamSpinner style={{ width: 16, height: 16 }} />
-              <span style={{ fontSize: 11, color: '#7a9bb5' }}>Loading Proton versions…</span>
+              <span style={{ fontSize: 11, color: '#7a9bb5' }}>{t().common.loading}</span>
             </div>
           ) : (
             <DropdownItem
-              label={installing ? `Proton Version (installing ${installing}…)` : 'Proton Version'}
+              label={installing ? t().detail.installing(installing) : t().detail.protonVersion}
               rgOptions={dropdownOptions}
               selectedOption={protonVersion}
               onChange={(opt) => handleVersionChange(opt.data)}
@@ -291,7 +292,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
         </PanelSectionRow>
         <PanelSectionRow>
           <DropdownItem
-            label="Rating"
+            label={t().editReport.rating}
             rgOptions={RATING_OPTIONS.map((r) => ({ data: r, label: r }))}
             selectedOption={rating}
             onChange={(opt) => setRating(opt.data)}
@@ -299,28 +300,28 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
         </PanelSectionRow>
         <PanelSectionRow>
           <TextField
-            label="GPU"
+            label={t().detail.gpu}
             value={gpu}
             onChange={(e) => setGpu(e.target.value)}
           />
         </PanelSectionRow>
         <PanelSectionRow>
           <TextField
-            label="GPU Driver"
+            label={t().detail.driver}
             value={gpuDriver}
             onChange={(e) => setGpuDriver(e.target.value)}
           />
         </PanelSectionRow>
         <PanelSectionRow>
           <TextField
-            label="OS"
+            label={t().detail.os}
             value={os}
             onChange={(e) => setOs(e.target.value)}
           />
         </PanelSectionRow>
         <PanelSectionRow>
           <TextField
-            label="Kernel"
+            label={t().detail.kernel}
             value={kernel}
             onChange={(e) => setKernel(e.target.value)}
           />
@@ -334,7 +335,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
         </PanelSectionRow>
         <PanelSectionRow>
           <TextField
-            label="Notes"
+            label={t().reports.notes}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             bShowClearAction
@@ -344,7 +345,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
       <PanelSection>
         <PanelSectionRow>
           <DialogButton onClick={handleSave} disabled={!!installing}>
-            {installing ? 'Installing…' : 'Save Edits'}
+            {installing ? t().common.loading : t().editReport.saveEdits}
           </DialogButton>
         </PanelSectionRow>
       </PanelSection>
