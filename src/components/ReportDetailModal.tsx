@@ -102,6 +102,13 @@ export function ReportDetailModal({
   const confScore = (cappedScore / 10).toFixed(1);
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
 
+  // Scroll to top on mount so D-pad scrolling starts from a known position
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, []);
+
   useEffect(() => {
     void logFrontendEvent('DEBUG', 'Checking Proton version availability', {
       appId, protonVersion: report.protonVersion,
@@ -315,28 +322,28 @@ export function ReportDetailModal({
           style={{
             flexShrink: 0,
             display: 'flex',
-            gap: 8,
-            padding: '8px 16px',
+            gap: 6,
+            padding: '6px 12px',
             borderBottom: '1px solid #2a3a4a',
           }}
         >
           <DialogButton
             onClick={handleApply}
             disabled={applying}
-            style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
+            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
-            {applying ? <SteamSpinner /> : 'Apply Config'}
+            {applying ? <SteamSpinner /> : 'Apply'}
           </DialogButton>
           <DialogButton
             onClick={handleEditConfig}
-            style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
+            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
-            Edit Config
+            Edit
           </DialogButton>
           <DialogButton
             onClick={handleUpvote}
             disabled={upvoting}
-            style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
+            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
             {upvoting ? <SteamSpinner /> : 'Upvote'}
           </DialogButton>
@@ -346,11 +353,11 @@ export function ReportDetailModal({
                 toaster.toast({ title: 'Proton Pulse', body: 'No launch options set.' });
                 return;
               }
-              handleClearLaunchOptions();
+              void handleClearLaunchOptions();
             }}
-            style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
+            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
-            Clear Options
+            Clear
           </DialogButton>
         </Focusable>
 
