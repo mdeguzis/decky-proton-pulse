@@ -236,7 +236,10 @@ export function ReportDetailModal({
   };
 
   return (
-    <ModalRoot onCancel={closeModal} bAllowFullSize>
+    <ModalRoot onCancel={closeModal} bAllowFullSize modalClassName="proton-pulse-detail-modal">
+      <style>{`
+        .proton-pulse-detail-modal { padding: 0 !important; margin: 0 !important; max-width: 100% !important; width: 100% !important; }
+      `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
 
         {/* ── Fixed header ── */}
