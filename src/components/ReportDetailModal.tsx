@@ -330,7 +330,7 @@ export function ReportDetailModal({
           {launchOptionsDisplay && (
             <DialogButton
               onClick={handleClearLaunchOptions}
-              style={{ fontSize: 11, padding: '6px 8px', minHeight: 0, minWidth: 0, width: 'auto', flexShrink: 0 }}
+              style={{ flex: 1, fontSize: 11, padding: '6px 8px', minHeight: 0 }}
             >
               Clear Options
             </DialogButton>
@@ -379,14 +379,16 @@ export function ReportDetailModal({
                 <InfoRow label="Notes" value={report.notes} />
               )}
             </InfoSection>
-            {/* End-of-content ruler */}
-            <div style={{
-              height: 2,
-              background: 'rgba(255,255,255,0.4)',
-              margin: '16px 0 8px',
-              borderRadius: 1,
-            }} />
         </div>
+
+        {/* Fixed bottom ruler — always visible */}
+        <div style={{
+          flexShrink: 0,
+          height: 2,
+          background: 'rgba(255,255,255,0.4)',
+          margin: '0 16px',
+          borderRadius: 1,
+        }} />
 
       </div>
     </ModalRoot>
