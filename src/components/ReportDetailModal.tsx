@@ -217,7 +217,7 @@ export function ReportDetailModal({
 
   return (
     <ModalRoot onCancel={closeModal} bAllowFullSize>
-      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 80px)' }}>
 
         {/* ── Fixed header ── */}
         <div
