@@ -19,6 +19,7 @@ import { getLaunchOptionsFromDetails, getSteamAppDetails } from '../../lib/steam
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
 import { ReportCard, type DisplayReportCard } from '../ReportCard';
 import { ReportDetailModal } from '../ReportDetailModal';
+import { t } from '../../lib/i18n';
 
 interface Props {
   appId: number | null;
@@ -503,7 +504,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     const running = (SteamClient.GameSessions as any)?.GetRunningApps?.() ?? [];
     if (running.length > 0) {
       void logFrontendEvent('WARNING', 'Apply blocked because a game is running', { appId, runningCount: running.length });
-      toaster.toast({ title: 'Proton Pulse', body: 'Quit your game first.' });
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.quitGameFirst });
       return;
     }
     try {
@@ -577,13 +578,13 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         });
 
         if (choice === 'cancel') {
-          toaster.toast({ title: 'Proton Pulse', body: 'Apply cancelled.' });
+          toaster.toast({ title: 'Proton Pulse', body: t().configure.applyCancelled });
           return;
         }
 
         if (choice === 'pick') {
           if (installedTools.length === 0) {
-            toaster.toast({ title: 'Proton Pulse', body: 'No installed compatibility tools were available. Using the required version instead.' });
+            toaster.toast({ title: 'Proton Pulse', body: t().configure.noCompatTools });
           } else {
             const pickedVersion = await new Promise<string | null>((resolve) => {
               const modal = showModal(
@@ -602,7 +603,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             });
 
             if (!pickedVersion) {
-              toaster.toast({ title: 'Proton Pulse', body: 'Apply cancelled.' });
+              toaster.toast({ title: 'Proton Pulse', body: t().configure.applyCancelled });
               return;
             }
             launchProtonVersion = pickedVersion;
@@ -635,7 +636,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
           if (latestInstalledTool) {
             launchProtonVersion = launchVersionValueForTool(latestInstalledTool);
           } else {
-            toaster.toast({ title: 'Proton Pulse', body: 'No installed compatibility tools were available. Using the required version instead.' });
+            toaster.toast({ title: 'Proton Pulse', body: t().configure.noCompatTools });
           }
         } else {
           const installResult = await installProtonGe(availability.normalized_version);
@@ -698,7 +699,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       });
       console.error('Proton Pulse: apply failed', e);
       const msg = e instanceof Error ? e.message : String(e);
-      toaster.toast({ title: 'Proton Pulse', body: `Apply failed: ${msg.slice(0, 80)}` });
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.applyFailed(msg.slice(0, 80)) });
     }
   };
 
@@ -707,7 +708,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     const token = getSetting<string>('gh-votes-token', '');
     if (!token) {
       void logFrontendEvent('WARNING', 'Upvote blocked because GitHub token is missing', { appId, appName });
-      toaster.toast({ title: 'Proton Pulse', body: 'Set a GitHub token in Settings to upvote.' });
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.setTokenToUpvote });
       return;
     }
     void logFrontendEvent('INFO', 'Upvote requested', {
@@ -720,7 +721,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       const ok = await postUpvote(String(appId), reportKey(targetReport), token);
       if (ok) {
         void logFrontendEvent('INFO', 'Upvote accepted by remote endpoint', { appId, appName });
-        toaster.toast({ title: 'Proton Pulse', body: 'Vote submitted! Count updates in ~60s.' });
+        toaster.toast({ title: 'Proton Pulse', body: t().configure.voteSubmitted });
         const capturedAppId = appId;
         setTimeout(() => {
           if (capturedAppId) {
@@ -730,7 +731,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         }, 90_000);
       } else {
         void logFrontendEvent('WARNING', 'Upvote request failed at remote endpoint', { appId, appName });
-        toaster.toast({ title: 'Proton Pulse', body: 'Vote failed. Check the token value and its repo/actions permissions.' });
+        toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
       }
     } catch (e) {
       void logFrontendEvent('ERROR', 'Upvote failed', {
@@ -739,7 +740,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         error: e instanceof Error ? e.message : String(e),
       });
       console.error('Proton Pulse: upvote failed', e);
-      toaster.toast({ title: 'Proton Pulse', body: 'Upvote failed — check logs.' });
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.upvoteFailed });
     }
   };
 
