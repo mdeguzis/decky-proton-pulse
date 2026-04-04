@@ -23,6 +23,7 @@ import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextM
 import { getSetting, setSetting } from './lib/settings';
 import { logFrontendEvent } from './lib/logger';
 import './lib/translations';
+import { useLanguage } from './lib/i18n';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -36,6 +37,7 @@ function extractLibraryAppId(pathname: string): number | null {
 
 // ─── Sidebar panel ────────────────────────────────────────────────────────────
 function Content() {
+  const _lang = useLanguage(); // triggers re-render on language change
   const [version, setVersion] = useState('...');
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
 
