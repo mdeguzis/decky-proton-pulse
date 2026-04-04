@@ -327,6 +327,14 @@ export function ReportDetailModal({
           >
             {upvoting ? <SteamSpinner /> : 'Upvote'}
           </DialogButton>
+          {launchOptionsDisplay && (
+            <DialogButton
+              onClick={handleClearLaunchOptions}
+              style={{ fontSize: 11, padding: '6px 8px', minHeight: 0, minWidth: 0, width: 'auto', flexShrink: 0 }}
+            >
+              Clear Options
+            </DialogButton>
+          )}
         </Focusable>
 
         {/* ── Scrollable info area (scrolled by button bar D-pad) ── */}
@@ -346,36 +354,10 @@ export function ReportDetailModal({
                 label="Launch Preview"
                 value={buildLaunchOptionPreview(report.protonVersion)}
               />
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  padding: '5px 0',
-                  borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  fontSize: 12,
-                  gap: 8,
-                }}
-              >
-                <span style={{ color: '#9db0c4', flexShrink: 0 }}>Current Launch Options</span>
-                <span style={{ color: '#e8f4ff', textAlign: 'right', wordBreak: 'break-word', flex: 1 }}>
-                  {launchOptionsDisplay || 'No launch options set.'}
-                </span>
-                {launchOptionsDisplay && (
-                  <DialogButton
-                    onClick={handleClearLaunchOptions}
-                    style={{
-                      fontSize: 9,
-                      padding: '2px 8px',
-                      minWidth: 0,
-                      width: 'auto',
-                      flexShrink: 0,
-                    }}
-                  >
-                    Clear
-                  </DialogButton>
-                )}
-              </div>
+              <InfoRow
+                label="Current Launch Options"
+                value={launchOptionsDisplay || 'No launch options set.'}
+              />
             </InfoSection>
 
             <InfoSection title="Hardware Match">
