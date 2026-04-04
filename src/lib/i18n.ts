@@ -299,9 +299,18 @@ export function detectLanguage(): Language {
 type Listener = () => void;
 const listeners = new Set<Listener>();
 let languageVersion = 0;
+let resolvedLang: Language = resolveLanguage();
+
+function resolveLanguage(): Language {
+  const stored = getSetting<string>('language', 'auto');
+  if (stored === 'auto') return detectLanguage();
+  if ((LANGUAGES as readonly string[]).includes(stored)) return stored as Language;
+  return 'en';
+}
 
 function notifyListeners(): void {
   languageVersion++;
+  resolvedLang = resolveLanguage();
   listeners.forEach((l) => l());
 }
 
@@ -315,14 +324,7 @@ export function setLanguage(lang: 'auto' | Language): void {
 }
 
 export function getActiveLanguage(): Language {
-  const stored = getSetting<string>('language', 'auto');
-  if (stored === 'auto') {
-    return detectLanguage();
-  }
-  if ((LANGUAGES as readonly string[]).includes(stored)) {
-    return stored as Language;
-  }
-  return 'en';
+  return resolvedLang;
 }
 
 export function getLanguageVersion(): number {
@@ -347,8 +349,9 @@ export function useLanguage(): Language {
 // t() — resolved tree with English fallback proxy
 // ---------------------------------------------------------------------------
 
+const IS_DEV = typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production';
+
 function makeFallbackProxy(translated: TranslationTree, fallback: TranslationTree): TranslationTree {
-  const isDev = process.env?.NODE_ENV !== 'production';
 
   return new Proxy(translated, {
     get(target, sectionKey: string) {
@@ -366,7 +369,7 @@ function makeFallbackProxy(translated: TranslationTree, fallback: TranslationTre
           if (val !== undefined) return val;
           // Fall back to English
           const fbVal = fallbackSection?.[leafKey];
-          if (isDev && fbVal !== undefined) {
+          if (IS_DEV && fbVal !== undefined) {
             if (typeof fbVal === 'function') {
               return (...args: any[]) => {
                 console.warn(`[i18n] missing key ${String(sectionKey)}.${String(leafKey)} in ${getActiveLanguage()}`);
