@@ -607,17 +607,26 @@ class Plugin:
         return self._compat_tools_cache_dir() / "proton-ge-releases-cache.json"
 
     def _normalize_proton_ge_tag(self, version: str) -> str | None:
+        """Normalize a version string to a GE-Proton tag name, or None if not GE-Proton.
+
+        Only versions that are clearly GE-Proton are recognized. Valve Proton
+        versions like "10.0-3" or "Proton 9.0-4" return None (not managed).
+        """
         cleaned = version.strip()
         if not cleaned:
             return None
 
         cleaned = cleaned.replace("_", "-")
         cleaned = re.sub(r"\s+", "", cleaned)
-        shorthand_match = re.fullmatch(r"(\d+)\.0-(\d+)", cleaned, re.IGNORECASE)
-        if shorthand_match:
-            return f"GE-Proton{shorthand_match.group(1)}-{shorthand_match.group(2)}"
 
-        match = re.search(r"(?:GE-?)?Proton(\d+(?:-\d+)*)", cleaned, re.IGNORECASE)
+        # Require "GE" somewhere in the string to distinguish from Valve Proton
+        if "ge" not in cleaned.lower():
+            decky.logger.debug(
+                f"_normalize_proton_ge_tag: '{version}' has no GE indicator, treating as Valve Proton"
+            )
+            return None
+
+        match = re.search(r"GE-?Proton(\d+(?:-\d+)*)", cleaned, re.IGNORECASE)
         if not match:
             return None
         return f"GE-Proton{match.group(1)}"
