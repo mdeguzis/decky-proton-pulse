@@ -200,6 +200,10 @@ export function ReportDetailModal({
     : null;
 
   const handleContentDirection = (evt: GamepadEvent) => {
+    void logFrontendEvent('DEBUG', 'ReportDetail: gamepad direction in content area', {
+      button: evt.detail.button,
+      hasScrollRef: !!scrollRef.current,
+    });
     const el = scrollRef.current;
     if (!el) return;
     if (evt.detail.button === GamepadButton.DIR_DOWN) {
@@ -207,6 +211,11 @@ export function ReportDetailModal({
     } else if (evt.detail.button === GamepadButton.DIR_UP) {
       el.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
     }
+  };
+
+  // Give the scroll div real DOM focus so right-stick scrolling works.
+  const focusScrollPane = () => {
+    scrollRef.current?.focus();
   };
 
   return (
@@ -292,6 +301,11 @@ export function ReportDetailModal({
 
         {/* ── Action buttons (fixed, horizontal) ── */}
         <Focusable
+          onGamepadDirection={(evt: GamepadEvent) => {
+            void logFrontendEvent('DEBUG', 'ReportDetail: gamepad direction in button bar', {
+              button: evt.detail.button,
+            });
+          }}
           style={{
             flexShrink: 0,
             display: 'flex',
@@ -325,6 +339,8 @@ export function ReportDetailModal({
         {/* ── Scrollable info area ── */}
         <Focusable
           onGamepadDirection={handleContentDirection}
+          onGamepadFocus={focusScrollPane}
+          onOKButton={() => { /* noop — keeps Focusable interactive for gamepad */ }}
           style={{ flex: 1, minHeight: 0 }}
         >
           <div
