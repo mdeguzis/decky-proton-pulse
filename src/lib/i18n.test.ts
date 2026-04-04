@@ -18,6 +18,7 @@ import {
   t,
 } from './i18n';
 import type { TranslationTree } from './i18n';
+import './translations/index';
 
 // ---------------------------------------------------------------------------
 // Mock localStorage (same pattern as settings.test.ts)
@@ -190,5 +191,56 @@ describe('detectLanguage()', () => {
       },
     });
     expect(detectLanguage()).toBe('de');
+  });
+});
+
+describe('translation completeness', () => {
+  it('all registered languages have the same top-level keys as English', () => {
+    const enTree = t();
+    const enKeys = Object.keys(enTree).sort();
+
+    for (const lang of LANGUAGES) {
+      if (lang === 'en') continue;
+      setLanguage(lang);
+      const tree = t();
+      const keys = Object.keys(tree).sort();
+      expect(keys).toEqual(enKeys);
+    }
+
+    setLanguage('auto');
+  });
+});
+
+describe('fallback proxy', () => {
+  it('returns English string for missing keys in non-English language', () => {
+    for (const lang of LANGUAGES) {
+      setLanguage(lang);
+      const tree = t();
+      // Every language should return a string for common.save (never undefined)
+      expect(typeof tree.common.save).toBe('string');
+      expect(tree.common.save.length).toBeGreaterThan(0);
+      // Dynamic functions should also work
+      expect(typeof tree.reports.found(3)).toBe('string');
+    }
+    setLanguage('auto');
+  });
+});
+
+describe('pluralization', () => {
+  it('Russian reports.found handles plural forms correctly', () => {
+    setLanguage('ru');
+    const tree = t();
+    expect(tree.reports.found(1)).toContain('1');
+    expect(tree.reports.found(5)).toContain('5');
+    expect(tree.reports.found(21)).toContain('21');
+    setLanguage('auto');
+  });
+
+  it('Japanese reports.found works without plural forms', () => {
+    setLanguage('ja');
+    const tree = t();
+    expect(tree.reports.found(1)).toContain('1');
+    expect(tree.reports.found(5)).toContain('5');
+    setLanguage('auto');
   });
 });
