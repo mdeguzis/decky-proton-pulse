@@ -1,10 +1,11 @@
 // src/components/tabs/GeneralSettingsTab.tsx
-import { Focusable, GamepadButton, ToggleField } from '@decky/ui';
+import { DropdownItem, Focusable, GamepadButton, ToggleField } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { callable } from '@decky/api';
 import { useEffect, useState } from 'react';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
+import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 
@@ -57,6 +58,14 @@ export function GeneralSettingsTab() {
     setSetting('gh-votes-token', value);
   };
 
+  const lang = useLanguage(); // subscribes to re-render on language change
+  const currentPref = getSetting<Language | 'auto'>('language', 'auto');
+  const detectedName = LANGUAGE_NAMES[detectLanguage()];
+  const langOptions = [
+    { data: 'auto' as const, label: t().settings.autoDetected(detectedName) },
+    ...LANGUAGES.map((code) => ({ data: code, label: LANGUAGE_NAMES[code] })),
+  ];
+
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
       evt.preventDefault();
@@ -68,6 +77,14 @@ export function GeneralSettingsTab() {
       <div style={sectionStyle()}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
           General
+        </div>
+        <div style={focusClipRowStyle()}>
+          <DropdownItem
+            label={t().settings.language}
+            rgOptions={langOptions}
+            selectedOption={currentPref}
+            onChange={(opt) => setLanguage(opt.data)}
+          />
         </div>
         <div style={focusClipRowStyle()}>
           <ToggleField
