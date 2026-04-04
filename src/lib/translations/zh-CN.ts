@@ -76,12 +76,12 @@ const zhCN: TranslationTree = {
   configure: {
     quitGameFirst: '请先退出游戏',
     applyCancelled: '应用已取消',
-    noCompatTools: '没有可用的兼容性工具',
+    noCompatTools: '没有可用的已安装兼容性工具。将改为使用所需版本。',
     applyFailed: (msg) => `应用失败：${msg}`,
     setTokenToUpvote: '设置 GitHub 令牌以点赞',
-    voteSubmitted: '投票已提交',
-    voteFailed: '投票失败',
-    upvoteFailed: '点赞失败',
+    voteSubmitted: '投票已提交！计数将在约 60 秒内更新。',
+    voteFailed: '投票失败。请检查令牌值及其仓库/Actions 权限。',
+    upvoteFailed: '点赞失败 — 请检查日志。',
   },
   toast: {
     installed: (v) => `已安装 ${v}。`,

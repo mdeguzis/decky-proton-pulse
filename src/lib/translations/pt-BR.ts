@@ -76,12 +76,12 @@ const ptBR: TranslationTree = {
   configure: {
     quitGameFirst: 'Por favor, saia do jogo primeiro',
     applyCancelled: 'Aplicação cancelada',
-    noCompatTools: 'Nenhuma ferramenta de compatibilidade disponível',
+    noCompatTools: 'Nenhuma ferramenta de compatibilidade instalada estava disponível. Usando a versão necessária como alternativa.',
     applyFailed: (msg) => `Falha ao aplicar: ${msg}`,
     setTokenToUpvote: 'Defina um token do GitHub para votar',
-    voteSubmitted: 'Voto enviado',
-    voteFailed: 'Falha no voto',
-    upvoteFailed: 'Falha ao votar',
+    voteSubmitted: 'Voto enviado! A contagem atualiza em ~60s.',
+    voteFailed: 'Falha no voto. Verifique o valor do token e suas permissões de repo/actions.',
+    upvoteFailed: 'Falha ao votar — verifique os logs.',
   },
   toast: {
     installed: (v) => `${v} instalado.`,

@@ -76,12 +76,12 @@ const ko: TranslationTree = {
   configure: {
     quitGameFirst: '먼저 게임을 종료해 주세요',
     applyCancelled: '적용이 취소되었습니다',
-    noCompatTools: '사용 가능한 호환성 도구가 없습니다',
+    noCompatTools: '설치된 호환성 도구를 사용할 수 없습니다. 대신 필요한 버전을 사용합니다.',
     applyFailed: (msg) => `적용 실패: ${msg}`,
     setTokenToUpvote: '추천하려면 GitHub 토큰을 설정하세요',
-    voteSubmitted: '투표가 제출되었습니다',
-    voteFailed: '투표에 실패했습니다',
-    upvoteFailed: '추천에 실패했습니다',
+    voteSubmitted: '투표가 제출되었습니다! 카운트는 약 60초 후에 업데이트됩니다.',
+    voteFailed: '투표에 실패했습니다. 토큰 값과 저장소/Actions 권한을 확인하세요.',
+    upvoteFailed: '추천에 실패했습니다 — 로그를 확인하세요.',
   },
   toast: {
     installed: (v) => `${v}이(가) 설치되었습니다.`,

@@ -24,7 +24,7 @@ const de: TranslationTree = {
   detail: {
     apply: 'Anwenden',
     edit: 'Bearbeiten',
-    upvote: 'Hochvoten',
+    upvote: 'Bewerten',
     clear: 'Löschen',
     launchPreview: 'Startvorschau',
     currentLaunchOptions: 'Aktuelle Startoptionen',
@@ -76,12 +76,12 @@ const de: TranslationTree = {
   configure: {
     quitGameFirst: 'Bitte beenden Sie zuerst das Spiel',
     applyCancelled: 'Anwenden abgebrochen',
-    noCompatTools: 'Keine Kompatibilitätswerkzeuge verfügbar',
+    noCompatTools: 'Keine installierten Kompatibilitätswerkzeuge verfügbar. Stattdessen wird die erforderliche Version verwendet.',
     applyFailed: (msg) => `Anwenden fehlgeschlagen: ${msg}`,
-    setTokenToUpvote: 'GitHub-Token setzen zum Hochvoten',
-    voteSubmitted: 'Stimme abgegeben',
-    voteFailed: 'Abstimmung fehlgeschlagen',
-    upvoteFailed: 'Hochvoten fehlgeschlagen',
+    setTokenToUpvote: 'GitHub-Token setzen zum Bewerten',
+    voteSubmitted: 'Stimme abgegeben! Zähler aktualisiert sich in ~60s.',
+    voteFailed: 'Abstimmung fehlgeschlagen. Überprüfen Sie den Token-Wert und seine Repo-/Actions-Berechtigungen.',
+    upvoteFailed: 'Bewerten fehlgeschlagen — Protokolle prüfen.',
   },
   toast: {
     installed: (v) => `${v} installiert.`,
