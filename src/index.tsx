@@ -22,6 +22,7 @@ import type { PageId } from './lib/pageState';
 import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextMenu';
 import { getSetting, setSetting } from './lib/settings';
 import { logFrontendEvent } from './lib/logger';
+import './lib/translations';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
