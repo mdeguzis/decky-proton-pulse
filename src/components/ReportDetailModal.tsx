@@ -397,8 +397,8 @@ export function ReportDetailModal({
                 <InfoRow label="Notes" value={report.notes} />
               )}
             </InfoSection>
-            {/* Footer divider — keeps last items visible above Steam's nav bar */}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 8 }} />
+            {/* End-of-content ruler */}
+            <div style={{ borderTop: '2px solid rgba(255,255,255,0.5)', marginTop: 12 }} />
         </div>
 
       </div>
