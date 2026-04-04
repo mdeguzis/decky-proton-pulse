@@ -73,7 +73,7 @@ describe('dispatchNavigate', () => {
   });
 
   it('fires correct tab for each PageId', () => {
-    const tabs = ['manage-game', 'manage', 'logs', 'settings', 'about'] as const;
+    const tabs = ['manage-game', 'manage', 'logs', 'compatibility-tools', 'settings', 'about'] as const;
     tabs.forEach(tab => {
       const received: NavigatePayload[] = [];
       const handler = (e: Event) => {
