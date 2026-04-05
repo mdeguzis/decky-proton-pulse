@@ -238,7 +238,9 @@ const registry: Partial<Record<Language, TranslationTree>> = { en };
 
 export function registerTranslation(lang: Language, tree: TranslationTree): void {
   registry[lang] = tree;
-  console.log(`[i18n] registered: ${lang}`);
+  import('./logger').then(({ logFrontendEvent }) =>
+    logFrontendEvent('INFO', `[i18n] registered: ${lang}`),
+  ).catch(() => {});  // silent in test env
 }
 
 // ---------------------------------------------------------------------------
@@ -323,7 +325,15 @@ export function setLanguage(lang: 'auto' | Language): void {
   const prev = resolvedLang;
   setSetting('language', lang);
   notifyListeners();
-  console.log(`[i18n] setLanguage: pref=${lang}, resolved=${prev}→${resolvedLang}, listeners=${listeners.size}, registry=[${Object.keys(registry).filter(k => registry[k as Language]).join(',')}]`);
+  import('./logger').then(({ logFrontendEvent }) =>
+    logFrontendEvent('INFO', '[i18n] setLanguage', {
+      pref: lang,
+      resolvedFrom: prev,
+      resolvedTo: resolvedLang,
+      listeners: listeners.size,
+      registry: Object.keys(registry).filter(k => registry[k as Language]),
+    }),
+  ).catch(() => {});  // silent in test env
 }
 
 export function getActiveLanguage(): Language {
