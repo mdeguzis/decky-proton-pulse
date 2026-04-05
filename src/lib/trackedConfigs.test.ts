@@ -1,5 +1,5 @@
 // src/lib/trackedConfigs.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
@@ -11,7 +11,7 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock });
+vi.stubGlobal('localStorage', localStorageMock);
 
 import {
   getTrackedConfigs,
