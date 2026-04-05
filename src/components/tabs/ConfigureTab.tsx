@@ -20,6 +20,8 @@ import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonG
 import { ReportCard, type DisplayReportCard } from '../ReportCard';
 import { ReportDetailModal } from '../ReportDetailModal';
 import { t } from '../../lib/i18n';
+import { addTrackedConfig } from '../../lib/trackedConfigs';
+import { parseLaunchOptions } from '../../lib/launchVars';
 
 interface Props {
   appId: number | null;
@@ -680,6 +682,15 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       const detailsResult = await getSteamAppDetails(appId);
       const appliedLaunchOptions = getLaunchOptionsFromDetails(detailsResult.details);
       setCurrentLaunchOptions(appliedLaunchOptions);
+      const parsedVars = parseLaunchOptions(appliedLaunchOptions);
+      addTrackedConfig({
+        appId,
+        appName,
+        protonVersion: launchProtonVersion,
+        launchOptions: appliedLaunchOptions,
+        enabledVars: parsedVars.vars,
+        appliedAt: Date.now(),
+      });
       void logFrontendEvent('INFO', 'Launch options applied', {
         appId,
         appName,
