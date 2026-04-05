@@ -2,6 +2,23 @@
 
 A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for the Steam Deck that pulls [ProtonDB](https://www.protondb.com) compatibility reports for any game in your library, scores them against your hardware, and lets you apply the most relevant launch options in a couple of button presses.
 
+---
+
+## Acknowledgments & Credits
+
+Proton Pulse would not exist without the work of the open-source projects below. A sincere and prominent thank you to each of these developers and communities — components, patterns, and ideas were directly borrowed from, inspired by, or built on top of their code.
+
+| Project | Author | License |
+|---|---|---|
+| [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) | OMGDuke | — |
+| [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) | moi952 | — |
+| [Wine Cellar (decky-wine-cellar)](https://github.com/FlashyReese/decky-wine-cellar) | FlashyReese | MIT |
+| [SteamGridDB Decky Plugin (decky-steamgriddb)](https://github.com/SteamGridDB/decky-steamgriddb) | SteamGridDB | GPL-3.0-or-later |
+
+If you find Proton Pulse useful, please consider starring or contributing to these upstream projects as well.
+
+---
+
 ## What it does
 
 Getting Proton launch options right for a specific game usually involves searching ProtonDB, digging through a dozen reports, figuring out which ones were written by people with similar hardware, and then manually copying the flags into Steam's Properties dialog. Proton Pulse handles that workflow from the Steam Deck UI:
@@ -25,30 +42,6 @@ You can also review or clear applied options from the plugin's sidebar panel.
 * **Library route patching** — hooks into `/library/app/:appid` via Decky's `routerHook`
 * **Rotating debug logs** — separate rotating file handler for troubleshooting
 * **Python backend** — structured logging, game guard, full test suite
-
-## Acknowledgments & Credits
-
-Proton Pulse would not exist without the work of the open-source projects below. Huge thank you to each of these developers and communities — components, patterns, and ideas were directly borrowed from, inspired by, or built on top of their code.
-
-### [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) — by OMGDuke
-
-The original Decky plugin for ProtonDB integration on Steam Deck. Proton Pulse draws heavily from this project's approach to fetching and displaying ProtonDB data within the Decky Loader environment, including the ProtonDB API integration patterns, badge/rating display concepts, and the overall plugin architecture for interfacing with ProtonDB from Game Mode.
-
-### [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) — by moi952
-
-A plugin for managing Proton launch options directly from the Steam Deck UI. Proton Pulse was inspired by and borrows from this project's approach to injecting and managing launch parameters for Steam games, including the method for writing launch options via the Steam client, the collapsible category UI patterns, and the concept of applying environment variables directly from Game Mode without manual typing.
-
-### [Wine Cellar (decky-wine-cellar)](https://github.com/FlashyReese/decky-wine-cellar) — by FlashyReese (MIT)
-
-A Decky Loader plugin for managing Steam Play compatibility tools. Proton Pulse references Wine Cellar's patterns for interacting with Proton/Wine compatibility layers on the Steam Deck, including its approach to detecting and working with compatibility tool directories and its plugin settings/management UI structure.
-
-### [SteamGridDB Decky Plugin (decky-steamgriddb)](https://github.com/SteamGridDB/decky-steamgriddb) — by SteamGridDB (GPL-3.0-or-later)
-
-A Decky Loader plugin for managing custom game artwork from within Game Mode. Proton Pulse was influenced by this project's implementation of the game context menu integration pattern (adding custom entries to the right-click menu on games in the Steam library), its approach to full-screen overlay views triggered from game pages, and general Decky plugin UI/UX conventions.
-
----
-
-A sincere thank you to all of the above maintainers and contributors. If you find Proton Pulse useful, please consider starring or contributing to these upstream projects as well.
 
 ## Installation
 
