@@ -22,7 +22,7 @@ import type { PageId } from './lib/pageState';
 import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextMenu';
 import { getSetting, setSetting } from './lib/settings';
 import { logFrontendEvent } from './lib/logger';
-import './lib/translations';
+import { TRANSLATIONS_LOADED } from './lib/translations';
 import { useLanguage } from './lib/i18n';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
@@ -141,7 +141,7 @@ function Content() {
 // ─── Plugin definition ────────────────────────────────────────────────────────
 export default definePlugin(() => {
   console.log('Proton Pulse initializing');
-  void logFrontendEvent('INFO', 'Plugin frontend initializing');
+  void logFrontendEvent('INFO', 'Plugin frontend initializing', { translationsLoaded: TRANSLATIONS_LOADED });
 
   void setLogLevel(getSetting('debugEnabled', false) ? 'DEBUG' : 'INFO').catch((error) => {
     console.error('Proton Pulse: failed to sync saved debug setting', error);

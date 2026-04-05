@@ -1,7 +1,7 @@
 // src/lib/translations/de.ts
-import { registerTranslation, type TranslationTree } from '../i18n';
+import type { TranslationTree } from '../i18n';
 
-const de: TranslationTree = {
+export const de: TranslationTree = {
   common: {
     save: 'Speichern',
     cancel: 'Abbrechen',
@@ -101,4 +101,3 @@ const de: TranslationTree = {
   },
 };
 
-registerTranslation('de', de);

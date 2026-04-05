@@ -1,7 +1,7 @@
 // src/lib/translations/tr.ts
-import { registerTranslation, type TranslationTree } from '../i18n';
+import type { TranslationTree } from '../i18n';
 
-const tr: TranslationTree = {
+export const tr: TranslationTree = {
   common: {
     save: 'Kaydet',
     cancel: 'İptal',
@@ -101,4 +101,3 @@ const tr: TranslationTree = {
   },
 };
 
-registerTranslation('tr', tr);
