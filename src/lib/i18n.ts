@@ -207,6 +207,29 @@ export interface TranslationTree {
     github: string;
     protondb: string;
   };
+  configManager: {
+    title: string;
+    createConfig: string;
+    configureCurrentGame: string;
+    emptyState: string;
+    deleteConfirm: (gameName: string) => string;
+    deleteConfirmTitle: string;
+    applied: string;
+    appliedAgo: (time: string) => string;
+    noConfigs: string;
+    livePreview: string;
+    customVariables: string;
+    addCustomVar: string;
+    toggleCategories: {
+      nvidia: string;
+      amd: string;
+      intel: string;
+      wrappers: string;
+      performance: string;
+      compatibility: string;
+      debug: string;
+    };
+  };
   ratings: {
     platinum: string;
     gold: string;
@@ -401,6 +424,29 @@ export const en: TranslationTree = {
     description: 'Ranks ProtonDB community reports by system compatibility and applies the best-matching Proton launch options to your Steam games — all from the Decky sidebar.',
     github: 'GitHub',
     protondb: 'ProtonDB',
+  },
+  configManager: {
+    title: 'Configurations',
+    createConfig: 'Create Config',
+    configureCurrentGame: 'Configure Current Game',
+    emptyState: 'No configurations yet. Apply a report from Manage This Game to get started.',
+    deleteConfirm: (name) => `Delete config for ${name}? This will clear the game's launch options.`,
+    deleteConfirmTitle: 'Delete Configuration',
+    applied: 'Applied',
+    appliedAgo: (time) => `Applied ${time}`,
+    noConfigs: 'No configurations',
+    livePreview: 'Live Preview',
+    customVariables: 'Custom Variables',
+    addCustomVar: 'Add custom variable',
+    toggleCategories: {
+      nvidia: 'NVIDIA',
+      amd: 'AMD',
+      intel: 'Intel',
+      wrappers: 'Wrappers',
+      performance: 'Performance',
+      compatibility: 'Compatibility',
+      debug: 'Debug',
+    },
   },
   ratings: {
     platinum: 'Platinum',
