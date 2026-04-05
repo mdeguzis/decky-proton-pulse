@@ -1,4 +1,6 @@
 // src/lib/launchVars.ts
+// Launch option management patterns inspired by decky-proton-launch by moi952:
+// https://github.com/moi952/decky-proton-launch
 
 export interface LaunchVarDef {
   key: string;

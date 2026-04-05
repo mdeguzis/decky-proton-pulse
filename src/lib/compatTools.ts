@@ -1,3 +1,5 @@
+// Compatibility tool management patterns inspired by decky-wine-cellar by FlashyReese (MIT):
+// https://github.com/FlashyReese/decky-wine-cellar
 import { callable } from '@decky/api';
 import type { ProtonGeManagerState, ProtonVersionAvailability } from '../types';
 
