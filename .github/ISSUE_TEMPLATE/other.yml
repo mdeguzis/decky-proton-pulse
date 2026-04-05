@@ -1,0 +1,34 @@
+name: Other
+description: Feature request, question, or anything else
+labels: ["other"]
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Feature request
+        - Question
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe your request or question
+    validations:
+      required: true
+  - type: textarea
+    id: system_info
+    attributes:
+      label: System Info (optional)
+      description: Auto-filled by the plugin when submitted from the About page
+      render: shell
+  - type: textarea
+    id: logs
+    attributes:
+      label: Plugin Logs (optional)
+      description: Auto-filled by the plugin when submitted from the About page. Only needed if relevant to your request.
+      render: shell

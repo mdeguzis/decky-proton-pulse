@@ -434,6 +434,23 @@ class Plugin:
     async def get_plugin_version(self) -> str:
         return getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
 
+    # ─── ProtonDB System Info ────────────────────────────────────────────────
+
+    async def get_protondb_systeminfo(self) -> str:
+        """Generate a Steam System Information block for ProtonDB submissions."""
+        try:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "protondb_systeminfo",
+                os.path.join(os.path.dirname(__file__), "protondb_systeminfo.py"),
+            )
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod.generate_system_info(home=decky.DECKY_USER_HOME)
+        except Exception as e:
+            decky.logger.error(f"Failed to generate ProtonDB system info: {e}")
+            return f"Error generating system info: {e}"
+
     # ─── Game Guard ───────────────────────────────────────────────────────────
 
     async def is_game_running(self) -> bool:

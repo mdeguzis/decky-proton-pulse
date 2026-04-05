@@ -206,6 +206,13 @@ export interface TranslationTree {
     description: string;
     github: string;
     protondb: string;
+    submitIssue: string;
+    submitIssueHint: string;
+    issueTemplateGameReport: string;
+    issueTemplateMissingReports: string;
+    issueTemplatePluginIssue: string;
+    issueTemplateOther: string;
+    openingIssue: string;
   };
   configManager: {
     title: string;
@@ -221,6 +228,8 @@ export interface TranslationTree {
     customVariables: string;
     addCustomVar: string;
     previewHint: string;
+    profileName: string;
+    profileNameHint: string;
     gpuFilter: string;
     toggleCategories: {
       nvidia: string;
@@ -231,6 +240,23 @@ export interface TranslationTree {
       compatibility: string;
       debug: string;
     };
+  };
+  protondbSubmit: {
+    title: string;
+    instructions: string;
+    generating: string;
+    generateFailed: string;
+    copyAndOpen: string;
+    copyInfo: string;
+    copied: string;
+    copiedToClipboard: string;
+    copyFailed: string;
+    submitToProtonDB: string;
+    confirmTitle: string;
+    confirmChanges: string;
+    confirmSubmit: string;
+    noChanges: string;
+    changed: (field: string, from: string, to: string) => string;
   };
   ratings: {
     platinum: string;
@@ -426,6 +452,13 @@ export const en: TranslationTree = {
     description: 'Ranks ProtonDB community reports by system compatibility and applies the best-matching Proton launch options to your Steam games — all from the Decky sidebar.',
     github: 'GitHub',
     protondb: 'ProtonDB',
+    submitIssue: 'Submit Issue',
+    submitIssueHint: 'System info and recent logs are attached automatically.',
+    issueTemplateGameReport: 'Game Report',
+    issueTemplateMissingReports: 'Missing ProtonDB Reports',
+    issueTemplatePluginIssue: 'Plugin Issue',
+    issueTemplateOther: 'Other',
+    openingIssue: 'Opening issue…',
   },
   configManager: {
     title: 'Configurations',
@@ -441,6 +474,8 @@ export const en: TranslationTree = {
     customVariables: 'Custom Variables',
     addCustomVar: 'Add custom variable',
     previewHint: 'Toggle options below to build your launch command. Sections are pre-filtered by your hardware.',
+    profileName: 'Profile Name',
+    profileNameHint: 'A label for this configuration (e.g. "High Performance", "Compatible")',
     gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
@@ -451,6 +486,23 @@ export const en: TranslationTree = {
       compatibility: 'Compatibility',
       debug: 'Debug',
     },
+  },
+  protondbSubmit: {
+    title: 'Submit to ProtonDB',
+    instructions: 'Your system info has been generated in the format ProtonDB expects. Copy it to your clipboard, then paste it into the ProtonDB contribute form when prompted for system information.',
+    generating: 'Generating system info…',
+    generateFailed: 'Failed to generate system info',
+    copyAndOpen: 'Copy & Open ProtonDB',
+    copyInfo: 'Copy Info',
+    copied: 'Copied!',
+    copiedToClipboard: 'System info copied to clipboard.',
+    copyFailed: 'Failed to copy to clipboard.',
+    submitToProtonDB: 'Submit to ProtonDB',
+    confirmTitle: 'Submit to ProtonDB?',
+    confirmChanges: 'The following changes will be included in your report:',
+    confirmSubmit: 'Continue to ProtonDB',
+    noChanges: 'No changes detected.',
+    changed: (field, from, to) => `${field}: ${from} → ${to}`,
   },
   ratings: {
     platinum: 'Platinum',

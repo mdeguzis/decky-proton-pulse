@@ -686,10 +686,12 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       addTrackedConfig({
         appId,
         appName,
+        profileName: '',
         protonVersion: launchProtonVersion,
         launchOptions: appliedLaunchOptions,
         enabledVars: parsedVars.vars,
         appliedAt: Date.now(),
+        source: 'protondb',
       });
       void logFrontendEvent('INFO', 'Launch options applied', {
         appId,

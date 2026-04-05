@@ -1,0 +1,47 @@
+name: Plugin Issue
+description: Report a bug or problem with the Proton Pulse plugin itself
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      options:
+        - Config Editor
+        - Manage Configurations
+        - Compatibility Tools
+        - ProtonDB Reports
+        - Settings
+        - UI / Navigation
+        - Backend / Python
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this?
+      value: |
+        1.
+        2.
+        3.
+  - type: textarea
+    id: system_info
+    attributes:
+      label: System Info
+      description: Auto-filled by the plugin when submitted from the About page
+      render: shell
+  - type: textarea
+    id: logs
+    attributes:
+      label: Plugin Logs
+      description: Auto-filled by the plugin when submitted from the About page (last 30 lines). Attach the full log file if needed.
+      render: shell
