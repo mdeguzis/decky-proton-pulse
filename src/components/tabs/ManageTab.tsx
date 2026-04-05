@@ -6,8 +6,7 @@ import { toaster } from '@decky/api';
 import { getTrackedConfigs, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
-// ConfigEditorModal will be created in Task 5 — commented until then
-// import { ConfigEditorModal } from '../ConfigEditorModal';
+import { ConfigEditorModal } from '../ConfigEditorModal';
 
 interface Props {
   appId: number | null;
@@ -28,7 +27,7 @@ function relativeTime(timestamp: number): string {
   return `${days}d`;
 }
 
-export function ManageTab({ appId, appName: _appName }: Props) {
+export function ManageTab({ appId, appName }: Props) {
   const [configs, setConfigs] = useState<TrackedConfig[]>([]);
 
   const refresh = () => setConfigs(getTrackedConfigs());
@@ -59,28 +58,26 @@ export function ManageTab({ appId, appName: _appName }: Props) {
     );
   };
 
-  const handleEdit = (_config: TrackedConfig) => {
-    // Will open ConfigEditorModal — implemented in Task 5
-    // showModal(
-    //   <ConfigEditorModal
-    //     appId={config.appId}
-    //     appName={config.appName}
-    //     existingConfig={config}
-    //     onSave={() => refresh()}
-    //   />,
-    // );
+  const handleEdit = (config: TrackedConfig) => {
+    showModal(
+      <ConfigEditorModal
+        appId={config.appId}
+        appName={config.appName}
+        existingConfig={config}
+        onSave={() => refresh()}
+      />,
+    );
   };
 
   const handleCreate = () => {
-    // Will open ConfigEditorModal — implemented in Task 5
-    // showModal(
-    //   <ConfigEditorModal
-    //     appId={appId}
-    //     appName={appName}
-    //     existingConfig={null}
-    //     onSave={() => refresh()}
-    //   />,
-    // );
+    showModal(
+      <ConfigEditorModal
+        appId={appId}
+        appName={appName}
+        existingConfig={null}
+        onSave={() => refresh()}
+      />,
+    );
   };
 
   const handleRootDirection = (evt: GamepadEvent) => {
