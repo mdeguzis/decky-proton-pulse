@@ -7,10 +7,12 @@ import { getTrackedConfigs, removeTrackedConfig, type TrackedConfig } from '../.
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
 import { ConfigEditorModal } from '../ConfigEditorModal';
+import type { GpuVendor } from '../../types';
 
 interface Props {
   appId: number | null;
   appName: string;
+  gpuVendor: GpuVendor | null;
 }
 
 const STEAM_HEADER_URL = (id: number) =>
@@ -27,7 +29,7 @@ function relativeTime(timestamp: number): string {
   return `${days}d`;
 }
 
-export function ManageTab({ appId, appName }: Props) {
+export function ManageTab({ appId, appName, gpuVendor }: Props) {
   const [configs, setConfigs] = useState<TrackedConfig[]>([]);
 
   const refresh = () => setConfigs(getTrackedConfigs());
@@ -64,6 +66,7 @@ export function ManageTab({ appId, appName }: Props) {
         appId={config.appId}
         appName={config.appName}
         existingConfig={config}
+        gpuVendor={gpuVendor}
         onSave={() => refresh()}
       />,
     );
@@ -75,6 +78,7 @@ export function ManageTab({ appId, appName }: Props) {
         appId={appId}
         appName={appName}
         existingConfig={null}
+        gpuVendor={gpuVendor}
         onSave={() => refresh()}
       />,
     );
