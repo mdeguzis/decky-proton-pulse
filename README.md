@@ -2,9 +2,6 @@
 
 A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for the Steam Deck that pulls [ProtonDB](https://www.protondb.com) compatibility reports for any game in your library, scores them against your hardware, and lets you apply the most relevant launch options in a couple of button presses.
 
-> **Status: Phase 1 — Pre-release / In Development**
-> Core functionality is implemented and unit-tested. On-device smoke testing on Steam Deck hardware is pending. See [Phase 1 Status](https://github.com/mdeguzis/decky-proton-pulse/wiki/Phase-1-Status) for details.
-
 ## What it does
 
 Getting Proton launch options right for a specific game usually involves searching ProtonDB, digging through a dozen reports, figuring out which ones were written by people with similar hardware, and then manually copying the flags into Steam's Properties dialog. Proton Pulse handles that workflow from the Steam Deck UI:
@@ -17,33 +14,17 @@ You can also review or clear applied options from the plugin's sidebar panel.
 
 ## Features
 
-### Implemented (Phase 1)
-
 * **ProtonDB report fetching** — live summary and detailed reports pulled from the ProtonDB API with retry logic and caching
-* **Hardware-aware scoring** — reports ranked by relevance using GPU vendor, driver version, Proton build, report age, and compatibility tier (9 unit tests passing)
+* **Hardware-aware scoring** — reports ranked by relevance using GPU vendor, driver version, Proton build, report age, and compatibility tier
 * **System detection** — automatic detection of CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions
-* **Full-screen report modal** — browse scored reports with GPU filter tabs (Nvidia / AMD / Other), apply or clear launch options, all without leaving Game Mode
-* **ProtonDB badge component** — displays the game's ProtonDB compatibility tier
-* **Report card component** — detailed per-report view with scoring breakdown
-* **Log viewer** — built-in log viewer with auto-scroll and 3-second polling for debug output
+* **Full-screen report modal** — browse scored reports with GPU filter tabs (Nvidia / AMD / Other), apply or clear launch options without leaving Game Mode
+* **ProtonDB badge** — displays the game's ProtonDB compatibility tier
+* **Report card view** — detailed per-report view with scoring breakdown
+* **Log viewer** — built-in log viewer with auto-scroll and polling for debug output
 * **Sidebar panel** — settings, log viewer, and plugin controls accessible from the Quick Access menu
-* **Library route patching** — plugin hooks into `/library/app/:appid` via Decky's `routerHook`
-* **Rotating log files** — debug logging with separate rotating file handler
-* **Python backend** — 17 tests passing, game guard via `pgrep`, structured logging
-* **Developer tooling** — `dev-setup.sh` and `deploy.sh` helper scripts, VS Code tasks for build/deploy
-
-### Pending (Pre-Deploy)
-
-* On-device smoke test on Steam Deck hardware
-* Badge injection positioning (requires live Steam DOM inspection via CEF DevTools)
-* ProtonDB reports endpoint on-device verification (full `/api/v1/reports/app/{id}` endpoint returned 404 during automated testing — likely rate limiting or geo-restriction)
-* `showModal` / `closeModal` signature verification against target `@decky/ui` version
-
-### Planned (Phase 2)
-
-* Local SQLite thumbs-up/down database for user ratings
-* Score adjustment from local user feedback
-* Settings overrides for detected system specs
+* **Library route patching** — hooks into `/library/app/:appid` via Decky's `routerHook`
+* **Rotating debug logs** — separate rotating file handler for troubleshooting
+* **Python backend** — structured logging, game guard, full test suite
 
 ## Acknowledgments & Credits
 
@@ -97,8 +78,6 @@ bash scripts/dev-setup.sh
 * [Scoring Algorithm](https://github.com/mdeguzis/decky-proton-pulse/wiki/Scoring-Algorithm) — how reports are weighted and ranked
 * [API Reference](https://github.com/mdeguzis/decky-proton-pulse/wiki/API-Reference) — Python callables and TypeScript interfaces
 * [ProtonDB Data Resolution](https://github.com/mdeguzis/decky-proton-pulse/wiki/ProtonDB-Data-Resolution) — app ID resolution, mirror misses, and live fallback
-* [On-Device Test Plan](https://github.com/mdeguzis/decky-proton-pulse/wiki/On-Device-Test-Plan) — manual test checklist for hardware validation
-* [Phase 1 Status](https://github.com/mdeguzis/decky-proton-pulse/wiki/Phase-1-Status) — current implementation status and pending items
 
 ## License
 
