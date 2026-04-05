@@ -1,7 +1,7 @@
 // src/lib/translations/pt-BR.ts
-import { registerTranslation, type TranslationTree } from '../i18n';
+import type { TranslationTree } from '../i18n';
 
-const ptBR: TranslationTree = {
+export const ptBR: TranslationTree = {
   common: {
     save: 'Salvar',
     cancel: 'Cancelar',
@@ -101,4 +101,3 @@ const ptBR: TranslationTree = {
   },
 };
 
-registerTranslation('pt-BR', ptBR);

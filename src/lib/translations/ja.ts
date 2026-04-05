@@ -1,7 +1,7 @@
 // src/lib/translations/ja.ts
-import { registerTranslation, type TranslationTree } from '../i18n';
+import type { TranslationTree } from '../i18n';
 
-const ja: TranslationTree = {
+export const ja: TranslationTree = {
   common: {
     save: '保存',
     cancel: 'キャンセル',
@@ -101,4 +101,3 @@ const ja: TranslationTree = {
   },
 };
 
-registerTranslation('ja', ja);

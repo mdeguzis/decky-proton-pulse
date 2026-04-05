@@ -1,7 +1,7 @@
 // src/lib/translations/zh-CN.ts
-import { registerTranslation, type TranslationTree } from '../i18n';
+import type { TranslationTree } from '../i18n';
 
-const zhCN: TranslationTree = {
+export const zhCN: TranslationTree = {
   common: {
     save: '保存',
     cancel: '取消',
@@ -101,4 +101,3 @@ const zhCN: TranslationTree = {
   },
 };
 
-registerTranslation('zh-CN', zhCN);

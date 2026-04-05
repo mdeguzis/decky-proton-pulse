@@ -1,7 +1,7 @@
 // src/lib/translations/ko.ts
-import { registerTranslation, type TranslationTree } from '../i18n';
+import type { TranslationTree } from '../i18n';
 
-const ko: TranslationTree = {
+export const ko: TranslationTree = {
   common: {
     save: '저장',
     cancel: '취소',
@@ -101,4 +101,3 @@ const ko: TranslationTree = {
   },
 };
 
-registerTranslation('ko', ko);
