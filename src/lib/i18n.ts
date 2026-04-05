@@ -37,14 +37,51 @@ export interface TranslationTree {
     clear: string;
     reset: string;
     close: string;
+    filters: string;
+    sort: string;
+    shown: (count: number) => string;
+    daysAgo: (days: number) => string;
+  };
+  sidebar: {
+    manageConfigurations: string;
+    manageConfigurationsDesc: string;
+    compatibilityTools: string;
+    compatibilityToolsDesc: string;
+    settings: string;
+    settingsDesc: string;
+    viewLogs: string;
+    viewLogsDesc: string;
+    debugLogs: string;
+    debugLogsDesc: string;
+    about: (version: string) => string;
+  };
+  nav: {
+    manageThisGame: string;
+    manageConfigurations: string;
+    logs: string;
+    compatibilityTools: string;
+    settings: string;
+    about: string;
   };
   reports: {
     found: (count: number) => string;
+    communityReports: (count: number) => string;
     noReports: string;
     confidence: string;
     votes: string;
     submitted: string;
     notes: string;
+    bestMatch: string;
+    mostVotes: string;
+    selectReport: string;
+    detectingGpu: string;
+    detectingGpuHint: string;
+    noReportsForTier: string;
+    noReportsForGame: string;
+    loadingSystemInfo: string;
+    navigateToGame: string;
+    hardwareUnavailable: string;
+    editedBadge: string;
   };
   detail: {
     apply: string;
@@ -73,6 +110,7 @@ export interface TranslationTree {
     matchesGpu: string;
     differentGpu: string;
     unknownGpu: string;
+    ram: string;
   };
   editReport: {
     title: string;
@@ -94,9 +132,25 @@ export interface TranslationTree {
   compatTools: {
     install: string;
     uninstall: string;
+    reinstall: string;
+    installing: string;
     otherVersion: string;
     installFromZip: string;
     autoUpdate: string;
+    autoUpdateDescription: string;
+    refresh: string;
+    refreshing: string;
+    installed: string;
+    title: string;
+    description: string;
+    filterPlaceholder: string;
+    zipPlaceholder: string;
+    removing: string;
+    actions: string;
+    restartHint: string;
+    unknownDate: string;
+    estimating: string;
+    timeLeft: (time: string) => string;
   };
   configure: {
     quitGameFirst: string;
@@ -107,6 +161,23 @@ export interface TranslationTree {
     voteSubmitted: string;
     voteFailed: string;
     upvoteFailed: string;
+    requiredProtonVersion: string;
+    requiresVersion: (version: string) => string;
+    chooseApplyMethod: string;
+    installVersion: (version: string) => string;
+    pickInstalledVersion: string;
+    searchClosestVersion: string;
+    searchClosestWith: (version: string) => string;
+    useLatestInstalled: string;
+    useLatestInstalledWith: (version: string) => string;
+    useSelectedVersion: string;
+    chooseInstalledTool: string;
+    usingClosest: (version: string) => string;
+    noCloseMatch: (version: string) => string;
+    installFailed: (version: string) => string;
+    installFailedFallback: (failedVersion: string, fallbackVersion: string) => string;
+    installFailedNoFallback: (version: string) => string;
+    appliedFor: (appName: string) => string;
   };
   toast: {
     installed: (version: string) => string;
@@ -115,6 +186,26 @@ export interface TranslationTree {
     cleared: string;
     clearFailed: (msg: string) => string;
     noOptionsSet: string;
+  };
+  manage: {
+    instructions: string;
+    protondbConfig: string;
+    currentLaunchOptions: string;
+    loadingLaunchOptions: string;
+    noLaunchOptions: string;
+    clearLaunchOptions: string;
+  };
+  logs: {
+    focused: string;
+    moveRight: string;
+    manualScroll: string;
+    jumpHint: string;
+    noLogs: string;
+  };
+  about: {
+    description: string;
+    github: string;
+    protondb: string;
   };
   ratings: {
     platinum: string;
@@ -141,14 +232,51 @@ export const en: TranslationTree = {
     clear: 'Clear',
     reset: 'Reset',
     close: 'Close',
+    filters: 'Filters',
+    sort: 'Sort',
+    shown: (n) => `${n} shown`,
+    daysAgo: (d) => `${d}d ago`,
+  },
+  sidebar: {
+    manageConfigurations: 'Manage Configurations',
+    manageConfigurationsDesc: 'View and manage ProtonDB configurations',
+    compatibilityTools: 'Compatibility Tools',
+    compatibilityToolsDesc: 'Install, remove, and manage compatibility tools',
+    settings: 'Settings',
+    settingsDesc: 'Plugin preferences and tokens',
+    viewLogs: 'View Logs',
+    viewLogsDesc: 'Open the live plugin log viewer',
+    debugLogs: 'Debug Logs',
+    debugLogsDesc: 'Enable verbose logging without opening Settings',
+    about: (v) => `About: Proton Pulse v${v}`,
+  },
+  nav: {
+    manageThisGame: 'Manage This Game',
+    manageConfigurations: 'Manage Configurations',
+    logs: 'Logs',
+    compatibilityTools: 'Compatibility Tools',
+    settings: 'Settings',
+    about: 'About',
   },
   reports: {
     found: (n) => n === 1 ? '1 report found' : `${n} reports found`,
+    communityReports: (n) => n === 1 ? '1 community report' : `${n} community reports`,
     noReports: 'No reports found',
     confidence: 'Confidence',
     votes: 'Votes',
     submitted: 'Submitted',
     notes: 'Notes',
+    bestMatch: 'Best Match',
+    mostVotes: 'Most Votes',
+    selectReport: 'Select a report card to view the full report.',
+    detectingGpu: 'Detecting GPU tier…',
+    detectingGpuHint: 'Detecting your GPU tier before narrowing the list. Showing all reports for now.',
+    noReportsForTier: 'No reports for this GPU tier.',
+    noReportsForGame: 'No ProtonDB reports found for this game.',
+    loadingSystemInfo: 'Loading system info…',
+    navigateToGame: 'Navigate to a game first.',
+    hardwareUnavailable: 'Hardware details unavailable',
+    editedBadge: 'Edited*',
   },
   detail: {
     apply: 'Apply',
@@ -177,6 +305,7 @@ export const en: TranslationTree = {
     matchesGpu: 'Matches your GPU',
     differentGpu: 'Different GPU',
     unknownGpu: 'Unknown GPU',
+    ram: 'RAM',
   },
   editReport: {
     title: 'Edit Report',
@@ -198,9 +327,25 @@ export const en: TranslationTree = {
   compatTools: {
     install: 'Install',
     uninstall: 'Uninstall',
+    reinstall: 'Reinstall',
+    installing: 'Installing',
     otherVersion: 'Other Version',
     installFromZip: 'Install from ZIP',
     autoUpdate: 'Auto Update',
+    autoUpdateDescription: 'Keep the pinned latest Proton-GE release installed whenever Settings opens and refreshes.',
+    refresh: 'Refresh',
+    refreshing: 'Refreshing…',
+    installed: 'Installed',
+    title: 'Compatibility Tools',
+    description: 'Proton-GE management inspired by Wine Cellar, tailored for Proton Pulse apply flow.',
+    filterPlaceholder: 'Filter versions…',
+    zipPlaceholder: '/home/deck/Downloads/GE-Proton8-3.tar.gz',
+    removing: 'Removing…',
+    actions: 'Actions',
+    restartHint: 'Steam may need a restart before the new compatibility tool appears everywhere.',
+    unknownDate: 'Unknown date',
+    estimating: 'estimating…',
+    timeLeft: (time) => `${time} left`,
   },
   configure: {
     quitGameFirst: 'Please quit the game first',
@@ -211,6 +356,23 @@ export const en: TranslationTree = {
     voteSubmitted: 'Vote submitted',
     voteFailed: 'Vote failed',
     upvoteFailed: 'Upvote failed',
+    requiredProtonVersion: 'Required Proton Version',
+    requiresVersion: (v) => `This profile config requires ${v}, but it is not currently installed.`,
+    chooseApplyMethod: 'Choose how you want to apply this profile.',
+    installVersion: (v) => `Install ${v}`,
+    pickInstalledVersion: 'Pick Installed Version',
+    searchClosestVersion: 'Search Closest Version',
+    searchClosestWith: (v) => `Search Closest Version (${v})`,
+    useLatestInstalled: 'Use Latest Installed',
+    useLatestInstalledWith: (v) => `Use Latest Installed (${v})`,
+    useSelectedVersion: 'Use Selected Version',
+    chooseInstalledTool: 'Choose an installed compatibility tool for this profile.',
+    usingClosest: (v) => `Using closest installed version: ${v}`,
+    noCloseMatch: (v) => `No close match found. Using latest installed: ${v}`,
+    installFailed: (v) => `Closest-version search failed, and install failed for ${v}.`,
+    installFailedFallback: (failedV, fallbackV) => `Install failed for ${failedV}. Using ${fallbackV} instead.`,
+    installFailedNoFallback: (v) => `Install failed for ${v}. Applying with the requested version anyway.`,
+    appliedFor: (name) => `Applied for ${name}`,
   },
   toast: {
     installed: (v) => `Installed ${v}.`,
@@ -219,6 +381,26 @@ export const en: TranslationTree = {
     cleared: 'Launch options cleared.',
     clearFailed: (msg) => `Clear failed: ${msg}`,
     noOptionsSet: 'No launch options set.',
+  },
+  manage: {
+    instructions: 'Right-click any game in your library (or use the settings gear) and select',
+    protondbConfig: 'ProtonDB Config',
+    currentLaunchOptions: 'Current launch options from Steam app details:',
+    loadingLaunchOptions: 'Loading launch options…',
+    noLaunchOptions: 'No launch options set.',
+    clearLaunchOptions: 'Clear Launch Options',
+  },
+  logs: {
+    focused: 'Logs focused. Right stick or D-pad scrolls.',
+    moveRight: 'Move right to focus logs.',
+    manualScroll: 'Manual scroll active.',
+    jumpHint: 'Manual scroll active. Press A/OK to jump to latest log output.',
+    noLogs: 'No logs yet.',
+  },
+  about: {
+    description: 'Ranks ProtonDB community reports by system compatibility and applies the best-matching Proton launch options to your Steam games — all from the Decky sidebar.',
+    github: 'GitHub',
+    protondb: 'ProtonDB',
   },
   ratings: {
     platinum: 'Platinum',
