@@ -1,24 +1,25 @@
 // src/components/ConfigEditorModal.tsx
 import { useState, useMemo } from 'react';
 import {
+  ModalRoot,
   Focusable,
   DialogButton,
   ToggleField,
   DropdownItem,
   TextField,
-  GamepadButton,
 } from '@decky/ui';
-import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '@decky/api';
 import { LAUNCH_VAR_CATALOG, buildLaunchOptions, parseLaunchOptions, type LaunchVarDef } from '../lib/launchVars';
 import { addTrackedConfig, type TrackedConfig } from '../lib/trackedConfigs';
 import { logFrontendEvent } from '../lib/logger';
 import { t } from '../lib/i18n';
+import type { GpuVendor } from '../types';
 
 interface Props {
   appId: number | null;
   appName: string;
   existingConfig: TrackedConfig | null;
+  gpuVendor: GpuVendor | null;
   onSave: () => void;
   closeModal?: () => void;
 }
@@ -28,12 +29,31 @@ const STEAM_HEADER_URL = (id: number) =>
 
 type Category = LaunchVarDef['category'];
 const CATEGORY_ORDER: Category[] = ['nvidia', 'amd', 'intel', 'wrappers', 'performance', 'compatibility', 'debug'];
+const VENDOR_CATEGORIES: Category[] = ['nvidia', 'amd', 'intel'];
+
+type FilterOption = 'all' | 'relevant';
 
 function categoryLabel(cat: Category): string {
   return t().configManager.toggleCategories[cat];
 }
 
-export function ConfigEditorModal({ appId, appName, existingConfig, onSave, closeModal }: Props) {
+/** Categories that don't match the detected GPU vendor start collapsed */
+function initialCollapsed(gpuVendor: GpuVendor | null): Set<Category> {
+  if (!gpuVendor || gpuVendor === 'other') return new Set<Category>();
+  return new Set(
+    VENDOR_CATEGORIES.filter((c) => c !== gpuVendor),
+  );
+}
+
+/** When filter is 'relevant', hide vendor categories that don't match */
+function isFiltered(cat: Category, filter: FilterOption, gpuVendor: GpuVendor | null): boolean {
+  if (filter === 'all') return false;
+  if (!VENDOR_CATEGORIES.includes(cat)) return false;
+  if (!gpuVendor || gpuVendor === 'other') return false;
+  return cat !== gpuVendor;
+}
+
+export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, onSave, closeModal }: Props) {
   const parsed = existingConfig
     ? parseLaunchOptions(existingConfig.launchOptions)
     : { protonVersion: null, vars: {} as Record<string, string> };
@@ -41,13 +61,17 @@ export function ConfigEditorModal({ appId, appName, existingConfig, onSave, clos
   const [protonVersion, setProtonVersion] = useState(parsed.protonVersion ?? '');
   const [enabledVars, setEnabledVars] = useState<Record<string, string>>(parsed.vars);
   const [customVars, setCustomVars] = useState<Array<{ key: string; value: string }>>(() => {
-    // Any vars not in catalog are custom
     const catalogKeys = new Set(LAUNCH_VAR_CATALOG.map((d) => d.key));
     return Object.entries(parsed.vars)
       .filter(([k]) => !catalogKeys.has(k))
       .map(([key, value]) => ({ key, value }));
   });
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<Category>>(new Set());
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<Category>>(
+    () => initialCollapsed(gpuVendor),
+  );
+  const [filter, setFilter] = useState<FilterOption>(
+    gpuVendor && gpuVendor !== 'other' ? 'relevant' : 'all',
+  );
 
   const allVars = useMemo(() => {
     const merged = { ...enabledVars };
@@ -143,38 +167,49 @@ export function ConfigEditorModal({ appId, appName, existingConfig, onSave, clos
     return map;
   }, []);
 
-  const handleRootDirection = (evt: GamepadEvent) => {
-    if (evt.detail.button === GamepadButton.DIR_LEFT) {
-      evt.preventDefault();
-    }
-  };
+  const filterOptions = [
+    { data: 'relevant' as FilterOption, label: gpuVendor ? `${categoryLabel(gpuVendor as Category)} + ${t().common.filters}` : t().common.filters },
+    { data: 'all' as FilterOption, label: t().configManager.toggleCategories.nvidia + ' / ' + t().configManager.toggleCategories.amd + ' / ' + t().configManager.toggleCategories.intel },
+  ];
 
   return (
-    <Focusable
-      onGamepadDirection={handleRootDirection}
-      style={{ padding: 16, display: 'flex', flexDirection: 'column', height: '100%' }}
-    >
-      {/* Header */}
-      {appId && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <img
-            src={STEAM_HEADER_URL(appId)}
-            style={{ height: 40, borderRadius: 3, objectFit: 'cover' }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
-              {appName || `App ${appId}`}
+    <ModalRoot onCancel={closeModal}>
+      <style>{`
+        .proton-pulse-config-editor .DialogContent_InnerWidth {
+          max-width: 100% !important;
+        }
+      `}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '70vh' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {appId && (
+              <img
+                src={STEAM_HEADER_URL(appId)}
+                style={{ height: 36, borderRadius: 3, objectFit: 'cover' }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            )}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
+                {appName || (appId ? `App ${appId}` : t().configManager.createConfig)}
+              </div>
+              {appId && <div style={{ fontSize: 10, color: '#7a9bb5' }}>AppID {appId}</div>}
             </div>
-            <div style={{ fontSize: 10, color: '#7a9bb5' }}>AppID {appId}</div>
           </div>
+          {/* Filter dropdown */}
+          {gpuVendor && gpuVendor !== 'other' && (
+            <DropdownItem
+              label={t().common.filters}
+              rgOptions={filterOptions}
+              selectedOption={filter}
+              onChange={(opt) => setFilter(opt.data)}
+            />
+          )}
         </div>
-      )}
 
-      {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: 'auto', marginBottom: 12 }}>
         {/* Proton Version */}
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 8 }}>
           <TextField
             label={t().detail.protonVersion}
             value={protonVersion}
@@ -182,129 +217,134 @@ export function ConfigEditorModal({ appId, appName, existingConfig, onSave, clos
           />
         </div>
 
-        {/* Toggle sections by category */}
-        {CATEGORY_ORDER.map((cat) => {
-          const defs = grouped.get(cat)!;
-          if (defs.length === 0) return null;
-          const collapsed = collapsedCategories.has(cat);
-          return (
-            <div key={cat} style={{ marginBottom: 12 }}>
-              <Focusable
-                onClick={() => toggleCategory(cat)}
-                onOKButton={() => toggleCategory(cat)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  cursor: 'pointer',
-                  padding: '6px 0',
-                  borderBottom: '1px solid #2a3a4a',
-                  marginBottom: 8,
-                }}
-              >
-                <span style={{ fontSize: 10, color: '#7a9bb5' }}>{collapsed ? '▸' : '▾'}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#cfe2f4' }}>
-                  {categoryLabel(cat)}
-                </span>
-                <span style={{ fontSize: 10, color: '#7a9bb5' }}>
-                  ({defs.filter((d) => d.key in enabledVars).length}/{defs.length})
-                </span>
-              </Focusable>
-              {!collapsed && defs.map((def) => (
-                <div key={def.key} style={{ marginBottom: 4 }}>
-                  {def.type === 'bool' ? (
-                    <ToggleField
-                      label={def.key}
-                      description={def.description}
-                      checked={def.key in enabledVars}
-                      onChange={() => toggleVar(def.key, def)}
-                    />
-                  ) : (
-                    <div>
+        {/* Scrollable toggle area */}
+        <Focusable style={{ flex: 1, overflowY: 'auto', maxHeight: '45vh' }}>
+          {/* Toggle sections by category */}
+          {CATEGORY_ORDER.map((cat) => {
+            const defs = grouped.get(cat)!;
+            if (defs.length === 0) return null;
+            if (isFiltered(cat, filter, gpuVendor)) return null;
+            const collapsed = collapsedCategories.has(cat);
+            return (
+              <div key={cat} style={{ marginBottom: 8 }}>
+                <Focusable
+                  onClick={() => toggleCategory(cat)}
+                  onOKButton={() => toggleCategory(cat)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    cursor: 'pointer',
+                    padding: '6px 0',
+                    borderBottom: '1px solid #2a3a4a',
+                    marginBottom: 6,
+                  }}
+                >
+                  <span style={{ fontSize: 10, color: '#7a9bb5' }}>{collapsed ? '▸' : '▾'}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#cfe2f4' }}>
+                    {categoryLabel(cat)}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#7a9bb5' }}>
+                    ({defs.filter((d) => d.key in enabledVars).length}/{defs.length})
+                  </span>
+                </Focusable>
+                {!collapsed && defs.map((def) => (
+                  <div key={def.key} style={{ marginBottom: 2 }}>
+                    {def.type === 'bool' ? (
                       <ToggleField
                         label={def.key}
                         description={def.description}
                         checked={def.key in enabledVars}
-                        onChange={() => {
-                          if (def.key in enabledVars) removeEnumVar(def.key);
-                          else setEnumVar(def.key, def.options![0]);
-                        }}
+                        onChange={() => toggleVar(def.key, def)}
                       />
-                      {def.key in enabledVars && (
-                        <DropdownItem
+                    ) : (
+                      <div>
+                        <ToggleField
                           label={def.key}
-                          rgOptions={def.options!.map((o) => ({ data: o, label: o }))}
-                          selectedOption={enabledVars[def.key]}
-                          onChange={(opt) => setEnumVar(def.key, opt.data)}
+                          description={def.description}
+                          checked={def.key in enabledVars}
+                          onChange={() => {
+                            if (def.key in enabledVars) removeEnumVar(def.key);
+                            else setEnumVar(def.key, def.options![0]);
+                          }}
                         />
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
+                        {def.key in enabledVars && (
+                          <DropdownItem
+                            label={def.key}
+                            rgOptions={def.options!.map((o) => ({ data: o, label: o }))}
+                            selectedOption={enabledVars[def.key]}
+                            onChange={(opt) => setEnumVar(def.key, opt.data)}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+
+          {/* Custom Variables */}
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#cfe2f4', marginBottom: 6, borderBottom: '1px solid #2a3a4a', paddingBottom: 4 }}>
+              {t().configManager.customVariables}
             </div>
-          );
-        })}
-
-        {/* Custom Variables */}
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#cfe2f4', marginBottom: 8, borderBottom: '1px solid #2a3a4a', paddingBottom: 6 }}>
-            {t().configManager.customVariables}
+            {customVars.map((cv, i) => (
+              <Focusable key={i} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+                <TextField
+                  label="KEY"
+                  value={cv.key}
+                  onChange={(e) => updateCustomVar(i, 'key', e.target.value)}
+                />
+                <span style={{ color: '#7a9bb5' }}>=</span>
+                <TextField
+                  label="VALUE"
+                  value={cv.value}
+                  onChange={(e) => updateCustomVar(i, 'value', e.target.value)}
+                />
+                <DialogButton
+                  onClick={() => removeCustomVar(i)}
+                  style={{ minWidth: 30, padding: '4px 8px', fontSize: 11, background: '#555' }}
+                >
+                  ✕
+                </DialogButton>
+              </Focusable>
+            ))}
+            <DialogButton onClick={addCustomVariable} style={{ fontSize: 11 }}>
+              + {t().configManager.addCustomVar}
+            </DialogButton>
           </div>
-          {customVars.map((cv, i) => (
-            <Focusable key={i} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-              <TextField
-                label="KEY"
-                value={cv.key}
-                onChange={(e) => updateCustomVar(i, 'key', e.target.value)}
-              />
-              <span style={{ color: '#7a9bb5' }}>=</span>
-              <TextField
-                label="VALUE"
-                value={cv.value}
-                onChange={(e) => updateCustomVar(i, 'value', e.target.value)}
-              />
-              <DialogButton
-                onClick={() => removeCustomVar(i)}
-                style={{ minWidth: 30, padding: '4px 8px', fontSize: 11, background: '#555' }}
-              >
-                ✕
-              </DialogButton>
-            </Focusable>
-          ))}
-          <DialogButton onClick={addCustomVariable} style={{ fontSize: 11 }}>
-            + {t().configManager.addCustomVar}
-          </DialogButton>
+        </Focusable>
+
+        {/* Live Preview */}
+        <div
+          style={{
+            padding: 8,
+            borderRadius: 6,
+            background: 'rgba(0,0,0,0.4)',
+            fontFamily: 'monospace',
+            fontSize: 10,
+            color: '#9dc4e8',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all',
+            marginBottom: 8,
+            marginTop: 8,
+          }}
+        >
+          <div style={{ fontSize: 9, color: '#7a9bb5', marginBottom: 2 }}>{t().configManager.livePreview}</div>
+          {preview}
         </div>
-      </div>
 
-      {/* Live Preview */}
-      <div
-        style={{
-          padding: 10,
-          borderRadius: 6,
-          background: 'rgba(0,0,0,0.4)',
-          fontFamily: 'monospace',
-          fontSize: 10,
-          color: '#9dc4e8',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-all',
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ fontSize: 9, color: '#7a9bb5', marginBottom: 4 }}>{t().configManager.livePreview}</div>
-        {preview}
+        {/* Action buttons */}
+        <Focusable style={{ display: 'flex', gap: 10 }}>
+          <DialogButton onClick={handleApply} disabled={!appId}>
+            {t().common.apply}
+          </DialogButton>
+          <DialogButton onClick={() => closeModal?.()} style={{ background: '#555' }}>
+            {t().common.cancel}
+          </DialogButton>
+        </Focusable>
       </div>
-
-      {/* Action buttons */}
-      <Focusable style={{ display: 'flex', gap: 10 }}>
-        <DialogButton onClick={handleApply} disabled={!appId}>
-          {t().common.apply}
-        </DialogButton>
-        <DialogButton onClick={() => closeModal?.()} style={{ background: '#555' }}>
-          {t().common.cancel}
-        </DialogButton>
-      </Focusable>
-    </Focusable>
+    </ModalRoot>
   );
 }
