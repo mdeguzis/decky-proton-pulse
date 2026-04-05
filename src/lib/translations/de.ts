@@ -195,6 +195,8 @@ export const de: TranslationTree = {
     livePreview: 'Live-Vorschau',
     customVariables: 'Benutzerdefinierte Variablen',
     addCustomVar: 'Variable hinzufügen',
+    previewHint: 'Optionen unten umschalten, um den Startbefehl zu erstellen. Abschnitte sind nach Hardware vorgefiltert.',
+    gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

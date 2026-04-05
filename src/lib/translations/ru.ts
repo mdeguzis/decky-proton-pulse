@@ -219,6 +219,8 @@ export const ru: TranslationTree = {
     livePreview: 'Предпросмотр',
     customVariables: 'Пользовательские переменные',
     addCustomVar: 'Добавить переменную',
+    previewHint: 'Переключайте опции ниже для настройки команды запуска. Разделы предварительно отфильтрованы по вашему оборудованию.',
+    gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

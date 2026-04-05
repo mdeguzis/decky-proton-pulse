@@ -195,6 +195,8 @@ export const ptBR: TranslationTree = {
     livePreview: 'Visualização ao vivo',
     customVariables: 'Variáveis personalizadas',
     addCustomVar: 'Adicionar variável personalizada',
+    previewHint: 'Ative as opções abaixo para montar seu comando de lançamento. As seções são pré-filtradas pelo seu hardware.',
+    gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
