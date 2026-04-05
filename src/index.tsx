@@ -23,7 +23,7 @@ import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextM
 import { getSetting, setSetting } from './lib/settings';
 import { logFrontendEvent } from './lib/logger';
 import { TRANSLATIONS_LOADED } from './lib/translations';
-import { useLanguage } from './lib/i18n';
+import { useLanguage, t } from './lib/i18n';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -70,27 +70,27 @@ function Content() {
           <ButtonItem
             layout="below"
             onClick={() => navigateTo('manage')}
-            description="View and manage ProtonDB configurations"
+            description={t().sidebar.manageConfigurationsDesc}
           >
-            Manage Configurations
+            {t().sidebar.manageConfigurations}
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem
             layout="below"
             onClick={() => navigateTo('compatibility-tools')}
-            description="Install, remove, and manage compatibility tools"
+            description={t().sidebar.compatibilityToolsDesc}
           >
-            Compatibility Tools
+            {t().sidebar.compatibilityTools}
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem
             layout="below"
             onClick={() => navigateTo('settings')}
-            description="Plugin preferences and tokens"
+            description={t().sidebar.settingsDesc}
           >
-            Settings
+            {t().sidebar.settings}
           </ButtonItem>
         </PanelSectionRow>
       </PanelSection>
@@ -100,15 +100,15 @@ function Content() {
           <ButtonItem
             layout="below"
             onClick={() => navigateTo('logs')}
-            description="Open the live plugin log viewer"
+            description={t().sidebar.viewLogsDesc}
           >
-            View Logs
+            {t().sidebar.viewLogs}
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>
           <ToggleField
-            label="Debug Logs"
-            description="Enable verbose logging without opening Settings"
+            label={t().sidebar.debugLogs}
+            description={t().sidebar.debugLogsDesc}
             checked={debugEnabled}
             onChange={(enabled) => {
               void logFrontendEvent('INFO', 'Sidebar debug logging toggle changed', {
@@ -130,7 +130,7 @@ function Content() {
               textAlign: 'center',
             }}
           >
-            <small>About: Proton Pulse v{version}</small>
+            <small>{t().sidebar.about(version)}</small>
           </div>
         </PanelSectionRow>
       </PanelSection>

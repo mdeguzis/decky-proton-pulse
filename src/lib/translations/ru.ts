@@ -12,6 +12,43 @@ export const ru: TranslationTree = {
     clear: 'Очистить',
     reset: 'Сбросить',
     close: 'Закрыть',
+    filters: 'Фильтры',
+    sort: 'Сортировка',
+    shown: (n) => {
+      const mod10 = n % 10;
+      const mod100 = n % 100;
+      if (mod10 === 1 && mod100 !== 11) return `Показан ${n}`;
+      if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return `Показано ${n}`;
+      return `Показано ${n}`;
+    },
+    daysAgo: (d) => {
+      const mod10 = d % 10;
+      const mod100 = d % 100;
+      if (mod10 === 1 && mod100 !== 11) return `${d} день назад`;
+      if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return `${d} дня назад`;
+      return `${d} дней назад`;
+    },
+  },
+  sidebar: {
+    manageConfigurations: 'Управление конфигурациями',
+    manageConfigurationsDesc: 'Просмотр и управление конфигурациями ProtonDB',
+    compatibilityTools: 'Инструменты совместимости',
+    compatibilityToolsDesc: 'Установка, удаление и управление инструментами совместимости',
+    settings: 'Настройки',
+    settingsDesc: 'Параметры плагина и токены',
+    viewLogs: 'Просмотр журналов',
+    viewLogsDesc: 'Открыть просмотрщик журналов плагина в реальном времени',
+    debugLogs: 'Журнал отладки',
+    debugLogsDesc: 'Включить подробное логирование без открытия настроек',
+    about: (v) => `О плагине: Proton Pulse v${v}`,
+  },
+  nav: {
+    manageThisGame: 'Управлять этой игрой',
+    manageConfigurations: 'Управление конфигурациями',
+    logs: 'Журналы',
+    compatibilityTools: 'Инструменты совместимости',
+    settings: 'Настройки',
+    about: 'О плагине',
   },
   reports: {
     found: (n) => {
@@ -21,11 +58,29 @@ export const ru: TranslationTree = {
       if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return `${n} отчёта найдено`;
       return `${n} отчётов найдено`;
     },
+    communityReports: (n) => {
+      const mod10 = n % 10;
+      const mod100 = n % 100;
+      if (mod10 === 1 && mod100 !== 11) return `${n} отчёт сообщества`;
+      if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return `${n} отчёта сообщества`;
+      return `${n} отчётов сообщества`;
+    },
     noReports: 'Отчёты не найдены',
     confidence: 'Достоверность',
     votes: 'Голоса',
     submitted: 'Отправлено',
     notes: 'Заметки',
+    bestMatch: 'Лучшее совпадение',
+    mostVotes: 'Больше всего голосов',
+    selectReport: 'Выберите карточку отчёта для просмотра полного отчёта.',
+    detectingGpu: 'Определение уровня GPU…',
+    detectingGpuHint: 'Определяем уровень GPU для сужения списка. Пока показаны все отчёты.',
+    noReportsForTier: 'Нет отчётов для этого уровня GPU.',
+    noReportsForGame: 'Отчёты ProtonDB для этой игры не найдены.',
+    loadingSystemInfo: 'Загрузка системной информации…',
+    navigateToGame: 'Сначала перейдите к игре.',
+    hardwareUnavailable: 'Сведения об оборудовании недоступны',
+    editedBadge: 'Изменено*',
   },
   detail: {
     apply: 'Применить',
@@ -54,6 +109,7 @@ export const ru: TranslationTree = {
     matchesGpu: 'Соответствует вашему GPU',
     differentGpu: 'Другой GPU',
     unknownGpu: 'Неизвестный GPU',
+    ram: 'ОЗУ',
   },
   editReport: {
     title: 'Изменить отчёт',
@@ -75,9 +131,25 @@ export const ru: TranslationTree = {
   compatTools: {
     install: 'Установить',
     uninstall: 'Удалить',
+    reinstall: 'Переустановить',
+    installing: 'Установка',
     otherVersion: 'Другая версия',
     installFromZip: 'Установить из ZIP',
     autoUpdate: 'Автообновление',
+    autoUpdateDescription: 'Автоматически устанавливать актуальный Proton-GE при каждом открытии и обновлении настроек.',
+    refresh: 'Обновить',
+    refreshing: 'Обновление…',
+    installed: 'Установлено',
+    title: 'Инструменты совместимости',
+    description: 'Управление Proton-GE по образцу Wine Cellar, адаптированное под процесс применения Proton Pulse.',
+    filterPlaceholder: 'Фильтр версий…',
+    zipPlaceholder: '/home/deck/Downloads/GE-Proton8-3.tar.gz',
+    removing: 'Удаление…',
+    actions: 'Действия',
+    restartHint: 'Возможно, потребуется перезапустить Steam, чтобы новый инструмент совместимости появился везде.',
+    unknownDate: 'Дата неизвестна',
+    estimating: 'оценка…',
+    timeLeft: (time) => `осталось ${time}`,
   },
   configure: {
     quitGameFirst: 'Сначала выйдите из игры',
@@ -88,6 +160,23 @@ export const ru: TranslationTree = {
     voteSubmitted: 'Голос отправлен! Счётчик обновится примерно через 60 с.',
     voteFailed: 'Ошибка голосования. Проверьте значение токена и его разрешения для репозитория/Actions.',
     upvoteFailed: 'Ошибка поддержки — проверьте журналы.',
+    requiredProtonVersion: 'Требуемая версия Proton',
+    requiresVersion: (v) => `Для этой конфигурации профиля требуется ${v}, но она не установлена.`,
+    chooseApplyMethod: 'Выберите способ применения этого профиля.',
+    installVersion: (v) => `Установить ${v}`,
+    pickInstalledVersion: 'Выбрать установленную версию',
+    searchClosestVersion: 'Найти ближайшую версию',
+    searchClosestWith: (v) => `Найти ближайшую версию (${v})`,
+    useLatestInstalled: 'Использовать последнюю установленную',
+    useLatestInstalledWith: (v) => `Использовать последнюю установленную (${v})`,
+    useSelectedVersion: 'Использовать выбранную версию',
+    chooseInstalledTool: 'Выберите установленный инструмент совместимости для этого профиля.',
+    usingClosest: (v) => `Используется ближайшая установленная версия: ${v}`,
+    noCloseMatch: (v) => `Близкая версия не найдена. Используется последняя установленная: ${v}`,
+    installFailed: (v) => `Поиск ближайшей версии не удался, установка ${v} также завершилась с ошибкой.`,
+    installFailedFallback: (failedV, fallbackV) => `Не удалось установить ${failedV}. Вместо этого используется ${fallbackV}.`,
+    installFailedNoFallback: (v) => `Не удалось установить ${v}. Применение выполняется с запрошенной версией.`,
+    appliedFor: (name) => `Применено для ${name}`,
   },
   toast: {
     installed: (v) => `${v} установлено.`,
@@ -96,6 +185,26 @@ export const ru: TranslationTree = {
     cleared: 'Параметры запуска очищены.',
     clearFailed: (msg) => `Ошибка очистки: ${msg}`,
     noOptionsSet: 'Параметры запуска не заданы.',
+  },
+  manage: {
+    instructions: 'Щёлкните правой кнопкой мыши по игре в библиотеке (или используйте шестерёнку настроек) и выберите',
+    protondbConfig: 'Конфигурация ProtonDB',
+    currentLaunchOptions: 'Текущие параметры запуска из настроек приложения Steam:',
+    loadingLaunchOptions: 'Загрузка параметров запуска…',
+    noLaunchOptions: 'Параметры запуска не заданы.',
+    clearLaunchOptions: 'Очистить параметры запуска',
+  },
+  logs: {
+    focused: 'Журналы в фокусе. Правый стик или крестовина для прокрутки.',
+    moveRight: 'Переместитесь вправо для фокусировки журналов.',
+    manualScroll: 'Ручная прокрутка активна.',
+    jumpHint: 'Ручная прокрутка активна. Нажмите A/OK для перехода к последней записи.',
+    noLogs: 'Журналов пока нет.',
+  },
+  about: {
+    description: 'Ранжирует отчёты сообщества ProtonDB по совместимости с вашей системой и применяет наиболее подходящие параметры запуска Proton к вашим играм в Steam — прямо из боковой панели Decky.',
+    github: 'GitHub',
+    protondb: 'ProtonDB',
   },
   ratings: {
     platinum: 'Платина',
@@ -106,4 +215,3 @@ export const ru: TranslationTree = {
     pending: 'Ожидание',
   },
 };
-

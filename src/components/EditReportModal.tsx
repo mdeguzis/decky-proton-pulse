@@ -328,7 +328,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
         </PanelSectionRow>
         <PanelSectionRow>
           <TextField
-            label="RAM"
+            label={t().detail.ram}
             value={ram}
             onChange={(e) => setRam(e.target.value)}
           />

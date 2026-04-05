@@ -3,11 +3,7 @@
 import { Focusable, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { BrandLogo } from '../BrandLogo';
-
-const LINKS: Array<{ label: string; url: string }> = [
-  { label: 'GitHub', url: 'https://github.com/mdeguzis/decky-proton-pulse' },
-  { label: 'ProtonDB', url: 'https://www.protondb.com' },
-];
+import { t } from '../../lib/i18n';
 
 export function AboutTab() {
   const handleRootDirection = (evt: GamepadEvent) => {
@@ -26,13 +22,15 @@ export function AboutTab() {
         </div>
       </div>
       <div style={{ marginBottom: 16, lineHeight: 1.5 }}>
-        Ranks ProtonDB community reports by system compatibility and applies the best-matching
-        Proton launch options to your Steam games — all from the Decky sidebar.
+        {t().about.description}
       </div>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        {LINKS.map(({ label, url }) => (
+        {[
+          { label: t().about.github, url: 'https://github.com/mdeguzis/decky-proton-pulse' },
+          { label: t().about.protondb, url: 'https://www.protondb.com' },
+        ].map(({ label, url }) => (
           <a
-            key={label}
+            key={url}
             href={url}
             target="_blank"
             rel="noreferrer"

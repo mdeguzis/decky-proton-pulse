@@ -37,8 +37,8 @@ export function ManageTab({ appId, appName }: Props) {
   if (!appId) {
     return (
       <div style={{ padding: 16, color: '#888', fontSize: 12, lineHeight: 1.6 }}>
-        Right-click any game in your library (or use the settings gear) and select{' '}
-        <span style={{ color: '#ccc' }}>ProtonDB Config</span> to configure launch options.
+        {t().manage.instructions}{' '}
+        <span style={{ color: '#ccc' }}>{t().manage.protondbConfig}</span> to configure launch options.
       </div>
     );
   }
@@ -68,7 +68,7 @@ export function ManageTab({ appId, appName }: Props) {
         <strong>{appName || `App ${appId}`}</strong>
       </div>
       <div style={{ marginBottom: 6, fontSize: 11, color: '#888' }}>
-        Current launch options from Steam app details:
+        {t().manage.currentLaunchOptions}
       </div>
       <div
         style={{
@@ -84,10 +84,10 @@ export function ManageTab({ appId, appName }: Props) {
           fontFamily: 'monospace',
         }}
       >
-        {loading ? 'Loading launch options…' : launchOptions || 'No launch options set.'}
+        {loading ? t().manage.loadingLaunchOptions : launchOptions || t().manage.noLaunchOptions}
       </div>
       <DialogButton onClick={handleClear} style={{ background: '#555' }}>
-        Clear Launch Options
+        {t().manage.clearLaunchOptions}
       </DialogButton>
     </Focusable>
   );

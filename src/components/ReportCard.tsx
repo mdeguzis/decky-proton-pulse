@@ -2,6 +2,7 @@
 import { Focusable } from '@decky/ui';
 import type { ScoredReport } from '../types';
 import { RATING_COLORS, formatProtonLabel } from '../lib/reportFormatters';
+import { t } from '../lib/i18n';
 
 export interface DisplayReportCard extends ScoredReport {
   displayKey: string;
@@ -83,7 +84,7 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
                   letterSpacing: 0.3,
                 }}
               >
-                Edited*
+                {t().reports.editedBadge}
               </span>
               {report.editLabel ? (
                 <span style={{ marginLeft: 8, fontSize: 10, color: '#b7d4ee' }}>
@@ -97,10 +98,10 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
             {formatProtonLabel(report.protonVersion)}
           </div>
           <div style={{ fontSize: 11, color: '#8fb4d5', marginBottom: 8 }}>
-            {[report.gpu, report.os].filter(Boolean).join(' · ') || 'Hardware details unavailable'}
+            {[report.gpu, report.os].filter(Boolean).join(' · ') || t().reports.hardwareUnavailable}
           </div>
           <div style={{ fontSize: 10, color: '#9cb3c7', marginBottom: 8 }}>
-            {report.recencyDays}d ago · {report.upvotes} votes
+            {t().common.daysAgo(report.recencyDays)} · {report.upvotes} {t().reports.votes.toLowerCase()}
           </div>
           {report.notes && (
             <div style={{ fontSize: 11, color: '#cad7e4', lineHeight: 1.45 }}>

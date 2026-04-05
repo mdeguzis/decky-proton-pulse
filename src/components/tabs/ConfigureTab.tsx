@@ -117,25 +117,25 @@ function MissingVersionModal({
 }) {
   return (
     <ConfirmModal
-      strTitle="Required Proton Version"
-      strDescription={`This profile config requires ${requiredVersion}, but it is not currently installed.`}
+      strTitle={t().configure.requiredProtonVersion}
+      strDescription={t().configure.requiresVersion(requiredVersion)}
       strOKButtonText="Cancel"
       onOK={onCancel}
       onCancel={onCancel}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 420, maxWidth: 520 }}>
         <div style={{ fontSize: 11, color: '#9eb7cc', lineHeight: 1.45 }}>
-          Choose how you want to apply this profile.
+          {t().configure.chooseApplyMethod}
         </div>
-        <DialogButton onClick={() => onResolve('install')}>Install {requiredVersion}</DialogButton>
-        <DialogButton onClick={() => onResolve('pick')}>Pick Installed Version</DialogButton>
+        <DialogButton onClick={() => onResolve('install')}>{t().configure.installVersion(requiredVersion)}</DialogButton>
+        <DialogButton onClick={() => onResolve('pick')}>{t().configure.pickInstalledVersion}</DialogButton>
         <DialogButton onClick={() => onResolve('closest')} disabled={!closestInstalledLabel && !latestInstalledLabel}>
           {closestInstalledLabel
-            ? `Search Closest Version (${closestInstalledLabel})`
-            : 'Search Closest Version'}
+            ? t().configure.searchClosestWith(closestInstalledLabel)
+            : t().configure.searchClosestVersion}
         </DialogButton>
         <DialogButton onClick={() => onResolve('latest')} disabled={!latestInstalledLabel}>
-          {latestInstalledLabel ? `Use Latest Installed (${latestInstalledLabel})` : 'Use Latest Installed'}
+          {latestInstalledLabel ? t().configure.useLatestInstalledWith(latestInstalledLabel) : t().configure.useLatestInstalled}
         </DialogButton>
       </div>
     </ConfirmModal>
@@ -161,8 +161,8 @@ function InstalledVersionPickerModal({
 
   return (
     <ConfirmModal
-      strTitle="Pick Installed Version"
-      strDescription="Choose an installed compatibility tool for this profile."
+      strTitle={t().configure.pickInstalledVersion}
+      strDescription={t().configure.chooseInstalledTool}
       strOKButtonText="Cancel"
       onOK={onCancel}
       onCancel={onCancel}
@@ -192,7 +192,7 @@ function InstalledVersionPickerModal({
           })}
         </select>
         <DialogButton onClick={() => selectedValue && onPick(selectedValue)} disabled={!selectedValue}>
-          Use Selected Version
+          {t().configure.useSelectedVersion}
         </DialogButton>
       </div>
     </ConfirmModal>
@@ -221,7 +221,7 @@ function GameSummaryHeader({
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5' }}>
           AppID {appId}
-          {typeof reportsCount === 'number' ? ` · ${reportsCount} community reports` : ''}
+          {typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}
         </div>
       </div>
     </div>
@@ -613,20 +613,20 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             launchProtonVersion = launchVersionValueForTool(closestInstalledTool);
             toaster.toast({
               title: 'Proton Pulse',
-              body: `Using closest installed version: ${closestInstalledTool.display_name}`,
+              body: t().configure.usingClosest(closestInstalledTool.display_name),
             });
           } else if (latestInstalledTool) {
             launchProtonVersion = launchVersionValueForTool(latestInstalledTool);
             toaster.toast({
               title: 'Proton Pulse',
-              body: `No close match found. Using latest installed: ${latestInstalledTool.display_name}`,
+              body: t().configure.noCloseMatch(latestInstalledTool.display_name),
             });
           } else {
             const installResult = await installProtonGe(availability.normalized_version);
             if (!installResult.success) {
               toaster.toast({
                 title: 'Proton Pulse',
-                body: `Closest-version search failed, and install failed for ${availability.normalized_version}.`,
+                body: t().configure.installFailed(availability.normalized_version!),
               });
             } else if (availability.normalized_version) {
               launchProtonVersion = availability.normalized_version;
@@ -645,20 +645,20 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
               launchProtonVersion = launchVersionValueForTool(latestInstalledTool);
               toaster.toast({
                 title: 'Proton Pulse',
-                body: `Install failed for ${availability.normalized_version}. Using ${latestInstalledTool.display_name} instead.`,
+                body: t().configure.installFailedFallback(availability.normalized_version!, latestInstalledTool.display_name),
               });
             } else {
               toaster.toast({
                 title: 'Proton Pulse',
-                body: `Install failed for ${availability.normalized_version}. Applying with the requested version anyway.`,
+                body: t().configure.installFailedNoFallback(availability.normalized_version!),
               });
             }
           } else {
             toaster.toast({
               title: 'Proton Pulse',
               body: installResult.already_installed
-                ? `${availability.normalized_version} is already installed.`
-                : `Installed ${availability.normalized_version}. Steam may need a restart before the new compatibility tool appears everywhere.`,
+                ? t().toast.alreadyInstalled(availability.normalized_version!)
+                : `${t().toast.installed(availability.normalized_version!)} ${t().compatTools.restartHint}`,
             });
             launchProtonVersion = availability.normalized_version ?? targetReport.protonVersion;
           }
@@ -688,7 +688,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       });
       toaster.toast({
         title: 'Proton Pulse',
-        body: appliedLaunchOptions || `Applied for ${appName}`,
+        body: appliedLaunchOptions || t().configure.appliedFor(appName),
       });
     } catch (e) {
       void logFrontendEvent('ERROR', 'Failed to apply launch options', {
@@ -770,7 +770,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   if (!appId) {
     return (
       <div style={{ padding: 16, color: '#888', fontSize: 12, textAlign: 'center' }}>
-        Navigate to a game first.
+        {t().reports.navigateToGame}
       </div>
     );
   }
@@ -810,7 +810,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       ) : showDiagnosticsState ? (
         <>
           <div style={{ padding: 16, color: '#888', fontSize: 12, textAlign: 'center' }}>
-            {!sysInfo ? 'Loading system info…' : 'No ProtonDB reports found for this game.'}
+            {!sysInfo ? t().reports.loadingSystemInfo : t().reports.noReportsForGame}
           </div>
           {reportDiagnostics?.source === 'live-summary' && (
             <div style={{ padding: '0 16px 12px', color: '#9dc4e8', fontSize: 11, textAlign: 'center' }}>
@@ -863,17 +863,17 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                 whiteSpace: 'nowrap',
               }}
             >
-              <span>Filters</span>
+              <span>{t().common.filters}</span>
             </div>
             <div
               style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
             >
-              Sort
+              {t().common.sort}
             </div>
             <Dropdown
               rgOptions={[
-                { data: 'score', label: 'Best Match' },
-                { data: 'votes', label: 'Most Votes' },
+                { data: 'score', label: t().reports.bestMatch },
+                { data: 'votes', label: t().reports.mostVotes },
               ]}
               selectedOption={sortMode}
               onChange={(opt) => setSortPreference(opt.data as SortMode)}
@@ -892,19 +892,19 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
               onChange={(opt) => setFilterMode(opt.data as FilterTier)}
             />
             <div style={{ fontSize: 11, color: '#7a9bb5', whiteSpace: 'nowrap', textAlign: 'right' }}>
-              {sortedReports.length} shown
+              {t().common.shown(sortedReports.length)}
             </div>
           </div>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
             <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
               {detectingGpu
-                ? 'Detecting your GPU tier before narrowing the list. Showing all reports for now.'
-                : 'Select a report card to view the full report.'}
+                ? t().reports.detectingGpuHint
+                : t().reports.selectReport}
             </div>
             <div style={{ padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid #2a3a4a' }}>
               {sortedReports.length === 0 ? (
                 <div style={{ color: '#666', fontSize: 12, padding: 12, textAlign: 'center' }}>
-                  {detectingGpu ? 'Detecting GPU tier…' : 'No reports for this GPU tier.'}
+                  {detectingGpu ? t().reports.detectingGpu : t().reports.noReportsForTier}
                 </div>
               ) : (
                 sortedReports.map((r) => (
