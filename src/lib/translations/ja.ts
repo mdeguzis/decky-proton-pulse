@@ -195,6 +195,8 @@ export const ja: TranslationTree = {
     livePreview: 'ライブプレビュー',
     customVariables: 'カスタム変数',
     addCustomVar: 'カスタム変数を追加',
+    previewHint: '以下のオプションを切り替えて起動コマンドを作成します。セクションはハードウェアに基づいてフィルタリングされています。',
+    gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

@@ -195,6 +195,8 @@ export const tr: TranslationTree = {
     livePreview: 'Canlı Önizleme',
     customVariables: 'Özel değişkenler',
     addCustomVar: 'Özel değişken ekle',
+    previewHint: 'Başlatma komutunuzu oluşturmak için aşağıdaki seçenekleri değiştirin. Bölümler donanımınıza göre ön filtrelenmiştir.',
+    gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

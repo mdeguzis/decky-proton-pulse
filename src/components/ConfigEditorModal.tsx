@@ -6,6 +6,7 @@ import {
   DialogButton,
   ToggleField,
   DropdownItem,
+  Dropdown,
   TextField,
 } from '@decky/ui';
 import { toaster } from '@decky/api';
@@ -31,6 +32,12 @@ type Category = LaunchVarDef['category'];
 const CATEGORY_ORDER: Category[] = ['nvidia', 'amd', 'intel', 'wrappers', 'performance', 'compatibility', 'debug'];
 const VENDOR_CATEGORIES: Category[] = ['nvidia', 'amd', 'intel'];
 
+type GpuFilter = GpuVendor | 'all';
+const GPU_FILTER_ORDER: GpuFilter[] = ['all', 'nvidia', 'amd', 'intel'];
+const GPU_FILTER_LABELS: Record<GpuFilter, string> = {
+  all: 'All', nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel', other: 'Other',
+};
+
 function categoryLabel(cat: Category): string {
   return t().configManager.toggleCategories[cat];
 }
@@ -41,6 +48,13 @@ function initialCollapsed(gpuVendor: GpuVendor | null): Set<Category> {
   return new Set(
     VENDOR_CATEGORIES.filter((c) => c !== gpuVendor),
   );
+}
+
+/** Should this category be hidden by the GPU filter? */
+function isCategoryHidden(cat: Category, gpuFilter: GpuFilter): boolean {
+  if (gpuFilter === 'all') return false;
+  if (!VENDOR_CATEGORIES.includes(cat)) return false; // non-vendor categories always shown
+  return cat !== gpuFilter;
 }
 
 export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, onSave, closeModal }: Props) {
@@ -58,6 +72,9 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   });
   const [collapsedCategories, setCollapsedCategories] = useState<Set<Category>>(
     () => initialCollapsed(gpuVendor),
+  );
+  const [gpuFilter, setGpuFilter] = useState<GpuFilter>(
+    gpuVendor && gpuVendor !== 'other' ? gpuVendor : 'all',
   );
 
   const allVars = useMemo(() => {
@@ -230,12 +247,38 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
             color: '#9dc4e8',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
-            borderBottom: '1px solid #1a2430',
           }}
         >
           <span style={{ fontSize: 9, color: '#7a9bb5', marginRight: 8 }}>{t().configManager.livePreview}</span>
           {preview}
         </div>
+        <div style={{ flexShrink: 0, padding: '4px 16px', fontSize: 10, color: '#6a8ba5', lineHeight: 1.4 }}>
+          {t().configManager.previewHint}
+        </div>
+
+        {/* ── Filter bar ── */}
+        <Focusable
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '6px 16px',
+            borderBottom: '1px solid #2a3a4a',
+          }}
+        >
+          <div style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap' }}>
+            {t().configManager.gpuFilter}
+          </div>
+          <Dropdown
+            rgOptions={GPU_FILTER_ORDER.map((f) => ({
+              data: f,
+              label: GPU_FILTER_LABELS[f],
+            }))}
+            selectedOption={gpuFilter}
+            onChange={(opt) => setGpuFilter(opt.data as GpuFilter)}
+          />
+        </Focusable>
 
         {/* ── Scrollable content ── */}
         <Focusable style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
@@ -252,6 +295,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           {CATEGORY_ORDER.map((cat) => {
             const defs = grouped.get(cat)!;
             if (defs.length === 0) return null;
+            if (isCategoryHidden(cat, gpuFilter)) return null;
             const collapsed = collapsedCategories.has(cat);
             return (
               <div key={cat} style={{ marginBottom: 6 }}>

@@ -220,6 +220,8 @@ export interface TranslationTree {
     livePreview: string;
     customVariables: string;
     addCustomVar: string;
+    previewHint: string;
+    gpuFilter: string;
     toggleCategories: {
       nvidia: string;
       amd: string;
@@ -438,6 +440,8 @@ export const en: TranslationTree = {
     livePreview: 'Live Preview',
     customVariables: 'Custom Variables',
     addCustomVar: 'Add custom variable',
+    previewHint: 'Toggle options below to build your launch command. Sections are pre-filtered by your hardware.',
+    gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
