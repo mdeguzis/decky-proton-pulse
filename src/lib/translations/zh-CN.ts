@@ -195,6 +195,8 @@ export const zhCN: TranslationTree = {
     livePreview: '实时预览',
     customVariables: '自定义变量',
     addCustomVar: '添加自定义变量',
+    previewHint: '切换以下选项来构建启动命令。各部分已根据您的硬件预筛选。',
+    gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

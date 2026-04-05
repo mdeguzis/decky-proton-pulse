@@ -195,6 +195,8 @@ export const ko: TranslationTree = {
     livePreview: '실시간 미리보기',
     customVariables: '사용자 정의 변수',
     addCustomVar: '사용자 정의 변수 추가',
+    previewHint: '아래 옵션을 토글하여 실행 명령을 구성하세요. 섹션은 하드웨어에 따라 사전 필터링됩니다.',
+    gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

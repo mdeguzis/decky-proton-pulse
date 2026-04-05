@@ -195,6 +195,8 @@ export const es: TranslationTree = {
     livePreview: 'Vista previa en vivo',
     customVariables: 'Variables personalizadas',
     addCustomVar: 'Agregar variable personalizada',
+    previewHint: 'Activa las opciones para construir tu comando de lanzamiento. Las secciones están prefiltradas por tu hardware.',
+    gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
