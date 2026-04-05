@@ -79,7 +79,7 @@ export function ProtonPulsePage() {
     {
       title: t().nav.manageConfigurations,
       identifier: 'manage',
-      content: <ManageTab appId={appId} appName={appName} />,
+      content: <ManageTab appId={appId} appName={appName} gpuVendor={sysInfo?.gpu_vendor ?? null} />,
     },
     {
       title: t().nav.logs,
