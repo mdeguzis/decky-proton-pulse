@@ -1,5 +1,5 @@
 // src/components/EditReportModal.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   ModalRoot,
   PanelSection,
@@ -8,10 +8,13 @@ import {
   DialogButton,
   DropdownItem,
   SteamSpinner,
+  ConfirmModal,
+  showModal,
 } from '@decky/ui';
 import { toaster } from '@decky/api';
 import type { DisplayReportCard } from './ReportCard';
 import type { EditedReportEntry } from './tabs/ConfigureTab';
+import { ProtonDBSubmitModal } from './ProtonDBSubmitModal';
 import { getProtonGeManagerState, installProtonGe } from '../lib/compatTools';
 import { formatProtonLabel } from '../lib/reportFormatters';
 import { logFrontendEvent } from '../lib/logger';
@@ -248,6 +251,46 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
     closeModal?.();
   };
 
+  const changes = useMemo(() => {
+    const diffs: { field: string; from: string; to: string }[] = [];
+    if (protonVersion !== report.protonVersion) diffs.push({ field: t().detail.protonVersion, from: report.protonVersion, to: protonVersion });
+    if (rating !== report.rating) diffs.push({ field: t().editReport.rating, from: report.rating, to: rating });
+    if (gpu !== report.gpu) diffs.push({ field: t().detail.gpu, from: report.gpu, to: gpu });
+    if (gpuDriver !== report.gpuDriver) diffs.push({ field: t().detail.driver, from: report.gpuDriver, to: gpuDriver });
+    if (os !== report.os) diffs.push({ field: t().detail.os, from: report.os, to: os });
+    if (kernel !== report.kernel) diffs.push({ field: t().detail.kernel, from: report.kernel, to: kernel });
+    if (ram !== report.ram) diffs.push({ field: t().detail.ram, from: report.ram, to: ram });
+    if (notes !== report.notes) diffs.push({ field: t().reports.notes, from: report.notes, to: notes });
+    return diffs;
+  }, [protonVersion, rating, gpu, gpuDriver, os, kernel, ram, notes, report]);
+
+  const hasChanges = changes.length > 0;
+
+  const handleSubmitToProtonDB = () => {
+    const strings = t().protondbSubmit;
+    const changesText = changes.map((c) => strings.changed(c.field, c.from, c.to)).join('\n');
+    showModal(
+      <ConfirmModal
+        strTitle={strings.confirmTitle}
+        strDescription={`${strings.confirmChanges}\n\n${changesText}`}
+        strOKButtonText={strings.confirmSubmit}
+        onOK={() => {
+          void logFrontendEvent('INFO', 'EditReport: Submit to ProtonDB confirmed', {
+            appId: report.appId, changes: changes.length,
+          });
+          const appIdNum = parseInt(report.appId, 10);
+          showModal(
+            <ProtonDBSubmitModal
+              appId={isNaN(appIdNum) ? null : appIdNum}
+              appName={report.title}
+            />,
+          );
+        }}
+        onCancel={() => {}}
+      />,
+    );
+  };
+
   const dropdownOptions = versionOptions.map((opt) => ({
     data: opt.value,
     label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
@@ -346,6 +389,15 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
         <PanelSectionRow>
           <DialogButton onClick={handleSave} disabled={!!installing}>
             {installing ? t().common.loading : t().editReport.saveEdits}
+          </DialogButton>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <DialogButton
+            onClick={handleSubmitToProtonDB}
+            disabled={!hasChanges || !!installing}
+            style={{ background: hasChanges ? undefined : '#333', opacity: hasChanges ? 1 : 0.5 }}
+          >
+            {t().protondbSubmit.submitToProtonDB}
           </DialogButton>
         </PanelSectionRow>
       </PanelSection>

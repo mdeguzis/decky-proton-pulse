@@ -1,12 +1,14 @@
 // src/components/tabs/ManageTab.tsx
 import { useState, useEffect } from 'react';
-import { Focusable, DialogButton, ConfirmModal, showModal, GamepadButton } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '@decky/api';
 import { getTrackedConfigs, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
 import { ConfigEditorModal } from '../ConfigEditorModal';
+import { ProtonDBSubmitModal } from '../ProtonDBSubmitModal';
+import { getSteamAppDetails } from '../../lib/steamApps';
 import type { GpuVendor } from '../../types';
 
 interface Props {
@@ -31,10 +33,30 @@ function relativeTime(timestamp: number): string {
 
 export function ManageTab({ appId, appName, gpuVendor }: Props) {
   const [configs, setConfigs] = useState<TrackedConfig[]>([]);
+  const [resolvedNames, setResolvedNames] = useState<Record<number, string>>({});
 
   const refresh = () => setConfigs(getTrackedConfigs());
 
   useEffect(() => { refresh(); }, []);
+
+  // Resolve missing app names from Steam
+  useEffect(() => {
+    for (const config of configs) {
+      if (!config.appName && !resolvedNames[config.appId]) {
+        getSteamAppDetails(config.appId)
+          .then((result) => {
+            const name = result?.details?.strDisplayName;
+            if (name) {
+              setResolvedNames((prev) => ({ ...prev, [config.appId]: name }));
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [configs]);
+
+  const displayName = (config: TrackedConfig): string =>
+    config.appName || resolvedNames[config.appId] || `App ${config.appId}`;
 
   const sorted = [...configs].sort((a, b) => {
     if (appId && a.appId === appId) return -1;
@@ -46,7 +68,7 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
     showModal(
       <ConfirmModal
         strTitle={t().configManager.deleteConfirmTitle}
-        strDescription={t().configManager.deleteConfirm(config.appName)}
+        strDescription={t().configManager.deleteConfirm(displayName(config))}
         strOKButtonText={t().common.clear}
         onOK={() => {
           void logFrontendEvent('INFO', 'Deleting tracked config', { appId: config.appId, appName: config.appName });
@@ -64,11 +86,17 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
     showModal(
       <ConfigEditorModal
         appId={config.appId}
-        appName={config.appName}
+        appName={displayName(config)}
         existingConfig={config}
         gpuVendor={gpuVendor}
         onSave={() => refresh()}
       />,
+    );
+  };
+
+  const handleSubmitReport = (config: TrackedConfig) => {
+    showModal(
+      <ProtonDBSubmitModal appId={config.appId} appName={displayName(config)} />,
     );
   };
 
@@ -88,6 +116,23 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
       evt.preventDefault();
     }
+  };
+
+  const openActionsMenu = (config: TrackedConfig, e: MouseEvent) => {
+    showContextMenu(
+      <Menu label={displayName(config)}>
+        <MenuItem onClick={() => handleEdit(config)}>
+          {t().common.edit}
+        </MenuItem>
+        <MenuItem onClick={() => handleSubmitReport(config)}>
+          {t().protondbSubmit.submitToProtonDB}
+        </MenuItem>
+        <MenuItem onClick={() => handleDelete(config)}>
+          {t().common.clear}
+        </MenuItem>
+      </Menu>,
+      e.currentTarget ?? window,
+    );
   };
 
   if (sorted.length === 0) {
@@ -120,8 +165,9 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {sorted.map((config) => {
           const isCurrent = appId === config.appId;
+          const name = displayName(config);
           return (
-            <Focusable
+            <div
               key={config.appId}
               style={{
                 display: 'flex',
@@ -141,27 +187,31 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
               />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#e8f4ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {config.appName || `App ${config.appId}`}
+                  {name}
                 </div>
+                {config.profileName && (
+                  <div style={{ fontSize: 10, fontWeight: 600, color: '#4c9eff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {config.profileName}
+                  </div>
+                )}
                 <div style={{ fontSize: 10, color: '#7a9bb5' }}>
-                  {config.protonVersion} · {t().configManager.appliedAgo(relativeTime(config.appliedAt))}
+                  AppID {config.appId} · {config.protonVersion} · {t().configManager.appliedAgo(relativeTime(config.appliedAt))}
                 </div>
               </div>
-              <Focusable style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <Focusable style={{ display: 'flex', flexShrink: 0 }}>
                 <DialogButton
-                  onClick={() => handleEdit(config)}
-                  style={{ minWidth: 50, padding: '4px 10px', fontSize: 11 }}
+                  style={{
+                    height: 40,
+                    width: 40,
+                    minWidth: 40,
+                    padding: '10px 12px',
+                  }}
+                  onClick={(e: MouseEvent) => openActionsMenu(config, e)}
                 >
-                  {t().common.edit}
-                </DialogButton>
-                <DialogButton
-                  onClick={() => handleDelete(config)}
-                  style={{ minWidth: 50, padding: '4px 10px', fontSize: 11, background: '#555' }}
-                >
-                  {t().common.clear}
+                  ...
                 </DialogButton>
               </Focusable>
-            </Focusable>
+            </div>
           );
         })}
       </div>
