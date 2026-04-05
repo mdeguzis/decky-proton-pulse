@@ -13,7 +13,7 @@ import { CompatibilityToolsTab } from './tabs/CompatibilityToolsTab';
 import { GeneralSettingsTab } from './tabs/GeneralSettingsTab';
 import { AboutTab } from './tabs/AboutTab';
 import { logFrontendEvent } from '../lib/logger';
-import { useLanguage } from '../lib/i18n';
+import { useLanguage, t } from '../lib/i18n';
 
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
 
@@ -66,7 +66,7 @@ export function ProtonPulsePage() {
 
   const pages: SidebarNavigationPage[] = [
     ...(hasGame ? [{
-      title: 'Manage This Game',
+      title: t().nav.manageThisGame,
       identifier: 'manage-game',
       content: (
         <ConfigureTab
@@ -77,27 +77,27 @@ export function ProtonPulsePage() {
       ),
     }] : []),
     {
-      title: 'Manage Configurations',
+      title: t().nav.manageConfigurations,
       identifier: 'manage',
       content: <ManageTab appId={appId} appName={appName} />,
     },
     {
-      title: 'Logs',
+      title: t().nav.logs,
       identifier: 'logs',
       content: <LogsTab />,
     },
     {
-      title: 'Compatibility Tools',
+      title: t().nav.compatibilityTools,
       identifier: 'compatibility-tools',
       content: <CompatibilityToolsTab />,
     },
     {
-      title: 'Settings',
+      title: t().nav.settings,
       identifier: 'settings',
       content: <GeneralSettingsTab />,
     },
     {
-      title: 'About',
+      title: t().nav.about,
       identifier: 'about',
       content: <AboutTab />,
     },

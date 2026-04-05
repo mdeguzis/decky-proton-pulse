@@ -18,6 +18,7 @@ import {
   t,
 } from './i18n';
 import type { TranslationTree } from './i18n';
+import { de as deTranslation } from './translations/de';
 import './translations/index';
 
 // ---------------------------------------------------------------------------
@@ -102,65 +103,7 @@ describe('setLanguage()', () => {
   });
 
   it('switches t() to registered German stub', () => {
-    const deStub: TranslationTree = {
-      common: {
-        save: 'Speichern', cancel: 'Abbrechen', loading: 'Laden…', error: 'Fehler',
-        apply: 'Anwenden', edit: 'Bearbeiten', clear: 'Löschen', reset: 'Zurücksetzen',
-        close: 'Schließen',
-      },
-      reports: {
-        found: (n) => n === 1 ? '1 Bericht gefunden' : `${n} Berichte gefunden`,
-        noReports: 'Keine Berichte gefunden',
-        confidence: 'Konfidenz', votes: 'Stimmen', submitted: 'Eingereicht', notes: 'Notizen',
-      },
-      detail: {
-        apply: 'Anwenden', edit: 'Bearbeiten', upvote: 'Upvote', clear: 'Löschen',
-        launchPreview: 'Startvorschau', currentLaunchOptions: 'Aktuelle Startoptionen',
-        noLaunchOptions: 'Keine Startoptionen gesetzt', hardwareMatch: 'Hardware-Übereinstimmung',
-        gpu: 'GPU', os: 'Betriebssystem', kernel: 'Kernel', driver: 'Treiber',
-        report: 'Bericht', gpuTier: 'GPU-Stufe', edited: 'Bearbeitet',
-        customVariant: 'Benutzerdefinierte Variante', protonVersion: 'Proton-Version',
-        installing: (v) => `Proton-Version (installiere ${v}…)`,
-        installed: 'Installiert', notInstalled: 'Nicht installiert', unavailable: 'Nicht verfügbar',
-        valveProton: 'Valve Proton', checking: 'Überprüfen…', matchesGpu: 'Passt zu Ihrer GPU',
-        differentGpu: 'Andere GPU', unknownGpu: 'Unbekannte GPU',
-      },
-      editReport: {
-        title: 'Bericht bearbeiten', resetToOriginal: 'Auf Original zurücksetzen',
-        label: 'Bezeichnung', labelDescription: 'Eine kurze Bezeichnung für diesen Bericht',
-        rating: 'Bewertung', saveEdits: 'Änderungen speichern',
-      },
-      settings: {
-        language: 'Sprache', autoDetected: (lang) => `Auto (erkannt: ${lang})`,
-        debugLogs: 'Debug-Protokolle', debugLogsDescription: 'Ausführliche Debug-Protokollierung aktivieren',
-        general: 'Allgemein', ghToken: 'GitHub-Token',
-        ghTokenDescription: 'Persönliches Zugriffstoken zum Einreichen von Stimmen',
-      },
-      compatTools: {
-        install: 'Installieren', uninstall: 'Deinstallieren', otherVersion: 'Andere Version',
-        installFromZip: 'Aus ZIP installieren', autoUpdate: 'Automatisches Update',
-      },
-      configure: {
-        quitGameFirst: 'Bitte beende zuerst das Spiel', applyCancelled: 'Anwenden abgebrochen',
-        noCompatTools: 'Keine Kompatibilitätstools verfügbar',
-        applyFailed: (msg) => `Anwenden fehlgeschlagen: ${msg}`,
-        setTokenToUpvote: 'Setze ein GitHub-Token zum Upvoten',
-        voteSubmitted: 'Stimme eingereicht', voteFailed: 'Abstimmung fehlgeschlagen',
-        upvoteFailed: 'Upvote fehlgeschlagen',
-      },
-      toast: {
-        installed: (v) => `${v} installiert.`, alreadyInstalled: (v) => `${v} ist bereits installiert.`,
-        installFailed: (msg) => `Installation fehlgeschlagen: ${msg}`,
-        cleared: 'Startoptionen gelöscht.', clearFailed: (msg) => `Löschen fehlgeschlagen: ${msg}`,
-        noOptionsSet: 'Keine Startoptionen gesetzt.',
-      },
-      ratings: {
-        platinum: 'Platin', gold: 'Gold', silver: 'Silber', bronze: 'Bronze',
-        borked: 'Kaputt', pending: 'Ausstehend',
-      },
-    };
-
-    registerTranslation('de', deStub);
+    registerTranslation('de', deTranslation);
     setLanguage('de');
 
     expect(t().common.save).toBe('Speichern');

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Focusable, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { callable } from '@decky/api';
+import { t } from '../../lib/i18n';
 
 const getLogContents = callable<[], string>('get_log_contents');
 
@@ -97,9 +98,9 @@ export function LogsTab() {
       >
         {autoFollow
           ? paneActive
-            ? 'Logs focused. Right stick or D-pad scrolls.'
-            : 'Move right to focus logs.'
-          : 'Manual scroll active.'}
+            ? t().logs.focused
+            : t().logs.moveRight
+          : t().logs.manualScroll}
       </div>
       <Focusable
         onGamepadDirection={handleDirection}
@@ -147,10 +148,10 @@ export function LogsTab() {
                 fontSize: 10,
               }}
             >
-              Manual scroll active. Press A/OK to jump to latest log output.
+              {t().logs.jumpHint}
             </div>
           )}
-          {logs || <span style={{ color: '#666' }}>No logs yet.</span>}
+          {logs || <span style={{ color: '#666' }}>{t().logs.noLogs}</span>}
           <div ref={bottomRef} />
         </div>
       </Focusable>
