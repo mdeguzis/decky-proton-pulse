@@ -13,10 +13,12 @@ import { CompatibilityToolsTab } from './tabs/CompatibilityToolsTab';
 import { GeneralSettingsTab } from './tabs/GeneralSettingsTab';
 import { AboutTab } from './tabs/AboutTab';
 import { logFrontendEvent } from '../lib/logger';
+import { useLanguage } from '../lib/i18n';
 
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
 
 export function ProtonPulsePage() {
+  const _lang = useLanguage(); // triggers re-render on language change
   const [activePage, setActivePage] = useState<string>(pageState.initialPage);
   const [appId, setAppId]           = useState<number | null>(pageState.appId);
   const [appName, setAppName]       = useState<string>(pageState.appName);
