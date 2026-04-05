@@ -1,0 +1,49 @@
+name: Game Report
+description: Report a game compatibility issue or incorrect ProtonDB config
+labels: ["game-report"]
+body:
+  - type: input
+    id: game_name
+    attributes:
+      label: Game Name
+      placeholder: e.g. Elden Ring
+    validations:
+      required: true
+  - type: input
+    id: app_id
+    attributes:
+      label: Steam AppID
+      placeholder: e.g. 1245620
+    validations:
+      required: true
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue Type
+      options:
+        - Config does not work
+        - Config causes crash
+        - Wrong Proton version suggested
+        - Missing game / no reports
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: system_info
+    attributes:
+      label: System Info
+      description: Auto-filled by the plugin when submitted from the About page
+      render: shell
+  - type: textarea
+    id: logs
+    attributes:
+      label: Plugin Logs
+      description: Auto-filled by the plugin when submitted from the About page (last 30 lines). Attach the full log file if needed.
+      render: shell

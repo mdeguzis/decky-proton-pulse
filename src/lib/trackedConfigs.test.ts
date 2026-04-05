@@ -34,6 +34,7 @@ describe('trackedConfigs', () => {
     const config: TrackedConfig = {
       appId: 12345,
       appName: 'Test Game',
+      profileName: '',
       protonVersion: 'GE-Proton9-27',
       launchOptions: 'PROTON_VERSION="GE-Proton9-27" %command%',
       enabledVars: {},
@@ -49,6 +50,7 @@ describe('trackedConfigs', () => {
     const config1: TrackedConfig = {
       appId: 100,
       appName: 'Game A',
+      profileName: '',
       protonVersion: 'GE-Proton9-1',
       launchOptions: 'PROTON_VERSION="GE-Proton9-1" %command%',
       enabledVars: {},
@@ -57,6 +59,7 @@ describe('trackedConfigs', () => {
     const config2: TrackedConfig = {
       appId: 100,
       appName: 'Game A',
+      profileName: '',
       protonVersion: 'GE-Proton9-5',
       launchOptions: 'PROTON_VERSION="GE-Proton9-5" %command%',
       enabledVars: { MANGOHUD: '1' },
@@ -78,6 +81,7 @@ describe('trackedConfigs', () => {
     addTrackedConfig({
       appId: 42,
       appName: 'Found',
+      profileName: '',
       protonVersion: 'GE-Proton10-1',
       launchOptions: 'PROTON_VERSION="GE-Proton10-1" %command%',
       enabledVars: {},
@@ -92,6 +96,7 @@ describe('trackedConfigs', () => {
     addTrackedConfig({
       appId: 1,
       appName: 'A',
+      profileName: '',
       protonVersion: 'v1',
       launchOptions: 'PROTON_VERSION="v1" %command%',
       enabledVars: {},
@@ -100,6 +105,7 @@ describe('trackedConfigs', () => {
     addTrackedConfig({
       appId: 2,
       appName: 'B',
+      profileName: '',
       protonVersion: 'v2',
       launchOptions: 'PROTON_VERSION="v2" %command%',
       enabledVars: {},
@@ -114,6 +120,7 @@ describe('trackedConfigs', () => {
     addTrackedConfig({
       appId: 1,
       appName: 'A',
+      profileName: '',
       protonVersion: 'v1',
       launchOptions: 'PROTON_VERSION="v1" %command%',
       enabledVars: {},

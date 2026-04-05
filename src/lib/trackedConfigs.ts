@@ -3,14 +3,18 @@ import { getSetting, setSetting } from './settings';
 
 const STORAGE_KEY = 'tracked-configs';
 
+export type ConfigSource = 'protondb' | 'protondb-local' | 'user';
+
 export interface TrackedConfig {
   appId: number;
   appName: string;
+  profileName: string;
   protonVersion: string;
   launchOptions: string;
   enabledVars: Record<string, string>;
   appliedAt: number;
   isEdited?: boolean;
+  source?: ConfigSource;
 }
 
 export function getTrackedConfigs(): TrackedConfig[] {

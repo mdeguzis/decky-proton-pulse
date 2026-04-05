@@ -62,6 +62,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     ? parseLaunchOptions(existingConfig.launchOptions)
     : { protonVersion: null, vars: {} as Record<string, string> };
 
+  const [profileName, setProfileName] = useState(existingConfig?.profileName ?? '');
   const [protonVersion, setProtonVersion] = useState(parsed.protonVersion ?? '');
   const [enabledVars, setEnabledVars] = useState<Record<string, string>>(parsed.vars);
   const [customVars, setCustomVars] = useState<Array<{ key: string; value: string }>>(() => {
@@ -143,6 +144,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       addTrackedConfig({
         appId,
         appName,
+        profileName: profileName.trim(),
         protonVersion: protonVersion || '',
         launchOptions: finalLaunchOptions,
         enabledVars: allVars,
@@ -282,6 +284,16 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
 
         {/* ── Scrollable content ── */}
         <Focusable style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
+          {/* Profile Name */}
+          <div style={{ marginBottom: 10 }}>
+            <TextField
+              label={t().configManager.profileName}
+              description={t().configManager.profileNameHint}
+              value={profileName}
+              onChange={(e) => setProfileName(e.target.value)}
+            />
+          </div>
+
           {/* Proton Version */}
           <div style={{ marginBottom: 10 }}>
             <TextField
