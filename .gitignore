@@ -10,7 +10,7 @@ lib-cov
 *.zip
 
 .codex
-.claude/
+.claude
 .superpowers/
 AGENTS.md
 CLAUDE.md
