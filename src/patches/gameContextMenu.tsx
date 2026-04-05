@@ -1,6 +1,8 @@
 // src/patches/gameContextMenu.tsx
-// Injects a "Proton Pulse…" menu item into the game library context menu,
-// following the same pattern used by decky-steamgriddb.
+// Injects a "Proton Pulse…" menu item into the game library context menu.
+// Context menu injection pattern (afterPatch + findModuleByExport) adapted from
+// decky-steamgriddb by SteamGridDB (GPL-3.0-or-later):
+// https://github.com/SteamGridDB/decky-steamgriddb
 import {
   afterPatch,
   fakeRenderComponent,

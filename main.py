@@ -575,6 +575,9 @@ class Plugin:
         return entries[0] if len(entries) == 1 else (", ".join(entries) if entries else None)
 
     # ─── Compatibility Tools / Proton-GE ─────────────────────────────────────
+    # Compat tool detection and management patterns inspired by
+    # decky-wine-cellar by FlashyReese (MIT):
+    # https://github.com/FlashyReese/decky-wine-cellar
 
     def _find_steam_root(self) -> Path | None:
         possible_roots = [

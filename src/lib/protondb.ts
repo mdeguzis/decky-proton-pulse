@@ -1,4 +1,6 @@
 // src/lib/protondb.ts
+// ProtonDB API integration pattern inspired by protondb-decky by OMGDuke:
+// https://github.com/OMGDuke/protondb-decky
 import { fetchNoCors } from '@decky/api';
 import type { ProtonDBSummary, CdnReport, ProtonRating } from '../types';
 import { logFrontendEvent } from './logger';
