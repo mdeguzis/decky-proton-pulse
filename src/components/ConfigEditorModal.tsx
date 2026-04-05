@@ -31,8 +31,6 @@ type Category = LaunchVarDef['category'];
 const CATEGORY_ORDER: Category[] = ['nvidia', 'amd', 'intel', 'wrappers', 'performance', 'compatibility', 'debug'];
 const VENDOR_CATEGORIES: Category[] = ['nvidia', 'amd', 'intel'];
 
-type FilterOption = 'all' | 'relevant';
-
 function categoryLabel(cat: Category): string {
   return t().configManager.toggleCategories[cat];
 }
@@ -43,14 +41,6 @@ function initialCollapsed(gpuVendor: GpuVendor | null): Set<Category> {
   return new Set(
     VENDOR_CATEGORIES.filter((c) => c !== gpuVendor),
   );
-}
-
-/** When filter is 'relevant', hide vendor categories that don't match */
-function isFiltered(cat: Category, filter: FilterOption, gpuVendor: GpuVendor | null): boolean {
-  if (filter === 'all') return false;
-  if (!VENDOR_CATEGORIES.includes(cat)) return false;
-  if (!gpuVendor || gpuVendor === 'other') return false;
-  return cat !== gpuVendor;
 }
 
 export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, onSave, closeModal }: Props) {
@@ -68,9 +58,6 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   });
   const [collapsedCategories, setCollapsedCategories] = useState<Set<Category>>(
     () => initialCollapsed(gpuVendor),
-  );
-  const [filter, setFilter] = useState<FilterOption>(
-    gpuVendor && gpuVendor !== 'other' ? 'relevant' : 'all',
   );
 
   const allVars = useMemo(() => {
@@ -167,26 +154,44 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     return map;
   }, []);
 
-  const filterOptions = [
-    { data: 'relevant' as FilterOption, label: gpuVendor ? `${categoryLabel(gpuVendor as Category)} + ${t().common.filters}` : t().common.filters },
-    { data: 'all' as FilterOption, label: t().configManager.toggleCategories.nvidia + ' / ' + t().configManager.toggleCategories.amd + ' / ' + t().configManager.toggleCategories.intel },
-  ];
-
   return (
-    <ModalRoot onCancel={closeModal}>
+    <ModalRoot
+      onCancel={closeModal}
+      bAllowFullSize
+      className="proton-pulse-config-editor"
+      modalClassName="proton-pulse-config-editor"
+    >
       <style>{`
+        .proton-pulse-config-editor,
+        .proton-pulse-config-editor > div,
         .proton-pulse-config-editor .DialogContent_InnerWidth {
-          max-width: 100% !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100vw !important;
+          width: 100vw !important;
+          max-height: 100vh !important;
         }
+        .proton-pulse-config-editor .ModalPosition { inset: 0 !important; }
       `}</style>
-      <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '70vh' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
+
+        {/* ── Fixed header: game info + actions ── */}
+        <div
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 16px',
+            borderBottom: '1px solid #2a3a4a',
+            background: 'linear-gradient(180deg, rgba(26,36,49,0.98), rgba(13,19,28,0.98))',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {appId && (
               <img
                 src={STEAM_HEADER_URL(appId)}
-                style={{ height: 36, borderRadius: 3, objectFit: 'cover' }}
+                style={{ height: 32, borderRadius: 3, objectFit: 'cover' }}
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             )}
@@ -194,39 +199,62 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
                 {appName || (appId ? `App ${appId}` : t().configManager.createConfig)}
               </div>
-              {appId && <div style={{ fontSize: 10, color: '#7a9bb5' }}>AppID {appId}</div>}
+              {appId && <div style={{ fontSize: 9, color: '#7a9bb5' }}>AppID {appId}</div>}
             </div>
           </div>
-          {/* Filter dropdown */}
-          {gpuVendor && gpuVendor !== 'other' && (
-            <DropdownItem
-              label={t().common.filters}
-              rgOptions={filterOptions}
-              selectedOption={filter}
-              onChange={(opt) => setFilter(opt.data)}
+          <Focusable style={{ display: 'flex', gap: 8 }}>
+            <DialogButton
+              onClick={handleApply}
+              disabled={!appId}
+              style={{ minWidth: 80, padding: '6px 16px', fontSize: 12 }}
+            >
+              {t().common.apply}
+            </DialogButton>
+            <DialogButton
+              onClick={() => closeModal?.()}
+              style={{ minWidth: 80, padding: '6px 16px', fontSize: 12, background: '#555' }}
+            >
+              {t().common.cancel}
+            </DialogButton>
+          </Focusable>
+        </div>
+
+        {/* ── Live preview bar ── */}
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '6px 16px',
+            background: 'rgba(0,0,0,0.4)',
+            fontFamily: 'monospace',
+            fontSize: 10,
+            color: '#9dc4e8',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all',
+            borderBottom: '1px solid #1a2430',
+          }}
+        >
+          <span style={{ fontSize: 9, color: '#7a9bb5', marginRight: 8 }}>{t().configManager.livePreview}</span>
+          {preview}
+        </div>
+
+        {/* ── Scrollable content ── */}
+        <Focusable style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
+          {/* Proton Version */}
+          <div style={{ marginBottom: 10 }}>
+            <TextField
+              label={t().detail.protonVersion}
+              value={protonVersion}
+              onChange={(e) => setProtonVersion(e.target.value)}
             />
-          )}
-        </div>
+          </div>
 
-        {/* Proton Version */}
-        <div style={{ marginBottom: 8 }}>
-          <TextField
-            label={t().detail.protonVersion}
-            value={protonVersion}
-            onChange={(e) => setProtonVersion(e.target.value)}
-          />
-        </div>
-
-        {/* Scrollable toggle area */}
-        <Focusable style={{ flex: 1, overflowY: 'auto', maxHeight: '45vh' }}>
           {/* Toggle sections by category */}
           {CATEGORY_ORDER.map((cat) => {
             const defs = grouped.get(cat)!;
             if (defs.length === 0) return null;
-            if (isFiltered(cat, filter, gpuVendor)) return null;
             const collapsed = collapsedCategories.has(cat);
             return (
-              <div key={cat} style={{ marginBottom: 8 }}>
+              <div key={cat} style={{ marginBottom: 6 }}>
                 <Focusable
                   onClick={() => toggleCategory(cat)}
                   onOKButton={() => toggleCategory(cat)}
@@ -237,7 +265,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
                     cursor: 'pointer',
                     padding: '6px 0',
                     borderBottom: '1px solid #2a3a4a',
-                    marginBottom: 6,
+                    marginBottom: 4,
                   }}
                 >
                   <span style={{ fontSize: 10, color: '#7a9bb5' }}>{collapsed ? '▸' : '▾'}</span>
@@ -314,35 +342,6 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               + {t().configManager.addCustomVar}
             </DialogButton>
           </div>
-        </Focusable>
-
-        {/* Live Preview */}
-        <div
-          style={{
-            padding: 8,
-            borderRadius: 6,
-            background: 'rgba(0,0,0,0.4)',
-            fontFamily: 'monospace',
-            fontSize: 10,
-            color: '#9dc4e8',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-all',
-            marginBottom: 8,
-            marginTop: 8,
-          }}
-        >
-          <div style={{ fontSize: 9, color: '#7a9bb5', marginBottom: 2 }}>{t().configManager.livePreview}</div>
-          {preview}
-        </div>
-
-        {/* Action buttons */}
-        <Focusable style={{ display: 'flex', gap: 10 }}>
-          <DialogButton onClick={handleApply} disabled={!appId}>
-            {t().common.apply}
-          </DialogButton>
-          <DialogButton onClick={() => closeModal?.()} style={{ background: '#555' }}>
-            {t().common.cancel}
-          </DialogButton>
         </Focusable>
       </div>
     </ModalRoot>
