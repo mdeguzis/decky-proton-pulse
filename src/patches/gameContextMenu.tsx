@@ -1,5 +1,5 @@
 // src/patches/gameContextMenu.tsx
-// Injects a "Proton Pulse…" menu item into the game library context menu.
+// Injects a "Proton Pulse..." menu item into the game library context menu.
 // Context menu injection pattern (afterPatch + findModuleByExport) adapted from
 // decky-steamgriddb by SteamGridDB (GPL-3.0-or-later):
 // https://github.com/SteamGridDB/decky-steamgriddb
@@ -232,7 +232,7 @@ const injectMenuItem = (
   initialAppId: number,
   contextSummary: Record<string, unknown>
 ): void => {
-  // Insert before "Properties…" to match SteamGridDB position.
+  // Insert before "Properties..." to match SteamGridDB position.
   const propertiesIdx = items.findIndex((item: any) =>
     findInReactTree(
       item,

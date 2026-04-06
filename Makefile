@@ -20,6 +20,7 @@ PROTONDB_REPO_DIR ?= $(if $(wildcard $(PROTONDB_PROJECT_REPO_DIR)/.git),$(PROTON
 PROTONDB_LOCAL_OUTPUT ?= /tmp/proton-pulse-protondb-data
 APP_ID ?=
 SCREENSHOT_BASE ?=
+PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 
 .PHONY: help build watch test test-ts test-py typecheck setup deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
@@ -66,15 +67,18 @@ help:
 	@echo "  live-reload-enable  Configure LIVE_RELOAD=1 on plugin_loader service"
 
 build: clean test
-	pnpm build
+	$(PNPM) build
 
 watch:
-	pnpm watch
+	$(PNPM) watch
 
 test: test-py test-ts
 
-test-ts:
-	pnpm test
+node_modules: package.json
+	$(PNPM) i
+
+test-ts: node_modules
+	$(PNPM) test
 
 typecheck:
 	npx pyright
@@ -87,7 +91,7 @@ test-py:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m pytest tests/ -v
 
 setup:
-	pnpm i
+	$(PNPM) i
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv sync --group dev
 
 deploy: build

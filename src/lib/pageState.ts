@@ -17,7 +17,7 @@ export function dispatchNavigate(payload: NavigatePayload): void {
   window.dispatchEvent(new CustomEvent<NavigatePayload>(NAVIGATE_EVENT, { detail: payload }));
 }
 
-// Fallback for initial mount only — do not read after first render.
+// Fallback for initial mount only -- do not read after first render.
 export const pageState: {
   initialPage: PageId;
   appId: number | null;

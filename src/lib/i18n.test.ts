@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock react so useSyncExternalStore doesn't require the real package in tests.
 vi.mock('react', () => ({
-  useSyncExternalStore: (subscribe: (cb: () => void) => () => void, getSnapshot: () => unknown) => {
+  useSyncExternalStore: (_subscribe: (cb: () => void) => () => void, getSnapshot: () => unknown) => {
     // In tests we just call getSnapshot synchronously; no subscription needed.
     return getSnapshot();
   },
@@ -17,7 +17,6 @@ import {
   registerTranslation,
   t,
 } from './i18n';
-import type { TranslationTree } from './i18n';
 import { de as deTranslation } from './translations/de';
 import './translations/index';
 
@@ -62,7 +61,7 @@ describe('LANGUAGES', () => {
   });
 });
 
-describe('t() — English strings by default', () => {
+describe('t() -- English strings by default', () => {
   it('returns common.save = "Save"', () => {
     expect(t().common.save).toBe('Save');
   });
@@ -71,12 +70,12 @@ describe('t() — English strings by default', () => {
     expect(t().common.cancel).toBe('Cancel');
   });
 
-  it('returns common.loading = "Loading…"', () => {
-    expect(t().common.loading).toBe('Loading…');
+  it('returns common.loading = "Loading..."', () => {
+    expect(t().common.loading).toBe('Loading...');
   });
 });
 
-describe('t() — rating strings', () => {
+describe('t() -- rating strings', () => {
   it('returns ratings.platinum = "Platinum"', () => {
     expect(t().ratings.platinum).toBe('Platinum');
   });
@@ -86,7 +85,7 @@ describe('t() — rating strings', () => {
   });
 });
 
-describe('t() — dynamic functions', () => {
+describe('t() -- dynamic functions', () => {
   it('reports.found(1) = "1 report found"', () => {
     expect(t().reports.found(1)).toBe('1 report found');
   });

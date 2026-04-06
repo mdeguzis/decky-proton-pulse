@@ -4,7 +4,6 @@ import {
   LAUNCH_VAR_CATALOG,
   buildLaunchOptions,
   parseLaunchOptions,
-  type LaunchVarDef,
 } from './launchVars';
 
 describe('LAUNCH_VAR_CATALOG', () => {

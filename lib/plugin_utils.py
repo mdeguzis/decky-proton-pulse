@@ -1,6 +1,6 @@
 """Low-level utilities shared across the plugin backend.
 
-Functions here have no dependency on Plugin state — they're pure helpers
+Functions here have no dependency on Plugin state -- they're pure helpers
 for environment sanitisation and archive handling.
 """
 

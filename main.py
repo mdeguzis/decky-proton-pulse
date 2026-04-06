@@ -1,4 +1,4 @@
-"""Proton Pulse – Decky Loader plugin backend.
+"""Proton Pulse -- Decky Loader plugin backend.
 
 This file is the entry-point that Decky's plugin loader imports.  It
 must expose a top-level ``Plugin`` class whose public ``async`` methods
@@ -6,7 +6,7 @@ become the callable API for the React frontend.
 
 All heavy logic lives in the helper modules (``proton_ge``,
 ``compat_tools``, ``system_info``, etc.).  ``Plugin`` is a thin
-orchestration façade that wires them together.
+orchestration facade that wires them together.
 """
 
 from __future__ import annotations
@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
+from lib.cdn_cache import is_fresh, read_cached, write_cached
 from lib.compat_tools import (
     find_closest_installed_tool,
     installed_tool_matches_version,
@@ -31,6 +32,7 @@ from lib.compat_tools import (
 )
 from lib.plugin_logging import get_log_contents, log_frontend_event, sync_set_log_level
 from lib.plugin_utils import extract_archive_safely
+from lib.prefetch import prefetch_installed_games
 from lib.proton_ge import (
     clear_latest_metadata,
     finalize_extracted_compat_tool,
@@ -64,6 +66,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         self._proton_ge_install_process: subprocess.Popen[str] | None = None
         self._proton_ge_install_process_ref: list[subprocess.Popen[str] | None] = [None]
         self._proton_ge_install_status: dict[str, Any] = make_initial_status()
+        self._prefetch_cancel = threading.Event()
+        self._prefetch_thread: threading.Thread | None = None
 
     ################################################################
     # Lifecycle
@@ -84,9 +88,22 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         self._proton_ge_install_status = make_initial_status()
         decky.logger.info("Proton Pulse backend ready")
 
+        # Start CDN prefetch in background -- daemon=True so it won't block
+        # plugin shutdown if it's still running when _unload() is called
+        self._prefetch_cancel = threading.Event()
+        self._prefetch_thread = threading.Thread(
+            target=prefetch_installed_games,
+            args=(self._prefetch_cancel,),
+            name="cdn-prefetch",
+            daemon=True,
+        )
+        self._prefetch_thread.start()
+
     async def _unload(self) -> None:
         """Kill any running install thread and clean up."""
         decky.logger.info("Proton Pulse backend shutting down")
+        # Signal both background threads to stop at their next cancel check
+        self._prefetch_cancel.set()
         self._proton_ge_install_cancel.set()
         with self._proton_ge_install_lock:
             proc = self._proton_ge_install_process_ref[0]
@@ -155,6 +172,36 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     async def get_system_info(self) -> dict[str, object]:
         """Collect CPU, GPU, kernel, distro info for the frontend."""
         return collect_system_info()
+
+    ################################################################
+    # CDN Cache
+    ################################################################
+
+    async def get_cached_cdn(self, app_id: str, filename: str) -> dict[str, Any]:
+        """Return cached CDN data if fresh, else ``{"data": null}``."""
+        # Reconstruct the full CDN URL to look up freshness metadata
+        url = f"https://mdeguzis.github.io/proton-pulse-data/data/{app_id}/{filename}"
+        if is_fresh(url):
+            data = read_cached(app_id, filename)
+            if data is not None:
+                decky.logger.debug(f"get_cached_cdn: hit for {app_id}/{filename}")
+                return {"data": data, "fresh": True}
+        decky.logger.debug(f"get_cached_cdn: miss for {app_id}/{filename}")
+        return {"data": None, "fresh": False}
+
+    async def put_cached_cdn(self, app_id: str, filename: str, data: Any) -> bool:
+        """Store CDN data from a frontend fetch into the backend cache."""
+        try:
+            write_cached(app_id, filename, data)
+            from lib.cdn_cache import set_meta  # pylint: disable=import-outside-toplevel
+            url = f"https://mdeguzis.github.io/proton-pulse-data/data/{app_id}/{filename}"
+            # Touch the metadata timestamp so is_fresh() considers this entry valid
+            set_meta(url)
+            decky.logger.debug(f"put_cached_cdn: stored {app_id}/{filename}")
+            return True
+        except OSError as exc:
+            decky.logger.debug(f"put_cached_cdn: failed for {app_id}/{filename}: {exc}")
+            return False
 
     ################################################################
     # Compatibility Tools / Proton-GE
@@ -305,7 +352,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
                 {
                     "state": "running",
                     "tag_name": normalized,
-                    "message": f"Installing {normalized}…",
+                    "message": f"Installing {normalized}...",
                     "stage": "queued",
                     "downloaded_bytes": None,
                     "total_bytes": release.get("asset_size"),
@@ -406,11 +453,11 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
                 proc.terminate()
             self._proton_ge_install_status.update(
                 {
-                    "message": f"Cancelling {tag_name or 'Proton-GE'}…",
+                    "message": f"Cancelling {tag_name or 'Proton-GE'}...",
                     "stage": "cancelling",
                 }
             )
-        return {"success": True, "message": f"Cancelling {tag_name or 'Proton-GE'}…"}
+        return {"success": True, "message": f"Cancelling {tag_name or 'Proton-GE'}..."}
 
     async def install_compatibility_tool_archive(
         self, archive_path: str

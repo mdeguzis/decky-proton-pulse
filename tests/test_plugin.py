@@ -227,7 +227,7 @@ def test_read_driver_version_nvidia_smi_success() -> None:
 
 
 def test_read_driver_version_fallback_drm(tmp_path: pathlib.Path) -> None:
-    """nvidia-smi not found → reads DRM sysfs path."""
+    """nvidia-smi not found --> reads DRM sysfs path."""
     version_file = tmp_path / "version"
     version_file.write_text("6.2.0\n")
 
@@ -243,7 +243,7 @@ def test_read_driver_version_fallback_drm(tmp_path: pathlib.Path) -> None:
 
 
 def test_read_driver_version_nvidia_smi_nonzero_and_no_drm() -> None:
-    """nvidia-smi returns non-zero and no DRM path exists → None."""
+    """nvidia-smi returns non-zero and no DRM path exists --> None."""
     mock_result = MagicMock(returncode=1, stdout="")
     with patch("lib.system_info.subprocess.run", return_value=mock_result), \
          patch("lib.system_info.glob.glob", return_value=[]):

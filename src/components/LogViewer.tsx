@@ -15,7 +15,7 @@ export function LogViewer() {
         const content = await getLogContents();
         if (active) setLogs(content);
       } catch {
-        // silently ignore — log file may not exist yet
+        // silently ignore -- log file may not exist yet
       }
     };
     poll();

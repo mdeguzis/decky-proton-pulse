@@ -37,7 +37,7 @@ function extractLibraryAppId(pathname: string): number | null {
 
 // ─── Sidebar panel ────────────────────────────────────────────────────────────
 function Content() {
-  const _lang = useLanguage(); // triggers re-render on language change
+  useLanguage(); // triggers re-render on language change
   const [version, setVersion] = useState('...');
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
 

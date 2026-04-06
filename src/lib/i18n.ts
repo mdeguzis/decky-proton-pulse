@@ -276,7 +276,7 @@ export const en: TranslationTree = {
   common: {
     save: 'Save',
     cancel: 'Cancel',
-    loading: 'Loading…',
+    loading: 'Loading...',
     error: 'Error',
     apply: 'Apply',
     edit: 'Edit',
@@ -320,11 +320,11 @@ export const en: TranslationTree = {
     bestMatch: 'Best Match',
     mostVotes: 'Most Votes',
     selectReport: 'Select a report card to view the full report.',
-    detectingGpu: 'Detecting GPU tier…',
+    detectingGpu: 'Detecting GPU tier...',
     detectingGpuHint: 'Detecting your GPU tier before narrowing the list. Showing all reports for now.',
     noReportsForTier: 'No reports for this GPU tier.',
     noReportsForGame: 'No ProtonDB reports found for this game.',
-    loadingSystemInfo: 'Loading system info…',
+    loadingSystemInfo: 'Loading system info...',
     navigateToGame: 'Navigate to a game first.',
     hardwareUnavailable: 'Hardware details unavailable',
     editedBadge: 'Edited*',
@@ -347,12 +347,12 @@ export const en: TranslationTree = {
     edited: 'Edited',
     customVariant: 'Custom Variant',
     protonVersion: 'Proton Version',
-    installing: (v) => `Proton Version (installing ${v}…)`,
+    installing: (v) => `Proton Version (installing ${v}...)`,
     installed: 'Installed',
     notInstalled: 'Not Installed',
     unavailable: 'Unavailable',
     valveProton: 'Valve Proton',
-    checking: 'Checking…',
+    checking: 'Checking...',
     matchesGpu: 'Matches your GPU',
     differentGpu: 'Different GPU',
     unknownGpu: 'Unknown GPU',
@@ -385,17 +385,17 @@ export const en: TranslationTree = {
     autoUpdate: 'Auto Update',
     autoUpdateDescription: 'Keep the pinned latest Proton-GE release installed whenever Settings opens and refreshes.',
     refresh: 'Refresh',
-    refreshing: 'Refreshing…',
+    refreshing: 'Refreshing...',
     installed: 'Installed',
     title: 'Compatibility Tools',
     description: 'Proton-GE management inspired by Wine Cellar, tailored for Proton Pulse apply flow.',
-    filterPlaceholder: 'Filter versions…',
+    filterPlaceholder: 'Filter versions...',
     zipPlaceholder: '/home/deck/Downloads/GE-Proton8-3.tar.gz',
-    removing: 'Removing…',
+    removing: 'Removing...',
     actions: 'Actions',
     restartHint: 'Steam may need a restart before the new compatibility tool appears everywhere.',
     unknownDate: 'Unknown date',
-    estimating: 'estimating…',
+    estimating: 'estimating...',
     timeLeft: (time) => `${time} left`,
   },
   configure: {
@@ -437,7 +437,7 @@ export const en: TranslationTree = {
     instructions: 'Right-click any game in your library (or use the settings gear) and select',
     protondbConfig: 'ProtonDB Config',
     currentLaunchOptions: 'Current launch options from Steam app details:',
-    loadingLaunchOptions: 'Loading launch options…',
+    loadingLaunchOptions: 'Loading launch options...',
     noLaunchOptions: 'No launch options set.',
     clearLaunchOptions: 'Clear Launch Options',
   },
@@ -449,7 +449,7 @@ export const en: TranslationTree = {
     noLogs: 'No logs yet.',
   },
   about: {
-    description: 'Ranks ProtonDB community reports by system compatibility and applies the best-matching Proton launch options to your Steam games — all from the Decky sidebar.',
+    description: 'Ranks ProtonDB community reports by system compatibility and applies the best-matching Proton launch options to your Steam games -- all from the Decky sidebar.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Submit Issue',
@@ -458,7 +458,7 @@ export const en: TranslationTree = {
     issueTemplateMissingReports: 'Missing ProtonDB Reports',
     issueTemplatePluginIssue: 'Plugin Issue',
     issueTemplateOther: 'Other',
-    openingIssue: 'Opening issue…',
+    openingIssue: 'Opening issue...',
   },
   configManager: {
     title: 'Configurations',
@@ -490,7 +490,7 @@ export const en: TranslationTree = {
   protondbSubmit: {
     title: 'Submit to ProtonDB',
     instructions: 'Your system info has been generated in the format ProtonDB expects. Copy it to your clipboard, then paste it into the ProtonDB contribute form when prompted for system information.',
-    generating: 'Generating system info…',
+    generating: 'Generating system info...',
     generateFailed: 'Failed to generate system info',
     copyAndOpen: 'Copy & Open ProtonDB',
     copyInfo: 'Copy Info',
@@ -502,7 +502,7 @@ export const en: TranslationTree = {
     confirmChanges: 'The following changes will be included in your report:',
     confirmSubmit: 'Continue to ProtonDB',
     noChanges: 'No changes detected.',
-    changed: (field, from, to) => `${field}: ${from} → ${to}`,
+    changed: (field, from, to) => `${field}: ${from} --> ${to}`,
   },
   ratings: {
     platinum: 'Platinum',
@@ -567,7 +567,7 @@ export function detectLanguage(): Language {
       if ((LANGUAGES as readonly string[]).includes(navLang)) {
         return navLang as Language;
       }
-      // Prefix match (e.g. 'de-DE' → 'de')
+      // Prefix match (e.g. 'de-DE' --> 'de')
       const prefix = navLang.split('-')[0];
       const match = LANGUAGES.find((l) => l === prefix || l.startsWith(prefix + '-'));
       if (match) return match;

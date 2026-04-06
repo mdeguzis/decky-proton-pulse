@@ -89,7 +89,7 @@ function formatByteCount(value: number | null | undefined): string {
 }
 
 function formatEta(seconds: number | null | undefined): string {
-  if (!seconds || seconds <= 0 || !Number.isFinite(seconds)) return 'estimating…';
+  if (!seconds || seconds <= 0 || !Number.isFinite(seconds)) return 'estimating...';
   const rounded = Math.max(1, Math.round(seconds));
   if (rounded < 60) return `${rounded}s left`;
   const minutes = Math.floor(rounded / 60);
@@ -181,7 +181,7 @@ function VersionBrowserModal({
           type="text"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter versions…"
+          placeholder="Filter versions..."
           style={{
             width: '100%',
             boxSizing: 'border-box',
@@ -277,7 +277,7 @@ function VersionBrowserModal({
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <CompactActionButton
-                      label={isInstalling ? 'Installing…' : installed ? 'Reinstall' : 'Install'}
+                      label={isInstalling ? 'Installing...' : installed ? 'Reinstall' : 'Install'}
                       onClick={() => onInstall(release.tag_name)}
                       disabled={installingTag !== null}
                     />
@@ -482,7 +482,7 @@ export function SettingsTab() {
             ? `${formatByteCount(installStatus.downloaded_bytes)} / ${formatByteCount(installStatus.total_bytes)}`
             : release.asset_size
               ? `${formatByteCount(installStatus.downloaded_bytes)} / ${formatByteCount(release.asset_size)}`
-              : `${installStatus.stage === 'finalizing' ? 'Finalizing…' : installStatus.stage === 'extracting' ? 'Extracting…' : 'Downloading…'}`
+              : `${installStatus.stage === 'finalizing' ? 'Finalizing...' : installStatus.stage === 'extracting' ? 'Extracting...' : 'Downloading...'}`
         )
         : undefined;
 
@@ -543,7 +543,7 @@ export function SettingsTab() {
               ? 'Installed'
             : 'Custom',
         statusStyle: installedToolStatusTone(tool),
-        actionLabel: removingTool === tool.directory_name ? 'Removing…' : 'Uninstall',
+        actionLabel: removingTool === tool.directory_name ? 'Removing...' : 'Uninstall',
         actionDanger: true,
         actionDisabled: removingTool !== null || installingTag !== null,
         onAction: tool.source !== 'valve'
@@ -795,7 +795,7 @@ export function SettingsTab() {
             </div>
           </div>
           <CompactActionButton
-            label={loadingManager ? 'Refreshing…' : 'Refresh'}
+            label={loadingManager ? 'Refreshing...' : 'Refresh'}
             onClick={() => {
               setAutoUpdateTriggered(false);
               void refreshManager(true);
@@ -829,7 +829,7 @@ export function SettingsTab() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#dbe8f4', marginBottom: 8 }}>Installed</div>
                 <div style={{ ...compactCatalogStyle(), padding: '0 12px', borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}>
                   {installedCompatibilityRows.map((row, index) => {
-                    const menuLabel = row.removing ? 'Removing…' : 'Actions';
+                    const menuLabel = row.removing ? 'Removing...' : 'Actions';
                     return (
                       <div
                         key={row.key}
@@ -869,7 +869,7 @@ export function SettingsTab() {
                               showContextMenu(
                                 <Menu label={row.displayName}>
                                   <MenuItem onClick={row.onAction}>
-                                    {menuLabel === 'Removing…' ? 'Removing…' : row.actionLabel ?? 'Uninstall'}
+                                    {menuLabel === 'Removing...' ? 'Removing...' : row.actionLabel ?? 'Uninstall'}
                                   </MenuItem>
                                 </Menu>,
                                 e.currentTarget ?? window,
@@ -890,7 +890,7 @@ export function SettingsTab() {
             <div style={{ ...compactCatalogStyle(), padding: '0 12px', borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}>
               {!managerState || availableCompatibilityRows.length === 0 ? (
                 <div style={{ fontSize: 11, color: '#8fa9bf', padding: '14px 0' }}>
-                  {loadingManager ? 'Loading release feed…' : 'No Proton-GE releases were returned from GitHub.'}
+                  {loadingManager ? 'Loading release feed...' : 'No Proton-GE releases were returned from GitHub.'}
                 </div>
               ) : (
                 visibleAvailableCompatibilityRows.map((row, index) => {
@@ -934,10 +934,10 @@ export function SettingsTab() {
                                   {row.progressLabel ?? `${progressPercent}%`}
                                 </div>
                                 <div style={{ fontSize: 10, color: '#7f9bb2', marginTop: 4, whiteSpace: 'nowrap' }}>
-                                  {row.versionMeta ?? 'Downloading…'}
+                                  {row.versionMeta ?? 'Downloading...'}
                                 </div>
                                 <div style={{ fontSize: 10, color: '#6faee8', marginTop: 2, whiteSpace: 'nowrap' }}>
-                                  {row.etaLabel ?? 'estimating…'}
+                                  {row.etaLabel ?? 'estimating...'}
                                 </div>
                               </div>
                             </div>

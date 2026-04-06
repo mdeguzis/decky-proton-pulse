@@ -87,7 +87,7 @@ def read_vdf_value(text: str, key: str) -> str | None:
     """Pull a value from Valve's VDF (KeyValues) format.
 
     VDF files look like ``"key"  "value"`` with optional whitespace.
-    This is a quick regex grab — not a full parser.
+    This is a quick regex grab -- not a full parser.
     """
     match = re.search(rf'"{re.escape(key)}"\s+"([^"]+)"', text)
     return match.group(1).strip() if match else None

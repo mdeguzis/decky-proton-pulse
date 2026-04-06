@@ -18,7 +18,7 @@ import { useLanguage, t } from '../lib/i18n';
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
 
 export function ProtonPulsePage() {
-  const _lang = useLanguage(); // triggers re-render on language change
+  useLanguage(); // triggers re-render on language change
   const [activePage, setActivePage] = useState<string>(pageState.initialPage);
   const [appId, setAppId]           = useState<number | null>(pageState.appId);
   const [appName, setAppName]       = useState<string>(pageState.appName);
