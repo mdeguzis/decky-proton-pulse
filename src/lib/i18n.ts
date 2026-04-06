@@ -643,7 +643,7 @@ export function useLanguage(): Language {
 }
 
 // ---------------------------------------------------------------------------
-// t() — resolved tree with English fallback proxy
+// t() - resolved tree with English fallback proxy
 // ---------------------------------------------------------------------------
 
 const IS_DEV = typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production';

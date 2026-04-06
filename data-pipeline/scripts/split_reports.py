@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-split_reports.py — split a bdefore/protondb-data monthly dump into
+split_reports.py - split a bdefore/protondb-data monthly dump into
 per-game JSON files suitable for GitHub Pages delivery.
 
 Usage:
     python split_reports.py <dump.tar.gz> <output_dir>
 
 Output:
-    <output_dir>/data/<appId>.json   — one file per game, minified
-    <output_dir>/index.json          — metadata (game count, last updated)
+    <output_dir>/data/<appId>.json   - one file per game, minified
+    <output_dir>/index.json          - metadata (game count, last updated)
 
 Field mapping (bdefore → output):
     responses.protonVersion  → pv
@@ -72,18 +72,18 @@ def process_dump(dump_path: str, output_dir: str) -> None:
 
     # ── stream-parse the dump ──────────────────────────────────────────────────
     # bdefore packs a single reports_piiremoved.json inside a .tar.gz.
-    # The file is ~2 GB uncompressed so we stream-parse line-by-line rather
-    # than loading it all into memory.
+    # the file is ~2 GB uncompressed so stream-parse line-by-line rather
+    # than loading it all into memory
     games: dict[str, list[dict]] = defaultdict(list)
     total_raw = 0
     total_kept = 0
 
     opener = gzip.open if dump_path.endswith(".gz") else open
 
-    # ijson would be ideal but isn't guaranteed in CI.  Instead we use the fact
+    # ijson would be ideal but isnt guaranteed in CI. Instead just use the fact
     # that bdefore's JSON is pretty-printed with each record starting on a line
-    # that begins with "  {" and ending on "  }".  We collect lines per record
-    # and parse each one independently — tolerant and memory-efficient.
+    # that begins with "  {" and ending on "  }". Collect lines per record
+    # and parse each one independently, tolerant and memory-efficient
     with tarfile.open(dump_path, "r:gz") as tf:
         member = next((m for m in tf.getmembers() if m.name.endswith(".json")), None)
         if member is None:

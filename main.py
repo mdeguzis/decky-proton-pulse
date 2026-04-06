@@ -1,11 +1,14 @@
-# main.py
-import os
+"""Proton Pulse backend - system detection, Proton-GE management, Decky callable API."""
+
+# pylint: disable=too-many-lines
+import glob
+import json
 import logging
 import logging.handlers
-import subprocess
-import json
+import os
 import re
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import threading
@@ -13,20 +16,31 @@ import time
 import zipfile
 from pathlib import Path
 from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
 
-import decky
+import decky  # pylint: disable=import-error  # type: ignore[import-untyped]
+from protondb_systeminfo import generate_system_info
 
 
 class Plugin:
-    PROTON_GE_REPO_API = "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases?per_page=30"
+    """
+    Decky backend for Proton Pulse.
+
+    Handles system detection, Proton-GE install/uninstall, log management,
+    and the callable API that the React frontend talks to.
+    """
+
+    PROTON_GE_REPO_API = (
+        "https://api.github.com/repos/GloriousEggroll/proton-ge-custom"
+        "/releases?per_page=30"
+    )
     PROTON_GE_CACHE_TTL_SECONDS = 6 * 60 * 60
     PROTON_GE_LATEST_SLOT_NAME = "Proton-GE-Latest"
-    COMPAT_TOOL_RESTART_HINT = " Steam may need a restart before the new compatibility tool appears everywhere."
+    COMPAT_TOOL_RESTART_HINT = (
+        " Steam may need a restart before the new"
+        " compatibility tool appears everywhere."
+    )
 
-    # ─── Lifecycle ────────────────────────────────────────────────────────────
-
-    async def _main(self):
+    def __init__(self):
         self._system_info: dict = {}
         self._debug_handler: logging.Handler | None = None
         self._proton_ge_install_lock = threading.Lock()
@@ -45,19 +59,33 @@ class Plugin:
             "finished_at": None,
             "install_as_latest": False,
         }
+
+    ################################################################
+    # Lifecycle stuff
+    ################################################################
+
+    async def _main(self):
+        """Decky lifecycle hook, runs when the plugin loads"""
         decky.logger.info("Proton Pulse starting up")
         self._system_info = await self.get_system_info()
         decky.logger.info(f"System detected: {self._system_info}")
 
     async def _unload(self):
+        # called when plugin is disabled or Decky restarts
         decky.logger.info("Proton Pulse unloading")
 
     async def _uninstall(self):
         decky.logger.info("Proton Pulse uninstalled")
 
     async def _migration(self):
+        # move logs and settings from old paths to Decky's managed dirs
         decky.migrate_logs(
-            os.path.join(decky.DECKY_USER_HOME, ".config", "decky-proton-pulse", "proton-pulse.log")
+            os.path.join(
+                decky.DECKY_USER_HOME,
+                ".config",
+                "decky-proton-pulse",
+                "proton-pulse.log",
+            )
         )
         decky.migrate_settings(
             os.path.join(decky.DECKY_HOME, "settings", "proton-pulse.json"),
@@ -65,6 +93,19 @@ class Plugin:
         )
 
     def _system_command_env(self) -> dict[str, str]:
+        """Build a clean env for shelling out to system tools.
+
+        Decky uses PyOxidizer to bundle its own Python runtime, which means
+        LD_LIBRARY_PATH points at bundled OpenSSL/readline instead of the system versions.
+        If that leaks into subprocess calls, curl dies with 'OPENSSL_3.2.0 not found'
+        (decky-loader#729) and bash hits 'undefined symbol: rl_trim_arg_from_keyseq' (#756).
+        The SSL cert vars (SSL_CERT_FILE, CURL_CA_BUNDLE, etc.) point at the
+        bundled CA bundle which system curl doesn't know how to use either.
+
+        Stripping all of these lets lspci, curl, uname, and friends find
+        their own libs like normal.
+        """
+
         env = os.environ.copy()
         for key in [
             "LD_LIBRARY_PATH",
@@ -79,12 +120,21 @@ class Plugin:
         return env
 
     def _extract_archive_safely(self, archive_path: Path, extract_dir: Path) -> None:
+        """
+        Unpack a zip or tar, but make sure nothing escapes extract_dir.
+
+        Malicious archives can have entries with paths like '../../etc/passwd'
+        that write outside where you'd expect. Every member path gets
+        resolved and checked before extracting anything.
+        """
         extract_root = extract_dir.resolve()
 
         def _ensure_within_root(candidate: Path) -> None:
             resolved = candidate.resolve()
             if resolved != extract_root and extract_root not in resolved.parents:
-                raise RuntimeError(f"Archive entry attempted to escape extraction root: {resolved}")
+                raise RuntimeError(
+                    f"Archive entry attempted to escape extraction root: {resolved}"
+                )
 
         if zipfile.is_zipfile(archive_path):
             with zipfile.ZipFile(archive_path, "r") as archive:
@@ -100,7 +150,16 @@ class Plugin:
                 _ensure_within_root(member_path)
             archive.extractall(extract_dir)
 
-    def _curl_json(self, url: str, *, headers: list[str] | None = None, timeout: int = 25) -> list | dict:
+    def _curl_json(
+        self, url: str, *, headers: list[str] | None = None, timeout: int = 25
+    ) -> list | dict:
+        """
+        Fetch JSON by shelling out to curl.
+
+        Uses curl instead of urllib/requests because SteamOS has known
+        SSL cert issues with Python's bundled OpenSSL (see _system_command_env).
+        curl uses the system CA store and just works.
+        """
         command = [
             "curl",
             "-LfsS",
@@ -116,17 +175,25 @@ class Plugin:
             str(timeout),
             url,
         ]
+
         for header in headers or []:
             command.extend(["-H", header])
+
         result = subprocess.run(
             command,
             capture_output=True,
             text=True,
             timeout=timeout + 10,
             env=self._system_command_env(),
+            check=False,
         )
+
         if result.returncode != 0:
-            raise RuntimeError(result.stderr.strip() or f"curl failed with exit code {result.returncode}")
+            raise RuntimeError(
+                result.stderr.strip()
+                or f"curl failed with exit code {result.returncode}"
+            )
+
         return json.loads(result.stdout)
 
     def _curl_download(
@@ -138,6 +205,14 @@ class Plugin:
         total_bytes: int | None = None,
         progress_callback=None,
     ) -> None:
+        """
+        Download a file with curl, polling for progress and checking for cancel.
+
+        Runs curl as a subprocess (same SSL reasoning as _curl_json), then
+        polls the output file size every ~10s to report progress back to the
+        frontend. The install cancel event is checked each loop iteration so
+        curl can be killed mid-download if the user backs out.
+        """
         command = [
             "curl",
             "-LfsS",
@@ -160,6 +235,7 @@ class Plugin:
             "-o",
             str(destination),
         ]
+
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -167,6 +243,7 @@ class Plugin:
             text=True,
             env=self._system_command_env(),
         )
+
         with self._proton_ge_install_lock:
             self._proton_ge_install_process = process
         start_time = time.time()
@@ -182,17 +259,29 @@ class Plugin:
                     except subprocess.TimeoutExpired:
                         process.kill()
                         stdout, stderr = process.communicate(timeout=5)
-                    raise RuntimeError((stderr or stdout or "Install cancelled").strip() or "Install cancelled")
+                    msg = (stderr or stdout or "Install cancelled").strip()
+                    raise RuntimeError(msg or "Install cancelled")
+
                 returncode = process.poll()
                 now = time.time()
+
                 if now - last_log_time >= 10:
-                    current_size = destination.stat().st_size if destination.exists() else 0
-                    growth = current_size - max(last_size, 0) if last_size >= 0 else current_size
+                    current_size = (
+                        destination.stat().st_size if destination.exists() else 0
+                    )
+                    growth = (
+                        current_size - max(last_size, 0)
+                        if last_size >= 0
+                        else current_size
+                    )
                     decky.logger.info(
                         "curl download progress"
-                        f" | destination={destination.name} bytes={current_size} growth_since_last={growth}"
+                        f" | destination={destination.name}"
+                        f" bytes={current_size}"
+                        f" growth_since_last={growth}"
                         f" elapsed={int(now - start_time)}s"
                     )
+
                     if progress_callback:
                         fraction = None
                         if total_bytes and total_bytes > 0:
@@ -203,10 +292,19 @@ class Plugin:
 
                 if returncode is not None:
                     stdout, stderr = process.communicate(timeout=5)
-                    if returncode != 0 or not destination.exists() or destination.stat().st_size <= 0:
+                    if (
+                        returncode != 0
+                        or not destination.exists()
+                        or destination.stat().st_size <= 0
+                    ):
                         raise RuntimeError(
-                            (stderr or stdout or f"curl failed with exit code {returncode}").strip()
+                            (
+                                stderr
+                                or stdout
+                                or f"curl failed with exit code {returncode}"
+                            ).strip()
                         )
+
                     if progress_callback:
                         current_size = destination.stat().st_size
                         fraction = None
@@ -215,11 +313,16 @@ class Plugin:
                         progress_callback(current_size, total_bytes, fraction)
                     return
 
+                # Account for timeout
                 if now - start_time > timeout + 30:
                     process.kill()
                     stdout, stderr = process.communicate(timeout=5)
                     raise RuntimeError(
-                        (stderr or stdout or f"curl exceeded timeout after {timeout + 30}s").strip()
+                        (
+                            stderr
+                            or stdout
+                            or f"curl exceeded timeout after {timeout + 30}s"
+                        ).strip()
                     )
 
                 time.sleep(1)
@@ -229,28 +332,43 @@ class Plugin:
                     self._proton_ge_install_process = None
 
     def _proton_ge_latest_metadata_path(self) -> Path:
+        # Handle our psuedo Proton-GE-Latest
         return self._compat_tools_cache_dir() / "proton-ge-latest.json"
 
-    def _write_proton_ge_latest_metadata(self, tag_name: str, directory_name: str) -> None:
+    def _write_proton_ge_latest_metadata(
+        self, tag_name: str, directory_name: str
+    ) -> None:
         metadata_path = self._proton_ge_latest_metadata_path()
-        metadata_path.write_text(json.dumps({
-            "tag_name": tag_name,
-            "directory_name": directory_name,
-            "updated_at": int(time.time()),
-        }))
+        metadata_path.write_text(
+            json.dumps(
+                {
+                    "tag_name": tag_name,
+                    "directory_name": directory_name,
+                    "updated_at": int(time.time()),
+                }
+            )
+        )
 
-    def _clear_proton_ge_latest_metadata(self, directory_name: str | None = None) -> None:
+    def _clear_proton_ge_latest_metadata(
+        self, directory_name: str | None = None
+    ) -> None:
         metadata_path = self._proton_ge_latest_metadata_path()
         if not metadata_path.exists():
             return
+
+        # if no directory specified, just nuke the whole file
         if directory_name is None:
             metadata_path.unlink(missing_ok=True)
             return
+
         try:
             payload = json.loads(metadata_path.read_text())
-        except Exception:
+        except (json.JSONDecodeError, OSError) as e:
+            decky.logger.debug(f"Clearing Proton-GE-Latest meta data exception: {e}")
             metadata_path.unlink(missing_ok=True)
             return
+
+        # only clear if this metadata actually points at the dir being removed
         if payload.get("directory_name") == directory_name:
             metadata_path.unlink(missing_ok=True)
 
@@ -258,12 +376,15 @@ class Plugin:
         metadata_path = self._proton_ge_latest_metadata_path()
         if not metadata_path.exists():
             return None
+
         try:
             payload = json.loads(metadata_path.read_text())
-        except Exception:
+        except (json.JSONDecodeError, OSError):
             return None
+
         if not isinstance(payload, dict):
             return None
+
         return payload
 
     def _set_proton_ge_install_status(
@@ -280,25 +401,53 @@ class Plugin:
         started_at: int | None = None,
         finished_at: int | None = None,
     ) -> None:
+        """
+        Update the install status dict that the frontend polls.
+
+        Fields that aren't explicitly passed keep their previous value while
+        state is 'running', and reset to None on terminal states. This lets
+        the progress bar stay filled during extract even though it only tracks
+        download bytes.
+        """
         with self._proton_ge_install_lock:
             current_started_at = self._proton_ge_install_status.get("started_at")
             current_stage = self._proton_ge_install_status.get("stage")
-            current_downloaded_bytes = self._proton_ge_install_status.get("downloaded_bytes")
+            current_downloaded_bytes = self._proton_ge_install_status.get(
+                "downloaded_bytes"
+            )
             current_total_bytes = self._proton_ge_install_status.get("total_bytes")
-            current_progress_fraction = self._proton_ge_install_status.get("progress_fraction")
+            current_progress_fraction = self._proton_ge_install_status.get(
+                "progress_fraction"
+            )
             self._proton_ge_install_status = {
                 "state": state,
                 "tag_name": tag_name,
                 "message": message,
-                "stage": stage if stage is not None else (current_stage if state == "running" else None),
+                "stage": (
+                    stage
+                    if stage is not None
+                    else (current_stage if state == "running" else None)
+                ),
                 "downloaded_bytes": (
-                    downloaded_bytes if downloaded_bytes is not None else (current_downloaded_bytes if state == "running" else None)
+                    downloaded_bytes
+                    if downloaded_bytes is not None
+                    else (current_downloaded_bytes if state == "running" else None)
                 ),
-                "total_bytes": total_bytes if total_bytes is not None else (current_total_bytes if state == "running" else None),
+                "total_bytes": (
+                    total_bytes
+                    if total_bytes is not None
+                    else (current_total_bytes if state == "running" else None)
+                ),
                 "progress_fraction": (
-                    progress_fraction if progress_fraction is not None else (current_progress_fraction if state == "running" else None)
+                    progress_fraction
+                    if progress_fraction is not None
+                    else (current_progress_fraction if state == "running" else None)
                 ),
-                "started_at": started_at if started_at is not None else (current_started_at if state == "running" else None),
+                "started_at": (
+                    started_at
+                    if started_at is not None
+                    else (current_started_at if state == "running" else None)
+                ),
                 "finished_at": finished_at,
                 "install_as_latest": install_as_latest,
             }
@@ -319,8 +468,18 @@ class Plugin:
         destination_name: str | None = None,
         replace_existing: bool = False,
     ) -> dict:
+        """Move an extracted compat tool into compatibilitytools.d.
+
+        Most GE archives extract to a single top-level directory (e.g.
+        'GE-Proton9-20/'). If the archive is flat (no subdirectory), we
+        infer a directory name from the archive filename and wrap the
+        loose files into it. destination_name overrides the final folder
+        name, used for the 'Proton-GE-Latest' rolling slot.
+        """
         extracted_entries = [entry for entry in extract_dir.iterdir()]
-        source_dir = next((entry for entry in extracted_entries if entry.is_dir()), None)
+        source_dir = next(
+            (entry for entry in extracted_entries if entry.is_dir()), None
+        )
         if source_dir is None:
             inferred_name = Path(archive_label).name
             for suffix in [".tar.gz", ".tar.xz", ".tar.bz2", ".tgz", ".zip", ".tar"]:
@@ -337,17 +496,29 @@ class Plugin:
             if replace_existing:
                 shutil.rmtree(destination)
             else:
-                return {"success": True, "already_installed": True, "message": f"{destination.name} is already installed."}
+                return {
+                    "success": True,
+                    "already_installed": True,
+                    "message": f"{destination.name} is already installed.",
+                }
 
         shutil.move(str(source_dir), str(destination))
-        return {"success": True, "message": f"Installed {destination.name}.{self.COMPAT_TOOL_RESTART_HINT}"}
-
-    # ─── Logging ──────────────────────────────────────────────────────────────
+        return {
+            "success": True,
+            "message": f"Installed {destination.name}.{self.COMPAT_TOOL_RESTART_HINT}",
+        }
 
     def _sync_set_log_level(self, level: str) -> bool:
-        """Synchronous helper used by tests and the async callable."""
-        valid = {"DEBUG": logging.DEBUG, "INFO": logging.INFO,
-                 "WARNING": logging.WARNING, "ERROR": logging.ERROR}
+        """Set the log level on decky.logger and toggle the debug file handler.
+
+        Sync version so tests can call it directly without asyncio.
+        """
+        valid = {
+            "DEBUG": logging.DEBUG,
+            "INFO": logging.INFO,
+            "WARNING": logging.WARNING,
+            "ERROR": logging.ERROR,
+        }
         if level not in valid:
             return False
         numeric = valid[level]
@@ -356,51 +527,64 @@ class Plugin:
         if numeric == logging.DEBUG:
             self._enable_debug_log()
             decky.logger.info(
-                f"Log level changed from {previous_level} to DEBUG; verbose frontend/backend logging enabled"
+                f"Log level changed from {previous_level} to DEBUG;"
+                " verbose frontend/backend logging enabled"
             )
         else:
             decky.logger.info(
-                f"Log level changed from {previous_level} to {level}; verbose debug logging disabled"
+                f"Log level changed from {previous_level} to {level};"
+                " verbose debug logging disabled"
             )
             self._disable_debug_log()
         return True
 
     def _enable_debug_log(self) -> None:
-        if hasattr(self, '_debug_handler') and self._debug_handler is not None:
+        if hasattr(self, "_debug_handler") and self._debug_handler is not None:
             return
-        debug_path = os.path.join(decky.DECKY_PLUGIN_LOG_DIR, 'plugin-debug.log')
+
+        debug_path = os.path.join(decky.DECKY_PLUGIN_LOG_DIR, "plugin-debug.log")
         handler = logging.handlers.RotatingFileHandler(
             debug_path, maxBytes=20 * 1024 * 1024, backupCount=3
         )
         handler.setLevel(logging.DEBUG)
-        handler.setFormatter(logging.Formatter(
-            "[%(asctime)s] [%(levelname)s] %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        ))
+        handler.setFormatter(
+            logging.Formatter(
+                "[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+            )
+        )
+
         decky.logger.addHandler(handler)
         self._debug_handler = handler
         decky.logger.debug("Debug log enabled")
 
     def _disable_debug_log(self) -> None:
-        if not hasattr(self, '_debug_handler') or self._debug_handler is None:
+        if not hasattr(self, "_debug_handler") or self._debug_handler is None:
             return
         decky.logger.removeHandler(self._debug_handler)
         self._debug_handler.close()
         self._debug_handler = None
 
     async def set_log_level(self, level: str) -> bool:
+        "Set log level"
         return self._sync_set_log_level(level)
 
     async def get_log_contents(self) -> str:
+        """
+        Grab the tail of each log file and stitch them together.
+
+        The frontend LogViewer polls this every few seconds. Cap it at
+        200 lines per file so it doesnt send a ton of text over the
+        callable bridge.
+        """
         log_paths = [
             decky.DECKY_PLUGIN_LOG,
-            os.path.join(decky.DECKY_PLUGIN_LOG_DIR, 'plugin-debug.log'),
+            os.path.join(decky.DECKY_PLUGIN_LOG_DIR, "plugin-debug.log"),
         ]
         chunks: list[str] = []
 
         for path in log_paths:
             try:
-                with open(path, "r") as f:
+                with open(path, "r", encoding="utf-8") as f:
                     lines = f.readlines()
                 if lines:
                     chunks.append(f"===== {os.path.basename(path)} =====\n")
@@ -410,13 +594,23 @@ class Plugin:
 
         return "\n".join(chunks)
 
-    async def log_frontend_event(self, level: str, message: str, context: dict | None = None) -> bool:
+    async def log_frontend_event(
+        self, level: str, message: str, context: dict | None = None
+    ) -> bool:
+        """
+        Let the frontend write to the backend log file.
+
+        The React side calls this via @decky/api callable so frontend
+        events show up in the same log stream as backend events.
+        Context dict gets JSON-serialized and tacked on as a suffix.
+        """
         valid = {
             "DEBUG": logging.DEBUG,
             "INFO": logging.INFO,
             "WARNING": logging.WARNING,
             "ERROR": logging.ERROR,
         }
+
         numeric = valid.get(level.upper())
         if numeric is None:
             return False
@@ -432,77 +626,85 @@ class Plugin:
         return True
 
     async def get_plugin_version(self) -> str:
+        "Snag plugin version"
         return getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
 
-    # ─── ProtonDB System Info ────────────────────────────────────────────────
-
     async def get_protondb_systeminfo(self) -> str:
-        """Generate a Steam System Information block for ProtonDB submissions."""
+        """Build the 'Steam System Information' text block that ProtonDB wants."""
         try:
-            import importlib.util
-            spec = importlib.util.spec_from_file_location(
-                "protondb_systeminfo",
-                os.path.join(os.path.dirname(__file__), "protondb_systeminfo.py"),
-            )
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            return mod.generate_system_info(home=decky.DECKY_USER_HOME)
-        except Exception as e:
+            return generate_system_info(home=decky.DECKY_USER_HOME)
+        except (OSError, ValueError, subprocess.SubprocessError) as e:
             decky.logger.error(f"Failed to generate ProtonDB system info: {e}")
             return f"Error generating system info: {e}"
 
-    # ─── Game Guard ───────────────────────────────────────────────────────────
-
     async def is_game_running(self) -> bool:
-        """Returns True if any Steam game process is detected via /proc scan."""
+        """Check if a Steam game is running by grepping for SteamLaunch processes"""
         try:
             result = subprocess.run(
                 ["pgrep", "-f", "SteamLaunch"],
-                capture_output=True, text=True, timeout=3
+                capture_output=True,
+                text=True,
+                timeout=3,
+                check=False,
             )
             return result.returncode == 0
-        except Exception as e:
+        except (subprocess.SubprocessError, OSError) as e:
             decky.logger.warning(f"is_game_running check failed: {e}")
             return False
 
-    # ─── System Detection ─────────────────────────────────────────────────────
+    # ─── System Detection ────────────────────────────────────────────────
 
     async def get_system_info(self) -> dict:
+        """
+        Detect hardware and OS info for the frontend.
+
+        Each field is read independently so one failing detector doesn't
+        take down the whole thing. GPU comes back as a (name, vendor)
+        tuple since the frontend needs both for filtering reports.
+        """
         info = {
-            'cpu': None, 'ram_gb': None, 'gpu': None, 'gpu_vendor': None,
-            'driver_version': None, 'kernel': None, 'distro': None, 'proton_custom': None
+            "cpu": None,
+            "ram_gb": None,
+            "gpu": None,
+            "gpu_vendor": None,
+            "driver_version": None,
+            "kernel": None,
+            "distro": None,
+            "proton_custom": None,
         }
         for field, fn in [
-            ('cpu',            self._read_cpu),
-            ('ram_gb',         self._read_ram_gb),
-            ('kernel',         self._read_kernel),
-            ('distro',         self._read_distro),
-            ('driver_version', self._read_driver_version),
-            ('proton_custom',  self._read_custom_proton),
+            ("cpu", self._read_cpu),
+            ("ram_gb", self._read_ram_gb),
+            ("kernel", self._read_kernel),
+            ("distro", self._read_distro),
+            ("driver_version", self._read_driver_version),
+            ("proton_custom", self._read_custom_proton),
         ]:
             try:
                 info[field] = fn()
-            except Exception as e:
+            except (OSError, subprocess.SubprocessError, ValueError) as e:
                 decky.logger.warning(f"System detection failed for {field}: {e}")
 
         try:
             gpu, vendor = self._read_gpu()
-            info['gpu'] = gpu
-            info['gpu_vendor'] = vendor
-        except Exception as e:
+            info["gpu"] = gpu
+            info["gpu_vendor"] = vendor
+        except (OSError, subprocess.SubprocessError) as e:
             decky.logger.warning(f"GPU detection failed: {e}")
 
         return info
 
     def _read_cpu(self) -> str | None:
-        with open("/proc/cpuinfo", "r") as f:
+        """Pull the CPU model name from /proc/cpuinfo"""
+        with open("/proc/cpuinfo", "r", encoding="utf-8") as f:
             for line in f:
                 if line.startswith("model name"):
                     return line.split(":", 1)[1].strip()
         return None
 
     def _read_ram_gb(self) -> int | None:
-        with open("/proc/meminfo", "r") as f:
+        """Read total RAM in GB from /proc/meminfo"""
+        with open("/proc/meminfo", "r", encoding="utf-8") as f:
             for line in f:
                 if line.startswith("MemTotal"):
                     kb = int(line.split()[1])
@@ -510,55 +712,73 @@ class Plugin:
         return None
 
     def _read_gpu(self) -> tuple[str | None, str | None]:
+        """Parse lspci output for the graphics card name and vendor.
+
+        lspci lists all PCI devices. The GPU shows up as 'VGA compatible
+        controller' on most systems, but discrete cards sometimes show
+        as '3D controller' or 'display controller' instead.
+        """
         result = subprocess.run(
             ["lspci"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
         )
         if result.returncode != 0:
             return None, None
         for line in result.stdout.splitlines():
             lower = line.lower()
-            if any(k in lower for k in ['vga', '3d controller', 'display controller']):
+            if any(k in lower for k in ["vga", "3d controller", "display controller"]):
                 name = line.split(":", 2)[-1].strip()
                 return name, self._detect_gpu_vendor(name)
         return None, None
 
     def _detect_gpu_vendor(self, gpu_string: str) -> str:
+        """Match a GPU name string to a vendor tag (nvidia, amd, intel, other)"""
         lower = gpu_string.lower()
-        if any(k in lower for k in ['nvidia', 'geforce', 'rtx', 'gtx', 'quadro']):
-            return 'nvidia'
-        if any(k in lower for k in ['amd', 'radeon', 'rx ', 'vega']):
-            return 'amd'
-        if any(k in lower for k in ['intel', 'arc', 'iris', 'uhd']):
-            return 'intel'
-        return 'other'
+        if any(k in lower for k in ["nvidia", "geforce", "rtx", "gtx", "quadro"]):
+            return "nvidia"
+        if any(k in lower for k in ["amd", "radeon", "rx ", "vega"]):
+            return "amd"
+        if any(k in lower for k in ["intel", "arc", "iris", "uhd"]):
+            return "intel"
+        return "other"
 
     def _read_driver_version(self) -> str | None:
         try:
             result = subprocess.run(
                 ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"],
-                capture_output=True, text=True, timeout=5
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
             )
             if result.returncode == 0:
                 return result.stdout.strip()
         except FileNotFoundError:
             pass
         try:
-            import glob
             for path in glob.glob("/sys/class/drm/card*/device/driver/module/version"):
-                with open(path) as f:
+                with open(path, encoding="utf-8") as f:
                     return f.read().strip()
         except OSError as e:
             decky.logger.warning(f"DRM driver version read failed: {e}")
         return None
 
     def _read_kernel(self) -> str | None:
-        result = subprocess.run(["uname", "-r"], capture_output=True, text=True, timeout=3)
+        result = subprocess.run(
+            ["uname", "-r"],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
         return result.stdout.strip() if result.returncode == 0 else None
 
     def _read_distro(self) -> str | None:
         try:
-            with open("/etc/os-release") as f:
+            with open("/etc/os-release", encoding="utf-8") as f:
                 for line in f:
                     if line.startswith("PRETTY_NAME="):
                         return line.split("=", 1)[1].strip().strip('"')
@@ -567,19 +787,35 @@ class Plugin:
         return None
 
     def _read_custom_proton(self) -> str | None:
-        compat_dir = os.path.join(decky.DECKY_USER_HOME, ".steam", "root", "compatibilitytools.d")
+        compat_dir = os.path.join(
+            decky.DECKY_USER_HOME, ".steam", "root", "compatibilitytools.d"
+        )
         if not os.path.isdir(compat_dir):
             return None
-        entries = [d for d in os.listdir(compat_dir)
-                   if os.path.isdir(os.path.join(compat_dir, d))]
-        return entries[0] if len(entries) == 1 else (", ".join(entries) if entries else None)
+        entries = [
+            d
+            for d in os.listdir(compat_dir)
+            if os.path.isdir(os.path.join(compat_dir, d))
+        ]
+        return (
+            entries[0]
+            if len(entries) == 1
+            else (", ".join(entries) if entries else None)
+        )
 
-    # ─── Compatibility Tools / Proton-GE ─────────────────────────────────────
-    # Compat tool detection and management patterns inspired by
-    # decky-wine-cellar by FlashyReese (MIT):
-    # https://github.com/FlashyReese/decky-wine-cellar
+    ################################################################
+    # Compatibility Tools / Proton-GE
+    ################################################################
 
     def _find_steam_root(self) -> Path | None:
+        """
+        Find the real Steam install dir by looking for config.vdf + libraryfolders.vdf.
+
+        Steam can live in a bunch of places depending on whether you're on
+        SteamOS, a Flatpak install, or a normal desktop Linux setup. Check
+        all the known candidates and pick the first one that has both config
+        files present.
+        """
         possible_roots = [
             ".local/share/Steam",
             ".steam/root",
@@ -587,23 +823,51 @@ class Plugin:
             ".steam/debian-installation",
             ".var/app/com.valvesoftware.Steam/data/Steam",
         ]
+
         user_home = Path(decky.DECKY_USER_HOME)
         for root in possible_roots:
             candidate = user_home / root
             config_dir = candidate / "config"
-            if (config_dir / "config.vdf").exists() and (config_dir / "libraryfolders.vdf").exists():
+            if (config_dir / "config.vdf").exists() and (
+                config_dir / "libraryfolders.vdf"
+            ).exists():
                 return candidate
+
         return None
 
     def _compat_tools_dirs(self) -> list[Path]:
+        """
+        All compatibilitytools.d dirs, deduped.
+
+        Creates any compat dir that doesn't exist. Uses the detected
+        Steam root first, falls back to other known paths.
+        """
         detected_root = self._find_steam_root()
         candidates = [detected_root / "compatibilitytools.d"] if detected_root else []
-        candidates.extend([
-            Path(decky.DECKY_USER_HOME) / ".steam" / "root" / "compatibilitytools.d",
-            Path(decky.DECKY_USER_HOME) / ".steam" / "steam" / "compatibilitytools.d",
-            Path(decky.DECKY_USER_HOME) / ".local" / "share" / "Steam" / "compatibilitytools.d",
-            Path(decky.DECKY_USER_HOME) / ".var" / "app" / "com.valvesoftware.Steam" / "data" / "Steam" / "compatibilitytools.d",
-        ])
+        candidates.extend(
+            [
+                Path(decky.DECKY_USER_HOME)
+                / ".steam"
+                / "root"
+                / "compatibilitytools.d",
+                Path(decky.DECKY_USER_HOME)
+                / ".steam"
+                / "steam"
+                / "compatibilitytools.d",
+                Path(decky.DECKY_USER_HOME)
+                / ".local"
+                / "share"
+                / "Steam"
+                / "compatibilitytools.d",
+                Path(decky.DECKY_USER_HOME)
+                / ".var"
+                / "app"
+                / "com.valvesoftware.Steam"
+                / "data"
+                / "Steam"
+                / "compatibilitytools.d",
+            ]
+        )
         seen: set[str] = set()
         result: list[Path] = []
         for candidate in candidates:
@@ -627,10 +891,12 @@ class Plugin:
         return self._compat_tools_cache_dir() / "proton-ge-releases-cache.json"
 
     def _normalize_proton_ge_tag(self, version: str) -> str | None:
-        """Normalize a version string to a GE-Proton tag name, or None if not GE-Proton.
+        """
+        Try to turn a version string into a GE-Proton tag name.
 
-        Only versions that are clearly GE-Proton are recognized. Valve Proton
-        versions like "10.0-3" or "Proton 9.0-4" return None (not managed).
+        Returns None if the string doesn't look like GE-Proton. Valve
+        Proton versions like '10.0-3' or 'Proton 9.0-4' aren't managed
+        by us so they get None too.
         """
         cleaned = version.strip()
         if not cleaned:
@@ -642,7 +908,8 @@ class Plugin:
         # Require "GE" somewhere in the string to distinguish from Valve Proton
         if "ge" not in cleaned.lower():
             decky.logger.debug(
-                f"_normalize_proton_ge_tag: '{version}' has no GE indicator, treating as Valve Proton"
+                f"_normalize_proton_ge_tag: '{version}'"
+                " has no GE indicator, treating as Valve Proton"
             )
             return None
 
@@ -652,6 +919,15 @@ class Plugin:
         return f"GE-Proton{match.group(1)}"
 
     def _read_vdf_value(self, text: str, key: str) -> str | None:
+        """
+        Pull a value from Valve's VDF (KeyValues) format.
+
+        VDF files look like: "key"  "value" with optional whitespace
+        between them. This is a quick regex grab instead of a full parser
+        since all the compat tool .vdf files are simple flat key-value pairs.
+
+        See: https://developer.valvesoftware.com/wiki/KeyValues
+        """
         match = re.search(rf'"{re.escape(key)}"\s+"([^"]+)"', text)
         return match.group(1).strip() if match else None
 
@@ -682,6 +958,13 @@ class Plugin:
         return any("ge-proton" in field.lower() for field in fields)
 
     def _simplify_release(self, release: dict) -> dict | None:
+        """
+        Pull just the fields needed from a GitHub release.
+
+        Skips drafts and prereleases. Looks for a .tar.gz or .tar.xz
+        asset that starts with 'GE-Proton', since that's the actual
+        archive we'd download.
+        """
         if release.get("draft") or release.get("prerelease"):
             return None
 
@@ -712,15 +995,26 @@ class Plugin:
         }
 
     def _fetch_proton_ge_releases(self) -> list[dict]:
+        """
+        Fetch GE-Proton releases from GitHub with a 6h disk cache.
+
+        Tries curl first (see _curl_json for why), falls back to Python's
+        urllib if curl fails. The cache lives in ~/.config/decky-proton-pulse/
+        so we're not hammering the GitHub API every time someone opens the
+        compat tools tab.
+        """
         cache_path = self._proton_ge_cache_path()
         now = int(time.time())
 
         if cache_path.exists():
             try:
                 cached = json.loads(cache_path.read_text())
-                if now - int(cached.get("fetched_at", 0)) < self.PROTON_GE_CACHE_TTL_SECONDS:
+                if (
+                    now - int(cached.get("fetched_at", 0))
+                    < self.PROTON_GE_CACHE_TTL_SECONDS
+                ):
                     return cached.get("releases", [])
-            except Exception as err:
+            except (json.JSONDecodeError, OSError, ValueError) as err:
                 decky.logger.warning(f"Failed to read Proton-GE cache: {err}")
 
         # Keep the GitHub path curl-first for now. The Deck has shown two separate
@@ -741,8 +1035,11 @@ class Plugin:
                 ],
                 timeout=25,
             )
-        except Exception as err:
-            decky.logger.warning(f"curl fetch for Proton-GE releases failed, trying Python fallback: {err}")
+        except (subprocess.SubprocessError, OSError, json.JSONDecodeError) as err:
+            decky.logger.warning(
+                "curl fetch for Proton-GE releases failed,"
+                f" trying Python fallback: {err}"
+            )
             request = Request(
                 self.PROTON_GE_REPO_API,
                 headers={
@@ -753,16 +1050,30 @@ class Plugin:
             with urlopen(request, timeout=20) as response:
                 releases = json.loads(response.read().decode("utf-8"))
 
-        simplified = [item for item in (self._simplify_release(release) for release in releases) if item]
+        simplified = [
+            item
+            for item in (self._simplify_release(release) for release in releases)
+            if item
+        ]
         cache_path.write_text(json.dumps({"fetched_at": now, "releases": simplified}))
         return simplified
 
     def _list_installed_compatibility_tools(self) -> list[dict]:
+        """Find all installed Proton builds on this system.
+
+        Checks two kinds of locations:
+        - compatibilitytools.d folders (where custom tools like GE-Proton live).
+          These have a .vdf file inside that tells us the display name.
+        - Steam's steamapps/common/ folder (where Valve's official Proton
+          builds get installed). For those, just use the directory name.
+        """
         tools: list[dict] = []
         seen_dirs: set[str] = set()
         latest_metadata = self._read_proton_ge_latest_metadata()
         for compat_dir in self._compat_tools_dirs():
-            for entry in sorted(compat_dir.iterdir(), key=lambda path: path.name.lower()):
+            for entry in sorted(
+                compat_dir.iterdir(), key=lambda path: path.name.lower()
+            ):
                 if not entry.is_dir():
                     continue
                 if entry.name in seen_dirs:
@@ -776,10 +1087,19 @@ class Plugin:
                 if vdf_path.exists():
                     try:
                         vdf_text = vdf_path.read_text()
-                        display_name = self._read_vdf_value(vdf_text, "display_name") or display_name
-                        internal_name = self._read_vdf_value(vdf_text, "internal_name") or internal_name
-                    except Exception as err:
-                        decky.logger.warning(f"Failed to read compatibilitytool.vdf for {entry.name}: {err}")
+                        display_name = (
+                            self._read_vdf_value(vdf_text, "display_name")
+                            or display_name
+                        )
+                        internal_name = (
+                            self._read_vdf_value(vdf_text, "internal_name")
+                            or internal_name
+                        )
+                    except OSError as err:
+                        decky.logger.warning(
+                            f"Failed to read compatibilitytool.vdf"
+                            f" for {entry.name}: {err}"
+                        )
 
                 tools.append(
                     {
@@ -791,8 +1111,16 @@ class Plugin:
                         "managed_slot": (
                             "latest"
                             if entry.name == self.PROTON_GE_LATEST_SLOT_NAME
-                            or (latest_metadata and latest_metadata.get("directory_name") == entry.name)
-                            else "versioned" if "ge-proton" in (display_name + internal_name + entry.name).lower() else None
+                            or (
+                                latest_metadata
+                                and latest_metadata.get("directory_name") == entry.name
+                            )
+                            else (
+                                "versioned"
+                                if "ge-proton"
+                                in (display_name + internal_name + entry.name).lower()
+                                else None
+                            )
                         ),
                         "latest_tag": (
                             latest_metadata.get("tag_name")
@@ -807,17 +1135,43 @@ class Plugin:
                 )
 
         detected_root = self._find_steam_root()
-        steam_common_dirs = [detected_root / "steamapps" / "common"] if detected_root else []
-        steam_common_dirs.extend([
-            Path(decky.DECKY_USER_HOME) / ".steam" / "root" / "steamapps" / "common",
-            Path(decky.DECKY_USER_HOME) / ".steam" / "steam" / "steamapps" / "common",
-            Path(decky.DECKY_USER_HOME) / ".local" / "share" / "Steam" / "steamapps" / "common",
-            Path(decky.DECKY_USER_HOME) / ".var" / "app" / "com.valvesoftware.Steam" / "data" / "Steam" / "steamapps" / "common",
-        ])
+        steam_common_dirs = (
+            [detected_root / "steamapps" / "common"] if detected_root else []
+        )
+        steam_common_dirs.extend(
+            [
+                Path(decky.DECKY_USER_HOME)
+                / ".steam"
+                / "root"
+                / "steamapps"
+                / "common",
+                Path(decky.DECKY_USER_HOME)
+                / ".steam"
+                / "steam"
+                / "steamapps"
+                / "common",
+                Path(decky.DECKY_USER_HOME)
+                / ".local"
+                / "share"
+                / "Steam"
+                / "steamapps"
+                / "common",
+                Path(decky.DECKY_USER_HOME)
+                / ".var"
+                / "app"
+                / "com.valvesoftware.Steam"
+                / "data"
+                / "Steam"
+                / "steamapps"
+                / "common",
+            ]
+        )
         for common_dir in steam_common_dirs:
             if not common_dir.is_dir():
                 continue
-            for entry in sorted(common_dir.iterdir(), key=lambda path: path.name.lower()):
+            for entry in sorted(
+                common_dir.iterdir(), key=lambda path: path.name.lower()
+            ):
                 if not entry.is_dir():
                     continue
                 name = entry.name
@@ -840,6 +1194,7 @@ class Plugin:
         return tools
 
     async def list_installed_compatibility_tools(self) -> list[dict]:
+        "Get a list of the compat tools"
         return self._list_installed_compatibility_tools()
 
     def _get_proton_ge_releases_sync(self, force_refresh: bool = False) -> list[dict]:
@@ -849,32 +1204,47 @@ class Plugin:
 
         try:
             return self._fetch_proton_ge_releases()
-        except Exception as err:
+        except (
+            OSError,
+            subprocess.SubprocessError,
+            json.JSONDecodeError,
+            ValueError,
+        ) as err:
             decky.logger.error(f"Failed to fetch Proton-GE releases: {err}")
             if cache_path.exists():
                 try:
                     cached = json.loads(cache_path.read_text())
                     return cached.get("releases", [])
-                except Exception:
+                except (json.JSONDecodeError, OSError):
                     pass
             return []
 
     async def get_proton_ge_releases(self, force_refresh: bool = False) -> list[dict]:
+        "Fetch proton ge releases"
         return self._get_proton_ge_releases_sync(force_refresh)
 
     async def get_proton_ge_manager_state(self, force_refresh: bool = False) -> dict:
+        """
+        Track the manager state for Proton GE etc... and tag each element
+        """
+
         releases = await self.get_proton_ge_releases(force_refresh)
         installed = self._list_installed_compatibility_tools()
         current_release = releases[0] if releases else None
         current_installed = bool(
             current_release
-            and any(self._installed_tool_matches_version(tool, current_release["tag_name"]) for tool in installed)
+            and any(
+                self._installed_tool_matches_version(tool, current_release["tag_name"])
+                for tool in installed
+            )
         )
         current_latest_slot_installed = bool(
             current_release
             and any(
                 tool.get("managed_slot") == "latest"
-                and self._installed_tool_matches_version(tool, current_release["tag_name"])
+                and self._installed_tool_matches_version(
+                    tool, current_release["tag_name"]
+                )
                 for tool in installed
             )
         )
@@ -888,6 +1258,12 @@ class Plugin:
         }
 
     async def check_proton_version_availability(self, version: str) -> dict:
+        """Figure out the status of a Proton version string.
+
+        Could be already installed, available to download from GE releases,
+        not a GE version at all (Valve Proton), or just not found. The
+        frontend uses this to decide whether to show an install button.
+        """
         normalized = self._normalize_proton_ge_tag(version)
         installed = self._list_installed_compatibility_tools()
 
@@ -932,13 +1308,16 @@ class Plugin:
                     f"'{closest_tool.get('display_name')}'"
                 )
             else:
-                decky.logger.info(f"  → no exact match; no close installed version found")
+                decky.logger.info(
+                    "  → no exact match; no close installed version found"
+                )
 
         releases = await self.get_proton_ge_releases(False)
-        release = next((item for item in releases if item.get("tag_name") == normalized), None)
+        release = next(
+            (item for item in releases if item.get("tag_name") == normalized), None
+        )
         decky.logger.info(
-            f"  → release_found={release is not None} "
-            f"release_count={len(releases)}"
+            f"  → release_found={release is not None} " f"release_count={len(releases)}"
         )
 
         return {
@@ -959,8 +1338,16 @@ class Plugin:
             ),
         }
 
-    def _find_closest_installed_tool(self, installed: list[dict], normalized: str) -> dict | None:
-        """Find the installed tool whose version is closest to the target."""
+    def _find_closest_installed_tool(
+        self, installed: list[dict], normalized: str
+    ) -> dict | None:
+        """When there's no exact version match, find whatever's closest.
+
+        Extracts major-minor numbers (e.g. GE-Proton9-20 -> 9, 20) and
+        scores each installed tool by how far off its numbers are. Major
+        version differences weigh 1000x more than minor ones so it wont
+        suggest GE-Proton8-1 when GE-Proton9-19 is sitting right there
+        """
         target = self._extract_version_parts(normalized)
         if not target:
             return None
@@ -971,7 +1358,9 @@ class Plugin:
             for field in ("internal_name", "directory_name", "display_name"):
                 parts = self._extract_version_parts(tool.get(field) or "")
                 if parts:
-                    distance = abs(parts[0] - target[0]) * 1000 + abs(parts[1] - target[1])
+                    distance = abs(parts[0] - target[0]) * 1000 + abs(
+                        parts[1] - target[1]
+                    )
                     if distance < best_distance:
                         best_distance = distance
                         best_tool = tool
@@ -980,6 +1369,7 @@ class Plugin:
 
     @staticmethod
     def _extract_version_parts(version: str) -> tuple[int, int] | None:
+        # Snag the bits from the Proton string to get the version
         match = re.search(r"(?:GE-?)?Proton(\d+)-(\d+)", version, re.IGNORECASE)
         if not match:
             match = re.search(r"(\d+)\.0-(\d+)", version)
@@ -987,25 +1377,45 @@ class Plugin:
             return None
         return (int(match.group(1)), int(match.group(2)))
 
-    def _install_proton_ge_sync(self, version: str | None = None, install_as_latest: bool = False) -> dict:
+    def _install_proton_ge_sync(
+        self, version: str | None = None, install_as_latest: bool = False
+    ) -> dict:
+        """The actual install logic that runs on the background thread.
+
+        Downloads the archive (curl first, Python urllib fallback), extracts
+        it to a temp dir, then moves it into compatibilitytools.d. Checks
+        for cancellation between each step to bail cleanly if needed.
+        """
         releases = self._get_proton_ge_releases_sync(False)
         release = None
 
         if version:
             normalized = self._normalize_proton_ge_tag(version)
-            release = next((item for item in releases if item.get("tag_name") == normalized), None)
+            release = next(
+                (item for item in releases if item.get("tag_name") == normalized), None
+            )
             if not release:
-                return {"success": False, "message": f"Could not find release for {version}.", "release": None}
+                return {
+                    "success": False,
+                    "message": f"Could not find release for {version}.",
+                    "release": None,
+                }
         else:
             release = releases[0] if releases else None
             normalized = release.get("tag_name") if release else None
 
         if not release or not normalized:
-            return {"success": False, "message": "No Proton-GE release is available right now.", "release": None}
+            return {
+                "success": False,
+                "message": "No Proton-GE release is available right now.",
+                "release": None,
+            }
 
         decky.logger.info(
             "Starting Proton-GE install sync"
-            f" | version={normalized} install_as_latest={install_as_latest} releases={len(releases)}"
+            f" | version={normalized}"
+            f" install_as_latest={install_as_latest}"
+            f" releases={len(releases)}"
         )
 
         installed = self._list_installed_compatibility_tools()
@@ -1013,19 +1423,34 @@ class Plugin:
             (tool for tool in installed if tool.get("managed_slot") == "latest"),
             None,
         )
-        if install_as_latest and existing_latest_slot and self._installed_tool_matches_version(existing_latest_slot, normalized):
+        if (
+            install_as_latest
+            and existing_latest_slot
+            and self._installed_tool_matches_version(existing_latest_slot, normalized)
+        ):
             return {
                 "success": True,
                 "already_installed": True,
                 "message": f"{self.PROTON_GE_LATEST_SLOT_NAME} already points to {normalized}.",
                 "release": release,
             }
-        if not install_as_latest and any(self._installed_tool_matches_version(tool, normalized) for tool in installed):
-            return {"success": True, "already_installed": True, "message": f"{normalized} is already installed.", "release": release}
+        if not install_as_latest and any(
+            self._installed_tool_matches_version(tool, normalized) for tool in installed
+        ):
+            return {
+                "success": True,
+                "already_installed": True,
+                "message": f"{normalized} is already installed.",
+                "release": release,
+            }
 
         download_url = release.get("download_url")
         if not download_url:
-            return {"success": False, "message": f"{normalized} did not expose a downloadable archive.", "release": release}
+            return {
+                "success": False,
+                "message": f"{normalized} did not expose a downloadable archive.",
+                "release": release,
+            }
 
         compat_dir = self._compat_tools_dir()
         decky.logger.info(
@@ -1033,7 +1458,9 @@ class Plugin:
             f" | version={normalized} asset={release.get('asset_name')} compat_dir={compat_dir}"
         )
         with tempfile.TemporaryDirectory(prefix="proton-pulse-install-") as tmp_dir:
-            archive_path = Path(tmp_dir) / (release.get("asset_name") or f"{normalized}.tar.gz")
+            archive_path = Path(tmp_dir) / (
+                release.get("asset_name") or f"{normalized}.tar.gz"
+            )
 
             try:
                 try:
@@ -1052,27 +1479,31 @@ class Plugin:
                         total_bytes=total_bytes,
                         progress_fraction=0.0 if total_bytes else None,
                     )
-                    self._curl_download(
-                        download_url,
-                        archive_path,
-                        timeout=900,
-                        total_bytes=total_bytes,
-                        progress_callback=lambda downloaded, total, fraction: self._set_proton_ge_install_status(
+
+                    def _dl_progress(downloaded, total, fraction):
+                        self._set_proton_ge_install_status(
                             state="running",
                             tag_name=normalized,
-                            message=f"Downloading {normalized}…",
+                            message=f"Downloading {normalized}...",
                             install_as_latest=install_as_latest,
                             stage="downloading",
                             downloaded_bytes=downloaded,
                             total_bytes=total,
                             progress_fraction=fraction,
-                        ),
+                        )
+
+                    self._curl_download(
+                        download_url,
+                        archive_path,
+                        timeout=900,
+                        total_bytes=total_bytes,
+                        progress_callback=_dl_progress,
                     )
                     decky.logger.info(
                         "Downloaded Proton-GE archive via curl"
                         f" | version={normalized} bytes={archive_path.stat().st_size}"
                     )
-                except Exception as err:
+                except (subprocess.SubprocessError, OSError) as err:
                     decky.logger.warning(
                         f"curl download for Proton-GE archive failed, trying Python fallback: {err}"
                     )
@@ -1091,13 +1522,20 @@ class Plugin:
                         total_bytes=total_bytes,
                         progress_fraction=0.0 if total_bytes else None,
                     )
-                    request = Request(download_url, headers={"User-Agent": "decky-proton-pulse"})
-                    with urlopen(request, timeout=180) as response, open(archive_path, "wb") as archive_file:
+                    request = Request(
+                        download_url, headers={"User-Agent": "decky-proton-pulse"}
+                    )
+                    with (
+                        urlopen(request, timeout=180) as response,
+                        open(archive_path, "wb") as archive_file,
+                    ):
                         shutil.copyfileobj(response, archive_file)
                     downloaded_size = archive_path.stat().st_size
                     fallback_fraction = None
                     if total_bytes and total_bytes > 0:
-                        fallback_fraction = max(0.0, min(1.0, downloaded_size / total_bytes))
+                        fallback_fraction = max(
+                            0.0, min(1.0, downloaded_size / total_bytes)
+                        )
                     self._set_proton_ge_install_status(
                         state="running",
                         tag_name=normalized,
@@ -1116,14 +1554,20 @@ class Plugin:
                 extract_dir = Path(tmp_dir) / "extract"
                 extract_dir.mkdir(parents=True, exist_ok=True)
                 if self._proton_ge_cancel_requested():
-                    return {"success": False, "message": f"Install cancelled for {normalized}.", "release": release}
+                    return {
+                        "success": False,
+                        "message": f"Install cancelled for {normalized}.",
+                        "release": release,
+                    }
                 self._set_proton_ge_install_status(
                     state="running",
                     tag_name=normalized,
                     message=f"Extracting {normalized}…",
                     install_as_latest=install_as_latest,
                     stage="extracting",
-                    downloaded_bytes=archive_path.stat().st_size if archive_path.exists() else None,
+                    downloaded_bytes=(
+                        archive_path.stat().st_size if archive_path.exists() else None
+                    ),
                     total_bytes=release.get("asset_size"),
                     progress_fraction=1.0 if release.get("asset_size") else None,
                 )
@@ -1138,10 +1582,18 @@ class Plugin:
                     f" | version={normalized} entries={extracted_entries}"
                 )
                 if self._proton_ge_cancel_requested():
-                    return {"success": False, "message": f"Install cancelled for {normalized}.", "release": release}
+                    return {
+                        "success": False,
+                        "message": f"Install cancelled for {normalized}.",
+                        "release": release,
+                    }
+                dest_name = (
+                    self.PROTON_GE_LATEST_SLOT_NAME if install_as_latest else normalized
+                )
                 decky.logger.info(
                     "Finalizing Proton-GE compatibility tool"
-                    f" | version={normalized} destination_name={self.PROTON_GE_LATEST_SLOT_NAME if install_as_latest else normalized}"
+                    f" | version={normalized}"
+                    f" destination_name={dest_name}"
                 )
                 self._set_proton_ge_install_status(
                     state="running",
@@ -1149,7 +1601,9 @@ class Plugin:
                     message=f"Finalizing {normalized}…",
                     install_as_latest=install_as_latest,
                     stage="finalizing",
-                    downloaded_bytes=archive_path.stat().st_size if archive_path.exists() else None,
+                    downloaded_bytes=(
+                        archive_path.stat().st_size if archive_path.exists() else None
+                    ),
                     total_bytes=release.get("asset_size"),
                     progress_fraction=1.0,
                 )
@@ -1157,7 +1611,9 @@ class Plugin:
                     normalized,
                     extract_dir,
                     compat_dir,
-                    destination_name=self.PROTON_GE_LATEST_SLOT_NAME if install_as_latest else None,
+                    destination_name=(
+                        self.PROTON_GE_LATEST_SLOT_NAME if install_as_latest else None
+                    ),
                     replace_existing=install_as_latest,
                 )
                 decky.logger.info(
@@ -1165,33 +1621,64 @@ class Plugin:
                     f" | version={normalized} result={result}"
                 )
                 if result.get("success") and install_as_latest:
-                    self._write_proton_ge_latest_metadata(normalized, self.PROTON_GE_LATEST_SLOT_NAME)
+                    self._write_proton_ge_latest_metadata(
+                        normalized, self.PROTON_GE_LATEST_SLOT_NAME
+                    )
                     decky.logger.info(
                         "Updated Proton-GE latest slot metadata"
                         f" | version={normalized} directory={self.PROTON_GE_LATEST_SLOT_NAME}"
                     )
                 result["release"] = release
                 return result
-            except Exception as err:
+            except (
+                OSError,
+                subprocess.SubprocessError,
+                tarfile.TarError,
+                zipfile.BadZipFile,
+                ValueError,
+            ) as err:
                 decky.logger.error(f"Failed to install Proton-GE {normalized}: {err}")
-                return {"success": False, "message": f"Install failed for {normalized}: {err}", "release": release}
+                return {
+                    "success": False,
+                    "message": f"Install failed for {normalized}: {err}",
+                    "release": release,
+                }
 
-    async def install_proton_ge(self, version: str | None = None, install_as_latest: bool = False) -> dict:
+    async def install_proton_ge(
+        self, version: str | None = None, install_as_latest: bool = False
+    ) -> dict:
+        """
+        Start a GE-Proton install on a background thread.
+
+        Returns right away so the frontend doesnt block. The actual work
+        happens in _install_proton_ge_sync on a daemon thread, and the
+        frontend polls get_proton_ge_manager_state to track progress.
+        """
         releases = await self.get_proton_ge_releases(False)
         release = None
         normalized = None
 
         if version:
             normalized = self._normalize_proton_ge_tag(version)
-            release = next((item for item in releases if item.get("tag_name") == normalized), None)
+            release = next(
+                (item for item in releases if item.get("tag_name") == normalized), None
+            )
             if not release:
-                return {"success": False, "message": f"Could not find release for {version}.", "release": None}
+                return {
+                    "success": False,
+                    "message": f"Could not find release for {version}.",
+                    "release": None,
+                }
         else:
             release = releases[0] if releases else None
             normalized = release.get("tag_name") if release else None
 
         if not release or not normalized:
-            return {"success": False, "message": "No Proton-GE release is available right now.", "release": None}
+            return {
+                "success": False,
+                "message": "No Proton-GE release is available right now.",
+                "release": None,
+            }
 
         with self._proton_ge_install_lock:
             existing_status = dict(self._proton_ge_install_status)
@@ -1199,7 +1686,9 @@ class Plugin:
             if active_thread and active_thread.is_alive():
                 return {
                     "success": False,
-                    "message": existing_status.get("message") or f"{existing_status.get('tag_name') or 'A Proton-GE release'} is already installing.",
+                    "message": existing_status.get("message")
+                    or f"{existing_status.get('tag_name')
+                          or 'A Proton-GE release'} is already installing.",
                     "release": release,
                 }
             self._proton_ge_install_cancel.clear()
@@ -1227,7 +1716,8 @@ class Plugin:
                         self._set_proton_ge_install_status(
                             state="error",
                             tag_name=normalized,
-                            message=result.get("message") or f"Install cancelled for {normalized}.",
+                            message=result.get("message")
+                            or f"Install cancelled for {normalized}.",
                             install_as_latest=install_as_latest,
                             stage="cancelled",
                             finished_at=int(time.time()),
@@ -1249,8 +1739,16 @@ class Plugin:
                         f" | version={normalized} state={'success' if result.get('success') else 'error'}"
                         f" message={result.get('message')}"
                     )
-                except Exception as err:
-                    decky.logger.error(f"Background Proton-GE install failed for {normalized}: {err}")
+                except (
+                    OSError,
+                    subprocess.SubprocessError,
+                    tarfile.TarError,
+                    zipfile.BadZipFile,
+                    ValueError,
+                ) as err:
+                    decky.logger.error(
+                        f"Background Proton-GE install failed for {normalized}: {err}"
+                    )
                     self._set_proton_ge_install_status(
                         state="error",
                         tag_name=normalized,
@@ -1277,10 +1775,20 @@ class Plugin:
         }
 
     async def cancel_proton_ge_install(self) -> dict:
+        """
+        Tell the background install to stop.
+
+        Sets the cancel event flag and kills the curl process if one is
+        running. The worker thread checks the flag between steps and
+        auto cleans up after it's done.
+        """
         with self._proton_ge_install_lock:
             active_thread = self._proton_ge_install_thread
             if not active_thread or not active_thread.is_alive():
-                return {"success": False, "message": "No Proton-GE install is currently running."}
+                return {
+                    "success": False,
+                    "message": "No Proton-GE install is currently running.",
+                }
             tag_name = self._proton_ge_install_status.get("tag_name")
             self._proton_ge_install_cancel.set()
             process = self._proton_ge_install_process
@@ -1291,25 +1799,40 @@ class Plugin:
                 "message": f"Cancelling {tag_name or 'Proton-GE'}…",
                 "stage": "cancelling",
             }
+
         return {"success": True, "message": f"Cancelling {tag_name or 'Proton-GE'}…"}
 
     async def install_compatibility_tool_archive(self, archive_path: str) -> dict:
+        """Install a compat tool from a local archive file on disk.
+
+        Supports .tar.gz, .tar.xz, .tar.bz2, .tgz, and .zip. Copies
+        the archive to a temp dir first so it doesnt mess with the original,
+        extracts it, then moves the result into compatibilitytools.d
+        """
         archive_input = (archive_path or "").strip()
         if not archive_input:
             return {"success": False, "message": "No archive path was provided."}
 
         source_path = Path(archive_input).expanduser()
         if not source_path.is_file():
-            return {"success": False, "message": f"Archive was not found: {archive_input}"}
+            return {
+                "success": False,
+                "message": f"Archive was not found: {archive_input}",
+            }
 
         if not any(
             source_path.name.endswith(suffix)
             for suffix in [".zip", ".tar", ".tar.gz", ".tar.xz", ".tar.bz2", ".tgz"]
         ):
-            return {"success": False, "message": "Archive must be a .zip or tar-based file."}
+            return {
+                "success": False,
+                "message": "Archive must be a .zip or tar-based file.",
+            }
 
         compat_dir = self._compat_tools_dir()
-        with tempfile.TemporaryDirectory(prefix="proton-pulse-archive-install-") as tmp_dir:
+        with tempfile.TemporaryDirectory(
+            prefix="proton-pulse-archive-install-"
+        ) as tmp_dir:
             staged_archive = Path(tmp_dir) / source_path.name
             extract_dir = Path(tmp_dir) / "extract"
 
@@ -1317,37 +1840,69 @@ class Plugin:
                 shutil.copy2(source_path, staged_archive)
                 extract_dir.mkdir(parents=True, exist_ok=True)
                 self._extract_archive_safely(staged_archive, extract_dir)
-                return self._finalize_extracted_compat_tool(source_path.name, extract_dir, compat_dir)
-            except Exception as err:
-                decky.logger.error(f"Failed to install compatibility tool archive {archive_input}: {err}")
-                return {"success": False, "message": f"Install failed for {source_path.name}: {err}"}
+                return self._finalize_extracted_compat_tool(
+                    source_path.name, extract_dir, compat_dir
+                )
+            except (OSError, tarfile.TarError, zipfile.BadZipFile, shutil.Error) as err:
+                decky.logger.error(
+                    f"Failed to install compatibility tool archive {archive_input}: {err}"
+                )
+                return {
+                    "success": False,
+                    "message": f"Install failed for {source_path.name}: {err}",
+                }
 
     async def uninstall_compatibility_tool(self, directory_name: str) -> dict:
+        """Delete a custom compat tool from disk.
+
+        Refuses to touch Valve's built-in Proton builds (source='valve')
+        and checks that the target path is actually inside one of the
+        managed compat dirs before outright deleting it.
+        """
         target_name = (directory_name or "").strip()
         if not target_name:
             return {"success": False, "message": "No compatibility tool was specified."}
 
         installed = self._list_installed_compatibility_tools()
-        target = next((tool for tool in installed if tool.get("directory_name") == target_name), None)
+        target = next(
+            (tool for tool in installed if tool.get("directory_name") == target_name),
+            None,
+        )
         if not target:
             return {"success": False, "message": f"{target_name} is not installed."}
 
         if target.get("source") == "valve":
-            return {"success": False, "message": f"{target_name} is a built-in Valve tool and cannot be removed."}
+            return {
+                "success": False,
+                "message": f"{target_name} is a built-in Valve tool and cannot be removed.",
+            }
 
         target_path = Path(target.get("path") or "")
         if not target_path.is_dir():
-            return {"success": False, "message": f"{target_name} is not available on disk anymore."}
+            return {
+                "success": False,
+                "message": f"{target_name} is not available on disk anymore.",
+            }
 
-        allowed_roots = [compat_dir.resolve() for compat_dir in self._compat_tools_dirs()]
+        allowed_roots = [
+            compat_dir.resolve() for compat_dir in self._compat_tools_dirs()
+        ]
         resolved_target = target_path.resolve()
         if not any(root == resolved_target.parent for root in allowed_roots):
-            return {"success": False, "message": f"{target_name} is outside the managed compatibility tools directories."}
+            return {
+                "success": False,
+                "message": f"{target_name} is outside the managed compatibility tools directories.",
+            }
 
         try:
             shutil.rmtree(resolved_target)
             self._clear_proton_ge_latest_metadata(target_name)
             return {"success": True, "message": f"Removed {target_name}."}
-        except Exception as err:
-            decky.logger.error(f"Failed to remove compatibility tool {target_name}: {err}")
-            return {"success": False, "message": f"Failed to remove {target_name}: {err}"}
+        except OSError as err:
+            decky.logger.error(
+                f"Failed to remove compatibility tool {target_name}: {err}"
+            )
+            return {
+                "success": False,
+                "message": f"Failed to remove {target_name}: {err}",
+            }

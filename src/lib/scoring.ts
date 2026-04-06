@@ -1,20 +1,29 @@
 // src/lib/scoring.ts
+//
+// Scores ProtonDB community reports so the frontend can rank them by relevance.
+// A report's score is based on: rating (platinum > borked), how recent it is,
+// whether it used a custom Proton build, and how closely the reporter's GPU
+// matches the current system. Higher score = more relevant to *this* user.
+//
+// The weights below control the balance between these factors. Tweak them
+// if the ranking feels off for certain edge cases.
+
 import type { CdnReport, ScoredReport, SystemInfo, TieredReports, GpuTier } from '../types';
 
-// ─── Weights — edit these to tune ranking ─────────────────────────────────────
+// ─── Weights, edit these to tune ranking ──────────────────────────────────────
 export const WEIGHTS = {
-  BASE_MAX: 60,
-  RECENCY_RECENT: 15,
-  RECENCY_MID: 5,
-  RECENCY_OLD: -5,
-  CUSTOM_PROTON: 10,
-  GPU_MATCH: 1.0,
-  GPU_MISMATCH: 0.5,
-  GPU_UNKNOWN: 0.75,
-  GPU_DRIVER_EXACT: 1.3,
-  GPU_DRIVER_CLOSE: 1.1,
-  BORKED_DECAY_DAYS: 365,
-  NOTES_MAX: 10,
+  BASE_MAX: 60,            // max points from the rating alone (platinum=60, borked=0)
+  RECENCY_RECENT: 15,      // bonus for reports < 90 days old
+  RECENCY_MID: 5,          // bonus for 90-365 days
+  RECENCY_OLD: -5,         // penalty for > 1 year old
+  CUSTOM_PROTON: 10,       // bonus if report used GE/CachyOS/TKG etc
+  GPU_MATCH: 1.0,          // multiplier when GPU vendor matches yours
+  GPU_MISMATCH: 0.5,       // multiplier for different vendor (halves the score)
+  GPU_UNKNOWN: 0.75,       // multiplier when report doesnt say what GPU
+  GPU_DRIVER_EXACT: 1.3,   // same vendor + same driver major version
+  GPU_DRIVER_CLOSE: 1.1,   // same vendor + driver within 2 major versions
+  BORKED_DECAY_DAYS: 365,  // borked reports older than this get treated as bronze
+  NOTES_MAX: 10,           // cap on the sentiment modifier from user notes
 } as const;
 
 const RATING_SCORES: Record<string, number> = {
@@ -77,7 +86,7 @@ function gpuDriverMultiplier(report: CdnReport, sysInfo: SystemInfo): number {
   if (!sysVendor || reportTier === 'unknown') return WEIGHTS.GPU_UNKNOWN;
   if (reportTier !== sysVendor) return WEIGHTS.GPU_MISMATCH;
 
-  // Same GPU vendor — compare driver major versions
+  // same GPU vendor, compare driver major versions to boost close matches
   const reportMajor = parseDriverMajor(report.gpuDriver ?? '');
   const sysMajor    = parseDriverMajor(sysInfo.driver_version ?? '');
 
@@ -93,7 +102,9 @@ export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredRepor
 
   const recencyDays = Math.round((Date.now() / 1000 - report.timestamp) / 86400);
 
-  // Borked decay: old borked reports treated as bronze instead of fully penalized
+  // old borked reports get bumped to bronze. Games that were broken a year
+  // ago have probably been fixed by now, so don't let ancient reports
+  // tank a game's score forever
   const effectiveRating =
     report.rating === 'borked' && recencyDays > WEIGHTS.BORKED_DECAY_DAYS
       ? 'bronze'
@@ -107,6 +118,8 @@ export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredRepor
   const customBonus = isCustomProton(report.protonVersion) ? WEIGHTS.CUSTOM_PROTON : 0;
   const notesModifier = parseNotesSentiment(report.notes);
 
+  // GPU multiplier scales everything except the notes sentiment modifier,
+  // so a mismatched GPU report still gets credit for good/bad user feedback
   const raw = (ratingScore + recencyBonus + customBonus) * mult + notesModifier;
 
   return {

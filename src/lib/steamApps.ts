@@ -1,3 +1,6 @@
+// Talks to Steam's internal SteamClient.Apps API to look up app details
+// like launch options. Uses RegisterForAppDetails which is callback-based,
+// so everything here wraps it in a promise with a timeout fallback.
 import { logFrontendEvent } from './logger';
 
 interface SteamAppDetailsResult {
