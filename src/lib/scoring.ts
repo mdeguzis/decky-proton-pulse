@@ -74,7 +74,7 @@ function isCustomProton(version: string): boolean {
 }
 
 function parseDriverMajor(driverStr: string): number | null {
-  // "NVIDIA 545.29.06" → 545, "Mesa 23.1.0" → 23, "NVIDIA 410.93" → 410
+  // "NVIDIA 545.29.06" --> 545, "Mesa 23.1.0" --> 23, "NVIDIA 410.93" --> 410
   const match = driverStr.match(/(\d+)\.\d+/);
   return match ? parseInt(match[1], 10) : null;
 }

@@ -234,7 +234,7 @@ export function ReportDetailModal({
         el.scrollBy({ top: el.scrollTop <= SCROLL_STEP ? -el.scrollTop : -SCROLL_STEP, behavior: 'auto' });
       }
     }
-    // LEFT/RIGHT: don't interfere — let Steam navigate between buttons
+    // LEFT/RIGHT: don't interfere -- let Steam navigate between buttons
   };
 
   return (
@@ -408,10 +408,10 @@ export function ReportDetailModal({
             </InfoSection>
 
             <InfoSection title={t().detail.hardwareMatch}>
-              <InfoRow label={t().detail.gpu} value={report.gpu || '—'} />
-              <InfoRow label={t().detail.os} value={report.os || '—'} />
-              <InfoRow label={t().detail.kernel} value={report.kernel || '—'} />
-              <InfoRow label={t().detail.driver} value={report.gpuDriver || '—'} />
+              <InfoRow label={t().detail.gpu} value={report.gpu || '-'} />
+              <InfoRow label={t().detail.os} value={report.os || '-'} />
+              <InfoRow label={t().detail.kernel} value={report.kernel || '-'} />
+              <InfoRow label={t().detail.driver} value={report.gpuDriver || '-'} />
             </InfoSection>
 
             <InfoSection title={t().detail.report}>

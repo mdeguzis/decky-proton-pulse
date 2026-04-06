@@ -7,6 +7,7 @@
 import { fetchNoCors } from "@decky/api";
 import type { ProtonDBSummary, CdnReport, ProtonRating } from "../types";
 import { logFrontendEvent } from "./logger";
+import { cachedFetchJson } from "./cdnCache";
 
 const SUMMARY_URL =
   "https://www.protondb.com/api/v1/reports/summaries/{id}.json";
@@ -127,31 +128,30 @@ export async function getProtonDBReportsWithDiagnostics(
       appId,
       indexUrl,
     });
-    // Fetch index to discover available year files
-    const indexResp = await fetchNoCors(indexUrl);
-    diagnostics.indexStatus = indexResp.status;
+    // Fetch index to discover available year files (cache-aware)
+    const indexResult = await cachedFetchJson<string[]>(indexUrl, appId, "index.json");
+    diagnostics.indexStatus = indexResult.data !== null ? 200 : null;
     await logFrontendEvent(
       "DEBUG",
       "Proton Pulse report index response received",
       {
         appId,
         indexUrl,
-        status: indexResp.status,
+        fromCache: indexResult.fromCache,
       },
     );
-    if (indexResp.status !== 200) {
+    if (indexResult.data === null) {
       await logFrontendEvent(
         "WARNING",
-        "Proton Pulse report index returned non-200",
+        "Proton Pulse report index not available",
         {
           appId,
           indexUrl,
-          status: indexResp.status,
         },
       );
       return await fallbackToLiveSummary(appId, diagnostics, "cdn-index-miss");
     }
-    const years = (await indexResp.json()) as string[];
+    const years = indexResult.data;
     diagnostics.years = years;
     await logFrontendEvent("INFO", "Proton Pulse report index loaded", {
       appId,
@@ -165,7 +165,7 @@ export async function getProtonDBReportsWithDiagnostics(
       return await fallbackToLiveSummary(appId, diagnostics, "cdn-index-empty");
     }
 
-    // Fetch all year files in parallel
+    // Fetch all year files in parallel (cache-aware)
     const yearResults = await Promise.all(
       years.map(async (year) => {
         const yearUrl = YEAR_URL.replace("{id}", appId).replace("{year}", year);
@@ -175,8 +175,12 @@ export async function getProtonDBReportsWithDiagnostics(
             year,
             yearUrl,
           });
-          const resp = await fetchNoCors(yearUrl);
-          diagnostics.yearStatuses[year] = resp.status;
+          const result = await cachedFetchJson<Array<CdnReport & { rating: string }>>(
+            yearUrl,
+            appId,
+            `${year}.json`,
+          );
+          diagnostics.yearStatuses[year] = result.data !== null ? 200 : null;
           await logFrontendEvent(
             "DEBUG",
             "Report year file response received",
@@ -184,25 +188,22 @@ export async function getProtonDBReportsWithDiagnostics(
               appId,
               year,
               yearUrl,
-              status: resp.status,
+              fromCache: result.fromCache,
             },
           );
-          if (resp.status !== 200) {
+          if (result.data === null) {
             await logFrontendEvent(
               "WARNING",
-              "Report year file returned non-200",
+              "Report year file not available",
               {
                 appId,
                 year,
                 yearUrl,
-                status: resp.status,
               },
             );
             return [];
           }
-          const reports = normalizeReports(
-            (await resp.json()) as Array<CdnReport & { rating: string }>,
-          );
+          const reports = normalizeReports(result.data);
           await logFrontendEvent("DEBUG", "Loaded report year file", {
             appId,
             year,
@@ -330,28 +331,26 @@ export async function getVotesWithDiagnostics(appId: string): Promise<{
   const diagnostics: VotesFetchDiagnostics = { url, status: null };
   try {
     await logFrontendEvent("DEBUG", "Fetching votes", { appId, url });
-    const resp = await fetchNoCors(url);
-    diagnostics.status = resp.status;
+    const result = await cachedFetchJson<Record<string, number>>(url, appId, "votes.json");
+    diagnostics.status = result.data !== null ? 200 : null;
     await logFrontendEvent("DEBUG", "Votes response received", {
       appId,
       url,
-      status: resp.status,
+      fromCache: result.fromCache,
     });
-    if (resp.status !== 200) {
-      await logFrontendEvent("WARNING", "Votes request returned non-200", {
+    if (result.data === null) {
+      await logFrontendEvent("WARNING", "Votes not available", {
         appId,
         url,
-        status: resp.status,
       });
       return { votes: {}, diagnostics };
     }
-    const votes = (await resp.json()) as Record<string, number>;
     await logFrontendEvent("DEBUG", "Fetched votes", {
       appId,
       url,
-      count: Object.keys(votes).length,
+      count: Object.keys(result.data).length,
     });
-    return { votes, diagnostics };
+    return { votes: result.data, diagnostics };
   } catch (error) {
     await logFrontendEvent("ERROR", "Failed to fetch votes", {
       appId,

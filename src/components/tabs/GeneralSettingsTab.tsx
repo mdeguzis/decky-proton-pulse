@@ -58,7 +58,7 @@ export function GeneralSettingsTab() {
     setSetting('gh-votes-token', value);
   };
 
-  const lang = useLanguage(); // subscribes to re-render on language change
+  useLanguage(); // subscribes to re-render on language change
   const currentPref = getSetting<Language | 'auto'>('language', 'auto');
   const detectedName = LANGUAGE_NAMES[detectLanguage()];
   const langOptions = [
@@ -106,7 +106,7 @@ export function GeneralSettingsTab() {
               type="password"
               value={ghToken}
               onChange={(e) => handleTokenChange(e.target.value)}
-              placeholder="ghp_…"
+              placeholder="ghp_..."
               style={{
                 width: '100%',
                 boxSizing: 'border-box',

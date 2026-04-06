@@ -25,7 +25,7 @@ const fakeSummary: ProtonDBSummary = {
   trendingTier: 'platinum', bestReportedTier: 'platinum', confidence: 'good',
 };
 
-// CDN returns capitalized ratings — the fetch layer must lowercase them
+// CDN returns capitalized ratings -- the fetch layer must lowercase them
 const fakeCdnRaw = [
   {
     appId: '730', cpu: 'Intel i7', duration: 'severalHours',

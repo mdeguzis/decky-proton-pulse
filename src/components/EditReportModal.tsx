@@ -23,7 +23,7 @@ import { t } from '../lib/i18n';
 const RATING_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending'] as const;
 
 interface VersionOption {
-  value: string;          // tag_name or internal_name — used as dropdown data
+  value: string;          // tag_name or internal_name -- used as dropdown data
   displayName: string;    // human label, e.g. "Proton GE 9-27"
   installed: boolean;
   managed: boolean;       // true for GE releases we can install; false for Valve/custom
@@ -41,7 +41,7 @@ function buildVersionOptions(
   }
   const isInstalled = (tag: string) => installedTagSet.has(tag.toLowerCase());
 
-  // Releases → options (all GE releases are managed/installable)
+  // Releases --> options (all GE releases are managed/installable)
   const releaseOptions: VersionOption[] = releases.map((r) => ({
     value: r.tag_name,
     displayName: formatProtonLabel(r.tag_name),
@@ -58,7 +58,7 @@ function buildVersionOptions(
         value: 'Proton-GE-Latest',
         displayName: 'Proton-GE-Latest',
         installed: true,
-        managed: true, // treated as managed — always use latest GE
+        managed: true, // treated as managed -- always use latest GE
       }]
     : [];
 
@@ -74,7 +74,7 @@ function buildVersionOptions(
       value: t.internal_name || t.directory_name,
       displayName: t.display_name || t.directory_name,
       installed: true,
-      managed: false, // Valve/custom builds — not installable via GE manager
+      managed: false, // Valve/custom builds -- not installable via GE manager
     }));
 
   // Combine: GE-Latest first, then installed, then available

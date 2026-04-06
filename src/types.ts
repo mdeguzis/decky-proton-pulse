@@ -21,7 +21,7 @@ export interface SystemInfo {
 export type ProtonRating = 'platinum' | 'gold' | 'silver' | 'bronze' | 'borked' | 'pending';
 
 export interface ProtonDBSummary {
-  score: number;              // 0.0–1.0 float (e.g. 0.82)
+  score: number;              // 0.0-1.0 float (e.g. 0.82)
   tier: ProtonRating;         // e.g. "platinum"
   total: number;
   trendingTier: ProtonRating; // e.g. "platinum"
@@ -44,7 +44,7 @@ export interface CdnReport {
   notes: string;
   os: string;
   protonVersion: string;
-  ram: string;          // raw string from CDN, e.g. "16 GB" — not a number
+  ram: string;          // raw string from CDN, e.g. "16 GB" -- not a number
   rating: ProtonRating;
   timestamp: number;
   title: string;
@@ -121,4 +121,4 @@ export interface ProtonVersionAvailability {
 }
 
 // ─── Steam CEF ───────────────────────────────────────────────────────────────
-// SteamClient global is provided by @decky/ui — no redeclaration needed.
+// SteamClient global is provided by @decky/ui -- no redeclaration needed.
