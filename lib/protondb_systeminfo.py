@@ -1,8 +1,11 @@
-# protondb_systeminfo.py
-# Generates "Steam System Information" format text for ProtonDB report submissions.
-# Ported from: https://github.com/mdeguzis/SteamOS-Tools/blob/master/utilities/protondb-systeminfo-tool.sh
-# Adapted for headless use inside a Decky Loader plugin (no X11/DISPLAY dependency).
+"""Generate 'Steam System Information' text for ProtonDB report submissions.
 
+Ported from the shell version at:
+https://github.com/mdeguzis/SteamOS-Tools/blob/master/utilities/protondb-systeminfo-tool.sh
+Adapted for headless use inside a Decky Loader plugin (no X11/DISPLAY dependency).
+"""
+
+import json as _json
 import os
 import re
 import subprocess
@@ -11,14 +14,16 @@ from pathlib import Path
 
 def _read_file(path: str) -> str | None:
     try:
-        return Path(path).read_text().strip()
+        return Path(path).read_text(encoding="utf-8").strip()
     except (FileNotFoundError, PermissionError, OSError):
         return None
 
 
 def _run(cmd: list[str], timeout: int = 5) -> str | None:
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=timeout, check=False
+        )
         return result.stdout.strip() if result.returncode == 0 else None
     except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
         return None
@@ -37,7 +42,6 @@ def _read_model() -> str:
 def _read_form_factor() -> str:
     result = _run(["hostnamectl", "--json=short"])
     if result:
-        import json as _json
         try:
             chassis: str = str(_json.loads(result).get("Chassis", "Unknown"))
             return chassis.capitalize()
@@ -154,15 +158,24 @@ def _read_steam_runtime(home: str) -> str:
     if not common.is_dir():
         return "None"
     for d in common.iterdir():
-        if d.name.startswith("SteamLinuxRuntime"):
-            for os_rel in d.rglob("usr/lib/os-release"):
-                raw = _read_file(str(os_rel))
-                if raw:
-                    for line in raw.splitlines():
-                        if line.startswith("BUILD_ID="):
-                            bid = line.split("=", 1)[1].strip().strip('"')
-                            return f"steam-runtime_{bid}"
+        if not d.name.startswith("SteamLinuxRuntime"):
+            continue
+        for os_rel in d.rglob("usr/lib/os-release"):
+            bid = _extract_build_id(str(os_rel))
+            if bid:
+                return f"steam-runtime_{bid}"
     return "None"
+
+
+def _extract_build_id(os_release_path: str) -> str | None:
+    """Pull BUILD_ID from an os-release file, or None."""
+    raw = _read_file(os_release_path)
+    if not raw:
+        return None
+    for line in raw.splitlines():
+        if line.startswith("BUILD_ID="):
+            return line.split("=", 1)[1].strip().strip('"')
+    return None
 
 
 # ─── Video Card ───────────────────────────────────────────────────────────────
@@ -249,7 +262,10 @@ def _read_display_info() -> dict[str, str]:
     # Number of VGA cards
     lspci = _run(["lspci"])
     if lspci:
-        info["num_video_cards"] = str(sum(1 for line in lspci.splitlines() if " VGA " in line) or 1)
+        vga_count = sum(
+            1 for line in lspci.splitlines() if " VGA " in line
+        )
+        info["num_video_cards"] = str(vga_count or 1)
 
     return info
 
@@ -303,7 +319,11 @@ def _read_disk_info() -> dict[str, str]:
                 info["disk_avail"] = parts[1].rstrip("M")
 
     # --exclude 7 skips loop devices, --nodeps skips partitions
-    raw = _run(["lsblk", "--nodeps", "--output", "name,tran,rota", "--noheadings", "--exclude", "7"])
+    lsblk_cmd = [
+        "lsblk", "--nodeps", "--output", "name,tran,rota",
+        "--noheadings", "--exclude", "7",
+    ]
+    raw = _run(lsblk_cmd)
     if raw:
         ssd = hdd = 0
         for line in raw.splitlines():

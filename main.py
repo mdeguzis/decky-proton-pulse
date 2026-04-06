@@ -15,14 +15,14 @@ import logging
 import shutil
 import subprocess
 import tarfile
+import tempfile
 import threading
 import time
 import zipfile
 from pathlib import Path
 from typing import Any
 
-import decky  # type: ignore[import-untyped]
-
+import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.compat_tools import (
     find_closest_installed_tool,
     installed_tool_matches_version,
@@ -46,32 +46,46 @@ from lib.steam_paths import compat_tools_dir, compat_tools_dirs
 from lib.system_info import collect_system_info
 
 
-class Plugin:
+class Plugin:  # pylint: disable=too-many-instance-attributes
     """Decky Loader plugin backend for Proton Pulse.
 
-    Every ``async`` method here is exposed to the frontend via the Decky
-    callable bridge.  Synchronous helpers are prefixed with ``_``.
+    Every async method here is exposed to the frontend via the Decky
+    callable bridge. Synchronous helpers are prefixed with underscore.
     """
 
-    # ─── Lifecycle ────────────────────────────────────────────────────
-
-    async def _main(self) -> None:
-        """Plugin entry-point called by Decky on load."""
-        decky.logger.info("Proton Pulse backend starting")
+    def __init__(self) -> None:
+        # all attrs declared here so pylint doesn't complain about
+        # attribute-defined-outside-init when _main() sets them for real
         self._debug_handler: logging.Handler | None = None
         self._debug_handler_ref: list[logging.Handler | None] = [None]
-
-        # Proton-GE install state
         self._proton_ge_install_lock = threading.Lock()
         self._proton_ge_install_cancel = threading.Event()
         self._proton_ge_install_thread: threading.Thread | None = None
         self._proton_ge_install_process: subprocess.Popen[str] | None = None
         self._proton_ge_install_process_ref: list[subprocess.Popen[str] | None] = [None]
         self._proton_ge_install_status: dict[str, Any] = make_initial_status()
+
+    ################################################################
+    # Lifecycle
+    ################################################################
+
+    async def _main(self) -> None:
+        """Plugin entry-point called by Decky on load."""
+        decky.logger.info("Proton Pulse backend starting")
+        self._debug_handler = None
+        self._debug_handler_ref = [None]
+
+        # reset install state on reload
+        self._proton_ge_install_lock = threading.Lock()
+        self._proton_ge_install_cancel = threading.Event()
+        self._proton_ge_install_thread = None
+        self._proton_ge_install_process = None
+        self._proton_ge_install_process_ref = [None]
+        self._proton_ge_install_status = make_initial_status()
         decky.logger.info("Proton Pulse backend ready")
 
     async def _unload(self) -> None:
-        """Cleanup on plugin unload."""
+        """Kill any running install thread and clean up."""
         decky.logger.info("Proton Pulse backend shutting down")
         self._proton_ge_install_cancel.set()
         with self._proton_ge_install_lock:
@@ -85,25 +99,34 @@ class Plugin:
     async def _migration(self) -> None:
         decky.logger.info("Proton Pulse migration hook (no-op)")
 
-    # ─── Logging ──────────────────────────────────────────────────────
+    ################################################################
+    # Logging
+    ################################################################
 
     async def set_log_level(self, level: str) -> bool:
+        """Change the plugin log level (DEBUG, INFO, WARNING, etc)."""
         return sync_set_log_level(level, self._debug_handler_ref)
 
     async def get_log_contents(self) -> str:
+        """Return the last 200 lines of the plugin log file."""
         return get_log_contents()
 
     async def log_frontend_event(
         self, level: str, message: str, context: dict[str, object] | None = None
     ) -> bool:
+        """Log a message from the React frontend into the backend log."""
         return log_frontend_event(level, message, context)
 
-    # ─── Metadata ─────────────────────────────────────────────────────
+    ################################################################
+    # Metadata
+    ################################################################
 
     async def get_plugin_version(self) -> str:
+        """Return the plugin version string from Decky."""
         return getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
 
     async def get_protondb_systeminfo(self) -> str:
+        """Build the system info blob for ProtonDB submissions."""
         try:
             return generate_system_info(home=decky.DECKY_USER_HOME)
         except (OSError, ValueError, subprocess.SubprocessError) as e:
@@ -111,6 +134,7 @@ class Plugin:
             return f"Error generating system info: {e}"
 
     async def is_game_running(self) -> bool:
+        """Check if a Steam game process is active via pgrep."""
         try:
             result = subprocess.run(
                 ["pgrep", "-f", "SteamLaunch"],
@@ -124,24 +148,32 @@ class Plugin:
             decky.logger.warning(f"is_game_running check failed: {e}")
             return False
 
-    # ─── System detection ─────────────────────────────────────────────
+    ################################################################
+    # System Detection
+    ################################################################
 
     async def get_system_info(self) -> dict[str, object]:
+        """Collect CPU, GPU, kernel, distro info for the frontend."""
         return collect_system_info()
 
-    # ─── Compatibility tools ──────────────────────────────────────────
+    ################################################################
+    # Compatibility Tools / Proton-GE
+    ################################################################
 
     async def list_installed_compatibility_tools(self) -> list[dict[str, Any]]:
+        """List all compat tools found in Steam's compatibilitytools.d dirs."""
         return list_installed_compatibility_tools(read_latest_metadata())
 
     async def get_proton_ge_releases(
         self, force_refresh: bool = False
     ) -> list[dict[str, Any]]:
+        """Fetch the list of Proton-GE releases from GitHub."""
         return get_releases_sync(force_refresh)
 
     async def get_proton_ge_manager_state(
         self, force_refresh: bool = False
     ) -> dict[str, Any]:
+        """Return combined state: releases, installed tools, install status."""
         releases = await self.get_proton_ge_releases(force_refresh)
         installed = list_installed_compatibility_tools(read_latest_metadata())
         current_release = releases[0] if releases else None
@@ -172,6 +204,7 @@ class Plugin:
         }
 
     async def check_proton_version_availability(self, version: str) -> dict[str, Any]:
+        """Check if a specific Proton-GE version is installed or available."""
         normalized = normalize_proton_ge_tag(version)
         installed = list_installed_compatibility_tools(read_latest_metadata())
 
@@ -196,9 +229,7 @@ class Plugin:
             else None
         )
         releases = await self.get_proton_ge_releases(False)
-        release = next(
-            (i for i in releases if i.get("tag_name") == normalized), None
-        )
+        release = next((i for i in releases if i.get("tag_name") == normalized), None)
 
         return {
             "managed": True,
@@ -222,11 +253,14 @@ class Plugin:
             ),
         }
 
-    # ─── Install / uninstall ──────────────────────────────────────────
+    ################################################################
+    # Install / Uninstall
+    ################################################################
 
     async def install_proton_ge(
         self, version: str | None = None, install_as_latest: bool = False
     ) -> dict[str, Any]:
+        """Kick off a background Proton-GE install for the given version."""
         releases = get_releases_sync(False)
         release: dict[str, Any] | None = None
 
@@ -259,7 +293,10 @@ class Plugin:
                 return {
                     "success": False,
                     "message": existing.get("message")
-                    or f"{existing.get('tag_name') or 'A Proton-GE release'} is already installing.",
+                    or (
+                        f"{existing.get('tag_name') or 'A Proton-GE release'}"
+                        " is already installing."
+                    ),
                     "release": release,
                 }
             self._proton_ge_install_cancel.clear()
@@ -354,6 +391,7 @@ class Plugin:
         }
 
     async def cancel_proton_ge_install(self) -> dict[str, Any]:
+        """Cancel a running Proton-GE install if one is active."""
         with self._proton_ge_install_lock:
             thread = self._proton_ge_install_thread
             if not thread or not thread.is_alive():
@@ -377,6 +415,7 @@ class Plugin:
     async def install_compatibility_tool_archive(
         self, archive_path: str
     ) -> dict[str, Any]:
+        """Install a compat tool from a local archive (zip/tar)."""
         archive_input = (archive_path or "").strip()
         if not archive_input:
             return {"success": False, "message": "No archive path was provided."}
@@ -396,8 +435,6 @@ class Plugin:
             }
 
         cd = compat_tools_dir()
-        import tempfile
-
         with tempfile.TemporaryDirectory(
             prefix="proton-pulse-archive-install-"
         ) as tmp_dir:
@@ -407,9 +444,7 @@ class Plugin:
                 shutil.copy2(source_path, staged)
                 extract_dir.mkdir(parents=True, exist_ok=True)
                 extract_archive_safely(staged, extract_dir)
-                return finalize_extracted_compat_tool(
-                    source_path.name, extract_dir, cd
-                )
+                return finalize_extracted_compat_tool(source_path.name, extract_dir, cd)
             except (
                 OSError,
                 tarfile.TarError,
@@ -424,9 +459,10 @@ class Plugin:
                     "message": f"Install failed for {source_path.name}: {err}",
                 }
 
-    async def uninstall_compatibility_tool(
+    async def uninstall_compatibility_tool(  # pylint: disable=too-many-return-statements
         self, directory_name: str
     ) -> dict[str, Any]:
+        """Remove an installed compat tool by its directory name."""
         target_name = (directory_name or "").strip()
         if not target_name:
             return {

@@ -1,4 +1,6 @@
-# tests/test_logger.py
+"""Tests for log level management and game process detection."""
+
+# pylint: disable=redefined-outer-name
 import asyncio
 import logging
 import os
@@ -10,37 +12,46 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from main import Plugin
-from lib.plugin_logging import sync_set_log_level
+import decky  # type: ignore[import-untyped]  # pylint: disable=import-error,wrong-import-position
+from lib.plugin_logging import (
+    sync_set_log_level,
+)  # pylint: disable=wrong-import-position
+from main import Plugin  # pylint: disable=wrong-import-position
 
 
 @pytest.fixture
 def plugin() -> Plugin:  # type: ignore[no-any-unimported]
+    """Fresh Plugin instance for each test"""
     p = Plugin()
-    p._debug_handler_ref = [None]
+    p._debug_handler_ref = [None]  # pylint: disable=protected-access
     return p
 
 
 def test_set_log_level_debug(plugin: Any) -> None:
-    import decky
-
+    """Setting DEBUG level works and sticks"""
     decky.logger.setLevel(logging.INFO)
-    result = sync_set_log_level("DEBUG", plugin._debug_handler_ref)
+    result = sync_set_log_level(
+        "DEBUG", plugin._debug_handler_ref  # pylint: disable=protected-access
+    )
     assert result is True
     assert decky.logger.level == logging.DEBUG
 
 
 def test_set_log_level_info(plugin: Any) -> None:
-    import decky
-
+    """Setting INFO level works and sticks"""
     decky.logger.setLevel(logging.DEBUG)
-    result = sync_set_log_level("INFO", plugin._debug_handler_ref)
+    result = sync_set_log_level(
+        "INFO", plugin._debug_handler_ref  # pylint: disable=protected-access
+    )
     assert result is True
     assert decky.logger.level == logging.INFO
 
 
 def test_set_log_level_invalid(plugin: Any) -> None:
-    result = sync_set_log_level("INVALID", plugin._debug_handler_ref)
+    """Invalid log level returns False"""
+    result = sync_set_log_level(
+        "INVALID", plugin._debug_handler_ref  # pylint: disable=protected-access
+    )
     assert result is False
 
 

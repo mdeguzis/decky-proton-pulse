@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from unittest.mock import patch, mock_open, MagicMock
 import pytest
-import decky
+import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 from main import Plugin
 from lib.plugin_logging import sync_set_log_level, _enable_debug_log, _disable_debug_log

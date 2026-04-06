@@ -11,7 +11,7 @@ import glob
 import os
 import subprocess
 
-import decky  # type: ignore[import-untyped]
+import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 from .plugin_utils import system_command_env
 
