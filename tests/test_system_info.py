@@ -39,7 +39,7 @@ def test_system_info_keys(plugin):
 
 def test_system_info_field_failure_returns_none(plugin):
     """Any field that fails detection returns None, never raises."""
-    with patch.object(plugin, '_read_cpu', side_effect=Exception("oops")), \
+    with patch.object(plugin, '_read_cpu', side_effect=OSError("oops")), \
          patch.object(plugin, '_read_ram_gb', return_value=64), \
          patch.object(plugin, '_read_gpu', return_value=(None, None)), \
          patch.object(plugin, '_read_driver_version', return_value=None), \

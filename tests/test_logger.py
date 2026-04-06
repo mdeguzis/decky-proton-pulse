@@ -1,10 +1,11 @@
 # tests/test_logger.py
 import asyncio
 import logging
-import pytest
-import sys
 import os
+import sys
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -18,6 +19,7 @@ def plugin():
 
 def test_set_log_level_debug(plugin):
     import decky
+
     decky.logger.setLevel(logging.INFO)
     result = plugin._sync_set_log_level("DEBUG")
     assert result is True
@@ -26,6 +28,7 @@ def test_set_log_level_debug(plugin):
 
 def test_set_log_level_info(plugin):
     import decky
+
     decky.logger.setLevel(logging.DEBUG)
     result = plugin._sync_set_log_level("INFO")
     assert result is True

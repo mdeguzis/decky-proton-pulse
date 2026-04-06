@@ -49,6 +49,7 @@ def _read_form_factor() -> str:
 # ─── Processor Information ────────────────────────────────────────────────────
 
 def _parse_cpuinfo() -> dict[str, str]:
+    """Pull vendor, model, stepping, cores, and flags from /proc/cpuinfo."""
     raw = _read_file("/proc/cpuinfo")
     if not raw:
         return {}
@@ -78,16 +79,28 @@ def _parse_cpuinfo() -> dict[str, str]:
 
 
 def _cpu_flag_status(flags: str, flag: str, label: str) -> str:
+    """Format one CPU feature flag line for the Steam System Information block.
+
+    The output matches what Steam's built-in system info dialog produces,
+    e.g. '    SSE2:  Supported'. ProtonDB expects this exact spacing.
+    """
     status = "Supported" if flag in flags.split() else "Unsupported"
     return f"    {label}:  {status}"
 
 
 def _cpu_speed() -> str:
+    """Get CPU speed in MHz from lscpu.
+
+    Uses lscpu instead of /proc/cpuinfo because cpuinfo reports the
+    current frequency which changes with power states. lscpu gives us
+    the max MHz, which is what Steam's system info dialog shows.
+    """
     result = _run(["lscpu"])
     if result:
         for line in result.splitlines():
             if "CPU max MHz" in line or "CPU MHz" in line:
                 val = line.split(":", 1)[1].strip()
+                # strip the decimal, Steam just shows whole numbers
                 return val.split(".")[0]
     return "Unknown"
 
@@ -115,14 +128,27 @@ def _read_kernel_version() -> str:
 
 
 def _read_window_manager() -> str:
+    """Figure out which window manager/compositor is running.
+
+    On the Steam Deck, gamescope is the compositor in game mode.
+    Older SteamOS versions used steamcompmgr instead. Desktop Linux
+    could be anything so just report 'Unknown' there.
+    """
     if _run(["pgrep", "-x", "gamescope"]):
         return "Gamescope"
+    # steamcompmgr was the old Deck compositor before gamescope took over
     if _run(["pgrep", "-x", "steamcompmgr"]):
         return "Steam"
     return "Unknown"
 
 
 def _read_steam_runtime(home: str) -> str:
+    """Find the SteamLinuxRuntime BUILD_ID, or 'None' if its not installed.
+
+    The runtime lives inside steamapps/common/ and has an os-release file
+    buried in it with the build ID. Dig through the directory tree to
+    find it since the exact path varies between runtime versions.
+    """
     common = Path(home) / ".local/share/Steam/steamapps/common"
     if not common.is_dir():
         return "None"
@@ -141,7 +167,11 @@ def _read_steam_runtime(home: str) -> str:
 # ─── Video Card ───────────────────────────────────────────────────────────────
 
 def _read_glxinfo() -> dict[str, str]:
-    """Try glxinfo; falls back gracefully if unavailable (headless/gamescope)."""
+    """Try to get GPU renderer, OpenGL version, and VRAM from glxinfo.
+
+    Returns defaults for everything if glxinfo isnt available, which
+    happens on the Deck in game mode since there's no X11 display.
+    """
     info: dict[str, str] = {
         "renderer": "Unknown",
         "version_long": "Unknown",
@@ -174,7 +204,13 @@ def _read_gpu_from_lspci() -> tuple[str, str]:
 
 
 def _read_display_info() -> dict[str, str]:
-    """Gather display info; works with or without xrandr/xdpyinfo."""
+    """Gather display resolution, refresh rate, monitor count, etc.
+
+    Tries xrandr first. On the Deck in game mode, gamescope is its own
+    Wayland compositor that doesn't expose an X11 display, so xrandr
+    has nothing to talk to and just fails. Every field has a fallback
+    default for that reason.
+    """
     info = {
         "color_depth": "24",
         "desktop_resolution": "Unknown",
@@ -205,6 +241,7 @@ def _read_display_info() -> dict[str, str]:
         m = re.search(r"connected primary \d+x\d+.*?(\d+)mm x (\d+)mm", raw)
         if m:
             w_mm, h_mm = float(m.group(1)), float(m.group(2))
+            # convert the width/height mm values to diagonal inches
             diag_in = ((w_mm**2 + h_mm**2) ** 0.5) / 25.4
             info["primary_size"] = f'{diag_in:.1f}" (diag)'
 
@@ -219,7 +256,11 @@ def _read_display_info() -> dict[str, str]:
 # ─── Sound ────────────────────────────────────────────────────────────────────
 
 def _read_audio_device() -> str:
-    # Try pactl (PipeWire / PulseAudio)
+    """Get the default audio sink name.
+
+    Tries pactl first since most modern distros use PipeWire or
+    PulseAudio. Falls back to pulsemixer if pactl isnt available.
+    """
     raw = _run(["pactl", "get-default-sink"])
     if raw:
         return raw
@@ -249,6 +290,7 @@ def _read_ram_mb() -> str:
 # ─── Storage ──────────────────────────────────────────────────────────────────
 
 def _read_disk_info() -> dict[str, str]:
+    """Get disk size/avail from df, SSD/HDD counts from lsblk."""
     info = {"disk_size": "Unknown", "disk_avail": "Unknown", "ssd": "0", "hdd": "0"}
     raw = _run(["df", "--output=size,avail", "--block-size=M", "/home"])
     if raw:
@@ -259,6 +301,7 @@ def _read_disk_info() -> dict[str, str]:
                 info["disk_size"] = parts[0].rstrip("M")
                 info["disk_avail"] = parts[1].rstrip("M")
 
+    # --exclude 7 skips loop devices, --nodeps skips partitions
     raw = _run(["lsblk", "--nodeps", "--output", "name,tran,rota", "--noheadings", "--exclude", "7"])
     if raw:
         ssd = hdd = 0
@@ -266,8 +309,10 @@ def _read_disk_info() -> dict[str, str]:
             parts = line.split()
             if len(parts) >= 3:
                 transport = parts[1] if parts[1] != "" else ""
+                # skip USB drives, only care about internal storage
                 if transport == "usb":
                     continue
+                # rota=1 means rotational (spinning disk), 0 means solid state
                 rotational = parts[-1]
                 if rotational == "1":
                     hdd += 1
@@ -281,12 +326,14 @@ def _read_disk_info() -> dict[str, str]:
 # ─── Main Generator ──────────────────────────────────────────────────────────
 
 def generate_system_info(home: str | None = None) -> str:
-    """
-    Generate a Steam System Information block matching the format expected by
-    ProtonDB report submissions.
+    """Build the full 'Steam System Information' text block.
 
-    Args:
-        home: User home directory. Defaults to $HOME.
+    ProtonDB expects this exact format when you paste system info into a
+    report submission. The layout matches what Steam's own Help > System
+    Information dialog produces. See the original shell version for reference:
+    https://github.com/mdeguzis/SteamOS-Tools/blob/master/utilities/protondb-systeminfo-tool.sh
+
+    home defaults to $HOME, or /home/deck on the Deck.
     """
     if home is None:
         home = os.environ.get("HOME", "/home/deck")
@@ -298,6 +345,7 @@ def generate_system_info(home: str | None = None) -> str:
     display = _read_display_info()
     disk = _read_disk_info()
 
+    # Steam reports CPU family/model/stepping as hex, so convert them
     cpu_family = cpu.get("cpu_family", "0")
     cpu_model = cpu.get("model", "0")
     cpu_stepping = cpu.get("stepping", "0")

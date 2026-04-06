@@ -325,7 +325,7 @@ export function patchGameContextMenu(LibraryContextMenuComponent: any): {
           return ret;
         });
       } else {
-        // Subsequent renders — splice directly
+        // subsequent renders, splice directly
         if (component.props?.children) {
           try { removeDupe(component.props.children); } catch { /* ignore */ }
           injectMenuItem(

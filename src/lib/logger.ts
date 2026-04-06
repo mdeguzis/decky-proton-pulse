@@ -1,3 +1,5 @@
+// Thin wrapper around the Python backend's log_frontend_event callable.
+// Keeps the frontend from having to deal with callable() plumbing directly.
 import { callable } from '@decky/api';
 
 const logFrontendEventCallable = callable<
@@ -13,6 +15,6 @@ export async function logFrontendEvent(
   try {
     await logFrontendEventCallable(level, message, context);
   } catch {
-    // Logging should never block the main user flow.
+    // don't let logging break the UI
   }
 }
