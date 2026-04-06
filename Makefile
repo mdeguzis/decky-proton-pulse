@@ -21,7 +21,7 @@ PROTONDB_LOCAL_OUTPUT ?= /tmp/proton-pulse-protondb-data
 APP_ID ?=
 SCREENSHOT_BASE ?=
 
-.PHONY: help build watch test test-ts test-py setup deploy deploy-reload build-and-deploy clean \
+.PHONY: help build watch test test-ts test-py typecheck setup deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
 
 help:
@@ -36,6 +36,7 @@ help:
 	@echo "  build             Clean, test, then build frontend"
 	@echo "  watch             Watch frontend for changes (pnpm watch)"
 	@echo "  test              Run all tests (Python + TypeScript)"
+	@echo "  typecheck         Run strict pyright type checking on all Python code"
 	@echo "  test-ts           Run TypeScript tests only (vitest)"
 	@echo "  test-py           Run Python tests only (pytest via uv)"
 	@echo "  setup             Install all dependencies (pnpm + uv)"
@@ -75,7 +76,13 @@ test: test-py test-ts
 test-ts:
 	pnpm test
 
+typecheck:
+	npx pyright
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m mypy
+
 test-py:
+	npx pyright
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m mypy
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m pytest tests/ -v
 
 setup:
