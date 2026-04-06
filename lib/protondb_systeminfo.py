@@ -39,7 +39,8 @@ def _read_form_factor() -> str:
     if result:
         import json as _json
         try:
-            return _json.loads(result).get("Chassis", "Unknown").capitalize()
+            chassis: str = str(_json.loads(result).get("Chassis", "Unknown"))
+            return chassis.capitalize()
         except (ValueError, AttributeError):
             pass
     result = _run(["hostnamectl", "chassis"])

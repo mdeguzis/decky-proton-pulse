@@ -152,7 +152,8 @@ def convert_webm_to_mp4(source_path: Path, output_path: Path) -> None:
     )
 
 
-def open_tty_for_stop() -> object | None:
+from typing import IO
+def open_tty_for_stop() -> IO[str] | None:
     try:
         return open("/dev/tty", "r", encoding="utf-8", errors="ignore")
     except OSError:
