@@ -14,7 +14,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import decky  # type: ignore[import-untyped]
+import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 from .plugin_utils import system_command_env
 
@@ -59,7 +59,7 @@ def curl_json(
 ProgressCallback = Callable[[int, int | None, float | None], None]
 
 
-def curl_download(
+def curl_download(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
     url: str,
     destination: Path,
     *,
@@ -99,7 +99,9 @@ def curl_download(
         str(destination),
     ]
 
-    process = subprocess.Popen(
+    # we manage the process lifecycle manually (poll, terminate, kill)
+    # so context manager doesn't fit here
+    process = subprocess.Popen(  # pylint: disable=consider-using-with
         command,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

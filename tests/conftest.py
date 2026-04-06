@@ -1,7 +1,6 @@
 # tests/conftest.py
 """Shared test fixtures and sys.path bootstrap for the test suite."""
 import logging
-import os
 import sys
 from pathlib import Path
 from typing import Generator
@@ -51,9 +50,9 @@ def plugin() -> Plugin:
 
 
 @pytest.fixture(autouse=True)
-def _reset_log_level() -> Generator[None, None, None]:
+def _reset_log_level() -> Generator[None, None, None]:  # pyright: ignore[reportUnusedFunction]
     """Reset the decky logger to INFO between tests so state doesn't leak."""
-    import decky
+    import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
     yield
     decky.logger.setLevel(logging.INFO)

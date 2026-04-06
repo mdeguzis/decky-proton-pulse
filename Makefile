@@ -83,6 +83,7 @@ typecheck:
 test-py:
 	npx pyright
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m mypy
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m pylint main.py lib/
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m pytest tests/ -v
 
 setup:

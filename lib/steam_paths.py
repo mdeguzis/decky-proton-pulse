@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import decky  # type: ignore[import-untyped]
+import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 
 def find_steam_root() -> Path | None:

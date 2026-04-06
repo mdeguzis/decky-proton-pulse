@@ -7,11 +7,20 @@ dependencies = []
 [dependency-groups]
 dev = [
     "mypy>=1.20.0",
+    "pylint>=4.0.5",
     "pytest>=8.0",
 ]
 
 [tool.uv]
 default-groups = ["dev"]
+
+[tool.pylint.main]
+max-line-length = 100
+
+[tool.pylint."messages control"]
+# R0801: the Steam path constants naturally appear in both
+# steam_paths.py and compat_tools.py
+disable = ["duplicate-code"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

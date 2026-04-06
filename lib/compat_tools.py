@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-import decky  # type: ignore[import-untyped]
+import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 from .steam_paths import compat_tools_dirs, find_steam_root, read_vdf_value
 
@@ -131,7 +131,7 @@ def find_closest_installed_tool(
     return best_tool
 
 
-def list_installed_compatibility_tools(
+def list_installed_compatibility_tools(  # pylint: disable=too-many-locals
     latest_metadata: dict[str, Any] | None,
 ) -> list[dict[str, Any]]:
     """Find all installed Proton builds on this system.

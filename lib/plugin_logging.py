@@ -11,7 +11,7 @@ import logging
 import logging.handlers
 import os
 
-import decky  # type: ignore[import-untyped]
+import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 
 def sync_set_log_level(
