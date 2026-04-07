@@ -382,7 +382,7 @@ export const en: TranslationTree = {
     refreshing: 'Refreshing...',
     installed: 'Installed',
     title: 'Compatibility Tools',
-    description: 'Proton-GE management inspired by Wine Cellar, tailored for Proton Pulse apply flow.',
+    description: 'Proton tool management.',
     filterPlaceholder: 'Filter versions...',
     zipPlaceholder: '/home/deck/Downloads/GE-Proton8-3.tar.gz',
     removing: 'Removing...',

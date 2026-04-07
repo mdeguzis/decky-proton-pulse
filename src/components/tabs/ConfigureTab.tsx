@@ -18,6 +18,7 @@ import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonG
 import { ReportCard, type DisplayReportCard } from '../ReportCard';
 import { ReportDetailModal } from '../ReportDetailModal';
 import { t } from '../../lib/i18n';
+import { isSteamShortcutApp } from '../../lib/steamApps';
 import { addTrackedConfig } from '../../lib/trackedConfigs';
 import { parseLaunchOptions } from '../../lib/launchVars';
 
@@ -208,6 +209,7 @@ function GameSummaryHeader({
   appName: string;
   reportsCount?: number;
 }) {
+  const isShortcut = isSteamShortcutApp(appId);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
       <img
@@ -220,8 +222,9 @@ function GameSummaryHeader({
           {appName || `App ${appId}`}
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5' }}>
-          AppID {appId}
-          {typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}
+          {isShortcut
+            ? 'Non-Steam shortcut'
+            : `AppID ${appId}${typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}`}
         </div>
       </div>
     </div>

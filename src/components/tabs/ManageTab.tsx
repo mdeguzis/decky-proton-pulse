@@ -8,7 +8,7 @@ import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
 import { ConfigEditorModal } from '../ConfigEditorModal';
 import { ProtonDBSubmitModal } from '../ProtonDBSubmitModal';
-import { getSteamAppDetails } from '../../lib/steamApps';
+import { getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
 import type { GpuVendor } from '../../types';
 
 interface Props {
@@ -95,6 +95,13 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
   };
 
   const handleSubmitReport = (config: TrackedConfig) => {
+    if (isSteamShortcutApp(config.appId)) {
+      toaster.toast({
+        title: 'Proton Pulse',
+        body: 'Non-Steam shortcuts cannot be submitted to ProtonDB.',
+      });
+      return;
+    }
     showModal(
       <ProtonDBSubmitModal appId={config.appId} appName={displayName(config)} />,
     );
@@ -119,14 +126,17 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
   };
 
   const openActionsMenu = (config: TrackedConfig, e: MouseEvent) => {
+    const isShortcut = isSteamShortcutApp(config.appId);
     showContextMenu(
       <Menu label={displayName(config)}>
         <MenuItem onClick={() => handleEdit(config)}>
           {t().common.edit}
         </MenuItem>
-        <MenuItem onClick={() => handleSubmitReport(config)}>
-          {t().protondbSubmit.submitToProtonDB}
-        </MenuItem>
+        {!isShortcut ? (
+          <MenuItem onClick={() => handleSubmitReport(config)}>
+            {t().protondbSubmit.submitToProtonDB}
+          </MenuItem>
+        ) : null}
         <MenuItem onClick={() => handleDelete(config)}>
           {t().common.clear}
         </MenuItem>
@@ -166,6 +176,12 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
         {sorted.map((config) => {
           const isCurrent = appId === config.appId;
           const name = displayName(config);
+          const isShortcut = isSteamShortcutApp(config.appId);
+          const metaParts = [
+            isShortcut ? 'Non-Steam shortcut' : `AppID ${config.appId}`,
+            config.protonVersion,
+            t().configManager.appliedAgo(relativeTime(config.appliedAt)),
+          ].filter(Boolean).join(' · ');
           return (
             <div
               key={config.appId}
@@ -195,7 +211,7 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
                   </div>
                 )}
                 <div style={{ fontSize: 10, color: '#7a9bb5' }}>
-                  AppID {config.appId} · {config.protonVersion} · {t().configManager.appliedAgo(relativeTime(config.appliedAt))}
+                  {metaParts}
                 </div>
               </div>
               <Focusable style={{ display: 'flex', flexShrink: 0 }}>

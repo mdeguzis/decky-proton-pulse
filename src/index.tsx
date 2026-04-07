@@ -69,9 +69,11 @@ function Content() {
     pageState.initialPage = tab;
     pageState.appId = null;
     pageState.appName = '';
-    dispatchNavigate({ tab, appId: null, appName: '' });
     Router.CloseSideMenus();
     Router.Navigate('/proton-pulse');
+    window.setTimeout(() => {
+      dispatchNavigate({ tab, appId: null, appName: '' });
+    }, 0);
   };
 
   return (
@@ -98,6 +100,15 @@ function Content() {
         <PanelSectionRow>
           <ButtonItem
             layout="below"
+            onClick={() => navigateTo('logs')}
+            description={t().sidebar.viewLogsDesc}
+          >
+            {t().sidebar.viewLogs}
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
             onClick={() => navigateTo('settings')}
             description={t().sidebar.settingsDesc}
           >
@@ -105,17 +116,7 @@ function Content() {
           </ButtonItem>
         </PanelSectionRow>
       </PanelSection>
-      <div style={{ flex: 1 }} />
       <PanelSection>
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={() => navigateTo('logs')}
-            description={t().sidebar.viewLogsDesc}
-          >
-            {t().sidebar.viewLogs}
-          </ButtonItem>
-        </PanelSectionRow>
         <PanelSectionRow>
           <ToggleField
             label={t().sidebar.debugLogs}

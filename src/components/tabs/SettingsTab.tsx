@@ -424,7 +424,7 @@ export function SettingsTab() {
     return tags;
   }, [managerState]);
 
-  const refreshManager = async (forceRefresh = false) => {
+  const refreshManager = async (forceRefresh = false, showSuccessToast = false) => {
     setLoadingManager(true);
     try {
       const nextState = await getProtonGeManagerState(forceRefresh);
@@ -442,6 +442,12 @@ export function SettingsTab() {
         installTotalBytes: nextState.install_status.total_bytes,
         installProgressFraction: nextState.install_status.progress_fraction,
       });
+      if (showSuccessToast) {
+        toaster.toast({
+          title: 'Proton Pulse',
+          body: 'Compatibility tools refreshed.',
+        });
+      }
     } catch (error) {
       console.error('Proton Pulse: failed to load Proton-GE manager state', error);
       void logFrontendEvent('ERROR', 'Failed to load Proton-GE manager state', {
@@ -791,14 +797,14 @@ export function SettingsTab() {
               Compatibility Tools
             </div>
             <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 4, maxWidth: 520, lineHeight: 1.45 }}>
-              Proton-GE management inspired by Wine Cellar, tailored for Proton Pulse apply flow.
+              Proton tool management.
             </div>
           </div>
           <CompactActionButton
             label={loadingManager ? 'Refreshing...' : 'Refresh'}
             onClick={() => {
               setAutoUpdateTriggered(false);
-              void refreshManager(true);
+              void refreshManager(true, true);
             }}
             disabled={loadingManager || installingTag !== null}
             fullWidth={false}

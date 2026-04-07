@@ -43,6 +43,25 @@ You can also review or clear applied options from the plugin's sidebar panel.
 * **Rotating debug logs** — separate rotating file handler for troubleshooting
 * **Python backend** — structured logging, game guard, full test suite
 
+## Translation Coverage
+
+Proton Pulse supports 10 languages. Translation coverage is enforced at build time (90% minimum). Run `pnpm run check-translations` for the full report.
+
+| Language | Code | Coverage |
+|---|---|---|
+| English | en | 100% (canonical) |
+| Deutsch | de | 99% |
+| Espanol | es | 98% |
+| Francais | fr | 96% |
+| Japanese | ja | 99% |
+| Korean | ko | 99% |
+| Portugues (BR) | pt-BR | 98% |
+| Russian | ru | 100% |
+| Turkce | tr | 100% |
+| Simplified Chinese | zh-CN | 100% |
+
+Want to help translate? See `src/lib/translations/` for the translation files.
+
 ## Installation
 
 > Installation from the Decky Plugin Marketplace is pending publication. For now, build and deploy from source.

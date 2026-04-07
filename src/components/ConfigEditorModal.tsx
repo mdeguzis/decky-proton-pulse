@@ -1,5 +1,5 @@
 // src/components/ConfigEditorModal.tsx
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   ModalRoot,
   Focusable,
@@ -8,13 +8,17 @@ import {
   DropdownItem,
   Dropdown,
   TextField,
+  SteamSpinner,
 } from '@decky/ui';
 import { toaster } from '@decky/api';
 import { LAUNCH_VAR_CATALOG, buildLaunchOptions, parseLaunchOptions, type LaunchVarDef } from '../lib/launchVars';
 import { addTrackedConfig, type TrackedConfig } from '../lib/trackedConfigs';
+import { getProtonGeManagerState, installProtonGe } from '../lib/compatTools';
 import { logFrontendEvent } from '../lib/logger';
 import { t } from '../lib/i18n';
+import { isSteamShortcutApp } from '../lib/steamApps';
 import type { GpuVendor } from '../types';
+import { buildVersionOptions, VersionOptionLabel, type VersionOption } from './EditReportModal';
 
 interface Props {
   appId: number | null;
@@ -58,6 +62,7 @@ function isCategoryHidden(cat: Category, gpuFilter: GpuFilter): boolean {
 }
 
 export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, onSave, closeModal }: Props) {
+  const isShortcut = appId ? isSteamShortcutApp(appId) : false;
   const parsed = existingConfig
     ? parseLaunchOptions(existingConfig.launchOptions)
     : { protonVersion: null, vars: {} as Record<string, string> };
@@ -71,12 +76,88 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       .filter(([k]) => !catalogKeys.has(k))
       .map(([key, value]) => ({ key, value }));
   });
+  const [versionOptions, setVersionOptions] = useState<VersionOption[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(true);
+  const [installing, setInstalling] = useState<string | null>(null);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<Category>>(
     () => initialCollapsed(gpuVendor),
   );
   const [gpuFilter, setGpuFilter] = useState<GpuFilter>(
     gpuVendor && gpuVendor !== 'other' ? gpuVendor : 'all',
   );
+
+  // load available proton versions for the dropdown
+  useEffect(() => {
+    getProtonGeManagerState(false)
+      .then((state) => {
+        const opts = buildVersionOptions(state.releases, state.installed_tools);
+
+        // if editing an existing config with a version, make sure it's in the list
+        if (protonVersion) {
+          const norm = protonVersion.toLowerCase();
+          const found = opts.some((o) => o.value.toLowerCase() === norm);
+          if (!found) {
+            opts.unshift({
+              value: protonVersion,
+              displayName: protonVersion,
+              installed: false,
+              managed: /ge/i.test(protonVersion),
+            });
+          }
+        }
+
+        setVersionOptions(opts);
+        setLoadingVersions(false);
+      })
+      .catch((err) => {
+        void logFrontendEvent('WARNING', 'Failed to load Proton versions for ConfigEditor', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        setLoadingVersions(false);
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleVersionChange = (nextVersion: string) => {
+    setProtonVersion(nextVersion);
+    const opt = versionOptions.find((o) => o.value === nextVersion);
+    if (opt && !opt.installed && opt.managed) {
+      setInstalling(nextVersion);
+      void logFrontendEvent('INFO', 'Auto-installing Proton version from config editor', {
+        version: nextVersion,
+      });
+      installProtonGe(nextVersion)
+        .then((result) => {
+          if (result.success) {
+            toaster.toast({
+              title: 'Proton Pulse',
+              body: result.already_installed
+                ? t().toast.alreadyInstalled(nextVersion)
+                : t().toast.installed(nextVersion),
+            });
+            setVersionOptions((prev) =>
+              prev.map((o) => (o.value === nextVersion ? { ...o, installed: true } : o)),
+            );
+          } else {
+            toaster.toast({
+              title: 'Proton Pulse',
+              body: t().toast.installFailed(result.message),
+            });
+          }
+        })
+        .catch((err) => {
+          toaster.toast({
+            title: 'Proton Pulse',
+            body: t().toast.installFailed(err instanceof Error ? err.message : String(err)),
+          });
+        })
+        .finally(() => setInstalling(null));
+    }
+  };
+
+  const versionDropdownOptions = versionOptions.map((opt) => ({
+    data: opt.value,
+    label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
+  }));
 
   const allVars = useMemo(() => {
     const merged = { ...enabledVars };
@@ -218,7 +299,11 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
                 {appName || (appId ? `App ${appId}` : t().configManager.createConfig)}
               </div>
-              {appId && <div style={{ fontSize: 9, color: '#7a9bb5' }}>AppID {appId}</div>}
+              {appId && (
+                <div style={{ fontSize: 9, color: '#7a9bb5' }}>
+                  {isShortcut ? 'Non-Steam shortcut' : `AppID ${appId}`}
+                </div>
+              )}
             </div>
           </div>
           <Focusable style={{ display: 'flex', gap: 8 }}>
@@ -296,11 +381,20 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
 
           {/* Proton Version */}
           <div style={{ marginBottom: 10 }}>
-            <TextField
-              label={t().detail.protonVersion}
-              value={protonVersion}
-              onChange={(e) => setProtonVersion(e.target.value)}
-            />
+            {loadingVersions ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                <SteamSpinner style={{ width: 16, height: 16 }} />
+                <span style={{ fontSize: 11, color: '#7a9bb5' }}>{t().common.loading}</span>
+              </div>
+            ) : (
+              <DropdownItem
+                label={installing ? t().detail.installing(installing) : t().detail.protonVersion}
+                rgOptions={versionDropdownOptions}
+                selectedOption={protonVersion}
+                onChange={(opt) => handleVersionChange(opt.data)}
+                disabled={!!installing}
+              />
+            )}
           </div>
 
           {/* Toggle sections by category */}
