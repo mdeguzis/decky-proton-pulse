@@ -129,6 +129,7 @@ export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredRepor
     recencyDays,
     notesModifier,
     upvotes: 0,
+    downvotes: 0,
   };
 }
 

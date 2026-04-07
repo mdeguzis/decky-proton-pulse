@@ -53,6 +53,11 @@ describe('scoreReport', () => {
     expect(scored.upvotes).toBe(0);
   });
 
+  it('scored report includes downvotes defaulting to 0', () => {
+    const report = scoreReport(platinumNvidiaRecent, nvidiaSystem);
+    expect(report.downvotes).toBe(0);
+  });
+
   it('score is never negative', () => {
     const r = makeCdnReport({ rating: 'borked', gpu: '' });
     expect(scoreReport(r, nvidiaSystem).score).toBeGreaterThanOrEqual(0);

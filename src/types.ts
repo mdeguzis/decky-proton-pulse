@@ -60,6 +60,7 @@ export interface ScoredReport extends CdnReport {
   recencyDays: number;
   notesModifier: number;
   upvotes: number;
+  downvotes: number;
 }
 
 export interface TieredReports {
