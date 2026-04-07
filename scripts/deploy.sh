@@ -55,6 +55,11 @@ cp dist/index.js             "${STAGING_DIR}/${PLUGIN_NAME}/dist/"
 cp main.py plugin.json LICENSE package.json README.md \
    "${STAGING_DIR}/${PLUGIN_NAME}/"
 
+# Python lib/ modules (backend helpers), skip __pycache__
+if [[ -d lib ]]; then
+  rsync -a --exclude='__pycache__' lib/ "${STAGING_DIR}/${PLUGIN_NAME}/lib/"
+fi
+
 (cd "$STAGING_DIR" && zip -r "$ZIP_NAME" "$PLUGIN_NAME")
 mv "${STAGING_DIR}/${ZIP_NAME}" .
 

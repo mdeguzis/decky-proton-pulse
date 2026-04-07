@@ -80,7 +80,7 @@ export function AboutTab() {
         <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 10, lineHeight: 1.4 }}>
           {aboutStrings.submitIssueHint}
         </div>
-        <Focusable style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <Focusable style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
           <div style={{ flex: 1 }}>
             <Dropdown
               rgOptions={ISSUE_TEMPLATES.map((tpl) => ({
@@ -94,7 +94,7 @@ export function AboutTab() {
           <DialogButton
             onClick={handleSubmit}
             disabled={submitting}
-            style={{ minWidth: 100, padding: '6px 16px', fontSize: 12 }}
+            style={{ flex: 1, fontSize: 12 }}
           >
             {submitting ? aboutStrings.openingIssue : aboutStrings.submitIssue}
           </DialogButton>

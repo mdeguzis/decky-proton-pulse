@@ -12,8 +12,10 @@ orchestration facade that wires them together.
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import threading
@@ -22,6 +24,14 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
+# Decky's sandboxed loader may not include the plugin directory in sys.path,
+# so `from lib.xxx import ...` fails with ModuleNotFoundError. Add the plugin
+# dir explicitly so Python can find the lib/ package.
+_PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
+if _PLUGIN_DIR not in sys.path:
+    sys.path.insert(0, _PLUGIN_DIR)
+
+# pylint: disable=wrong-import-position
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
 from lib.compat_tools import (
@@ -43,9 +53,11 @@ from lib.proton_ge import (
     read_latest_metadata,
     set_install_status,
 )
+from lib.metrics_export import export_metrics_to_disk
 from lib.protondb_systeminfo import generate_system_info
 from lib.steam_paths import compat_tools_dir, compat_tools_dirs
 from lib.system_info import collect_system_info
+# pylint: enable=wrong-import-position
 
 
 class Plugin:  # pylint: disable=too-many-instance-attributes
@@ -149,6 +161,10 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         except (OSError, ValueError, subprocess.SubprocessError) as e:
             decky.logger.error(f"Failed to generate ProtonDB system info: {e}")
             return f"Error generating system info: {e}"
+
+    async def export_metrics(self, data: str) -> bool:
+        """Write frontend metrics JSON to disk for offline analysis."""
+        return export_metrics_to_disk(data)
 
     async def is_game_running(self) -> bool:
         """Check if a Steam game process is active via pgrep."""
