@@ -6,6 +6,19 @@ vi.mock('@decky/api', () => ({
   callable: vi.fn(() => vi.fn().mockResolvedValue(true)),
 }));
 
+// bypass cache so every test hits the mock fetch
+vi.mock('./cache', () => ({
+  getCached: vi.fn(() => null),
+  setCache: vi.fn(),
+  updateCachedVotes: vi.fn(),
+}));
+
+// stub metrics so they dont break in test env
+vi.mock('./metrics', () => ({
+  startDetailedSpan: vi.fn(() => ({ end: vi.fn() })),
+  countFetch: vi.fn(),
+}));
+
 import { fetchNoCors } from '@decky/api';
 import { getProtonDBSummary, getProtonDBReports, getProtonDBReportsWithDiagnostics, getVotes, postUpvote } from './protondb';
 import type { ProtonDBSummary } from '../types';

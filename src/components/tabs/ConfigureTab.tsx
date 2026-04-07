@@ -394,7 +394,8 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     }
 
     let cancelled = false;
-    void logFrontendEvent('DEBUG', 'Loading Manage This Game data', {
+    const loadT0 = Date.now();
+    void logFrontendEvent('INFO', 'Manage This Game: loading started', {
       appId,
       appName,
       hasSystemInfo: !!sysInfo,
@@ -416,11 +417,13 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         if (cancelled) return;
         const r = reportResult.reports;
         const v = voteResult.votes;
-        void logFrontendEvent('DEBUG', 'Manage This Game data loaded', {
+        void logFrontendEvent('INFO', `Manage This Game: loaded (${Date.now() - loadT0}ms)`, {
           appId,
           appName,
           reportCount: r.length,
           voteCount: Object.keys(v).length,
+          durationMs: Date.now() - loadT0,
+          source: reportResult.diagnostics.source,
         });
         setReports(r);
         setVotes(v);
@@ -429,10 +432,11 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       })
       .catch((error) => {
         if (cancelled) return;
-        void logFrontendEvent('ERROR', 'Manage This Game load failed', {
+        void logFrontendEvent('ERROR', `Manage This Game: load FAILED (${Date.now() - loadT0}ms)`, {
           appId,
           appName,
           error: error instanceof Error ? error.message : String(error),
+          durationMs: Date.now() - loadT0,
         });
         console.error(error);
       })
@@ -852,7 +856,9 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
           onGamepadDirection={handleRootDirection}
           style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}
         >
-          <div
+          {/* flow-children="horizontal" makes dpad left/right move between the dropdowns */}
+          <Focusable
+            flow-children="horizontal"
             style={{
               display: 'grid',
               gridTemplateColumns: '92px auto minmax(0, 220px) auto minmax(0, 170px) auto',
@@ -907,7 +913,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             <div style={{ fontSize: 11, color: '#7a9bb5', whiteSpace: 'nowrap', textAlign: 'right' }}>
               {t().common.shown(sortedReports.length)}
             </div>
-          </div>
+          </Focusable>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
             <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
               {detectingGpu
@@ -931,6 +937,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                       setSelectedKey(report.displayKey);
                     }}
                     onSelect={openReportDetail}
+                    onUpvote={handleUpvote}
                   />
                 ))
               )}

@@ -12,10 +12,11 @@ import { LogsTab } from './tabs/LogsTab';
 import { CompatibilityToolsTab } from './tabs/CompatibilityToolsTab';
 import { GeneralSettingsTab } from './tabs/GeneralSettingsTab';
 import { AboutTab } from './tabs/AboutTab';
-import { logFrontendEvent } from '../lib/logger';
+import { logFrontendEvent, callWithTimeout } from '../lib/logger';
 import { useLanguage, t } from '../lib/i18n';
 
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
+const getSystemInfoSafe = () => callWithTimeout(() => getSystemInfo(), 'get_system_info');
 
 export function ProtonPulsePage() {
   useLanguage(); // triggers re-render on language change
@@ -24,20 +25,21 @@ export function ProtonPulsePage() {
   const [appName, setAppName]       = useState<string>(pageState.appName);
   const [sysInfo, setSysInfo]       = useState<SystemInfo | null>(null);
 
+  const [backendError, setBackendError] = useState<string | null>(null);
+
   useEffect(() => {
-    getSystemInfo()
+    getSystemInfoSafe()
       .then((info) => {
-        void logFrontendEvent('INFO', 'System info loaded for modal', {
+        void logFrontendEvent('INFO', 'System info loaded', {
           gpuVendor: info.gpu_vendor,
           kernel: info.kernel,
         });
         setSysInfo(info);
       })
       .catch((error) => {
-        void logFrontendEvent('ERROR', 'Failed to load system info for modal', {
-          error: error instanceof Error ? error.message : String(error),
-        });
-        console.error(error);
+        const msg = error instanceof Error ? error.message : String(error);
+        void logFrontendEvent('ERROR', 'Failed to load system info', { error: msg });
+        setBackendError(msg);
       });
   }, []);
 
@@ -104,20 +106,39 @@ export function ProtonPulsePage() {
   ];
 
   return (
-    <SidebarNavigation
-      title="Proton Pulse"
-      showTitle={false}
-      pages={pages}
-      page={activePage}
-      onPageRequested={(page) => {
-        void logFrontendEvent('DEBUG', 'Sidebar page requested', {
-          page,
-          appId,
-          appName,
-        });
-        setActivePage(page);
-      }}
-      disableRouteReporting={true}
-    />
+    <>
+      {backendError && (
+        <div style={{
+          background: '#4a1c1c',
+          border: '1px solid #8b3030',
+          borderRadius: 6,
+          padding: '8px 14px',
+          margin: '0 0 8px',
+          fontSize: 11,
+          color: '#f4c6c6',
+          lineHeight: 1.5,
+        }}>
+          <strong>Backend unavailable:</strong> {backendError}
+          <div style={{ fontSize: 10, color: '#c09090', marginTop: 4 }}>
+            Check Logs tab for details. The Python backend may have failed to start.
+          </div>
+        </div>
+      )}
+      <SidebarNavigation
+        title="Proton Pulse"
+        showTitle={false}
+        pages={pages}
+        page={activePage}
+        onPageRequested={(page) => {
+          void logFrontendEvent('DEBUG', 'Sidebar page requested', {
+            page,
+            appId,
+            appName,
+          });
+          setActivePage(page);
+        }}
+        disableRouteReporting={true}
+      />
+    </>
   );
 }

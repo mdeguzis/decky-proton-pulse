@@ -21,12 +21,21 @@ import { pageState, dispatchNavigate } from './lib/pageState';
 import type { PageId } from './lib/pageState';
 import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextMenu';
 import { getSetting, setSetting } from './lib/settings';
-import { logFrontendEvent } from './lib/logger';
+import { logFrontendEvent, callWithTimeout } from './lib/logger';
 import { TRANSLATIONS_LOADED } from './lib/translations';
 import { useLanguage, t } from './lib/i18n';
+import { initCache } from './lib/cache';
+import { runStartupPrefetch } from './lib/prefetch';
+import { startAutoFlush, stopAutoFlush, flushMetricsToDisk } from './lib/metrics';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
+
+// wrap backend calls so they timeout + log clearly when Python is dead
+const setLogLevelSafe = (level: string) =>
+  callWithTimeout(() => setLogLevel(level), 'set_log_level', 5000);
+const getPluginVersionSafe = () =>
+  callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000);
 
 function extractLibraryAppId(pathname: string): number | null {
   const match = pathname.match(/\/(?:routes\/)?library\/app\/(\d+)/);
@@ -42,14 +51,16 @@ function Content() {
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
 
   useEffect(() => {
-    void getPluginVersion()
+    void getPluginVersionSafe()
       .then(setVersion)
-      .catch(() => setVersion('unknown'));
+      .catch(() => setVersion('backend offline'));
   }, []);
 
   useEffect(() => {
-    void setLogLevel(debugEnabled ? 'DEBUG' : 'INFO').catch((error) => {
-      console.error('Proton Pulse: failed to sync debug setting from sidebar', error);
+    void setLogLevelSafe(debugEnabled ? 'DEBUG' : 'INFO').catch((error) => {
+      void logFrontendEvent('ERROR', 'Backend: set_log_level failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     });
   }, [debugEnabled]);
 
@@ -143,9 +154,19 @@ export default definePlugin(() => {
   console.log('Proton Pulse initializing');
   void logFrontendEvent('INFO', 'Plugin frontend initializing', { translationsLoaded: TRANSLATIONS_LOADED });
 
-  void setLogLevel(getSetting('debugEnabled', false) ? 'DEBUG' : 'INFO').catch((error) => {
-    console.error('Proton Pulse: failed to sync saved debug setting', error);
+  void setLogLevelSafe(getSetting('debugEnabled', false) ? 'DEBUG' : 'INFO').catch((error) => {
+    void logFrontendEvent('ERROR', 'Backend: initial set_log_level failed - Python may not be running', {
+      error: error instanceof Error ? error.message : String(error),
+    });
   });
+
+  // init cache from localStorage and start prefetch in background
+  initCache();
+  startAutoFlush();
+  // delay prefetch a bit so Steam's UI is fully loaded and collectionStore is populated
+  const prefetchTimer = setTimeout(() => {
+    void runStartupPrefetch();
+  }, 5000);
 
   routerHook.addRoute('/proton-pulse', ProtonPulsePage);
   const syncFocusedGameFromPath = () => {
@@ -187,6 +208,10 @@ export default definePlugin(() => {
     onDismount() {
       console.log('Proton Pulse unloading');
       void logFrontendEvent('INFO', 'Plugin frontend unloading');
+      // flush metrics one last time before shutdown
+      stopAutoFlush();
+      clearTimeout(prefetchTimer);
+      void flushMetricsToDisk();
       routerHook.removeRoute('/proton-pulse');
       routerHook.removePatch('/library/app/:appid', gamePagePatch);
       clearInterval(focusedGamePoll);

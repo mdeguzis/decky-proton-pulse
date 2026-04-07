@@ -4,11 +4,19 @@
 // GitHub Pages site) with a fallback to the live ProtonDB API when the CDN
 // doesn't have data for a game yet. Also handles upvote submission via
 // GitHub repository/workflow dispatch.
+//
+// All data reads go through the local cache first. On cache miss, we fetch
+// from the network and write the result back into cache. Every fetch is
+// timed via the metrics library for perf profiling.
 import { fetchNoCors } from "@decky/api";
 import type { ProtonDBSummary, CdnReport, ProtonRating } from "../types";
 import { logFrontendEvent } from "./logger";
+import { getCached, setCache, updateCachedVotes } from "./cache";
 import { cachedFetchJson } from "./cdnCache";
+import { startDetailedSpan, countFetch } from "./metrics";
 
+// TODO: replace GitHub Pages with a proper CDN (CloudFlare R2, Fastly, etc)
+// for better reliability, caching headers, and reduced latency
 const SUMMARY_URL =
   "https://www.protondb.com/api/v1/reports/summaries/{id}.json";
 const APP_INDEX_URL =
@@ -42,19 +50,28 @@ export interface VotesFetchDiagnostics {
 export async function getProtonDBSummary(
   appId: string,
 ): Promise<ProtonDBSummary | null> {
+  // check cache for summary
+  const cached = getCached(appId);
+  if (cached?.summary) {
+    await logFrontendEvent("DEBUG", "Serving summary from cache", { appId });
+    return cached.summary;
+  }
+
+  const span = startDetailedSpan('fetch-live-summary', appId);
+  countFetch();
   const url = SUMMARY_URL.replace("{id}", appId);
   try {
-    await logFrontendEvent("DEBUG", "Fetching ProtonDB summary", {
-      appId,
-      url,
-    });
+    const st0 = Date.now();
+    await logFrontendEvent("INFO", "NET >> summary request started", { appId, url });
     const resp = await fetchNoCors(url);
-    await logFrontendEvent("DEBUG", "ProtonDB summary response received", {
+    await logFrontendEvent("INFO", `NET << summary response ${resp.status} (${Date.now() - st0}ms)`, {
       appId,
       url,
       status: resp.status,
+      durationMs: Date.now() - st0,
     });
     if (resp.status !== 200) {
+      span.end(false, { status: resp.status });
       await logFrontendEvent(
         "WARNING",
         "ProtonDB summary request returned non-200",
@@ -63,6 +80,7 @@ export async function getProtonDBSummary(
       return null;
     }
     const summary = (await resp.json()) as ProtonDBSummary;
+    span.end(true, { total: summary.total, tier: summary.tier });
     await logFrontendEvent("DEBUG", "Fetched ProtonDB summary", {
       appId,
       url,
@@ -71,6 +89,7 @@ export async function getProtonDBSummary(
     });
     return summary;
   } catch (error) {
+    span.end(false, { error: error instanceof Error ? error.message : String(error) });
     await logFrontendEvent("ERROR", "Failed to fetch ProtonDB summary", {
       appId,
       url,
@@ -111,6 +130,33 @@ export async function getProtonDBReportsWithDiagnostics(
   reports: CdnReport[];
   diagnostics: ReportFetchDiagnostics;
 }> {
+  // check local cache first
+  const cached = getCached(appId);
+  if (cached && cached.reports.length > 0) {
+    await logFrontendEvent("INFO", "Serving reports from cache", {
+      appId,
+      reportCount: cached.reports.length,
+      cacheAgeMs: Date.now() - cached.cachedAt,
+      source: cached.source,
+    });
+    return {
+      reports: cached.reports,
+      diagnostics: {
+        source: "cdn",
+        indexUrl: APP_INDEX_URL.replace("{id}", appId),
+        indexStatus: 200,
+        years: [],
+        yearStatuses: {},
+        liveSummaryUrl: SUMMARY_URL.replace("{id}", appId),
+        liveSummaryStatus: null,
+        liveSummaryTotal: cached.summary?.total ?? null,
+        liveSummaryTier: cached.summary?.tier ?? null,
+      },
+    };
+  }
+
+  const fetchSpan = startDetailedSpan('fetch-cdn-index', appId);
+  countFetch();
   const indexUrl = APP_INDEX_URL.replace("{id}", appId);
   const diagnostics: ReportFetchDiagnostics = {
     source: "none",
@@ -124,20 +170,22 @@ export async function getProtonDBReportsWithDiagnostics(
     liveSummaryTier: null,
   };
   try {
-    await logFrontendEvent("INFO", "Fetching Proton Pulse report index", {
+    const t0 = Date.now();
+    await logFrontendEvent("INFO", "NET >> CDN index request started", {
       appId,
-      indexUrl,
+      url: indexUrl,
     });
     // Fetch index to discover available year files (cache-aware)
     const indexResult = await cachedFetchJson<string[]>(indexUrl, appId, "index.json");
     diagnostics.indexStatus = indexResult.data !== null ? 200 : null;
     await logFrontendEvent(
-      "DEBUG",
-      "Proton Pulse report index response received",
+      "INFO",
+      `NET << CDN index response (${Date.now() - t0}ms)`,
       {
         appId,
         indexUrl,
         fromCache: indexResult.fromCache,
+        durationMs: Date.now() - t0,
       },
     );
     if (indexResult.data === null) {
@@ -170,10 +218,11 @@ export async function getProtonDBReportsWithDiagnostics(
       years.map(async (year) => {
         const yearUrl = YEAR_URL.replace("{id}", appId).replace("{year}", year);
         try {
-          await logFrontendEvent("DEBUG", "Fetching report year file", {
+          const yt0 = Date.now();
+          await logFrontendEvent("INFO", `NET >> CDN year ${year} request started`, {
             appId,
             year,
-            yearUrl,
+            url: yearUrl,
           });
           const result = await cachedFetchJson<Array<CdnReport & { rating: string }>>(
             yearUrl,
@@ -182,13 +231,14 @@ export async function getProtonDBReportsWithDiagnostics(
           );
           diagnostics.yearStatuses[year] = result.data !== null ? 200 : null;
           await logFrontendEvent(
-            "DEBUG",
-            "Report year file response received",
+            "INFO",
+            `NET << CDN year ${year} response (${Date.now() - yt0}ms)`,
             {
               appId,
               year,
               yearUrl,
               fromCache: result.fromCache,
+              durationMs: Date.now() - yt0,
             },
           );
           if (result.data === null) {
@@ -237,6 +287,9 @@ export async function getProtonDBReportsWithDiagnostics(
       return await fallbackToLiveSummary(appId, diagnostics, "cdn-years-empty");
     }
     diagnostics.source = "cdn";
+    // write through to cache for next time
+    setCache(appId, reports, null, {}, 'cdn');
+    fetchSpan.end(true, { years: years.length, reports: reports.length });
     await logFrontendEvent("INFO", "Finished Proton Pulse report fetch", {
       appId,
       source: diagnostics.source,
@@ -245,6 +298,9 @@ export async function getProtonDBReportsWithDiagnostics(
     });
     return { reports, diagnostics };
   } catch (error) {
+    fetchSpan.end(false, {
+      error: error instanceof Error ? error.message : String(error),
+    });
     await logFrontendEvent(
       "ERROR",
       "Failed to fetch Proton Pulse report index",
@@ -268,18 +324,20 @@ async function fallbackToLiveSummary(
 }> {
   const url = diagnostics.liveSummaryUrl;
   try {
-    await logFrontendEvent("INFO", "Falling back to live ProtonDB summary", {
+    const ft0 = Date.now();
+    await logFrontendEvent("INFO", `NET >> live summary fallback started (${reason})`, {
       appId,
       reason,
       url,
     });
     const resp = await fetchNoCors(url);
     diagnostics.liveSummaryStatus = resp.status;
-    await logFrontendEvent("DEBUG", "Live ProtonDB summary response received", {
+    await logFrontendEvent("INFO", `NET << live summary response ${resp.status} (${Date.now() - ft0}ms)`, {
       appId,
       reason,
       url,
       status: resp.status,
+      durationMs: Date.now() - ft0,
     });
     if (resp.status !== 200) {
       await logFrontendEvent(
@@ -327,6 +385,18 @@ export async function getVotesWithDiagnostics(appId: string): Promise<{
   votes: Record<string, number>;
   diagnostics: VotesFetchDiagnostics;
 }> {
+  // check cache for votes
+  const cached = getCached(appId);
+  if (cached && Object.keys(cached.votes).length > 0) {
+    await logFrontendEvent("DEBUG", "Serving votes from cache", { appId });
+    return {
+      votes: cached.votes,
+      diagnostics: { url: VOTES_URL.replace("{id}", appId), status: 200 },
+    };
+  }
+
+  const span = startDetailedSpan('fetch-cdn-votes', appId);
+  countFetch();
   const url = VOTES_URL.replace("{id}", appId);
   const diagnostics: VotesFetchDiagnostics = { url, status: null };
   try {
@@ -345,6 +415,8 @@ export async function getVotesWithDiagnostics(appId: string): Promise<{
       });
       return { votes: {}, diagnostics };
     }
+    updateCachedVotes(appId, result.data);
+    span.end(true, { count: Object.keys(result.data).length });
     await logFrontendEvent("DEBUG", "Fetched votes", {
       appId,
       url,
@@ -352,6 +424,7 @@ export async function getVotesWithDiagnostics(appId: string): Promise<{
     });
     return { votes: result.data, diagnostics };
   } catch (error) {
+    span.end(false, { error: error instanceof Error ? error.message : String(error) });
     await logFrontendEvent("ERROR", "Failed to fetch votes", {
       appId,
       url,

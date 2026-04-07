@@ -1,11 +1,14 @@
 // src/components/tabs/LogsTab.tsx
-import { useEffect, useRef, useState } from 'react';
+//
+// Shows live plugin logs from the frontend ring buffer. Logs appear
+// instantly since they come from the in-memory buffer, not the Python
+// backend file. Auto-scrolls to the bottom by default, with dpad/
+// stick scrolling support.
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Focusable, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
-import { callable } from '@decky/api';
 import { t } from '../../lib/i18n';
-
-const getLogContents = callable<[], string>('get_log_contents');
+import { getLogText, subscribeToLogs, getLogCount } from '../../lib/logger';
 
 const SCROLL_STEP = 80;
 
@@ -16,7 +19,10 @@ export function LogsTab() {
   const [autoFollow, setAutoFollow] = useState(true);
   const [showJumpHint, setShowJumpHint] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const refreshLogs = useCallback(() => {
+    setLogs(getLogText());
+  }, []);
 
   const focusScrollPane = () => {
     setPaneActive(true);
@@ -24,37 +30,30 @@ export function LogsTab() {
     scrollRef.current?.focus();
   };
 
+  // subscribe to frontend log buffer for live updates
   useEffect(() => {
-    let active = true;
-    const poll = async () => {
-      try {
-        const content = await getLogContents();
-        if (active) setLogs(content);
-      } catch {
-        // log file may not exist yet
-      }
-    };
-    poll();
-    const interval = setInterval(poll, 3000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, []);
+    refreshLogs(); // initial load
+    const unsub = subscribeToLogs(refreshLogs);
+    return unsub;
+  }, [refreshLogs]);
 
+  // auto-scroll to bottom when new logs come in.
+  // scrollIntoView doesn't work reliably here because Decky's tab
+  // containers don't always give us a properly constrained height,
+  // so we set scrollTop directly on the scroll container instead
   useEffect(() => {
-    if (!autoFollow || !paneActive) return;
+    if (!autoFollow) return;
     setShowJumpHint(false);
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs, autoFollow, paneActive]);
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [logs, autoFollow]);
 
-  // Dpad / left-stick up-down scroll while the log pane has gamepad focus.
   const handleDirection = (evt: GamepadEvent) => {
     if (!scrollRef.current) return;
     if (evt.detail.button === GamepadButton.DIR_RIGHT) {
       focusScrollPane();
       if (autoFollow) {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }
       return;
     }
@@ -78,29 +77,27 @@ export function LogsTab() {
     setPaneActive(true);
     setAutoFollow(true);
     setShowJumpHint(false);
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     focusScrollPane();
   };
 
-  // Give the scroll div real DOM focus so Steam's right-stick-to-scroll fires.
   const handleFocus = () => setFocused(true);
   const handleBlur = () => setFocused(false);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div
-        style={{
-          marginBottom: 8,
-          paddingLeft: 2,
-          fontSize: 11,
-          color: '#7a9bb5',
-        }}
-      >
-        {autoFollow
-          ? paneActive
-            ? t().logs.focused
-            : t().logs.moveRight
-          : t().logs.manualScroll}
+      {/* log count header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+          {autoFollow
+            ? paneActive
+              ? t().logs.focused
+              : t().logs.moveRight
+            : t().logs.manualScroll}
+        </div>
+        <div style={{ fontSize: 10, color: '#556b7a' }}>
+          {getLogCount()} entries
+        </div>
       </div>
       <Focusable
         onGamepadDirection={handleDirection}
@@ -152,7 +149,6 @@ export function LogsTab() {
             </div>
           )}
           {logs || <span style={{ color: '#666' }}>{t().logs.noLogs}</span>}
-          <div ref={bottomRef} />
         </div>
       </Focusable>
     </div>
