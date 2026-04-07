@@ -120,7 +120,6 @@ function MetricsInfoBox() {
 
 export function GeneralSettingsTab() {
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
-  const [ghToken, setGhToken] = useState(() => getSetting<string>('gh-votes-token', ''));
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
 
@@ -139,15 +138,6 @@ export function GeneralSettingsTab() {
     });
     setDebugEnabled(enabled);
     setSetting('debugEnabled', enabled);
-  };
-
-  const handleTokenChange = (value: string) => {
-    void logFrontendEvent('DEBUG', 'GitHub token field updated', {
-      hasToken: value.trim().length > 0,
-      length: value.length,
-    });
-    setGhToken(value);
-    setSetting('gh-votes-token', value);
   };
 
   useLanguage(); // subscribes to re-render on language change
@@ -185,32 +175,6 @@ export function GeneralSettingsTab() {
             checked={debugEnabled}
             onChange={handleDebugToggle}
           />
-        </div>
-        <div style={focusClipRowStyle()}>
-          <div style={{ padding: '8px 16px' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f4ff', marginBottom: 2 }}>
-              {t().settings.ghToken}
-            </div>
-            <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 6 }}>
-              {t().settings.ghTokenDescription}
-            </div>
-            <input
-              type="password"
-              value={ghToken}
-              onChange={(e) => handleTokenChange(e.target.value)}
-              placeholder="ghp_..."
-              style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                background: '#1a2a3a',
-                border: '1px solid #2a3a4a',
-                borderRadius: 6,
-                color: '#e8f4ff',
-                fontSize: 12,
-                padding: '6px 10px',
-              }}
-            />
-          </div>
         </div>
       </div>
 

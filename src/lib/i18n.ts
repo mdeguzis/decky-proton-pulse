@@ -126,8 +126,6 @@ export interface TranslationTree {
     debugLogs: string;
     debugLogsDescription: string;
     general: string;
-    ghToken: string;
-    ghTokenDescription: string;
   };
   compatTools: {
     install: string;
@@ -157,10 +155,8 @@ export interface TranslationTree {
     applyCancelled: string;
     noCompatTools: string;
     applyFailed: (msg: string) => string;
-    setTokenToUpvote: string;
     voteSubmitted: string;
     voteFailed: string;
-    upvoteFailed: string;
     requiredProtonVersion: string;
     requiresVersion: (version: string) => string;
     chooseApplyMethod: string;
@@ -372,8 +368,6 @@ export const en: TranslationTree = {
     debugLogs: 'Debug Logs',
     debugLogsDescription: 'Enable verbose debug logging',
     general: 'General',
-    ghToken: 'GitHub Token',
-    ghTokenDescription: 'Personal access token for submitting votes',
   },
   compatTools: {
     install: 'Install',
@@ -403,10 +397,8 @@ export const en: TranslationTree = {
     applyCancelled: 'Apply cancelled',
     noCompatTools: 'No compatibility tools available',
     applyFailed: (msg) => `Apply failed: ${msg}`,
-    setTokenToUpvote: 'Set a GitHub token to upvote',
     voteSubmitted: 'Vote submitted',
     voteFailed: 'Vote failed',
-    upvoteFailed: 'Upvote failed',
     requiredProtonVersion: 'Required Proton Version',
     requiresVersion: (v) => `This profile config requires ${v}, but it is not currently installed.`,
     chooseApplyMethod: 'Choose how you want to apply this profile.',
