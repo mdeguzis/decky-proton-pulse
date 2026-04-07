@@ -2,8 +2,7 @@
 //
 // Fetches ProtonDB reports and summary data from the CDN (proton-pulse-data
 // GitHub Pages site) with a fallback to the live ProtonDB API when the CDN
-// doesn't have data for a game yet. Also handles upvote submission via
-// GitHub repository/workflow dispatch.
+// doesn't have data for a game yet.
 //
 // All data reads go through the local cache first. On cache miss, we fetch
 // from the network and write the result back into cache. Every fetch is
@@ -11,7 +10,7 @@
 import { fetchNoCors } from "@decky/api";
 import type { ProtonDBSummary, CdnReport, ProtonRating } from "../types";
 import { logFrontendEvent } from "./logger";
-import { getCached, setCache, updateCachedVotes } from "./cache";
+import { getCached, setCache } from "./cache";
 import { cachedFetchJson } from "./cdnCache";
 import { startDetailedSpan, countFetch } from "./metrics";
 
@@ -23,13 +22,6 @@ const APP_INDEX_URL =
   "https://mdeguzis.github.io/proton-pulse-data/data/{id}/index.json";
 const YEAR_URL =
   "https://mdeguzis.github.io/proton-pulse-data/data/{id}/{year}.json";
-const VOTES_URL =
-  "https://mdeguzis.github.io/proton-pulse-data/data/{id}/votes.json";
-const REPOSITORY_DISPATCH_URL =
-  "https://api.github.com/repos/mdeguzis/proton-pulse-data/dispatches";
-const WORKFLOW_DISPATCH_URL =
-  "https://api.github.com/repos/mdeguzis/proton-pulse-data/actions/workflows/upvote.yml/dispatches";
-const WORKFLOW_REF = "main";
 
 export interface ReportFetchDiagnostics {
   source: "cdn" | "live-summary" | "none";
@@ -43,10 +35,6 @@ export interface ReportFetchDiagnostics {
   liveSummaryTier: ProtonRating | null;
 }
 
-export interface VotesFetchDiagnostics {
-  url: string;
-  status: number | null;
-}
 export async function getProtonDBSummary(
   appId: string,
 ): Promise<ProtonDBSummary | null> {
@@ -376,142 +364,3 @@ async function fallbackToLiveSummary(
   }
 }
 
-export async function getVotes(appId: string): Promise<Record<string, number>> {
-  const result = await getVotesWithDiagnostics(appId);
-  return result.votes;
-}
-
-export async function getVotesWithDiagnostics(appId: string): Promise<{
-  votes: Record<string, number>;
-  diagnostics: VotesFetchDiagnostics;
-}> {
-  // check cache for votes
-  const cached = getCached(appId);
-  if (cached && Object.keys(cached.votes).length > 0) {
-    await logFrontendEvent("DEBUG", "Serving votes from cache", { appId });
-    return {
-      votes: cached.votes,
-      diagnostics: { url: VOTES_URL.replace("{id}", appId), status: 200 },
-    };
-  }
-
-  const span = startDetailedSpan('fetch-cdn-votes', appId);
-  countFetch();
-  const url = VOTES_URL.replace("{id}", appId);
-  const diagnostics: VotesFetchDiagnostics = { url, status: null };
-  try {
-    await logFrontendEvent("DEBUG", "Fetching votes", { appId, url });
-    const result = await cachedFetchJson<Record<string, number>>(url, appId, "votes.json");
-    diagnostics.status = result.data !== null ? 200 : null;
-    await logFrontendEvent("DEBUG", "Votes response received", {
-      appId,
-      url,
-      fromCache: result.fromCache,
-    });
-    if (result.data === null) {
-      await logFrontendEvent("WARNING", "Votes not available", {
-        appId,
-        url,
-      });
-      return { votes: {}, diagnostics };
-    }
-    updateCachedVotes(appId, result.data);
-    span.end(true, { count: Object.keys(result.data).length });
-    await logFrontendEvent("DEBUG", "Fetched votes", {
-      appId,
-      url,
-      count: Object.keys(result.data).length,
-    });
-    return { votes: result.data, diagnostics };
-  } catch (error) {
-    span.end(false, { error: error instanceof Error ? error.message : String(error) });
-    await logFrontendEvent("ERROR", "Failed to fetch votes", {
-      appId,
-      url,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return { votes: {}, diagnostics };
-  }
-}
-
-export async function postUpvote(
-  appId: string,
-  reportKey: string,
-  token: string,
-): Promise<boolean> {
-  const trimmedToken = token.trim();
-  if (!trimmedToken) {
-    await logFrontendEvent(
-      "WARNING",
-      "Upvote aborted because token was empty after trimming",
-      { appId, reportKey },
-    );
-    return false;
-  }
-
-  const headers = {
-    Authorization: `Bearer ${trimmedToken}`,
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "Content-Type": "application/json",
-  };
-
-  try {
-    await logFrontendEvent(
-      "INFO",
-      "Submitting repository dispatch upvote request",
-      { appId, reportKey },
-    );
-    const repositoryDispatchResp = await fetchNoCors(REPOSITORY_DISPATCH_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        event_type: "upvote",
-        client_payload: { appId, reportKey },
-      }),
-    });
-    await logFrontendEvent(
-      "DEBUG",
-      "Repository dispatch upvote response received",
-      {
-        appId,
-        reportKey,
-        status: repositoryDispatchResp.status,
-      },
-    );
-
-    if (repositoryDispatchResp.status === 204) return true;
-
-    // Some installations expose only workflow_dispatch for the upvote workflow.
-    await logFrontendEvent(
-      "INFO",
-      "Falling back to workflow dispatch for upvote request",
-      { appId, reportKey },
-    );
-    const workflowDispatchResp = await fetchNoCors(WORKFLOW_DISPATCH_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        ref: WORKFLOW_REF,
-        inputs: { appId, reportKey },
-      }),
-    });
-    await logFrontendEvent(
-      "DEBUG",
-      "Workflow dispatch upvote response received",
-      {
-        appId,
-        reportKey,
-        status: workflowDispatchResp.status,
-      },
-    );
-    return workflowDispatchResp.status === 204;
-  } catch (error) {
-    await logFrontendEvent("ERROR", "Upvote request threw an exception", {
-      appId,
-      reportKey,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return false;
-  }
-}

@@ -10,7 +10,6 @@ vi.mock('@decky/api', () => ({
 vi.mock('./cache', () => ({
   getCached: vi.fn(() => null),
   setCache: vi.fn(),
-  updateCachedVotes: vi.fn(),
 }));
 
 // stub metrics so they dont break in test env
@@ -20,7 +19,7 @@ vi.mock('./metrics', () => ({
 }));
 
 import { fetchNoCors } from '@decky/api';
-import { getProtonDBSummary, getProtonDBReports, getProtonDBReportsWithDiagnostics, getVotes, postUpvote } from './protondb';
+import { getProtonDBSummary, getProtonDBReports, getProtonDBReportsWithDiagnostics } from './protondb';
 import type { ProtonDBSummary } from '../types';
 
 const mockFetch = fetchNoCors as ReturnType<typeof vi.fn>;
@@ -196,107 +195,3 @@ describe('getProtonDBReports', () => {
   });
 });
 
-// ─── getVotes ─────────────────────────────────────────────────────────────────
-
-describe('getVotes', () => {
-  it('fetches from correct votes URL', async () => {
-    mockFetch.mockResolvedValue(makeResponse(200, {}));
-    await getVotes('730');
-    expect(mockFetch).toHaveBeenCalledWith(
-      'https://mdeguzis.github.io/proton-pulse-data/data/730/votes.json'
-    );
-  });
-
-  it('returns parsed vote map on 200', async () => {
-    const voteData = { '1700000000_GE-Proton9-7': 5 };
-    mockFetch.mockResolvedValue(makeResponse(200, voteData));
-    expect(await getVotes('730')).toEqual(voteData);
-  });
-
-  it('returns empty object on 404', async () => {
-    mockFetch.mockResolvedValue(makeResponse(404, null));
-    expect(await getVotes('730')).toEqual({});
-  });
-
-  it('returns empty object when fetchNoCors throws', async () => {
-    mockFetch.mockRejectedValue(new Error('network error'));
-    expect(await getVotes('730')).toEqual({});
-  });
-});
-
-// ─── postUpvote ───────────────────────────────────────────────────────────────
-
-describe('postUpvote', () => {
-  it('returns false immediately when token is empty', async () => {
-    expect(await postUpvote('730', '1700000000_GE-Proton9-7', '')).toBe(false);
-    expect(mockFetch).not.toHaveBeenCalled();
-  });
-
-  it('posts to GitHub dispatches endpoint with correct payload', async () => {
-    mockFetch.mockResolvedValue(makeResponse(204, null));
-    await postUpvote('730', '1700000000_GE-Proton9-7', 'mytoken');
-    expect(mockFetch).toHaveBeenCalledWith(
-      'https://api.github.com/repos/mdeguzis/proton-pulse-data/dispatches',
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          'Authorization': 'Bearer mytoken',
-          'X-GitHub-Api-Version': '2022-11-28',
-        }),
-        body: JSON.stringify({
-          event_type: 'upvote',
-          client_payload: { appId: '730', reportKey: '1700000000_GE-Proton9-7' },
-        }),
-      })
-    );
-  });
-
-  it('returns true on 204', async () => {
-    mockFetch.mockResolvedValue(makeResponse(204, null));
-    expect(await postUpvote('730', 'key', 'token')).toBe(true);
-  });
-
-  it('falls back to workflow dispatch when repository dispatch is rejected', async () => {
-    mockFetch
-      .mockResolvedValueOnce(makeResponse(404, null))
-      .mockResolvedValueOnce(makeResponse(204, null));
-
-    expect(await postUpvote('730', 'key', 'token')).toBe(true);
-    expect(mockFetch).toHaveBeenNthCalledWith(
-      2,
-      'https://api.github.com/repos/mdeguzis/proton-pulse-data/actions/workflows/upvote.yml/dispatches',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          ref: 'main',
-          inputs: { appId: '730', reportKey: 'key' },
-        }),
-      })
-    );
-  });
-
-  it('trims token before dispatching', async () => {
-    mockFetch.mockResolvedValue(makeResponse(204, null));
-    await postUpvote('730', 'key', ' token-with-space ');
-    expect(mockFetch).toHaveBeenCalledWith(
-      'https://api.github.com/repos/mdeguzis/proton-pulse-data/dispatches',
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          'Authorization': 'Bearer token-with-space',
-        }),
-      })
-    );
-  });
-
-  it('returns false on non-204', async () => {
-    mockFetch
-      .mockResolvedValueOnce(makeResponse(422, null))
-      .mockResolvedValueOnce(makeResponse(422, null));
-    expect(await postUpvote('730', 'key', 'token')).toBe(false);
-  });
-
-  it('returns false when fetchNoCors throws', async () => {
-    mockFetch.mockRejectedValue(new Error('network error'));
-    expect(await postUpvote('730', 'key', 'token')).toBe(false);
-  });
-});
