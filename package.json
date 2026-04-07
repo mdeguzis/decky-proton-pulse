@@ -4,9 +4,10 @@
   "description": "Decky plugin that ranks ProtonDB reports by system compatibility and applies launch options.",
   "type": "module",
   "scripts": {
-    "build": "rollup -c",
+    "build": "npx tsx scripts/check-translations.ts && rollup -c",
     "watch": "rollup -c -w",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check-translations": "npx tsx scripts/check-translations.ts"
   },
   "keywords": [
     "decky",

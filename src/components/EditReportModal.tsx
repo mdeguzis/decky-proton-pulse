@@ -22,14 +22,14 @@ import { t } from '../lib/i18n';
 
 const RATING_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending'] as const;
 
-interface VersionOption {
+export interface VersionOption {
   value: string;          // tag_name or internal_name -- used as dropdown data
   displayName: string;    // human label, e.g. "Proton GE 9-27"
   installed: boolean;
   managed: boolean;       // true for GE releases we can install; false for Valve/custom
 }
 
-function buildVersionOptions(
+export function buildVersionOptions(
   releases: { tag_name: string }[],
   installedTools: { directory_name: string; display_name: string; internal_name: string }[],
 ): VersionOption[] {
@@ -86,7 +86,7 @@ function buildVersionOptions(
   return combined;
 }
 
-function VersionOptionLabel({ name, installed, managed }: { name: string; installed: boolean; managed: boolean }) {
+export function VersionOptionLabel({ name, installed, managed }: { name: string; installed: boolean; managed: boolean }) {
   const statusLabel = installed ? t().detail.installed : managed ? t().detail.notInstalled : t().detail.valveProton;
   const statusColor = installed ? '#4caf50' : managed ? '#f59e0b' : '#4a6a8a';
   return (

@@ -13,7 +13,7 @@ import {
   formatTimestamp,
   buildLaunchOptionPreview,
 } from '../lib/reportFormatters';
-import { getSteamAppDetails, getLaunchOptionsFromDetails } from '../lib/steamApps';
+import { getSteamAppDetails, getLaunchOptionsFromDetails, isSteamShortcutApp } from '../lib/steamApps';
 import { checkProtonVersionAvailability } from '../lib/compatTools';
 import { logFrontendEvent } from '../lib/logger';
 import { getUserVote } from '../lib/voting';
@@ -98,6 +98,7 @@ export function ReportDetailModal({
   onDownvote,
   onSaveEdit,
 }: ReportDetailModalProps) {
+  const isShortcut = isSteamShortcutApp(appId);
   const [applying, setApplying] = useState(false);
   const [voting, setVoting] = useState(false);
   const [localUpvotes, setLocalUpvotes] = useState(report.upvotes);
@@ -331,7 +332,9 @@ export function ReportDetailModal({
               >
                 {appName || `App ${appId}`}
               </div>
-              <div style={{ fontSize: 10, color: '#7a9bb5' }}>AppID {appId}</div>
+              <div style={{ fontSize: 10, color: '#7a9bb5' }}>
+                {isShortcut ? 'Non-Steam shortcut' : `AppID ${appId}`}
+              </div>
             </div>
 
             {/* Rating badge */}

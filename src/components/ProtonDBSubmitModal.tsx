@@ -4,6 +4,7 @@ import { ModalRoot, Focusable, DialogButton, Navigation } from '@decky/ui';
 import { callable, toaster } from '@decky/api';
 import { t } from '../lib/i18n';
 import { logFrontendEvent } from '../lib/logger';
+import { isSteamShortcutApp } from '../lib/steamApps';
 
 const getProtonDBSystemInfo = callable<[], string>('get_protondb_systeminfo');
 
@@ -17,9 +18,14 @@ export function ProtonDBSubmitModal({ appId, appName, closeModal }: Props) {
   const [systemInfo, setSystemInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const isShortcut = isSteamShortcutApp(appId);
 
   useEffect(() => {
     void logFrontendEvent('INFO', 'ProtonDB submit modal opened', { appId, appName });
+    if (isShortcut) {
+      setError('Non-Steam shortcuts cannot be submitted to ProtonDB.');
+      return;
+    }
     getProtonDBSystemInfo()
       .then((info) => setSystemInfo(info))
       .catch((e) => {
@@ -27,7 +33,7 @@ export function ProtonDBSubmitModal({ appId, appName, closeModal }: Props) {
         void logFrontendEvent('ERROR', 'Failed to get ProtonDB system info', { error: msg });
         setError(msg);
       });
-  }, []);
+  }, [appId, appName, isShortcut]);
 
   const handleCopy = async () => {
     if (!systemInfo) return;
@@ -42,6 +48,7 @@ export function ProtonDBSubmitModal({ appId, appName, closeModal }: Props) {
   };
 
   const handleOpen = () => {
+    if (isShortcut) return;
     const url = appId
       ? `https://www.protondb.com/contribute?appId=${appId}`
       : 'https://www.protondb.com/contribute';
@@ -64,11 +71,11 @@ export function ProtonDBSubmitModal({ appId, appName, closeModal }: Props) {
         </div>
         {appName && (
           <div style={{ fontSize: 12, color: '#7a9bb5', marginBottom: 12 }}>
-            {appName}{appId ? ` (${appId})` : ''}
+            {appName}{appId && !isShortcut ? ` (${appId})` : ''}
           </div>
         )}
         <div style={{ fontSize: 11, color: '#9dc4e8', lineHeight: 1.5, marginBottom: 12 }}>
-          {strings.instructions}
+          {isShortcut ? 'ProtonDB accepts Steam app submissions only. This shortcut can still use a local config, but it should not be submitted.' : strings.instructions}
         </div>
 
         {/* System info preview */}
@@ -98,14 +105,14 @@ export function ProtonDBSubmitModal({ appId, appName, closeModal }: Props) {
         <Focusable style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <DialogButton
             onClick={handleCopyAndOpen}
-            disabled={!systemInfo}
+            disabled={!systemInfo || isShortcut}
             style={{ flex: 1, minWidth: 120, padding: '8px 16px', fontSize: 12 }}
           >
             {strings.copyAndOpen}
           </DialogButton>
           <DialogButton
             onClick={handleCopy}
-            disabled={!systemInfo}
+            disabled={!systemInfo || isShortcut}
             style={{ minWidth: 80, padding: '8px 12px', fontSize: 12, background: '#444' }}
           >
             {copied ? strings.copied : strings.copyInfo}

@@ -1,8 +1,8 @@
 // src/components/Modal.tsx
-import { useState, useEffect } from 'react';
-import { SidebarNavigation } from '@decky/ui';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { SidebarNavigation, Focusable, Navigation } from '@decky/ui';
 import type { SidebarNavigationPage } from '@decky/ui';
-import { callable } from '@decky/api';
+import { callable, toaster } from '@decky/api';
 import { pageState, NAVIGATE_EVENT } from '../lib/pageState';
 import type { NavigatePayload } from '../lib/pageState';
 import type { SystemInfo } from '../types';
@@ -64,9 +64,33 @@ export function ProtonPulsePage() {
     }
   }, [appId, activePage]);
 
+  // double-B to exit: first B shows toast, second B within 3s actually exits
+  const exitPendingRef = useRef(false);
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const doExit = useCallback(() => {
+    exitPendingRef.current = false;
+    if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+    Navigation.NavigateBack();
+  }, []);
+
+  const handleCancel = useCallback(() => {
+    if (exitPendingRef.current) {
+      doExit();
+      return;
+    }
+    exitPendingRef.current = true;
+    toaster.toast({ title: 'Proton Pulse', body: 'Hit B again to exit', duration: 3000 });
+    if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+    exitTimerRef.current = setTimeout(() => { exitPendingRef.current = false; }, 3000);
+  }, [doExit]);
+
+  // cleanup timer on unmount
+  useEffect(() => () => { if (exitTimerRef.current) clearTimeout(exitTimerRef.current); }, []);
+
   const hasGame = !!appId;
 
-  const pages: SidebarNavigationPage[] = [
+  const pages: (SidebarNavigationPage | 'separator')[] = [
     ...(hasGame ? [{
       title: t().nav.manageThisGame,
       identifier: 'manage-game',
@@ -84,14 +108,14 @@ export function ProtonPulsePage() {
       content: <ManageTab appId={appId} appName={appName} gpuVendor={sysInfo?.gpu_vendor ?? null} />,
     },
     {
-      title: t().nav.logs,
-      identifier: 'logs',
-      content: <LogsTab />,
-    },
-    {
       title: t().nav.compatibilityTools,
       identifier: 'compatibility-tools',
       content: <CompatibilityToolsTab />,
+    },
+    {
+      title: t().nav.logs,
+      identifier: 'logs',
+      content: <LogsTab />,
     },
     {
       title: t().nav.settings,
@@ -103,10 +127,16 @@ export function ProtonPulsePage() {
       identifier: 'about',
       content: <AboutTab />,
     },
+    'separator',
+    {
+      title: 'Exit',
+      identifier: 'exit',
+      content: <div />,
+    },
   ];
 
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       {backendError && (
         <div style={{
           background: '#4a1c1c',
@@ -124,21 +154,30 @@ export function ProtonPulsePage() {
           </div>
         </div>
       )}
-      <SidebarNavigation
-        title="Proton Pulse"
-        showTitle={false}
-        pages={pages}
-        page={activePage}
-        onPageRequested={(page) => {
-          void logFrontendEvent('DEBUG', 'Sidebar page requested', {
-            page,
-            appId,
-            appName,
-          });
-          setActivePage(page);
-        }}
-        disableRouteReporting={true}
-      />
-    </>
+      <Focusable
+        onCancelButton={handleCancel}
+        style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+      >
+        <SidebarNavigation
+          title="Proton Pulse"
+          showTitle={false}
+          pages={pages}
+          page={activePage}
+          onPageRequested={(page) => {
+            if (page === 'exit') {
+              doExit();
+              return;
+            }
+            void logFrontendEvent('DEBUG', 'Sidebar page requested', {
+              page,
+              appId,
+              appName,
+            });
+            setActivePage(page);
+          }}
+          disableRouteReporting={true}
+        />
+      </Focusable>
+    </div>
   );
 }
