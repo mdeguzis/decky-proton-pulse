@@ -88,18 +88,25 @@ export async function submitVote(
   });
 
   try {
-    const { error } = await getClient()
+    const client = getClient();
+
+    // delete any existing vote first, then insert the new one.
+    // this avoids the RLS UPDATE policy issue with PostgREST upserts
+    await client
       .from('report_votes')
-      .upsert(
-        {
-          voter_id: voterId,
-          app_id: appId,
-          report_key: reportKey,
-          vote,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'voter_id,app_id,report_key' },
-      );
+      .delete()
+      .eq('voter_id', voterId)
+      .eq('app_id', appId)
+      .eq('report_key', reportKey);
+
+    const { error } = await client
+      .from('report_votes')
+      .insert({
+        voter_id: voterId,
+        app_id: appId,
+        report_key: reportKey,
+        vote,
+      });
 
     lastVoteAt = Date.now();
 
