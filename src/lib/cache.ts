@@ -27,11 +27,16 @@ const MAX_CACHE_ENTRIES = 200;
 const STORAGE_KEY = 'data-cache';
 const TTL_SETTING_KEY = 'cache-ttl-hours';
 
+export interface VoteTotals {
+  upvotes: number;
+  downvotes: number;
+}
+
 export interface CacheEntry {
   appId: string;
   reports: CdnReport[];
   summary: ProtonDBSummary | null;
-  votes: Record<string, number>;
+  votes: Record<string, VoteTotals>;
   cachedAt: number;       // Date.now() when cached
   lastAccessedAt: number; // for LRU eviction
   source: 'cdn' | 'live-summary' | 'prefetch';
@@ -169,7 +174,7 @@ export function setCache(
   appId: string,
   reports: CdnReport[],
   summary: ProtonDBSummary | null,
-  votes: Record<string, number>,
+  votes: Record<string, VoteTotals>,
   source: CacheEntry['source'] = 'cdn',
 ): void {
   const endSpan = startSpan('cache-write', appId);
@@ -199,8 +204,8 @@ export function setCache(
   });
 }
 
-// update just the votes for an already-cached game (after upvote)
-export function updateCachedVotes(appId: string, votes: Record<string, number>): void {
+// update just the votes for an already-cached game (after upvote/downvote)
+export function updateCachedVotes(appId: string, votes: Record<string, VoteTotals>): void {
   const entry = memCache.get(appId);
   if (!entry) return;
   entry.votes = votes;

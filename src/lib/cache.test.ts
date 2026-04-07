@@ -70,14 +70,14 @@ describe('cache', () => {
   });
 
   it('stores and retrieves a cache entry', () => {
-    setCache('730', [fakeReport], fakeSummary, { key1: 3 }, 'cdn');
+    setCache('730', [fakeReport], fakeSummary, { key1: { upvotes: 3, downvotes: 0 } }, 'cdn');
     const entry = getCached('730');
     expect(entry).not.toBeNull();
     expect(entry!.appId).toBe('730');
     expect(entry!.reports).toHaveLength(1);
     expect(entry!.reports[0].title).toBe('CS2');
     expect(entry!.summary?.tier).toBe('gold');
-    expect(entry!.votes).toEqual({ key1: 3 });
+    expect(entry!.votes).toEqual({ key1: { upvotes: 3, downvotes: 0 } });
     expect(entry!.source).toBe('cdn');
   });
 
@@ -117,14 +117,21 @@ describe('cache', () => {
 
   it('updateCachedVotes merges votes into existing entry', () => {
     setCache('730', [fakeReport], null, {});
-    updateCachedVotes('730', { key1: 5, key2: 2 });
+    updateCachedVotes('730', { key1: { upvotes: 5, downvotes: 0 }, key2: { upvotes: 2, downvotes: 1 } });
     const entry = getCached('730');
-    expect(entry!.votes).toEqual({ key1: 5, key2: 2 });
+    expect(entry!.votes).toEqual({ key1: { upvotes: 5, downvotes: 0 }, key2: { upvotes: 2, downvotes: 1 } });
   });
 
   it('updateCachedVotes is a no-op when entry doesnt exist', () => {
     // should not throw
-    updateCachedVotes('999', { key1: 1 });
+    updateCachedVotes('999', { key1: { upvotes: 1, downvotes: 0 } });
     expect(getCached('999')).toBeNull();
+  });
+
+  it('updateCachedVotes stores upvotes and downvotes', () => {
+    setCache('999', [], null, {}, 'cdn');
+    updateCachedVotes('999', { 'rk1': { upvotes: 3, downvotes: 1 } });
+    const c = getCached('999');
+    expect(c?.votes).toEqual({ 'rk1': { upvotes: 3, downvotes: 1 } });
   });
 });
