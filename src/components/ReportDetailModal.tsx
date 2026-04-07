@@ -16,6 +16,7 @@ import {
 import { getSteamAppDetails, getLaunchOptionsFromDetails } from '../lib/steamApps';
 import { checkProtonVersionAvailability } from '../lib/compatTools';
 import { logFrontendEvent } from '../lib/logger';
+import { getUserVote } from '../lib/voting';
 import { t } from '../lib/i18n';
 
 const STEAM_HEADER_URL = (id: number) =>
@@ -94,10 +95,14 @@ export function ReportDetailModal({
   currentLaunchOptions,
   onApply,
   onUpvote,
+  onDownvote,
   onSaveEdit,
 }: ReportDetailModalProps) {
   const [applying, setApplying] = useState(false);
-  const [upvoting, setUpvoting] = useState(false);
+  const [voting, setVoting] = useState(false);
+  const [localUpvotes, setLocalUpvotes] = useState(report.upvotes);
+  const [localDownvotes, setLocalDownvotes] = useState(report.downvotes);
+  const [userVote, setUserVote] = useState<1 | -1 | null>(null);
   const [launchOptionsDisplay, setLaunchOptionsDisplay] = useState(currentLaunchOptions);
   const [versionStatus, setVersionStatus] = useState<'loading' | 'installed' | 'installable' | 'unavailable' | 'unmanaged'>('loading');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -160,15 +165,55 @@ export function ReportDetailModal({
     }
   };
 
+  // fetch user's existing vote on mount
+  useEffect(() => {
+    const key = `${report.timestamp}_${report.protonVersion}`;
+    getUserVote(String(appId), key).then(v => {
+      if (v) setUserVote(v);
+    }).catch(() => {});
+  }, [appId, report.timestamp, report.protonVersion]);
+
   const handleUpvote = async () => {
+    if (userVote === 1) {
+      toaster.toast({ title: 'Proton Pulse', body: 'Already upvoted this report' });
+      return;
+    }
     void logFrontendEvent('INFO', 'ReportDetail: Upvote requested', {
       appId, appName, protonVersion: report.protonVersion,
     });
-    setUpvoting(true);
+    setVoting(true);
     try {
       await onUpvote(report);
+      // if switching from downvote, adjust both counts
+      if (userVote === -1) {
+        setLocalDownvotes(prev => Math.max(0, prev - 1));
+      }
+      setLocalUpvotes(prev => prev + 1);
+      setUserVote(1);
     } finally {
-      setUpvoting(false);
+      setVoting(false);
+    }
+  };
+
+  const handleDownvote = async () => {
+    if (userVote === -1) {
+      toaster.toast({ title: 'Proton Pulse', body: 'Already downvoted this report' });
+      return;
+    }
+    if (!onDownvote) return;
+    void logFrontendEvent('INFO', 'ReportDetail: Downvote requested', {
+      appId, appName, protonVersion: report.protonVersion,
+    });
+    setVoting(true);
+    try {
+      await onDownvote(report);
+      if (userVote === 1) {
+        setLocalUpvotes(prev => Math.max(0, prev - 1));
+      }
+      setLocalDownvotes(prev => prev + 1);
+      setUserVote(-1);
+    } finally {
+      setVoting(false);
     }
   };
 
@@ -366,25 +411,39 @@ export function ReportDetailModal({
           </DialogButton>
           <DialogButton
             onClick={handleUpvote}
-            disabled={upvoting}
-            style={{ flex: 0.5, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            disabled={voting || userVote === 1}
+            style={{
+              flex: 0.5, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+              opacity: userVote === 1 ? 0.4 : 1,
+            }}
           >
-            {upvoting ? <SteamSpinner /> : (
+            {voting ? <SteamSpinner /> : (
               <>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66a4.8 4.8 0 0 0-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-6.15z" />
                 </svg>
-                <span>{report.upvotes}</span>
+                <span>{localUpvotes}</span>
               </>
             )}
           </DialogButton>
           <DialogButton
-            style={{ flex: 0.5, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, opacity: 0.35 }}
+            onClick={handleDownvote}
+            disabled={voting || userVote === -1}
+            style={{
+              flex: 0.5, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+              opacity: userVote === -1 ? 0.4 : 1,
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22 4h-2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2V4zM2.17 11.12c-.11.25-.17.52-.17.8V13c0 1.1.9 2 2 2h5.5l-.92 4.65c-.05.22-.02.46.08.66.23.45.52.86.88 1.22L10 22l6.41-6.41c.38-.38.59-.89.59-1.42V6.34C17 5.05 15.95 4 14.66 4h-8.1c-.71 0-1.36.37-1.72.97l-2.67 6.15z" />
-            </svg>
-            <span>0</span>
+            {voting ? <SteamSpinner /> : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22 4h-2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2V4zM2.17 11.12c-.11.25-.17.52-.17.8V13c0 1.1.9 2 2 2h5.5l-.92 4.65c-.05.22-.02.46.08.66.23.45.52.86.88 1.22L10 22l6.41-6.41c.38-.38.59-.89.59-1.42V6.34C17 5.05 15.95 4 14.66 4h-8.1c-.71 0-1.36.37-1.72.97l-2.67 6.15z" />
+                </svg>
+                <span>{localDownvotes}</span>
+              </>
+            )}
           </DialogButton>
           <DialogButton
             onClick={() => {
@@ -433,7 +492,7 @@ export function ReportDetailModal({
             <InfoSection title={t().detail.report}>
               <InfoRow label={t().reports.confidence} value={`${confScore}/10`} />
               <InfoRow label={t().detail.gpuTier} value={report.gpuTier.toUpperCase()} />
-              <InfoRow label={t().reports.votes} value={String(report.upvotes)} />
+              <InfoRow label={t().reports.votes} value={`+${localUpvotes} / -${localDownvotes}`} />
               <InfoRow label={t().reports.submitted} value={formatTimestamp(report.timestamp)} />
               {report.isEdited && (
                 <InfoRow label={t().detail.edited} value={report.editLabel || t().detail.customVariant} />
