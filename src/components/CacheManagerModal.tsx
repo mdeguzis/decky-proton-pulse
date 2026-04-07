@@ -10,7 +10,8 @@ import { toaster } from '@decky/api';
 import { logFrontendEvent } from '../lib/logger';
 import { invalidate, invalidateAll, getCacheStats, getCachedAppIds, getCached } from '../lib/cache';
 import type { CacheEntry } from '../lib/cache';
-import { getProtonDBReportsWithDiagnostics, getVotesWithDiagnostics } from '../lib/protondb';
+import { getProtonDBReportsWithDiagnostics } from '../lib/protondb';
+import { getVoteTotals } from '../lib/voting';
 
 interface CacheRow {
   appId: string;
@@ -76,14 +77,14 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
     void logFrontendEvent('INFO', 'Cache refresh started', { appId, gameName });
     invalidate(appId);
     try {
-      const [reportResult, voteResult] = await Promise.all([
+      const [reportResult, voteTotals] = await Promise.all([
         getProtonDBReportsWithDiagnostics(appId),
-        getVotesWithDiagnostics(appId),
+        getVoteTotals(appId),
       ]);
       void logFrontendEvent('INFO', 'Cache refresh complete', {
         appId,
         reports: reportResult.reports.length,
-        votes: Object.keys(voteResult.votes).length,
+        votes: Object.keys(voteTotals).length,
       });
       toaster.toast({ title: 'Cache Refreshed', body: `${gameName} updated`, duration: 2000 });
     } catch (err) {

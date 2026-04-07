@@ -6,12 +6,10 @@ import { toaster } from '@decky/api';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
 import {
   getProtonDBReportsWithDiagnostics,
-  getVotes,
-  getVotesWithDiagnostics,
-  postUpvote,
   type ReportFetchDiagnostics,
-  type VotesFetchDiagnostics,
 } from '../../lib/protondb';
+import { getVoteTotals, submitVote } from '../../lib/voting';
+import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
@@ -320,14 +318,13 @@ class ConfigureTabErrorBoundary extends Component<ConfigureTabBoundaryProps, Con
 function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const [reports, setReports]   = useState<CdnReport[]>([]);
   const [editedReports, setEditedReports] = useState<EditedReportEntry[]>([]);
-  const [votes, setVotes]       = useState<Record<string, number>>({});
+  const [votes, setVotes]       = useState<Record<string, VoteTotals>>({});
   const [loading, setLoading]   = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [focusedCardKey, setFocusedCardKey] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>('score');
   const [filterTouched, setFilterTouched] = useState(false);
   const [reportDiagnostics, setReportDiagnostics] = useState<ReportFetchDiagnostics | null>(null);
-  const [voteDiagnostics, setVoteDiagnostics] = useState<VotesFetchDiagnostics | null>(null);
   const [currentLaunchOptions, setCurrentLaunchOptions] = useState('');
 
   const gpuVendor = sysInfo?.gpu_vendor ?? null;
@@ -346,13 +343,15 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   const baseDisplayReports: DisplayReportCard[] = reports.map(r => ({
     ...scoreReport(r, scoreContext),
-    upvotes: votes[reportKey(r)] ?? 0,
+    upvotes: votes[reportKey(r)]?.upvotes ?? 0,
+    downvotes: votes[reportKey(r)]?.downvotes ?? 0,
     displayKey: `cdn:${reportKey(r)}`,
   }));
 
   const editedDisplayReports: DisplayReportCard[] = editedReports.map((entry) => ({
     ...scoreReport(entry.report, scoreContext),
-    upvotes: votes[reportKey(entry.report)] ?? 0,
+    upvotes: votes[reportKey(entry.report)]?.upvotes ?? 0,
+    downvotes: votes[reportKey(entry.report)]?.downvotes ?? 0,
     displayKey: `edited:${entry.id}`,
     isEdited: true,
     editLabel: entry.label,
@@ -375,7 +374,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   const sortedReports =
     sortMode === 'votes'
-      ? [...visibleReports].sort((a, b) => b.upvotes - a.upvotes)
+      ? [...visibleReports].sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes))
       : visibleReports;
 
   useEffect(() => {
@@ -389,7 +388,6 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       setFilterTouched(false);
       setFilter('all');
       setReportDiagnostics(null);
-      setVoteDiagnostics(null);
       return;
     }
 
@@ -410,25 +408,22 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     setFilterTouched(false);
     setFilter('all');
     setReportDiagnostics(null);
-    setVoteDiagnostics(null);
 
-    void Promise.all([getProtonDBReportsWithDiagnostics(String(appId)), getVotesWithDiagnostics(String(appId))])
-      .then(([reportResult, voteResult]) => {
+    void Promise.all([getProtonDBReportsWithDiagnostics(String(appId)), getVoteTotals(String(appId))])
+      .then(([reportResult, voteTotals]) => {
         if (cancelled) return;
         const r = reportResult.reports;
-        const v = voteResult.votes;
         void logFrontendEvent('INFO', `Manage This Game: loaded (${Date.now() - loadT0}ms)`, {
           appId,
           appName,
           reportCount: r.length,
-          voteCount: Object.keys(v).length,
+          voteCount: Object.keys(voteTotals).length,
           durationMs: Date.now() - loadT0,
           source: reportResult.diagnostics.source,
         });
         setReports(r);
-        setVotes(v);
+        setVotes(voteTotals);
         setReportDiagnostics(reportResult.diagnostics);
-        setVoteDiagnostics(voteResult.diagnostics);
       })
       .catch((error) => {
         if (cancelled) return;
@@ -722,42 +717,42 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   const handleUpvote = async (targetReport: DisplayReportCard) => {
     if (!appId) return;
-    const token = getSetting<string>('gh-votes-token', '');
-    if (!token) {
-      void logFrontendEvent('WARNING', 'Upvote blocked because GitHub token is missing', { appId, appName });
-      toaster.toast({ title: 'Proton Pulse', body: t().configure.setTokenToUpvote });
-      return;
+    const key = reportKey(targetReport);
+    void logFrontendEvent('INFO', 'Upvote requested', { appId, appName, reportKey: key });
+
+    const ok = await submitVote(String(appId), key, 1);
+    if (ok) {
+      // optimistic update
+      setVotes(prev => ({
+        ...prev,
+        [key]: {
+          upvotes: (prev[key]?.upvotes ?? 0) + 1,
+          downvotes: prev[key]?.downvotes ?? 0,
+        },
+      }));
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.voteSubmitted });
+    } else {
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
     }
-    void logFrontendEvent('INFO', 'Upvote requested', {
-      appId,
-      appName,
-      protonVersion: targetReport.protonVersion,
-      reportTimestamp: targetReport.timestamp,
-    });
-    try {
-      const ok = await postUpvote(String(appId), reportKey(targetReport), token);
-      if (ok) {
-        void logFrontendEvent('INFO', 'Upvote accepted by remote endpoint', { appId, appName });
-        toaster.toast({ title: 'Proton Pulse', body: t().configure.voteSubmitted });
-        const capturedAppId = appId;
-        setTimeout(() => {
-          if (capturedAppId) {
-            void logFrontendEvent('DEBUG', 'Refreshing votes after upvote delay', { appId: capturedAppId });
-            getVotes(String(capturedAppId)).then(setVotes).catch(console.error);
-          }
-        }, 90_000);
-      } else {
-        void logFrontendEvent('WARNING', 'Upvote request failed at remote endpoint', { appId, appName });
-        toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
-      }
-    } catch (e) {
-      void logFrontendEvent('ERROR', 'Upvote failed', {
-        appId,
-        appName,
-        error: e instanceof Error ? e.message : String(e),
-      });
-      console.error('Proton Pulse: upvote failed', e);
-      toaster.toast({ title: 'Proton Pulse', body: t().configure.upvoteFailed });
+  };
+
+  const handleDownvote = async (targetReport: DisplayReportCard) => {
+    if (!appId) return;
+    const key = reportKey(targetReport);
+    void logFrontendEvent('INFO', 'Downvote requested', { appId, appName, reportKey: key });
+
+    const ok = await submitVote(String(appId), key, -1);
+    if (ok) {
+      setVotes(prev => ({
+        ...prev,
+        [key]: {
+          upvotes: prev[key]?.upvotes ?? 0,
+          downvotes: (prev[key]?.downvotes ?? 0) + 1,
+        },
+      }));
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.voteSubmitted });
+    } else {
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
     }
   };
 
@@ -772,6 +767,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         currentLaunchOptions={currentLaunchOptions}
         onApply={handleApply}
         onUpvote={handleUpvote}
+        onDownvote={handleDownvote}
         onSaveEdit={(entry) => setEditedReports((prev) => [entry, ...prev])}
       />,
       window,
@@ -809,9 +805,6 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             : `Live ProtonDB summary: ${reportDiagnostics.liveSummaryStatus ?? 'not tried'}`
         )
         : 'Live ProtonDB summary: pending',
-      voteDiagnostics
-        ? `Votes response: ${voteDiagnostics.status ?? 'request failed'}`
-        : 'Votes response: pending',
     ];
 
   const showDiagnosticsState = !loading && (!sysInfo || (reports.length === 0 && editedReports.length === 0));
@@ -938,6 +931,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                     }}
                     onSelect={openReportDetail}
                     onUpvote={handleUpvote}
+                    onDownvote={handleDownvote}
                   />
                 ))
               )}

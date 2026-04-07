@@ -12,6 +12,7 @@
 import { fetchNoCors } from '@decky/api';
 import { logFrontendEvent } from './logger';
 import { setCache, getCachedAppIds, initCache } from './cache';
+import type { VoteTotals } from './cache';
 import {
   startDetailedSpan,
   countPrefetchedGame,
@@ -35,7 +36,6 @@ const CONCURRENCY = 3;
 const APP_INDEX_URL = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/index.json';
 const YEAR_URL = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/{year}.json';
 const SUMMARY_URL = 'https://www.protondb.com/api/v1/reports/summaries/{id}.json';
-const VOTES_URL = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/votes.json';
 
 const VALID_RATINGS = new Set<string>(['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending']);
 
@@ -157,15 +157,8 @@ async function prefetchGame(appId: string): Promise<boolean> {
       }
     } catch { /* summary is optional */ }
 
-    // fetch votes (best effort)
-    let votes: Record<string, number> = {};
-    try {
-      const votesUrl = VOTES_URL.replace('{id}', appId);
-      const votesResp = await fetchNoCors(votesUrl);
-      if (votesResp.status === 200) {
-        votes = (await votesResp.json()) as Record<string, number>;
-      }
-    } catch { /* votes are optional */ }
+    // votes come from Supabase at query time, not prefetched
+    const votes: Record<string, VoteTotals> = {};
 
     setCache(appId, reports, summary, votes, 'prefetch');
     countPrefetchedGame();
