@@ -18,6 +18,7 @@ import { useLanguage, t } from '../lib/i18n';
 
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
 const getSystemInfoSafe = () => callWithTimeout(() => getSystemInfo(), 'get_system_info');
+const DEFAULT_EXIT_PATH = '/routes/library/home';
 
 export function ProtonPulsePage() {
   useLanguage(); // triggers re-render on language change
@@ -100,33 +101,72 @@ export function ProtonPulsePage() {
     if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
     const returnPath = pageState.returnPath;
     const currentPath = globalThis.location?.pathname ?? null;
-    if (returnPath && returnPath !== currentPath) {
-      pageState.returnPath = null;
-      try {
-        Navigation.Navigate(returnPath);
-      } catch {
-        Router.Navigate(returnPath);
-      }
-      return;
-    }
-    Navigation.NavigateBack();
+    const targetPath = returnPath && returnPath !== currentPath
+      ? returnPath
+      : DEFAULT_EXIT_PATH;
+
+    pageState.returnPath = null;
+    pageState.pendingNavigate = null;
+
+    void logFrontendEvent('INFO', 'Exiting Proton Pulse page', {
+      currentPath,
+      targetPath,
+      hadReturnPath: Boolean(returnPath),
+    });
+
+    Router.CloseSideMenus();
+    void logFrontendEvent('DEBUG', 'Exit step: Router.CloseSideMenus()', {
+      currentPath: globalThis.location?.pathname ?? null,
+    });
     window.setTimeout(() => {
-      if (currentPath && globalThis.location?.pathname === currentPath) {
-        globalThis.history?.back?.();
+      if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
+      void logFrontendEvent('DEBUG', 'Exit fallback: history.back()', {
+        currentPath: globalThis.location?.pathname ?? null,
+      });
+      window.history.back();
+    }, 50);
+    window.setTimeout(() => {
+      if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
+      void logFrontendEvent('DEBUG', 'Exit fallback: Navigation.NavigateBack()', {
+        currentPath: globalThis.location?.pathname ?? null,
+      });
+      try {
+        Navigation.NavigateBack();
+      } catch {
+        // Continue to route fallback below if Decky cannot navigate back.
       }
-    }, 150);
+    }, 175);
+    window.setTimeout(() => {
+      if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
+      void logFrontendEvent('DEBUG', 'Exit fallback: target route navigation', {
+        currentPath: globalThis.location?.pathname ?? null,
+        targetPath,
+      });
+      try {
+        Navigation.Navigate(targetPath);
+      } catch {
+        Router.Navigate(targetPath);
+      }
+    }, 325);
   }, []);
 
   const handleCancel = useCallback(() => {
     if (exitPendingRef.current) {
+      void logFrontendEvent('DEBUG', 'Exit confirmation accepted', {
+        currentPath: globalThis.location?.pathname ?? null,
+      });
       doExit();
       return;
     }
     exitPendingRef.current = true;
+    void logFrontendEvent('DEBUG', 'Exit confirmation requested', {
+      currentPath: globalThis.location?.pathname ?? null,
+      activePage,
+    });
     toaster.toast({ title: 'Proton Pulse', body: extras.pressBackAgainToExit(), duration: 3000 });
     if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
     exitTimerRef.current = setTimeout(() => { exitPendingRef.current = false; }, 3000);
-  }, [doExit]);
+  }, [activePage, doExit, extras]);
 
   useEffect(() => {
     pageState.initialPage = activePage as typeof pageState.initialPage;
