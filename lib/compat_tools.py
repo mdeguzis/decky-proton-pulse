@@ -1,7 +1,7 @@
 """Installed compatibility-tool discovery and classification.
 
-Scans ``compatibilitytools.d`` and ``steamapps/common`` to build
-the list of Proton builds visible to the frontend.
+Scans ``compatibilitytools.d`` and ``steamapps/common`` to build the
+list of Proton builds the frontend can show to the user.
 """
 
 from __future__ import annotations
@@ -18,14 +18,14 @@ PROTON_GE_LATEST_SLOT_NAME = "Proton-GE-Latest"
 
 
 def _looks_like_proton_tool(*values: str | None) -> bool:
-    """Return ``True`` when any provided value looks Proton-family."""
+    """Quick sniff test: does any of these values look Proton-family?"""
     return any("proton" in (value or "").lower() for value in values)
 
 
 def normalize_proton_ge_tag(version: str) -> str | None:
-    """Try to turn a version string into a ``GE-ProtonX-Y`` tag name.
+    """Try to coerce a version string into a ``GE-ProtonX-Y`` tag name.
 
-    Returns ``None`` if the string doesn't look like GE-Proton.
+    Returns ``None`` if the string doesn't look like GE-Proton at all.
     """
     cleaned = version.strip()
     if not cleaned:
@@ -47,7 +47,7 @@ def normalize_proton_ge_tag(version: str) -> str | None:
 
 
 def extract_version_parts(version: str) -> tuple[int, int] | None:
-    """Extract ``(major, minor)`` from a Proton version string."""
+    """Pull ``(major, minor)`` out of a Proton version string."""
     match = re.search(r"(?:GE-?)?Proton(\d+)-(\d+)", version, re.IGNORECASE)
     if not match:
         match = re.search(r"(\d+)\.0-(\d+)", version)
@@ -57,7 +57,7 @@ def extract_version_parts(version: str) -> tuple[int, int] | None:
 
 
 def installed_tool_matches_version(tool: dict[str, Any], version: str) -> bool:
-    """Check whether an installed tool dict matches a normalised tag."""
+    """Does this installed tool dict match a normalised GE-Proton tag?"""
     normalized = normalize_proton_ge_tag(version)
     if not normalized:
         return False
@@ -74,7 +74,7 @@ def installed_tool_matches_version(tool: dict[str, Any], version: str) -> bool:
 
 
 def is_proton_ge_tool(tool: dict[str, Any]) -> bool:
-    """Return ``True`` if the tool dict looks like a GE-Proton build."""
+    """Does this tool dict look like a GE-Proton build?"""
     if tool.get("managed_slot") == "latest":
         return True
     fields = [
@@ -86,7 +86,7 @@ def is_proton_ge_tool(tool: dict[str, Any]) -> bool:
 
 
 def simplify_release(release: dict[str, Any]) -> dict[str, Any] | None:
-    """Distil a GitHub release payload to the fields the frontend needs.
+    """Boil a GitHub release payload down to the fields the frontend needs.
 
     Skips drafts and prereleases.
     """
@@ -118,7 +118,7 @@ def simplify_release(release: dict[str, Any]) -> dict[str, Any] | None:
 def find_closest_installed_tool(
     installed: list[dict[str, Any]], normalized: str
 ) -> dict[str, Any] | None:
-    """When there's no exact version match, find the closest installed build."""
+    """No exact version match?  Find the closest installed build instead."""
     target = extract_version_parts(normalized)
     if not target:
         return None
@@ -139,10 +139,10 @@ def find_closest_installed_tool(
 def list_installed_compatibility_tools(  # pylint: disable=too-many-locals
     latest_metadata: dict[str, Any] | None,
 ) -> list[dict[str, Any]]:
-    """Find all installed Proton builds on this system.
+    """Find every installed Proton build on this system.
 
     Checks ``compatibilitytools.d`` (custom tools) and
-    ``steamapps/common`` (Valve official builds).
+    ``steamapps/common`` (Valve's official builds).
     """
     tools: list[dict[str, Any]] = []
     seen_dirs: set[str] = set()
@@ -207,7 +207,7 @@ def list_installed_compatibility_tools(  # pylint: disable=too-many-locals
                 }
             )
 
-    # Valve official Proton builds in steamapps/common
+    # Valve's official Proton builds live in steamapps/common
     detected_root = find_steam_root()
     steam_common_dirs = (
         [detected_root / "steamapps" / "common"] if detected_root else []

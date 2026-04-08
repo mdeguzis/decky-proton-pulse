@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the guided project screenshot manifest and publish the results to the wiki."""
+"""Run the project screenshot manifest — fully automated or guided."""
 
 from __future__ import annotations
 
@@ -69,6 +69,24 @@ def publish_to_wiki(screenshots_dir: Path, wiki_dir: Path) -> None:
     )
 
 
+def wait_for_readiness(entry: ScreenshotManifestEntry, *, deck_ip: str, deck_user: str) -> bool:
+    """Wait until the Deck's CEF debug endpoint is reachable (readiness check)."""
+    import time
+
+    ssh_target = f"{deck_user}@{deck_ip}"
+    check = 'python3 -c "import urllib.request; urllib.request.urlopen(\'http://127.0.0.1:8080/json/list\', timeout=3)"'
+    for attempt in range(10):
+        result = subprocess.run(
+            ["ssh", ssh_target, check],
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            return True
+        print(f"  Waiting for CEF debug endpoint (attempt {attempt + 1}/10)...")
+        time.sleep(2)
+    return False
+
+
 def prompt_for_step(index: int, total: int, entry: ScreenshotManifestEntry) -> str:
     """Show the guided capture prompt and return capture, skip, or quit."""
     print("")
@@ -103,6 +121,11 @@ def main() -> int:
         help="Optional filter applied to group, key, or title",
     )
     parser.add_argument(
+        "--auto",
+        action="store_true",
+        help="Run all manifest entries without prompting (zero-interaction mode)",
+    )
+    parser.add_argument(
         "--output-dir",
         default="../screenshots",
         help="Local screenshot directory",
@@ -131,7 +154,14 @@ def main() -> int:
     for index, entry in enumerate(manifest_entries, start=1):
         print("")
         print("=" * 80)
-        action = prompt_for_step(index, total, entry)
+        if args.auto:
+            print(f"[{index}/{total}] {entry.group}/{entry.key} - {entry.title}")
+            if not wait_for_readiness(entry, deck_ip=args.deck_ip, deck_user=args.deck_user):
+                print(f"  Skipping {entry.key}: CEF endpoint not reachable", file=sys.stderr)
+                continue
+            action = "capture"
+        else:
+            action = prompt_for_step(index, total, entry)
         if action == "quit":
             break
         if action == "skip":

@@ -24,7 +24,8 @@
       "reportUnknownParameterType": false,
       "reportUnknownArgumentType": false,
       "reportUnknownLambdaType": false,
-      "reportPrivateUsage": false
+      "reportPrivateUsage": false,
+      "reportUntypedFunctionDecorator": false
     }
   ]
 }

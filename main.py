@@ -1,12 +1,12 @@
 """Proton Pulse -- Decky Loader plugin backend.
 
-This file is the entry-point that Decky's plugin loader imports.  It
-must expose a top-level ``Plugin`` class whose public ``async`` methods
-become the callable API for the React frontend.
+This is the file Decky's plugin loader picks up on startup.  It exposes
+a ``Plugin`` class whose async methods become the callable API that the
+React frontend talks to.
 
-All heavy logic lives in the helper modules (``proton_ge``,
-``compat_tools``, ``system_info``, etc.).  ``Plugin`` is a thin
-orchestration facade that wires them together.
+The heavy lifting lives in the helper modules (``proton_ge``,
+``compat_tools``, ``system_info``, …).  ``Plugin`` itself is just a thin
+orchestration layer that wires everything together.
 """
 
 from __future__ import annotations
@@ -24,9 +24,9 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-# Decky's sandboxed loader may not include the plugin directory in sys.path,
-# so `from lib.xxx import ...` fails with ModuleNotFoundError. Add the plugin
-# dir explicitly so Python can find the lib/ package.
+# Decky's sandboxed loader doesn't always put the plugin directory on
+# sys.path, so `from lib.xxx import ...` can blow up with
+# ModuleNotFoundError.  Adding the plugin dir ourselves fixes that.
 _PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
 if _PLUGIN_DIR not in sys.path:
     sys.path.insert(0, _PLUGIN_DIR)
@@ -63,13 +63,14 @@ from lib.system_info import collect_system_info
 class Plugin:  # pylint: disable=too-many-instance-attributes
     """Decky Loader plugin backend for Proton Pulse.
 
-    Every async method here is exposed to the frontend via the Decky
-    callable bridge. Synchronous helpers are prefixed with underscore.
+    Every async method here is callable from the frontend via Decky's
+    bridge.  Synchronous helpers are prefixed with underscore so they
+    stay private.
     """
 
     def __init__(self) -> None:
-        # all attrs declared here so pylint doesn't complain about
-        # attribute-defined-outside-init when _main() sets them for real
+        # Declare everything up front so pylint doesn't complain about
+        # attribute-defined-outside-init when _main() sets them for real.
         self._debug_handler: logging.Handler | None = None
         self._debug_handler_ref: list[logging.Handler | None] = [None]
         self._proton_ge_install_lock = threading.Lock()
@@ -86,12 +87,12 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     ################################################################
 
     async def _main(self) -> None:
-        """Plugin entry-point called by Decky on load."""
+        """Called by Decky when the plugin loads — our starting line."""
         decky.logger.info("Proton Pulse backend starting")
         self._debug_handler = None
         self._debug_handler_ref = [None]
 
-        # reset install state on reload
+        # Fresh install state on every reload
         self._proton_ge_install_lock = threading.Lock()
         self._proton_ge_install_cancel = threading.Event()
         self._proton_ge_install_thread = None
@@ -100,8 +101,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         self._proton_ge_install_status = make_initial_status()
         decky.logger.info("Proton Pulse backend ready")
 
-        # Start CDN prefetch in background -- daemon=True so it won't block
-        # plugin shutdown if it's still running when _unload() is called
+        # Kick off CDN prefetch in the background.  daemon=True so it
+        # won't block plugin shutdown if it's still running.
         self._prefetch_cancel = threading.Event()
         self._prefetch_thread = threading.Thread(
             target=prefetch_installed_games,
@@ -112,9 +113,9 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         self._prefetch_thread.start()
 
     async def _unload(self) -> None:
-        """Kill any running install thread and clean up."""
+        """Shut everything down gracefully — kill running threads, clean up."""
         decky.logger.info("Proton Pulse backend shutting down")
-        # Signal both background threads to stop at their next cancel check
+        # Tell both background threads to wrap it up
         self._prefetch_cancel.set()
         self._proton_ge_install_cancel.set()
         with self._proton_ge_install_lock:
@@ -133,17 +134,17 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     ################################################################
 
     async def set_log_level(self, level: str) -> bool:
-        """Change the plugin log level (DEBUG, INFO, WARNING, etc)."""
+        """Switch the plugin log level (DEBUG, INFO, WARNING, …)."""
         return sync_set_log_level(level, self._debug_handler_ref)
 
     async def get_log_contents(self) -> str:
-        """Return the last 200 lines of the plugin log file."""
+        """Grab the last 200 lines of the plugin log."""
         return get_log_contents()
 
     async def log_frontend_event(
         self, level: str, message: str, context: dict[str, object] | None = None
     ) -> bool:
-        """Log a message from the React frontend into the backend log."""
+        """Forward a log message from the React frontend into the backend log."""
         return log_frontend_event(level, message, context)
 
     ################################################################
@@ -151,11 +152,11 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     ################################################################
 
     async def get_plugin_version(self) -> str:
-        """Return the plugin version string from Decky."""
+        """Hand back the plugin version string that Decky knows about."""
         return getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
 
     async def get_protondb_systeminfo(self) -> str:
-        """Build the system info blob for ProtonDB submissions."""
+        """Build the system-info blob that ProtonDB submissions need."""
         try:
             return generate_system_info(home=decky.DECKY_USER_HOME)
         except (OSError, ValueError, subprocess.SubprocessError) as e:
@@ -163,11 +164,11 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             return f"Error generating system info: {e}"
 
     async def export_metrics(self, data: str) -> bool:
-        """Write frontend metrics JSON to disk for offline analysis."""
+        """Dump frontend metrics JSON to disk so you can poke at it offline."""
         return export_metrics_to_disk(data)
 
     async def is_game_running(self) -> bool:
-        """Check if a Steam game process is active via pgrep."""
+        """Quick check: is a Steam game process alive right now?"""
         try:
             result = subprocess.run(
                 ["pgrep", "-f", "SteamLaunch"],
@@ -186,7 +187,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     ################################################################
 
     async def get_system_info(self) -> dict[str, object]:
-        """Collect CPU, GPU, kernel, distro info for the frontend."""
+        """Gather CPU, GPU, kernel, distro info and send it to the frontend."""
         return collect_system_info()
 
     ################################################################
@@ -194,8 +195,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     ################################################################
 
     async def get_cached_cdn(self, app_id: str, filename: str) -> dict[str, Any]:
-        """Return cached CDN data if fresh, else ``{"data": null}``."""
-        # Reconstruct the full CDN URL to look up freshness metadata
+        """Return cached CDN data if it's still fresh, otherwise ``{"data": null}``."""
+        # Rebuild the full CDN URL so we can check the freshness metadata
         url = f"https://mdeguzis.github.io/proton-pulse-data/data/{app_id}/{filename}"
         if is_fresh(url):
             data = read_cached(app_id, filename)
@@ -206,12 +207,12 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         return {"data": None, "fresh": False}
 
     async def put_cached_cdn(self, app_id: str, filename: str, data: Any) -> bool:
-        """Store CDN data from a frontend fetch into the backend cache."""
+        """Stash CDN data the frontend just fetched into the backend cache."""
         try:
             write_cached(app_id, filename, data)
             from lib.cdn_cache import set_meta  # pylint: disable=import-outside-toplevel
             url = f"https://mdeguzis.github.io/proton-pulse-data/data/{app_id}/{filename}"
-            # Touch the metadata timestamp so is_fresh() considers this entry valid
+            # Bump the metadata timestamp so is_fresh() treats this entry as valid
             set_meta(url)
             decky.logger.debug(f"put_cached_cdn: stored {app_id}/{filename}")
             return True
@@ -224,19 +225,19 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     ################################################################
 
     async def list_installed_compatibility_tools(self) -> list[dict[str, Any]]:
-        """List all compat tools found in Steam's compatibilitytools.d dirs."""
+        """List every compat tool we can find in Steam's compatibilitytools.d dirs."""
         return list_installed_compatibility_tools(read_latest_metadata())
 
     async def get_proton_ge_releases(
         self, force_refresh: bool = False
     ) -> list[dict[str, Any]]:
-        """Fetch the list of Proton-GE releases from GitHub."""
+        """Grab the list of Proton-GE releases from GitHub."""
         return get_releases_sync(force_refresh)
 
     async def get_proton_ge_manager_state(
         self, force_refresh: bool = False
     ) -> dict[str, Any]:
-        """Return combined state: releases, installed tools, install status."""
+        """Bundle up everything the frontend needs: releases, installed tools, install status."""
         releases = await self.get_proton_ge_releases(force_refresh)
         installed = list_installed_compatibility_tools(read_latest_metadata())
         current_release = releases[0] if releases else None
@@ -267,7 +268,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         }
 
     async def check_proton_version_availability(self, version: str) -> dict[str, Any]:
-        """Check if a specific Proton-GE version is installed or available."""
+        """See if a specific Proton-GE version is installed, available, or unknown."""
         normalized = normalize_proton_ge_tag(version)
         installed = list_installed_compatibility_tools(read_latest_metadata())
 
@@ -323,7 +324,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     async def install_proton_ge(
         self, version: str | None = None, install_as_latest: bool = False
     ) -> dict[str, Any]:
-        """Kick off a background Proton-GE install for the given version."""
+        """Kick off a background Proton-GE install for the requested version."""
         releases = get_releases_sync(False)
         release: dict[str, Any] | None = None
 
@@ -454,7 +455,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         }
 
     async def cancel_proton_ge_install(self) -> dict[str, Any]:
-        """Cancel a running Proton-GE install if one is active."""
+        """Stop a running Proton-GE install if there is one."""
         with self._proton_ge_install_lock:
             thread = self._proton_ge_install_thread
             if not thread or not thread.is_alive():
@@ -478,7 +479,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     async def install_compatibility_tool_archive(
         self, archive_path: str
     ) -> dict[str, Any]:
-        """Install a compat tool from a local archive (zip/tar)."""
+        """Install a compat tool from a local archive (zip or tar)."""
         archive_input = (archive_path or "").strip()
         if not archive_input:
             return {"success": False, "message": "No archive path was provided."}
@@ -525,7 +526,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     async def uninstall_compatibility_tool(  # pylint: disable=too-many-return-statements
         self, directory_name: str
     ) -> dict[str, Any]:
-        """Remove an installed compat tool by its directory name."""
+        """Delete an installed compat tool by its directory name."""
         target_name = (directory_name or "").strip()
         if not target_name:
             return {

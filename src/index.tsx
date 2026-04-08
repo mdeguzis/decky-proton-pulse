@@ -29,6 +29,7 @@ import { useLanguage, t } from './lib/i18n';
 import { initCache } from './lib/cache';
 import { runStartupPrefetch } from './lib/prefetch';
 import { startAutoFlush, stopAutoFlush, flushMetricsToDisk } from './lib/metrics';
+import { getProtonGeManagerState, installProtonGe } from './lib/compatTools';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -198,6 +199,21 @@ export default definePlugin(() => {
     void runStartupPrefetch();
   }, 5000);
 
+  // Auto-install latest Proton-GE on load if the user has the setting enabled
+  const geAutoUpdateTimer = setTimeout(() => {
+    if (!getSetting('compat-auto-update-proton-ge', false)) return;
+    void (async () => {
+      try {
+        const state = await getProtonGeManagerState(true);
+        if (!state.current_release || state.current_latest_slot_installed || state.install_status.state === 'running') return;
+        const result = await installProtonGe(state.current_release.tag_name, true);
+        void logFrontendEvent('INFO', 'Startup auto-install Proton-GE-Latest', { tag: state.current_release.tag_name, result });
+      } catch (e) {
+        void logFrontendEvent('ERROR', 'Startup auto-install Proton-GE failed', { error: e instanceof Error ? e.message : String(e) });
+      }
+    })();
+  }, 8000);
+
   routerHook.addRoute('/proton-pulse', ProtonPulsePage);
   const syncFocusedGameFromPath = () => {
     const pathname = globalThis.location?.pathname ?? '';
@@ -241,6 +257,7 @@ export default definePlugin(() => {
       // flush metrics one last time before shutdown
       stopAutoFlush();
       clearTimeout(prefetchTimer);
+      clearTimeout(geAutoUpdateTimer);
       void flushMetricsToDisk();
       routerHook.removeRoute('/proton-pulse');
       routerHook.removePatch('/library/app/:appid', gamePagePatch);
