@@ -41,5 +41,5 @@ jobs:
       - name: Sync Python dependencies
         run: uv sync --group dev
 
-      - name: Run full buil
+      - name: Build
         run: make build
