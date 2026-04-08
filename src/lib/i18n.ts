@@ -202,6 +202,15 @@ export interface TranslationTree {
     jumpHint: string;
     noLogs: string;
     entryCount: (count: number) => string;
+    openViewer: string;
+    openHint: string;
+    viewerTitle: string;
+    viewerHint: string;
+    copyLogs: string;
+    copied: string;
+    copiedToClipboard: string;
+    copyFailed: string;
+    jumpToLatest: string;
   };
   about: {
     description: string;
@@ -534,6 +543,15 @@ export const en: TranslationTree = {
     jumpHint: 'Manual scroll is active. Press A/OK to jump back to the latest log output.',
     noLogs: 'No logs yet.',
     entryCount: (count) => `${count} entries`,
+    openViewer: 'Open Log Viewer',
+    openHint: 'Press A to open',
+    viewerTitle: 'Log Viewer',
+    viewerHint: 'Open logs in a dedicated modal for cleaner scrolling and back behavior.',
+    copyLogs: 'Copy Logs',
+    copied: 'Copied!',
+    copiedToClipboard: 'Logs copied to clipboard.',
+    copyFailed: 'Could not copy logs to clipboard.',
+    jumpToLatest: 'Jump to Latest',
   },
   about: {
     description: 'Finds the ProtonDB reports that best match your hardware and helps you apply the launch options that actually look useful, all from the Decky sidebar.',
