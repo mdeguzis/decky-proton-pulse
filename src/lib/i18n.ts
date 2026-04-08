@@ -197,6 +197,7 @@ export interface TranslationTree {
     manualScroll: string;
     jumpHint: string;
     noLogs: string;
+    entryCount: (count: number) => string;
   };
   about: {
     description: string;
@@ -262,6 +263,91 @@ export interface TranslationTree {
     borked: string;
     pending: string;
   };
+  extras?: {
+    exit: () => string;
+    backendOfflineVersion: () => string;
+    backendUnavailableTitle: () => string;
+    backendUnavailableHint: () => string;
+    pressBackAgainToExit: () => string;
+    failedToOpenIssuePage: () => string;
+    nonSteamShortcut: () => string;
+    appIdLabel: (appId: number | string) => string;
+    shortcutCannotSubmit: () => string;
+    shortcutSubmissionHint: () => string;
+    confidenceOutOfTen: (score: string | number) => string;
+    alreadyUpvoted: () => string;
+    alreadyDownvoted: () => string;
+    all: () => string;
+    other: () => string;
+    cacheManagerTitle: () => string;
+    clearEntireCacheTitle: () => string;
+    clearEntireCacheDescription: (count: number) => string;
+    clearAll: () => string;
+    cacheCleared: (count: number) => string;
+    cacheRefreshed: (gameName: string) => string;
+    cacheRefreshFailed: (gameName: string, error: string) => string;
+    cacheRemoved: (gameName: string) => string;
+    cacheFilterPlaceholder: () => string;
+    cacheEmpty: () => string;
+    cacheNoMatches: () => string;
+    cacheStatsSummary: (size: number, maxSize: number, oldest: string | null) => string;
+    cacheRowSummary: (appId: string, reportCount: number, source: string, age: string) => string;
+    advancedSettings: () => string;
+    advancedSettingsDescription: () => string;
+    cacheSection: () => string;
+    cacheTtlHours: () => string;
+    cacheTtlDescription: (hours: number) => string;
+    manageCache: () => string;
+    manageCacheDescription: () => string;
+    performance: () => string;
+    export: () => string;
+    uptime: () => string;
+    cacheHitRate: () => string;
+    cachedGames: () => string;
+    prefetched: () => string;
+    totalFetches: () => string;
+    cdnFetchAvg: () => string;
+    prefetchAvg: () => string;
+    evictions: () => string;
+    hitsAndMisses: (hits: number, misses: number) => string;
+    errorsSuffix: (errors: number) => string;
+    notAvailable: () => string;
+    compatVersionBrowserTitle: () => string;
+    compatVersionBrowserDescription: () => string;
+    compatNameColumn: () => string;
+    compatVersionColumn: () => string;
+    compatStatusColumn: () => string;
+    compatActionColumn: () => string;
+    compatNoVersionsMatched: () => string;
+    compatInstallFromZipTitle: () => string;
+    compatInstallFromZipDescription: () => string;
+    compatInstallArchiveHint: () => string;
+    compatInstallArchive: () => string;
+    compatLatestInstalled: () => string;
+    compatLatest: () => string;
+    compatAvailable: () => string;
+    compatLatestSlot: () => string;
+    compatCustom: () => string;
+    compatNotInstalled: () => string;
+    compatLoadingReleaseFeed: () => string;
+    compatNoReleasesReturned: () => string;
+    compatRefreshed: () => string;
+    compatLoadFailed: () => string;
+    compatDownloading: () => string;
+    compatExtracting: () => string;
+    compatFinalizing: () => string;
+    compatAutoUpdateCurrentVersion: () => string;
+    customVarKey: () => string;
+    customVarValue: () => string;
+    liveSummaryUnavailable: () => string;
+    diagnosticsTriedAppId: (appId: number) => string;
+    diagnosticsPrimarySource: (source: string) => string;
+    diagnosticsPrimarySourcePending: () => string;
+    diagnosticsReportIndexResponse: (status: string) => string;
+    diagnosticsReportIndexPending: () => string;
+    diagnosticsLiveSummary: (status: string, total?: number, tier?: string) => string;
+    diagnosticsLiveSummaryPending: () => string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -286,15 +372,15 @@ export const en: TranslationTree = {
   },
   sidebar: {
     manageConfigurations: 'Manage Configurations',
-    manageConfigurationsDesc: 'View and manage ProtonDB configurations',
+    manageConfigurationsDesc: 'View and manage saved Proton Pulse setups',
     compatibilityTools: 'Compatibility Tools',
     compatibilityToolsDesc: 'Install, remove, and manage compatibility tools',
     settings: 'Settings',
-    settingsDesc: 'Plugin preferences and tokens',
+    settingsDesc: 'Plugin preferences and advanced options',
     viewLogs: 'View Logs',
     viewLogsDesc: 'Open the live plugin log viewer',
     debugLogs: 'Debug Logs',
-    debugLogsDesc: 'Enable verbose logging without opening Settings',
+    debugLogsDesc: 'Turn on verbose logging without opening Settings',
     about: (v) => `About: Proton Pulse v${v}`,
   },
   nav: {
@@ -319,10 +405,10 @@ export const en: TranslationTree = {
     detectingGpu: 'Detecting GPU tier...',
     detectingGpuHint: 'Detecting your GPU tier before narrowing the list. Showing all reports for now.',
     noReportsForTier: 'No reports for this GPU tier.',
-    noReportsForGame: 'No ProtonDB reports found for this game.',
+    noReportsForGame: 'No ProtonDB reports showed up for this game.',
     loadingSystemInfo: 'Loading system info...',
     navigateToGame: 'Navigate to a game first.',
-    hardwareUnavailable: 'Hardware details unavailable',
+    hardwareUnavailable: 'Hardware details are unavailable',
     editedBadge: 'Edited*',
   },
   detail: {
@@ -382,7 +468,7 @@ export const en: TranslationTree = {
     refreshing: 'Refreshing...',
     installed: 'Installed',
     title: 'Compatibility Tools',
-    description: 'Proton tool management.',
+    description: 'Manage Proton and GE compatibility tools.',
     filterPlaceholder: 'Filter versions...',
     zipPlaceholder: '/home/deck/Downloads/GE-Proton8-3.tar.gz',
     removing: 'Removing...',
@@ -395,12 +481,12 @@ export const en: TranslationTree = {
   configure: {
     quitGameFirst: 'Please quit the game first',
     applyCancelled: 'Apply cancelled',
-    noCompatTools: 'No compatibility tools available',
-    applyFailed: (msg) => `Apply failed: ${msg}`,
-    voteSubmitted: 'Vote submitted',
-    voteFailed: 'Vote failed',
+    noCompatTools: 'No compatibility tools are available',
+    applyFailed: (msg) => `Could not apply launch options: ${msg}`,
+    voteSubmitted: 'Vote sent',
+    voteFailed: 'Could not send vote',
     requiredProtonVersion: 'Required Proton Version',
-    requiresVersion: (v) => `This profile config requires ${v}, but it is not currently installed.`,
+    requiresVersion: (v) => `This profile needs ${v}, but it is not installed right now.`,
     chooseApplyMethod: 'Choose how you want to apply this profile.',
     installVersion: (v) => `Install ${v}`,
     pickInstalledVersion: 'Pick Installed Version',
@@ -411,11 +497,11 @@ export const en: TranslationTree = {
     useSelectedVersion: 'Use Selected Version',
     chooseInstalledTool: 'Choose an installed compatibility tool for this profile.',
     usingClosest: (v) => `Using closest installed version: ${v}`,
-    noCloseMatch: (v) => `No close match found. Using latest installed: ${v}`,
-    installFailed: (v) => `Closest-version search failed, and install failed for ${v}.`,
-    installFailedFallback: (failedV, fallbackV) => `Install failed for ${failedV}. Using ${fallbackV} instead.`,
-    installFailedNoFallback: (v) => `Install failed for ${v}. Applying with the requested version anyway.`,
-    appliedFor: (name) => `Applied for ${name}`,
+    noCloseMatch: (v) => `No close match found. Using the latest installed version instead: ${v}`,
+    installFailed: (v) => `Could not find a close installed match, and ${v} could not be installed either.`,
+    installFailedFallback: (failedV, fallbackV) => `Could not install ${failedV}. Using ${fallbackV} instead.`,
+    installFailedNoFallback: (v) => `Could not install ${v}. Applying the profile anyway with the requested version.`,
+    appliedFor: (name) => `Applied to ${name}`,
   },
   toast: {
     installed: (v) => `Installed ${v}.`,
@@ -426,48 +512,49 @@ export const en: TranslationTree = {
     noOptionsSet: 'No launch options set.',
   },
   manage: {
-    instructions: 'Right-click any game in your library (or use the settings gear) and select',
+    instructions: 'Right-click any game in your library, or use the settings gear, and select',
     protondbConfig: 'ProtonDB Config',
-    currentLaunchOptions: 'Current launch options from Steam app details:',
+    currentLaunchOptions: 'Current launch options from Steam:',
     loadingLaunchOptions: 'Loading launch options...',
     noLaunchOptions: 'No launch options set.',
     clearLaunchOptions: 'Clear Launch Options',
   },
   logs: {
     focused: 'Logs focused. Right stick or D-pad scrolls.',
-    moveRight: 'Move right to focus logs.',
+    moveRight: 'Move right to focus the logs.',
     manualScroll: 'Manual scroll active.',
-    jumpHint: 'Manual scroll active. Press A/OK to jump to latest log output.',
+    jumpHint: 'Manual scroll is active. Press A/OK to jump back to the latest log output.',
     noLogs: 'No logs yet.',
+    entryCount: (count) => `${count} entries`,
   },
   about: {
-    description: 'Ranks ProtonDB community reports by system compatibility and applies the best-matching Proton launch options to your Steam games -- all from the Decky sidebar.',
+    description: 'Finds the ProtonDB reports that best match your hardware and helps you apply the launch options that actually look useful, all from the Decky sidebar.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Submit Issue',
-    submitIssueHint: 'System info and recent logs are attached automatically.',
+    submitIssueHint: 'Recent logs and system details are attached automatically.',
     issueTemplateGameReport: 'Game Report',
     issueTemplateMissingReports: 'Missing ProtonDB Reports',
     issueTemplatePluginIssue: 'Plugin Issue',
-    issueTemplateOther: 'Other',
+    issueTemplateOther: 'General Feedback',
     openingIssue: 'Opening issue...',
   },
   configManager: {
     title: 'Configurations',
     createConfig: 'Create Config',
     configureCurrentGame: 'Configure Current Game',
-    emptyState: 'No configurations yet. Apply a report from Manage This Game to get started.',
+    emptyState: 'No saved configurations yet. Apply a report from Manage This Game to get started.',
     deleteConfirm: (name) => `Delete config for ${name}? This will clear the game's launch options.`,
     deleteConfirmTitle: 'Delete Configuration',
     applied: 'Applied',
     appliedAgo: (time) => `Applied ${time}`,
-    noConfigs: 'No configurations',
+    noConfigs: 'No saved configurations',
     livePreview: 'Live Preview',
     customVariables: 'Custom Variables',
     addCustomVar: 'Add custom variable',
-    previewHint: 'Toggle options below to build your launch command. Sections are pre-filtered by your hardware.',
+    previewHint: 'Toggle options below to build your launch command. The sections are already filtered to fit your hardware.',
     profileName: 'Profile Name',
-    profileNameHint: 'A label for this configuration (e.g. "High Performance", "Compatible")',
+    profileNameHint: 'Pick a short label for this configuration, like "High Performance" or "Compatible".',
     gpuFilter: 'GPU',
     toggleCategories: {
       nvidia: 'NVIDIA',
@@ -481,14 +568,14 @@ export const en: TranslationTree = {
   },
   protondbSubmit: {
     title: 'Submit to ProtonDB',
-    instructions: 'Your system info has been generated in the format ProtonDB expects. Copy it to your clipboard, then paste it into the ProtonDB contribute form when prompted for system information.',
+    instructions: 'Proton Pulse generated your system info in the format ProtonDB expects. Copy it, then paste it into the ProtonDB submission form when it asks for system details.',
     generating: 'Generating system info...',
-    generateFailed: 'Failed to generate system info',
+    generateFailed: 'Could not generate system info',
     copyAndOpen: 'Copy & Open ProtonDB',
     copyInfo: 'Copy Info',
     copied: 'Copied!',
     copiedToClipboard: 'System info copied to clipboard.',
-    copyFailed: 'Failed to copy to clipboard.',
+    copyFailed: 'Could not copy to clipboard.',
     submitToProtonDB: 'Submit to ProtonDB',
     confirmTitle: 'Submit to ProtonDB?',
     confirmChanges: 'The following changes will be included in your report:',
@@ -503,6 +590,94 @@ export const en: TranslationTree = {
     bronze: 'Bronze',
     borked: 'Borked',
     pending: 'Pending',
+  },
+  extras: {
+    exit: () => 'Exit',
+    backendOfflineVersion: () => 'backend offline',
+    backendUnavailableTitle: () => 'Backend unavailable:',
+    backendUnavailableHint: () => 'Check the Logs tab for details. The Python backend may not have started cleanly.',
+    pressBackAgainToExit: () => 'Press B again to exit',
+    failedToOpenIssuePage: () => 'Could not open the issue page.',
+    nonSteamShortcut: () => 'Non-Steam shortcut',
+    appIdLabel: (appId) => `AppID ${appId}`,
+    shortcutCannotSubmit: () => 'Non-Steam shortcuts cannot be submitted to ProtonDB.',
+    shortcutSubmissionHint: () => 'ProtonDB only accepts Steam app submissions. You can still use a local config for this shortcut, but you should not submit it there.',
+    confidenceOutOfTen: (score) => `${score}/10 confidence`,
+    alreadyUpvoted: () => 'You already upvoted this report',
+    alreadyDownvoted: () => 'You already downvoted this report',
+    all: () => 'All',
+    other: () => 'Other',
+    cacheManagerTitle: () => 'Cache Manager',
+    clearEntireCacheTitle: () => 'Clear Entire Cache',
+    clearEntireCacheDescription: (count) => `Remove all ${count} cached entries? Proton Pulse will fetch them again the next time you open those games.`,
+    clearAll: () => 'Clear All',
+    cacheCleared: (count) => `Removed ${count} cached entr${count === 1 ? 'y' : 'ies'}`,
+    cacheRefreshed: (gameName) => `Refreshed ${gameName}`,
+    cacheRefreshFailed: (gameName, error) => `Could not refresh ${gameName}: ${error}`,
+    cacheRemoved: (gameName) => `Removed ${gameName} from cache`,
+    cacheFilterPlaceholder: () => 'Filter by name or app ID...',
+    cacheEmpty: () => 'The cache is empty',
+    cacheNoMatches: () => 'No matches',
+    cacheStatsSummary: (size, maxSize, oldest) => `${size} of ${maxSize} cached${oldest ? ` | oldest ${oldest}` : ''}`,
+    cacheRowSummary: (appId, reportCount, source, age) => `App ${appId} | ${reportCount} reports | ${source} | ${age}`,
+    advancedSettings: () => 'Advanced Settings',
+    advancedSettingsDescription: () => 'Show cache controls and developer tools',
+    cacheSection: () => 'Cache',
+    cacheTtlHours: () => 'Cache TTL (hours)',
+    cacheTtlDescription: (hours) => `Data re-fetched after ${hours}h`,
+    manageCache: () => 'Manage Cache...',
+    manageCacheDescription: () => 'View, refresh, or remove cached game data',
+    performance: () => 'Performance',
+    export: () => 'Export',
+    uptime: () => 'Uptime',
+    cacheHitRate: () => 'Cache hit rate',
+    cachedGames: () => 'Cached games',
+    prefetched: () => 'Prefetched',
+    totalFetches: () => 'Total fetches',
+    cdnFetchAvg: () => 'CDN fetch avg',
+    prefetchAvg: () => 'Prefetch avg',
+    evictions: () => 'Evictions',
+    hitsAndMisses: (hits, misses) => `${hits} hits / ${misses} misses`,
+    errorsSuffix: (errors) => ` (${errors} errors)`,
+    notAvailable: () => 'n/a',
+    compatVersionBrowserTitle: () => 'Other Proton-GE Versions',
+    compatVersionBrowserDescription: () => 'Browse and filter the full Proton-GE release list.',
+    compatNameColumn: () => 'Name',
+    compatVersionColumn: () => 'Version',
+    compatStatusColumn: () => 'Status',
+    compatActionColumn: () => 'Action',
+    compatNoVersionsMatched: () => 'No versions matched that filter.',
+    compatInstallFromZipTitle: () => 'Install From ZIP',
+    compatInstallFromZipDescription: () => 'Enter a local archive path on the Deck. Proton Pulse accepts .zip files and tar-based archives.',
+    compatInstallArchiveHint: () => 'Use this for older Proton-GE builds or custom compatibility tool archives you already copied to the Deck.',
+    compatInstallArchive: () => 'Install Archive',
+    compatLatestInstalled: () => 'Latest installed',
+    compatLatest: () => 'Latest',
+    compatAvailable: () => 'Available',
+    compatLatestSlot: () => 'Latest Slot',
+    compatCustom: () => 'Custom',
+    compatNotInstalled: () => 'Not Installed',
+    compatLoadingReleaseFeed: () => 'Loading release feed...',
+    compatNoReleasesReturned: () => 'GitHub did not return any Proton-GE releases.',
+    compatRefreshed: () => 'Compatibility tools refreshed.',
+    compatLoadFailed: () => 'Could not load the Proton-GE manager state.',
+    compatDownloading: () => 'Downloading...',
+    compatExtracting: () => 'Extracting...',
+    compatFinalizing: () => 'Finalizing...',
+    compatAutoUpdateCurrentVersion: () => 'Auto-update Current Version',
+    customVarKey: () => 'KEY',
+    customVarValue: () => 'VALUE',
+    liveSummaryUnavailable: () => 'ProtonDB has a live summary for this game, but the detailed report cards were not available from the CDN.',
+    diagnosticsTriedAppId: (appId) => `Checked App ID ${appId}`,
+    diagnosticsPrimarySource: (source) => `Primary source: ${source}`,
+    diagnosticsPrimarySourcePending: () => 'Primary source: pending',
+    diagnosticsReportIndexResponse: (status) => `Report index response: ${status}`,
+    diagnosticsReportIndexPending: () => 'Report index response: pending',
+    diagnosticsLiveSummary: (status, total, tier) =>
+      total !== undefined && tier !== undefined
+        ? `Live ProtonDB summary: ${status} · ${total} reports · ${tier} tier`
+        : `Live ProtonDB summary: ${status}`,
+    diagnosticsLiveSummaryPending: () => 'Live ProtonDB summary: pending',
   },
 };
 
@@ -682,4 +857,3 @@ export function t(): TranslationTree {
   if (!tree) return en;
   return makeFallbackProxy(tree, en);
 }
-

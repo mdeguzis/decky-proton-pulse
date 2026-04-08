@@ -17,6 +17,7 @@ import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 from main import Plugin
 from lib.plugin_logging import sync_set_log_level, _enable_debug_log, _disable_debug_log
+from lib.compat_tools import list_installed_compatibility_tools
 from lib.system_info import (
     read_cpu,
     read_gpu,
@@ -330,3 +331,25 @@ def test_read_custom_proton_no_dir(tmp_path: pathlib.Path) -> None:
     with patch.object(decky, "DECKY_USER_HOME", str(tmp_path)):
         result = read_custom_proton()
     assert result is None
+
+
+def test_list_installed_compatibility_tools_filters_non_proton_custom_tools(
+    tmp_path: pathlib.Path,
+) -> None:
+    compat_dir = tmp_path / "compatibilitytools.d"
+    compat_dir.mkdir()
+    (compat_dir / "GE-Proton10-1").mkdir()
+    (compat_dir / "Luxtorpeda").mkdir()
+    (compat_dir / "Steam Linux Runtime 3.0").mkdir()
+
+    with (
+        patch("lib.compat_tools.compat_tools_dirs", return_value=[compat_dir]),
+        patch("lib.compat_tools.find_steam_root", return_value=None),
+        patch.object(decky, "DECKY_USER_HOME", str(tmp_path)),
+    ):
+        tools = list_installed_compatibility_tools(None)
+
+    names = {tool["directory_name"] for tool in tools}
+    assert "GE-Proton10-1" in names
+    assert "Luxtorpeda" not in names
+    assert "Steam Linux Runtime 3.0" not in names

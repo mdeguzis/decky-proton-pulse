@@ -1,6 +1,6 @@
 // src/lib/pageState.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NAVIGATE_EVENT, dispatchNavigate, pageState } from './pageState';
+import { NAVIGATE_EVENT, dispatchNavigate, pageState, rememberReturnPath } from './pageState';
 import type { NavigatePayload } from './pageState';
 
 // Shim window with an EventTarget so CustomEvent dispatch works in Node.
@@ -19,6 +19,9 @@ beforeEach(() => {
   pageState.initialPage = 'manage';
   pageState.appId = null;
   pageState.appName = '';
+  pageState.returnPath = null;
+  pageState.pendingNavigate = null;
+  pageState.pendingNavigateVersion = 0;
 });
 
 describe('NAVIGATE_EVENT', () => {
@@ -39,6 +42,10 @@ describe('pageState defaults', () => {
   it('appName defaults to empty string', () => {
     expect(pageState.appName).toBe('');
   });
+
+  it('returnPath defaults to null', () => {
+    expect(pageState.returnPath).toBeNull();
+  });
 });
 
 describe('dispatchNavigate', () => {
@@ -55,6 +62,11 @@ describe('dispatchNavigate', () => {
 
     expect(received).toHaveLength(1);
     expect(received[0]).toEqual({ tab: 'manage-game', appId: 42, appName: 'Half-Life 3' });
+    expect(pageState.initialPage).toBe('manage-game');
+    expect(pageState.appId).toBe(42);
+    expect(pageState.appName).toBe('Half-Life 3');
+    expect(pageState.pendingNavigate).toEqual({ tab: 'manage-game', appId: 42, appName: 'Half-Life 3' });
+    expect(pageState.pendingNavigateVersion).toBe(1);
   });
 
   it('fires with null appId for manage navigation', () => {
@@ -84,5 +96,17 @@ describe('dispatchNavigate', () => {
       (window as unknown as EventTarget).removeEventListener(NAVIGATE_EVENT, handler);
       expect(received[0].tab).toBe(tab);
     });
+  });
+});
+
+describe('rememberReturnPath', () => {
+  it('stores non-plugin paths for exiting back', () => {
+    rememberReturnPath('/library/app/123');
+    expect(pageState.returnPath).toBe('/library/app/123');
+  });
+
+  it('ignores plugin paths', () => {
+    rememberReturnPath('/proton-pulse');
+    expect(pageState.returnPath).toBeNull();
   });
 });

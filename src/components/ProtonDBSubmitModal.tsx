@@ -15,6 +15,7 @@ interface Props {
 }
 
 export function ProtonDBSubmitModal({ appId, appName, closeModal }: Props) {
+  const extras = t().extras!;
   const [systemInfo, setSystemInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -23,7 +24,7 @@ export function ProtonDBSubmitModal({ appId, appName, closeModal }: Props) {
   useEffect(() => {
     void logFrontendEvent('INFO', 'ProtonDB submit modal opened', { appId, appName });
     if (isShortcut) {
-      setError('Non-Steam shortcuts cannot be submitted to ProtonDB.');
+      setError(extras.shortcutCannotSubmit());
       return;
     }
     getProtonDBSystemInfo()
@@ -71,11 +72,11 @@ export function ProtonDBSubmitModal({ appId, appName, closeModal }: Props) {
         </div>
         {appName && (
           <div style={{ fontSize: 12, color: '#7a9bb5', marginBottom: 12 }}>
-            {appName}{appId && !isShortcut ? ` (${appId})` : ''}
-          </div>
+          {appName}{appId && !isShortcut ? ` (${appId})` : ''}
+        </div>
         )}
         <div style={{ fontSize: 11, color: '#9dc4e8', lineHeight: 1.5, marginBottom: 12 }}>
-          {isShortcut ? 'ProtonDB accepts Steam app submissions only. This shortcut can still use a local config, but it should not be submitted.' : strings.instructions}
+          {isShortcut ? extras.shortcutSubmissionHint() : strings.instructions}
         </div>
 
         {/* System info preview */}

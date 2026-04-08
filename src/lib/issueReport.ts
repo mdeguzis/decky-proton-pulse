@@ -102,11 +102,19 @@ function buildBody(template: IssueTemplate, systemInfo: string, logs: string): s
 
     case 'other':
       return [
-        '## Other',
+        '## General Feedback',
         '',
-        '**Category:** <!-- Feature request / Question / Documentation / Other -->',
+        '**Feedback Type:** <!-- General feedback / Feature request / Question / Documentation / Other -->',
         '',
-        '### Description',
+        '### What would you like to share?',
+        '<!-- Tell us what is working well, what feels rough, or what you want changed. -->',
+        '',
+        '',
+        '### Affected Area (optional)',
+        '<!-- Manage This Game / Manage Configurations / Compatibility Tools / Logs / Settings / About / Other -->',
+        '',
+        '',
+        '### Additional Context',
         '',
         '',
         '### System Info',
@@ -129,7 +137,7 @@ const TITLES: Record<IssueTemplate, string> = {
   game_report: '[Game Report] ',
   missing_reports: '[Missing Reports] ',
   plugin_issue: '[Bug] ',
-  other: '',
+  other: '[General Feedback] ',
 };
 
 export async function openIssue(template: IssueTemplate): Promise<void> {

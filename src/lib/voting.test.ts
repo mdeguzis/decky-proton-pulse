@@ -1,180 +1,149 @@
-// src/lib/voting.test.ts
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// mock logger before importing the module under test
 vi.mock('./logger', () => ({
   logFrontendEvent: vi.fn().mockResolvedValue(true),
 }));
 
-// mock @supabase/supabase-js so we don't make real network calls
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    upsert: vi.fn().mockResolvedValue({ error: null }),
-    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-  })),
-}));
-
-// ── global stubs ──────────────────────────────────────────────────────────
-
 const lsStore: Record<string, string> = {};
 const localStorageMock = {
-  getItem: (k: string) => lsStore[k] ?? null,
-  setItem: (k: string, v: string) => { lsStore[k] = v; },
-  removeItem: (k: string) => { delete lsStore[k]; },
-  clear: () => { Object.keys(lsStore).forEach(k => delete lsStore[k]); },
+  getItem: (key: string) => lsStore[key] ?? null,
+  setItem: (key: string, value: string) => { lsStore[key] = value; },
+  removeItem: (key: string) => { delete lsStore[key]; },
+  clear: () => { Object.keys(lsStore).forEach(key => delete lsStore[key]); },
 };
-vi.stubGlobal('localStorage', localStorageMock);
 
-// predictable bytes for getRandomValues: 0x01, 0x02, 0x03 ... repeating
+const fetchMock = vi.fn();
+
+vi.stubGlobal('localStorage', localStorageMock);
+vi.stubGlobal('fetch', fetchMock);
 vi.stubGlobal('crypto', {
   getRandomValues: (buf: Uint8Array) => {
-    for (let i = 0; i < buf.length; i++) buf[i] = (i % 255) + 1;
+    for (let i = 0; i < buf.length; i++) {
+      buf[i] = (i % 255) + 1;
+    }
     return buf;
   },
   subtle: {
-    digest: vi.fn().mockResolvedValue(
-      // 32 bytes, all 0xab -- gives us a predictable 64-char hex string
-      new Uint8Array(32).fill(0xab).buffer,
-    ),
+    digest: vi.fn().mockResolvedValue(new Uint8Array(32).fill(0xab).buffer),
   },
 });
-
-// SteamClient is a global in the Decky runtime
 vi.stubGlobal('SteamClient', {
   User: {
     GetCurrentUser: () => ({ strAccountName: 'testuser' }),
   },
 });
 
-// import after stubs are set up
-import { bytesToHex, getVoterId, isVoteCooldownActive } from './voting';
+function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+    ...init,
+  });
+}
 
 beforeEach(() => {
   localStorageMock.clear();
-  // reset module-level cached voter ID between tests by clearing localStorage
-  // (the module caches in-memory too, but we can't easily reset that without
-  //  vi.resetModules -- just test idempotence instead)
+  fetchMock.mockReset();
+  vi.resetModules();
 });
 
-// ── bytesToHex ────────────────────────────────────────────────────────────
-
 describe('bytesToHex', () => {
-  it('converts empty array to empty string', () => {
+  it('converts empty array to empty string', async () => {
+    const { bytesToHex } = await import('./voting');
     expect(bytesToHex(new Uint8Array(0))).toBe('');
   });
 
-  it('converts single byte correctly', () => {
-    expect(bytesToHex(new Uint8Array([0x0f]))).toBe('0f');
-    expect(bytesToHex(new Uint8Array([0xff]))).toBe('ff');
-    expect(bytesToHex(new Uint8Array([0x00]))).toBe('00');
-  });
-
-  it('pads single-digit hex values', () => {
-    // 0x01 should be '01', not '1'
-    expect(bytesToHex(new Uint8Array([0x01, 0x10]))).toBe('0110');
-  });
-
-  it('converts multi-byte array', () => {
-    expect(bytesToHex(new Uint8Array([0xde, 0xad, 0xbe, 0xef]))).toBe('deadbeef');
-  });
-
-  it('produces correct length output (2 chars per byte)', () => {
-    const bytes = new Uint8Array(16);
-    expect(bytesToHex(bytes)).toHaveLength(32);
+  it('pads values correctly', async () => {
+    const { bytesToHex } = await import('./voting');
+    expect(bytesToHex(new Uint8Array([0x01, 0x10, 0xff]))).toBe('0110ff');
   });
 });
-
-// ── voter ID ──────────────────────────────────────────────────────────────
 
 describe('getVoterId', () => {
-  it('returns a 64-char hex string', async () => {
-    const id = await getVoterId();
-    expect(id).toHaveLength(64);
-    expect(id).toMatch(/^[0-9a-f]{64}$/);
-  });
-
-  it('is idempotent -- same value on repeated calls', async () => {
-    const a = await getVoterId();
-    const b = await getVoterId();
-    expect(a).toBe(b);
-  });
-
-  it('stores a salt in localStorage on first call', async () => {
-    // clear any cached salt
-    localStorageMock.clear();
-    // force fresh module state by resetting subtle.digest mock to let the call through
-    await getVoterId();
-    const stored = localStorageMock.getItem('proton-pulse-voter-salt');
-    // if cachedVoterId was already set from a prior test, salt may already exist
-    // just check either the salt was stored or it wasnt the first call in this module instance
-    expect(typeof stored === 'string' || stored === null).toBe(true);
-  });
-
-  it('generates salt as 64-char hex string', () => {
-    // getRandomValues fills 32 bytes (01..20), bytesToHex gives 64 chars
-    const bytes = new Uint8Array(32);
-    crypto.getRandomValues(bytes);
-    const hex = bytesToHex(bytes);
-    expect(hex).toHaveLength(64);
-    expect(hex).toMatch(/^[0-9a-f]{64}$/);
+  it('returns a stable 64-char hex string', async () => {
+    const { getVoterId } = await import('./voting');
+    const first = await getVoterId();
+    const second = await getVoterId();
+    expect(first).toHaveLength(64);
+    expect(first).toMatch(/^[0-9a-f]{64}$/);
+    expect(second).toBe(first);
   });
 });
 
-// ── cooldown ──────────────────────────────────────────────────────────────
+describe('submitVote', () => {
+  it('upserts the vote in one request', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+    const { submitVote } = await import('./voting');
+    const ok = await submitVote('123', 'report-1', 1);
+
+    expect(ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('/report_votes?');
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('on_conflict=voter_id%2Capp_id%2Creport_key');
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'POST' });
+    expect(fetchMock.mock.calls[0]?.[1]?.headers).toMatchObject({
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    });
+
+    const insertBody = fetchMock.mock.calls[0]?.[1]?.body;
+    expect(typeof insertBody).toBe('string');
+    expect(JSON.parse(insertBody as string)).toMatchObject({
+      app_id: '123',
+      report_key: 'report-1',
+      vote: 1,
+    });
+  });
+
+  it('returns false when the insert fails', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'bad insert' }, { status: 400 }));
+
+    const { submitVote } = await import('./voting');
+    await expect(submitVote('123', 'report-1', -1)).resolves.toBe(false);
+  });
+});
+
+describe('getVoteTotals', () => {
+  it('maps rows into the keyed vote totals object', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse([
+      { report_key: 'r1', upvotes: 2, downvotes: 1 },
+      { report_key: 'r2', upvotes: null, downvotes: 4 },
+    ]));
+
+    const { getVoteTotals } = await import('./voting');
+    await expect(getVoteTotals('999')).resolves.toEqual({
+      r1: { upvotes: 2, downvotes: 1 },
+      r2: { upvotes: 0, downvotes: 4 },
+    });
+  });
+
+  it('returns an empty object on request failure', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'broken' }, { status: 500 }));
+
+    const { getVoteTotals } = await import('./voting');
+    await expect(getVoteTotals('999')).resolves.toEqual({});
+  });
+});
+
+describe('getUserVote', () => {
+  it('returns the stored vote when present', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ vote: -1 }));
+
+    const { getUserVote } = await import('./voting');
+    await expect(getUserVote('42', 'report-2')).resolves.toBe(-1);
+  });
+
+  it('returns null on 406 no-row responses', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'no rows' }, { status: 406 }));
+
+    const { getUserVote } = await import('./voting');
+    await expect(getUserVote('42', 'report-2')).resolves.toBeNull();
+  });
+});
 
 describe('isVoteCooldownActive', () => {
-  it('returns false initially (no vote submitted yet)', () => {
-    // no vote has been submitted, so cooldown should be inactive
-    // NOTE: if another test in this file triggered a vote submission, this could
-    // flicker -- keep vote submission tests in a separate describe block
+  it('is false before a vote is submitted', async () => {
+    const { isVoteCooldownActive } = await import('./voting');
     expect(isVoteCooldownActive()).toBe(false);
-  });
-});
-
-// ── vote totals transform ─────────────────────────────────────────────────
-
-describe('getVoteTotals data transform', () => {
-  it('handles null upvotes/downvotes by defaulting to 0', () => {
-    // test the transform logic directly -- same code as in getVoteTotals
-    const rawRows = [
-      { report_key: 'r1', upvotes: null, downvotes: null },
-      { report_key: 'r2', upvotes: 5, downvotes: 2 },
-      { report_key: 'r3', upvotes: 0, downvotes: null },
-    ];
-
-    const totals: Record<string, { upvotes: number; downvotes: number }> = {};
-    for (const row of rawRows) {
-      totals[row.report_key] = {
-        upvotes: row.upvotes ?? 0,
-        downvotes: row.downvotes ?? 0,
-      };
-    }
-
-    expect(totals['r1']).toEqual({ upvotes: 0, downvotes: 0 });
-    expect(totals['r2']).toEqual({ upvotes: 5, downvotes: 2 });
-    expect(totals['r3']).toEqual({ upvotes: 0, downvotes: 0 });
-  });
-
-  it('produces correct report_key mapping', () => {
-    const rows = [
-      { report_key: 'abc-123', upvotes: 10, downvotes: 3 },
-    ];
-    const totals: Record<string, { upvotes: number; downvotes: number }> = {};
-    for (const row of rows) {
-      totals[row.report_key] = { upvotes: row.upvotes ?? 0, downvotes: row.downvotes ?? 0 };
-    }
-    expect(Object.keys(totals)).toEqual(['abc-123']);
-    expect(totals['abc-123'].upvotes).toBe(10);
-  });
-
-  it('returns empty object for empty row set', () => {
-    const totals: Record<string, { upvotes: number; downvotes: number }> = {};
-    for (const row of []) {
-      totals[(row as any).report_key] = { upvotes: 0, downvotes: 0 };
-    }
-    expect(totals).toEqual({});
   });
 });

@@ -12,6 +12,7 @@ import { invalidate, invalidateAll, getCacheStats, getCachedAppIds, getCached } 
 import type { CacheEntry } from '../lib/cache';
 import { getProtonDBReportsWithDiagnostics } from '../lib/protondb';
 import { getVoteTotals } from '../lib/voting';
+import { t } from '../lib/i18n';
 
 interface CacheRow {
   appId: string;
@@ -40,6 +41,7 @@ function formatAge(ms: number): string {
 
 // the modal content, used with showModal(<CacheManagerModalContent />)
 export function CacheManagerModalContent({ closeModal }: { closeModal?: () => void }) {
+  const extras = t().extras!;
   const [filter, setFilter] = useState('');
   const [rows, setRows] = useState<CacheRow[]>([]);
   const [refreshing, setRefreshing] = useState<Set<string>>(new Set());
@@ -86,13 +88,17 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
         reports: reportResult.reports.length,
         votes: Object.keys(voteTotals).length,
       });
-      toaster.toast({ title: 'Cache Refreshed', body: `${gameName} updated`, duration: 2000 });
+      toaster.toast({ title: extras.cacheManagerTitle(), body: extras.cacheRefreshed(gameName), duration: 2000 });
     } catch (err) {
       void logFrontendEvent('ERROR', 'Cache refresh failed', {
         appId,
         error: err instanceof Error ? err.message : String(err),
       });
-      toaster.toast({ title: 'Refresh Failed', body: `${gameName}: ${err instanceof Error ? err.message : 'unknown error'}`, duration: 3000 });
+      toaster.toast({
+        title: extras.cacheManagerTitle(),
+        body: extras.cacheRefreshFailed(gameName, err instanceof Error ? err.message : 'unknown error'),
+        duration: 3000,
+      });
     }
     setRefreshing(prev => {
       const next = new Set(prev);
@@ -104,19 +110,19 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
 
   const handleDelete = (appId: string, gameName: string) => {
     invalidate(appId);
-    toaster.toast({ title: 'Removed', body: `${gameName} removed from cache`, duration: 2000 });
+    toaster.toast({ title: extras.cacheManagerTitle(), body: extras.cacheRemoved(gameName), duration: 2000 });
     loadRows();
   };
 
   const handleClearAll = () => {
     showModal(
       <ConfirmModal
-        strTitle="Clear Entire Cache"
-        strDescription={`Remove all ${stats.size} cached entries? Data will be re-fetched on next view.`}
-        strOKButtonText="Clear All"
+        strTitle={extras.clearEntireCacheTitle()}
+        strDescription={extras.clearEntireCacheDescription(stats.size)}
+        strOKButtonText={extras.clearAll()}
         onOK={() => {
           invalidateAll();
-          toaster.toast({ title: 'Cache Cleared', body: `${stats.size} entries removed`, duration: 2000 });
+          toaster.toast({ title: extras.cacheManagerTitle(), body: extras.cacheCleared(stats.size), duration: 2000 });
           loadRows();
         }}
         onCancel={() => {}}
@@ -126,8 +132,8 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
 
   return (
     <ConfirmModal
-      strTitle="Cache Manager"
-      strOKButtonText="Close"
+      strTitle={extras.cacheManagerTitle()}
+      strOKButtonText={t().common.close}
       onOK={() => closeModal?.()}
       onCancel={() => closeModal?.()}
     >
@@ -135,22 +141,21 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
         {/* stats header */}
         <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
           <span>
-            {stats.size} / {stats.maxSize} cached
-            {stats.oldestMs !== null && ` | oldest ${formatAge(stats.oldestMs)}`}
+            {extras.cacheStatsSummary(stats.size, stats.maxSize, stats.oldestMs !== null ? formatAge(stats.oldestMs) : null)}
           </span>
           <Focusable
             onClick={handleClearAll}
             onOKButton={handleClearAll}
             style={{ cursor: 'pointer', color: '#f44336', fontSize: 11 }}
           >
-            Clear All
+            {extras.clearAll()}
           </Focusable>
         </div>
 
         {/* search filter */}
         <input
           type="text"
-          placeholder="Filter by name or app ID..."
+          placeholder={extras.cacheFilterPlaceholder()}
           value={filter}
           onChange={e => setFilter(e.target.value)}
           style={{
@@ -175,7 +180,7 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
         }}>
           {filtered.length === 0 && (
             <div style={{ padding: 20, textAlign: 'center', color: '#556b7a', fontSize: 12 }}>
-              {rows.length === 0 ? 'Cache is empty' : 'No matches'}
+              {rows.length === 0 ? extras.cacheEmpty() : extras.cacheNoMatches()}
             </div>
           )}
           {filtered.map(row => (
@@ -200,7 +205,7 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
                     {row.gameName}
                   </div>
                   <div style={{ fontSize: 10, color: '#556b7a', marginTop: 2 }}>
-                    {row.appId} | {row.entry.reports.length} reports | {row.entry.source} | {formatAge(Date.now() - row.entry.cachedAt)}
+                    {extras.cacheRowSummary(row.appId, row.entry.reports.length, row.entry.source, formatAge(Date.now() - row.entry.cachedAt))}
                   </div>
                 </div>
 

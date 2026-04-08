@@ -20,10 +20,18 @@ PROTONDB_REPO_DIR ?= $(if $(wildcard $(PROTONDB_PROJECT_REPO_DIR)/.git),$(PROTON
 PROTONDB_LOCAL_OUTPUT ?= /tmp/proton-pulse-protondb-data
 APP_ID ?=
 SCREENSHOT_BASE ?=
+SCREENSHOT_GROUP ?=
+SCREENSHOT_KEY ?=
+SCREENSHOT_TITLE ?=
+SCREENSHOT_CAPTION ?=
+SCREENSHOT_MATCH ?=
+SCREENSHOT_MANIFEST ?= config/ui_screenshot_manifest.json
 PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 
-.PHONY: help build watch test test-ts test-py typecheck setup deploy deploy-reload build-and-deploy clean \
-        logs get-logs take-screenshot take-video fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
+.PHONY: help build watch test test-ts test-py typecheck check-translations translate setup deploy deploy-reload build-and-deploy clean \
+        logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
+        capture-project-screenshots \
+        fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
 
 help:
 	@echo "Usage: make <target>"
@@ -37,6 +45,8 @@ help:
 	@echo "  build             Clean, test, then build frontend"
 	@echo "  watch             Watch frontend for changes (pnpm watch)"
 	@echo "  test              Run all tests (Python + TypeScript)"
+	@echo "  check-translations  Enforce translation coverage and refresh coverage metrics"
+	@echo "  translate         Alias for check-translations"
 	@echo "  typecheck         Run strict pyright type checking on all Python code"
 	@echo "  test-ts           Run TypeScript tests only (vitest)"
 	@echo "  test-py           Run Python tests only (pytest via uv)"
@@ -51,6 +61,13 @@ help:
 	@echo "  get-logs          Sync plugin logs from the Steam Deck into the project root"
 	@echo "  take-screenshot   Capture the current Steam UI into ../screenshots/"
 	@echo "                    Optional: SCREENSHOT_BASE=my-name make take-screenshot"
+	@echo "                    Optional catalog metadata: SCREENSHOT_GROUP=manage-game SCREENSHOT_KEY=default"
+	@echo "  take-screenshot-wiki  Capture and register a grouped wiki screenshot"
+	@echo "                    Required: SCREENSHOT_GROUP=... SCREENSHOT_KEY=..."
+	@echo "                    Optional: SCREENSHOT_TITLE='Manage Game default' SCREENSHOT_CAPTION='...'"
+	@echo "  capture-project-screenshots  Guided batch capture for the full project screenshot manifest"
+	@echo "                    Optional: SCREENSHOT_MATCH=manage-game to limit the run"
+	@echo "  publish-screenshots-wiki  Copy catalogued screenshots into ../decky-proton-pulse.wiki"
 	@echo "                    Also copies the saved PNG to the local clipboard when supported."
 	@echo "                    Linux tip: install wl-clipboard for Wayland clipboard copy."
 	@echo "                    Warning: this may capture private on-screen content such as account, chat, or store UI."
@@ -73,6 +90,11 @@ watch:
 	$(PNPM) watch
 
 test: test-py test-ts
+
+check-translations: node_modules
+	$(PNPM) run check-translations
+
+translate: check-translations
 
 node_modules: package.json
 	$(PNPM) i
@@ -130,7 +152,25 @@ take-screenshot:
 	$(call require_deck_ip)
 	@echo "Capturing the current Steam UI via CEF remote debugging..."
 	@echo "This may include private on-screen content visible on the Steam Deck."
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),)
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),) $(if $(SCREENSHOT_GROUP),--group $(SCREENSHOT_GROUP),) $(if $(SCREENSHOT_KEY),--shot-key $(SCREENSHOT_KEY),) $(if $(SCREENSHOT_TITLE),--title "$(SCREENSHOT_TITLE)",) $(if $(SCREENSHOT_CAPTION),--caption "$(SCREENSHOT_CAPTION)",)
+
+take-screenshot-wiki:
+	$(call require_deck_ip)
+ifndef SCREENSHOT_GROUP
+	$(error SCREENSHOT_GROUP is required: SCREENSHOT_GROUP=manage-game make take-screenshot-wiki)
+endif
+ifndef SCREENSHOT_KEY
+	$(error SCREENSHOT_KEY is required: SCREENSHOT_KEY=default make take-screenshot-wiki)
+endif
+	@$(MAKE) take-screenshot SCREENSHOT_GROUP="$(SCREENSHOT_GROUP)" SCREENSHOT_KEY="$(SCREENSHOT_KEY)" SCREENSHOT_TITLE="$(SCREENSHOT_TITLE)" SCREENSHOT_CAPTION="$(SCREENSHOT_CAPTION)" SCREENSHOT_BASE="$(if $(SCREENSHOT_BASE),$(SCREENSHOT_BASE),$(SCREENSHOT_KEY))"
+	@$(MAKE) publish-screenshots-wiki
+
+capture-project-screenshots:
+	$(call require_deck_ip)
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/capture_project_screenshots.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --manifest $(SCREENSHOT_MANIFEST) --match "$(SCREENSHOT_MATCH)" --output-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki
+
+publish-screenshots-wiki:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/publish_screenshots_to_wiki.py --screenshots-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki
 
 take-video:
 	$(call require_deck_ip)

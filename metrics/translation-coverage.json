@@ -1,0 +1,108 @@
+{
+  "generatedAt": "2026-04-08T00:05:27.380Z",
+  "minimumCoveragePercent": 90,
+  "totalKeys": 285,
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "canonical": true,
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "de",
+      "name": "Deutsch",
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "es",
+      "name": "Español",
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "fr",
+      "name": "Français",
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "ja",
+      "name": "日本語",
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "ko",
+      "name": "한국어",
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "pt-BR",
+      "name": "Português (BR)",
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "ru",
+      "name": "Русский",
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "tr",
+      "name": "Türkçe",
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "zh-CN",
+      "name": "简体中文",
+      "translated": 285,
+      "total": 285,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    }
+  ]
+}

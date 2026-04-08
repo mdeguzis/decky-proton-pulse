@@ -24,10 +24,17 @@ export function LogsTab() {
     setLogs(getLogText());
   }, []);
 
+  const scrollToBottom = () => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  };
+
   const focusScrollPane = () => {
     setPaneActive(true);
     setFocused(true);
-    scrollRef.current?.focus();
+    if (autoFollow) {
+      scrollToBottom();
+    }
   };
 
   // subscribe to frontend log buffer for live updates
@@ -44,29 +51,29 @@ export function LogsTab() {
   useEffect(() => {
     if (!autoFollow) return;
     setShowJumpHint(false);
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    scrollToBottom();
   }, [logs, autoFollow]);
 
   const handleDirection = (evt: GamepadEvent) => {
     if (!scrollRef.current) return;
     if (evt.detail.button === GamepadButton.DIR_RIGHT) {
+      evt.preventDefault();
       focusScrollPane();
-      if (autoFollow) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }
       return;
     }
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
+      setPaneActive(false);
       evt.preventDefault();
       return;
     }
     if (!paneActive) return;
     if (evt.detail.button === GamepadButton.DIR_UP) {
+      evt.preventDefault();
       setAutoFollow(false);
       setShowJumpHint(true);
       scrollRef.current.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
     } else if (evt.detail.button === GamepadButton.DIR_DOWN) {
+      evt.preventDefault();
       setAutoFollow(false);
       setShowJumpHint(true);
       scrollRef.current.scrollBy({ top: SCROLL_STEP, behavior: 'smooth' });
@@ -77,12 +84,17 @@ export function LogsTab() {
     setPaneActive(true);
     setAutoFollow(true);
     setShowJumpHint(false);
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    scrollToBottom();
     focusScrollPane();
   };
 
-  const handleFocus = () => setFocused(true);
-  const handleBlur = () => setFocused(false);
+  const handleFocus = () => {
+    focusScrollPane();
+  };
+  const handleBlur = () => {
+    setFocused(false);
+    setPaneActive(false);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -96,10 +108,11 @@ export function LogsTab() {
             : t().logs.manualScroll}
         </div>
         <div style={{ fontSize: 10, color: '#556b7a' }}>
-          {getLogCount()} entries
+          {t().logs.entryCount(getLogCount())}
         </div>
       </div>
       <Focusable
+        onButtonDown={handleDirection}
         onGamepadDirection={handleDirection}
         onGamepadFocus={handleFocus}
         onGamepadBlur={handleBlur}
@@ -108,9 +121,6 @@ export function LogsTab() {
       >
         <div
           ref={scrollRef}
-          tabIndex={0}
-          onFocus={() => setFocused(true)}
-          onBlur={handleBlur}
           onWheel={() => {
             setAutoFollow(false);
             setShowJumpHint(true);
@@ -128,7 +138,7 @@ export function LogsTab() {
             color: '#bbb',
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
-            outline: focused ? '2px solid rgba(255,255,255,0.3)' : 'none',
+            outline: focused && paneActive ? '2px solid rgba(255,255,255,0.3)' : 'none',
           }}
         >
           {!autoFollow && showJumpHint && (

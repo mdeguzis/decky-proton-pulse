@@ -17,6 +17,11 @@ from .steam_paths import compat_tools_dirs, find_steam_root, read_vdf_value
 PROTON_GE_LATEST_SLOT_NAME = "Proton-GE-Latest"
 
 
+def _looks_like_proton_tool(*values: str | None) -> bool:
+    """Return ``True`` when any provided value looks Proton-family."""
+    return any("proton" in (value or "").lower() for value in values)
+
+
 def normalize_proton_ge_tag(version: str) -> str | None:
     """Try to turn a version string into a ``GE-ProtonX-Y`` tag name.
 
@@ -165,6 +170,9 @@ def list_installed_compatibility_tools(  # pylint: disable=too-many-locals
                     decky.logger.warning(
                         f"Failed to read compatibilitytool.vdf for {entry.name}: {err}"
                     )
+
+            if not _looks_like_proton_tool(entry.name, display_name, internal_name):
+                continue
 
             tools.append(
                 {

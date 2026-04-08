@@ -1,32 +1,105 @@
-// src/lib/voting.ts
-//
-// Supabase-backed voting system. Handles voter ID generation,
-// vote submission (upsert), and fetching vote totals.
-// No login required -- uses the Supabase anon key with RLS.
-
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { logFrontendEvent } from './logger';
 import type { VoteTotals } from './cache';
 
-// these are public by design -- RLS controls access
 const SUPABASE_URL = 'https://ilsgdshkaocrmibwdezk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsc2dkc2hrYW9jcm1pYndkZXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNDM0NzMsImV4cCI6MjA5MDkxOTQ3M30.jMZ05zOPGupbWYQI4vEjxq05T0QETCpte7EN3uQzqaU';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Imlsc2dkc2hrYW9jcm1pYndkZXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNDM0NzMsImV4cCI6MjA5MDkxOTQ3M30.jMZ05zOPGupbWYQI4vEjxq05T0QETCpte7EN3uQzqaU';
+const SUPABASE_REST_URL = `${SUPABASE_URL}/rest/v1`;
 
 const SALT_KEY = 'proton-pulse-voter-salt';
 const VOTE_COOLDOWN_MS = 3000;
 
-let supabase: SupabaseClient | null = null;
+type VoteRow = {
+  vote: 1 | -1;
+};
+
+type VoteTotalsRow = {
+  report_key: string;
+  upvotes: number | null;
+  downvotes: number | null;
+};
+
+type SupabaseErrorPayload = {
+  message?: string;
+  error?: string;
+  details?: string;
+  hint?: string;
+};
+
 let cachedVoterId: string | null = null;
 let lastVoteAt = 0;
 
-function getClient(): SupabaseClient {
-  if (!supabase) {
-    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
-  return supabase;
+function defaultHeaders(): HeadersInit {
+  return {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+  };
 }
 
-// ── voter ID ──────────────────────────────────────────────────────────────
+function buildRestUrl(path: string, query: Record<string, string> = {}): string {
+  const url = new URL(`${SUPABASE_REST_URL}/${path}`);
+  for (const [key, value] of Object.entries(query)) {
+    url.searchParams.set(key, value);
+  }
+  return url.toString();
+}
+
+function extractErrorMessage(payload: unknown, status: number): string {
+  if (typeof payload === 'string' && payload.trim()) {
+    return payload;
+  }
+  if (payload && typeof payload === 'object') {
+    const err = payload as SupabaseErrorPayload;
+    return err.message ?? err.error ?? err.details ?? err.hint ?? `HTTP ${status}`;
+  }
+  return `HTTP ${status}`;
+}
+
+async function parseResponseBody(response: Response): Promise<unknown> {
+  if (response.status === 204) {
+    return null;
+  }
+
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+async function restRequest<T>(
+  path: string,
+  init: RequestInit = {},
+  query: Record<string, string> = {},
+): Promise<{ data: T | null; error: string | null; status: number }> {
+  const response = await fetch(buildRestUrl(path, query), {
+    ...init,
+    headers: {
+      ...defaultHeaders(),
+      ...(init.headers ?? {}),
+    },
+  });
+
+  const payload = await parseResponseBody(response);
+  if (!response.ok) {
+    return {
+      data: null,
+      error: extractErrorMessage(payload, response.status),
+      status: response.status,
+    };
+  }
+
+  return {
+    data: payload as T | null,
+    error: null,
+    status: response.status,
+  };
+}
 
 export function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -54,7 +127,9 @@ function getSteamUsername(): string {
 }
 
 export async function getVoterId(): Promise<string> {
-  if (cachedVoterId) return cachedVoterId;
+  if (cachedVoterId) {
+    return cachedVoterId;
+  }
 
   const salt = getSalt();
   const username = getSteamUsername();
@@ -68,8 +143,6 @@ export async function getVoterId(): Promise<string> {
   });
   return cachedVoterId;
 }
-
-// ── vote submission ───────────────────────────────────────────────────────
 
 export async function submitVote(
   appId: string,
@@ -88,31 +161,24 @@ export async function submitVote(
   });
 
   try {
-    const client = getClient();
-
-    // delete any existing vote first, then insert the new one.
-    // this avoids the RLS UPDATE policy issue with PostgREST upserts
-    await client
-      .from('report_votes')
-      .delete()
-      .eq('voter_id', voterId)
-      .eq('app_id', appId)
-      .eq('report_key', reportKey);
-
-    const { error } = await client
-      .from('report_votes')
-      .insert({
+    const { error } = await restRequest<null>('report_votes', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({
         voter_id: voterId,
         app_id: appId,
         report_key: reportKey,
         vote,
-      });
+      }),
+    }, {
+      on_conflict: 'voter_id,app_id,report_key',
+    });
 
     lastVoteAt = Date.now();
 
     if (error) {
       void logFrontendEvent('ERROR', 'Vote submission failed', {
-        appId, reportKey, error: error.message,
+        appId, reportKey, error,
       });
       return false;
     }
@@ -121,30 +187,27 @@ export async function submitVote(
     return true;
   } catch (err) {
     void logFrontendEvent('ERROR', 'Vote submission threw', {
-      appId, reportKey,
+      appId,
+      reportKey,
       error: err instanceof Error ? err.message : String(err),
     });
     return false;
   }
 }
 
-// ── fetch vote totals ─────────────────────────────────────────────────────
-
-export async function getVoteTotals(
-  appId: string,
-): Promise<Record<string, VoteTotals>> {
+export async function getVoteTotals(appId: string): Promise<Record<string, VoteTotals>> {
   void logFrontendEvent('DEBUG', 'Fetching vote totals', { appId });
 
   try {
-    const { data, error } = await getClient()
-      .from('report_vote_totals')
-      .select('report_key, upvotes, downvotes')
-      .eq('app_id', appId);
+    const { data, error } = await restRequest<VoteTotalsRow[]>('report_vote_totals', {
+      method: 'GET',
+    }, {
+      select: 'report_key,upvotes,downvotes',
+      app_id: `eq.${appId}`,
+    });
 
     if (error) {
-      void logFrontendEvent('ERROR', 'Vote totals fetch failed', {
-        appId, error: error.message,
-      });
+      void logFrontendEvent('ERROR', 'Vote totals fetch failed', { appId, error });
       return {};
     }
 
@@ -157,18 +220,18 @@ export async function getVoteTotals(
     }
 
     void logFrontendEvent('DEBUG', 'Vote totals fetched', {
-      appId, reportCount: Object.keys(totals).length,
+      appId,
+      reportCount: Object.keys(totals).length,
     });
     return totals;
   } catch (err) {
     void logFrontendEvent('ERROR', 'Vote totals fetch threw', {
-      appId, error: err instanceof Error ? err.message : String(err),
+      appId,
+      error: err instanceof Error ? err.message : String(err),
     });
     return {};
   }
 }
-
-// ── check user's existing vote on a report ───────────────────────────────
 
 export async function getUserVote(
   appId: string,
@@ -176,22 +239,29 @@ export async function getUserVote(
 ): Promise<1 | -1 | null> {
   try {
     const voterId = await getVoterId();
-    const { data, error } = await getClient()
-      .from('report_votes')
-      .select('vote')
-      .eq('voter_id', voterId)
-      .eq('app_id', appId)
-      .eq('report_key', reportKey)
-      .maybeSingle();
+    const result = await restRequest<VoteRow>('report_votes', {
+      method: 'GET',
+      headers: { Accept: 'application/vnd.pgrst.object+json' },
+    }, {
+      select: 'vote',
+      voter_id: `eq.${voterId}`,
+      app_id: `eq.${appId}`,
+      report_key: `eq.${reportKey}`,
+    });
 
-    if (error || !data) return null;
-    return data.vote as 1 | -1;
+    if (result.status === 406) {
+      return null;
+    }
+
+    if (result.error || !result.data) {
+      return null;
+    }
+
+    return result.data.vote;
   } catch {
     return null;
   }
 }
-
-// ── cooldown check (for UI button state) ─────────────────────────────────
 
 export function isVoteCooldownActive(): boolean {
   return Date.now() - lastVoteAt < VOTE_COOLDOWN_MS;

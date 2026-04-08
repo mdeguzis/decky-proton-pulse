@@ -1,6 +1,6 @@
 // src/components/Modal.tsx
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { SidebarNavigation, Focusable, Navigation } from '@decky/ui';
+import { SidebarNavigation, Focusable, Navigation, Router } from '@decky/ui';
 import type { SidebarNavigationPage } from '@decky/ui';
 import { callable, toaster } from '@decky/api';
 import { pageState, NAVIGATE_EVENT } from '../lib/pageState';
@@ -20,12 +20,20 @@ const getSystemInfoSafe = () => callWithTimeout(() => getSystemInfo(), 'get_syst
 
 export function ProtonPulsePage() {
   useLanguage(); // triggers re-render on language change
+  const extras = t().extras!;
   const [activePage, setActivePage] = useState<string>(pageState.initialPage);
   const [appId, setAppId]           = useState<number | null>(pageState.appId);
   const [appName, setAppName]       = useState<string>(pageState.appName);
   const [sysInfo, setSysInfo]       = useState<SystemInfo | null>(null);
 
   const [backendError, setBackendError] = useState<string | null>(null);
+  const appliedPendingVersionRef = useRef(pageState.pendingNavigateVersion);
+
+  const applyNavigation = useCallback((payload: NavigatePayload) => {
+    setAppId(payload.appId);
+    setAppName(payload.appName);
+    setActivePage(payload.tab);
+  }, []);
 
   useEffect(() => {
     getSystemInfoSafe()
@@ -48,13 +56,31 @@ export function ProtonPulsePage() {
     const handler = (e: Event) => {
       const { tab, appId: id, appName: name } = (e as CustomEvent<NavigatePayload>).detail;
       void logFrontendEvent('DEBUG', 'Navigation event received', { tab, appId: id, appName: name });
-      setAppId(id);
-      setAppName(name);
-      setActivePage(tab);
+      appliedPendingVersionRef.current = pageState.pendingNavigateVersion;
+      applyNavigation({ tab, appId: id, appName: name });
     };
     window.addEventListener(NAVIGATE_EVENT, handler);
     return () => window.removeEventListener(NAVIGATE_EVENT, handler);
-  }, []);
+  }, [applyNavigation]);
+
+  useEffect(() => {
+    const syncPendingNavigation = () => {
+      if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
+      if (!pageState.pendingNavigate) return;
+      if (appliedPendingVersionRef.current === pageState.pendingNavigateVersion) return;
+
+      appliedPendingVersionRef.current = pageState.pendingNavigateVersion;
+      void logFrontendEvent('DEBUG', 'Pending navigation applied from page state', {
+        ...pageState.pendingNavigate,
+        pendingNavigateVersion: pageState.pendingNavigateVersion,
+      });
+      applyNavigation(pageState.pendingNavigate);
+    };
+
+    syncPendingNavigation();
+    const interval = window.setInterval(syncPendingNavigation, 150);
+    return () => window.clearInterval(interval);
+  }, [applyNavigation]);
 
   // If the game-specific page is active but appId is cleared, fall back to Manage.
   useEffect(() => {
@@ -71,7 +97,23 @@ export function ProtonPulsePage() {
   const doExit = useCallback(() => {
     exitPendingRef.current = false;
     if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+    const returnPath = pageState.returnPath;
+    const currentPath = globalThis.location?.pathname ?? null;
+    if (returnPath && returnPath !== currentPath) {
+      pageState.returnPath = null;
+      try {
+        Navigation.Navigate(returnPath);
+      } catch {
+        Router.Navigate(returnPath);
+      }
+      return;
+    }
     Navigation.NavigateBack();
+    window.setTimeout(() => {
+      if (currentPath && globalThis.location?.pathname === currentPath) {
+        globalThis.history?.back?.();
+      }
+    }, 150);
   }, []);
 
   const handleCancel = useCallback(() => {
@@ -80,10 +122,16 @@ export function ProtonPulsePage() {
       return;
     }
     exitPendingRef.current = true;
-    toaster.toast({ title: 'Proton Pulse', body: 'Hit B again to exit', duration: 3000 });
+    toaster.toast({ title: 'Proton Pulse', body: extras.pressBackAgainToExit(), duration: 3000 });
     if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
     exitTimerRef.current = setTimeout(() => { exitPendingRef.current = false; }, 3000);
   }, [doExit]);
+
+  useEffect(() => {
+    if (activePage !== 'exit') {
+      pageState.initialPage = activePage as typeof pageState.initialPage;
+    }
+  }, [activePage]);
 
   // cleanup timer on unmount
   useEffect(() => () => { if (exitTimerRef.current) clearTimeout(exitTimerRef.current); }, []);
@@ -129,7 +177,7 @@ export function ProtonPulsePage() {
     },
     'separator',
     {
-      title: 'Exit',
+      title: extras.exit(),
       identifier: 'exit',
       content: <div />,
     },
@@ -148,9 +196,9 @@ export function ProtonPulsePage() {
           color: '#f4c6c6',
           lineHeight: 1.5,
         }}>
-          <strong>Backend unavailable:</strong> {backendError}
+          <strong>{extras.backendUnavailableTitle()}</strong> {backendError}
           <div style={{ fontSize: 10, color: '#c09090', marginTop: 4 }}>
-            Check Logs tab for details. The Python backend may have failed to start.
+            {extras.backendUnavailableHint()}
           </div>
         </div>
       )}
@@ -164,15 +212,15 @@ export function ProtonPulsePage() {
           pages={pages}
           page={activePage}
           onPageRequested={(page) => {
-            if (page === 'exit') {
-              doExit();
-              return;
-            }
             void logFrontendEvent('DEBUG', 'Sidebar page requested', {
               page,
               appId,
               appName,
             });
+            if (page === 'exit') {
+              doExit();
+              return;
+            }
             setActivePage(page);
           }}
           disableRouteReporting={true}

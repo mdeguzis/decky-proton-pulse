@@ -2,12 +2,12 @@
 import { DropdownItem, Focusable, GamepadButton, ToggleField, SliderField, DialogButton, showModal } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { callable } from '@decky/api';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent, callWithTimeout } from '../../lib/logger';
 import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
 import { getCacheTtlMs, setCacheTtlHours, getCacheStats } from '../../lib/cache';
-import { getSummary, flushMetricsToDisk } from '../../lib/metrics';
+import { getSummary } from '../../lib/metrics';
 import { CacheManagerModalContent } from '../CacheManagerModal';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
@@ -35,10 +35,24 @@ function focusClipRowStyle(): React.CSSProperties {
   };
 }
 
+function scrollNearestScrollableAncestor(node: HTMLDivElement | null): void {
+  let current = node?.parentElement ?? null;
+  while (current) {
+    const canScroll = current.scrollHeight > current.clientHeight;
+    const overflowY = globalThis.getComputedStyle?.(current).overflowY ?? '';
+    if (canScroll && (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay')) {
+      current.scrollTop = current.scrollHeight;
+      return;
+    }
+    current = current.parentElement;
+  }
+}
+
 const ADVANCED_SETTINGS_KEY = 'advanced-settings-enabled';
 
 // compact metrics info box for the advanced settings area
 function MetricsInfoBox() {
+  const extras = t().extras!;
   const [stats, setStats] = useState<ReturnType<typeof getSummary> | null>(null);
   const cacheStats = getCacheStats();
 
@@ -59,7 +73,7 @@ function MetricsInfoBox() {
   const hitTotal = counters.cacheHits + counters.cacheMisses;
   const hitRate = hitTotal > 0
     ? ((counters.cacheHits / hitTotal) * 100).toFixed(1) + '%'
-    : 'n/a';
+    : extras.notAvailable();
 
   const infoStyle: React.CSSProperties = {
     background: '#0d1b2a',
@@ -82,46 +96,39 @@ function MetricsInfoBox() {
   return (
     <div style={infoStyle}>
       <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f4ff', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span>Performance</span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Focusable
-            onClick={refresh}
-            onOKButton={refresh}
-            style={{ cursor: 'pointer', fontSize: 11, color: '#5dade2', padding: '2px 6px' }}
-          >
-            Refresh
-          </Focusable>
-          <Focusable
-            onClick={() => void flushMetricsToDisk()}
-            onOKButton={() => void flushMetricsToDisk()}
-            style={{ cursor: 'pointer', fontSize: 11, color: '#7a9bb5', padding: '2px 6px' }}
-          >
-            Export
-          </Focusable>
-        </div>
+        <span>{extras.performance()}</span>
+        <Focusable
+          onClick={refresh}
+          onOKButton={refresh}
+          style={{ cursor: 'pointer', fontSize: 11, color: '#5dade2', padding: '2px 6px' }}
+        >
+          {t().compatTools.refresh}
+        </Focusable>
       </div>
-      <div><span style={labelStyle}>Uptime</span>{upMin}m</div>
-      <div><span style={labelStyle}>Cache hit rate</span>{hitRate} ({counters.cacheHits} hits / {counters.cacheMisses} misses)</div>
-      <div><span style={labelStyle}>Cached games</span>{cacheStats.size} / {cacheStats.maxSize}</div>
-      <div><span style={labelStyle}>Prefetched</span>{counters.prefetchedGames} games</div>
-      <div><span style={labelStyle}>Total fetches</span>{counters.totalFetches}{counters.fetchErrors > 0 ? ` (${counters.fetchErrors} errors)` : ''}</div>
+      <div><span style={labelStyle}>{extras.uptime()}</span>{upMin}m</div>
+      <div><span style={labelStyle}>{extras.cacheHitRate()}</span>{hitRate} ({extras.hitsAndMisses(counters.cacheHits, counters.cacheMisses)})</div>
+      <div><span style={labelStyle}>{extras.cachedGames()}</span>{cacheStats.size} / {cacheStats.maxSize}</div>
+      <div><span style={labelStyle}>{extras.prefetched()}</span>{counters.prefetchedGames} games</div>
+      <div><span style={labelStyle}>{extras.totalFetches()}</span>{counters.totalFetches}{counters.fetchErrors > 0 ? extras.errorsSuffix(counters.fetchErrors) : ''}</div>
       {cdnIdx && (
-        <div><span style={labelStyle}>CDN fetch avg</span>{cdnIdx.avgMs}ms (p95: {cdnIdx.p95Ms}ms, max: {cdnIdx.maxMs}ms)</div>
+        <div><span style={labelStyle}>{extras.cdnFetchAvg()}</span>{cdnIdx.avgMs}ms (p95: {cdnIdx.p95Ms}ms, max: {cdnIdx.maxMs}ms)</div>
       )}
       {prefetchCat && (
-        <div><span style={labelStyle}>Prefetch avg</span>{prefetchCat.avgMs}ms (p95: {prefetchCat.p95Ms}ms)</div>
+        <div><span style={labelStyle}>{extras.prefetchAvg()}</span>{prefetchCat.avgMs}ms (p95: {prefetchCat.p95Ms}ms)</div>
       )}
       {counters.cacheEvictions > 0 && (
-        <div><span style={labelStyle}>Evictions</span>{counters.cacheEvictions}</div>
+        <div><span style={labelStyle}>{extras.evictions()}</span>{counters.cacheEvictions}</div>
       )}
     </div>
   );
 }
 
 export function GeneralSettingsTab() {
+  const extras = t().extras!;
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
+  const bottomAnchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void setLogLevelSafe(debugEnabled ? 'DEBUG' : 'INFO').catch((error) => {
@@ -182,8 +189,8 @@ export function GeneralSettingsTab() {
       <div style={sectionStyle()}>
         <div style={focusClipRowStyle()}>
           <ToggleField
-            label="Advanced Settings"
-            description="Show cache management and developer tools"
+            label={extras.advancedSettings()}
+            description={extras.advancedSettingsDescription()}
             checked={advancedEnabled}
             onChange={(enabled) => {
               setAdvancedEnabled(enabled);
@@ -198,12 +205,12 @@ export function GeneralSettingsTab() {
       {advancedEnabled && (
         <div style={sectionStyle()}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
-            Cache
+            {extras.cacheSection()}
           </div>
           <div style={focusClipRowStyle()}>
             <SliderField
-              label="Cache TTL (hours)"
-              description={`Data re-fetched after ${cacheTtlHours}h`}
+              label={extras.cacheTtlHours()}
+              description={extras.cacheTtlDescription(cacheTtlHours)}
               value={cacheTtlHours}
               min={1}
               max={168}
@@ -223,10 +230,10 @@ export function GeneralSettingsTab() {
               style={{ padding: '8px 16px' }}
             >
               <div style={{ fontSize: 12, fontWeight: 600 }}>
-                Manage Cache...
+                {extras.manageCache()}
               </div>
               <div style={{ fontSize: 11, color: '#7a9bb5' }}>
-                View, refresh, or delete cached game data
+                {extras.manageCacheDescription()}
               </div>
             </DialogButton>
           </div>
@@ -237,6 +244,43 @@ export function GeneralSettingsTab() {
       {advancedEnabled && (
         <div style={sectionStyle()}>
           <MetricsInfoBox />
+        </div>
+      )}
+
+      {advancedEnabled && (
+        <div style={{ padding: '0 8px 20px' }}>
+          <Focusable
+            ref={bottomAnchorRef}
+            onGamepadFocus={() => {
+              scrollNearestScrollableAncestor(bottomAnchorRef.current);
+            }}
+            style={{
+              minHeight: 40,
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(255,255,255,0.02)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                width: '100%',
+                padding: '0 12px',
+                color: '#7a9bb5',
+                fontSize: 10,
+                letterSpacing: 1.5,
+              }}
+            >
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              <div>V</div>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            </div>
+          </Focusable>
         </div>
       )}
     </Focusable>
