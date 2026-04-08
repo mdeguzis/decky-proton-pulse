@@ -28,13 +28,14 @@ def plugin() -> Plugin:  # type: ignore[no-any-unimported]
 
 
 def test_set_log_level_debug(plugin: Any) -> None:
-    """Setting DEBUG level works and sticks"""
+    """Setting DEBUG level works and sticks on the main logger."""
     decky.logger.setLevel(logging.INFO)
     result = sync_set_log_level(
         "DEBUG", plugin._debug_handler_ref  # pylint: disable=protected-access
     )
     assert result is True
     assert decky.logger.level == logging.DEBUG
+    assert plugin._debug_handler_ref[0] is None  # pylint: disable=protected-access
 
 
 def test_set_log_level_info(plugin: Any) -> None:

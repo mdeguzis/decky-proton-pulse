@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
-import { toaster } from '@decky/api';
+import { toaster } from '../../lib/notify';
 import { getTrackedConfigs, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';

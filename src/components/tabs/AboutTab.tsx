@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Focusable, DialogButton, Dropdown, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
-import { toaster } from '@decky/api';
+import { toaster } from '../../lib/notify';
 import { BrandLogo } from '../BrandLogo';
 import { t } from '../../lib/i18n';
 import { openIssue, type IssueTemplate } from '../../lib/issueReport';

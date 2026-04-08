@@ -1,105 +1,129 @@
-# Steam Deck Plugin: Anonymous Voting System Plan
+# Supabase Voting Setup
 
-## 1. Architecture Overview
+This document describes the current Proton Pulse voting backend.
 
-The system uses a **Blind-ID** approach. We generate a unique identifier on the Steam Deck, hash it to ensure anonymity, and store the vote in a cloud database.
+## Overview
 
-- **Frontend**: Decky Plugin (React/TS)
-- **Database**: Supabase (PostgreSQL) — Handles real-time increments and duplicate prevention
-- **Backup**: GitHub Actions — Daily "snapshot" of total votes saved to the repo as JSON
-- **Anonymity**: SHA-256 Hashing of the Deck's Machine ID
+Votes are stored in Supabase and fetched live by the plugin.
 
-## 2. Supabase Setup (The "Live" DB)
+- Frontend: Decky plugin (`src/lib/voting.ts`)
+- Database: Supabase Postgres
+- Public client key: Supabase publishable key
+- Current identity model: hashed local `voter_id`
+- Planned future model: Supabase anonymous auth + `auth.uid()`
 
-- **Create a Project**: Sign up at supabase.com
-- **SQL Table**: Run this in the SQL Editor:
+The public key used by the client is safe to embed in the plugin. It is not a secret. The database must still be protected with grants and RLS.
+
+## Current Database Shape
+
+### Table: `report_votes`
 
 ```sql
--- Create a table for unique votes
-CREATE TABLE plugin_votes (
-    hashed_id TEXT PRIMARY KEY, -- Prevents double voting
-    voted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+create table if not exists public.report_votes (
+  voter_id text not null,
+  app_id text not null,
+  report_key text not null,
+  vote smallint not null,
+  voted_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  primary key (voter_id, app_id, report_key)
 );
 
--- Create a view to easily fetch the total count
-CREATE VIEW total_votes AS
-SELECT count(*) as count FROM plugin_votes;
+create index if not exists idx_report_votes_app
+  on public.report_votes (app_id);
 ```
 
-- **Enable RLS**: Set Row Level Security to allow INSERT only.
+### View: `report_vote_totals`
 
-## 3. Decky Plugin Logic (The "Send" System)
-
-In your plugin's Python backend (`main.py`), generate the anonymous ID so the user doesn't have to log in.
-
-### Python (Backend)
-
-```python
-import hashlib
-import subprocess
-
-def get_anonymous_id():
-    # Grabs the unique hardware ID of the Steam Deck
-    raw_id = subprocess.check_output(['cat', '/etc/machine-id']).decode().strip()
-    # Hash it so you (the dev) never see the real ID
-    return hashlib.sha256(raw_id.encode()).hexdigest()
+```sql
+create or replace view public.report_vote_totals as
+select
+  app_id,
+  report_key,
+  coalesce(sum(case when vote = 1 then 1 else 0 end), 0)::integer as upvotes,
+  coalesce(sum(case when vote = -1 then 1 else 0 end), 0)::integer as downvotes
+from public.report_votes
+group by app_id, report_key;
 ```
 
-### Frontend (TypeScript)
+## Required Grants
 
-```typescript
-const handleVote = async () => {
-  const hashedId = await serverApi.callPluginMethod("get_anonymous_id", {});
+If the plugin needs to talk to Supabase directly from the client, the public roles need access:
 
-  const { error } = await supabase
-    .from('plugin_votes')
-    .insert([{ hashed_id: hashedId }]);
+```sql
+grant usage on schema public to anon, authenticated;
 
-  if (error?.code === '23505') {
-    console.log("User already voted!");
-  }
-};
+grant select, insert, update on table public.report_votes to anon, authenticated;
+grant select on table public.report_vote_totals to anon, authenticated;
 ```
 
-## 4. GitHub Actions "Backfill" (The "Storage" System)
+## If RLS Is Enabled
 
-Create a file at `.github/workflows/sync-votes.yml`:
+If `report_votes` has RLS enabled, the current `voter_id` flow needs permissive policies to work:
 
-```yaml
-name: Daily Vote Sync
-on:
-  schedule:
-    - cron: '0 0 * * *' # Once a day at midnight
-  workflow_dispatch: # Allows manual trigger
+```sql
+alter table public.report_votes enable row level security;
 
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Fetch Votes from Supabase
-        run: |
-          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/total_votes" \
-          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-          -o votes.json
-      - name: Commit and Push
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add votes.json
-          git commit -m "Update vote backfill" || exit 0
-          git push
+create policy "public read votes"
+on public.report_votes
+for select
+to anon, authenticated
+using (true);
+
+create policy "public insert votes"
+on public.report_votes
+for insert
+to anon, authenticated
+with check (true);
+
+create policy "public update votes"
+on public.report_votes
+for update
+to anon, authenticated
+using (true)
+with check (true);
 ```
 
-## 5. Security & Privacy Checklist
+These policies restore the current browser-based voting flow. They are not the final security model.
 
-- [ ] **Anonymity**: The machine-id is never sent in plain text. Only the SHA-256 hash leaves the device
-- [ ] **Spam Protection**: The PRIMARY KEY on hashed_id in Supabase automatically rejects multiple votes from the same device
-- [ ] **Reliability**: If the Supabase API fails, the plugin can fetch `https://raw.githubusercontent.com/[USER]/[REPO]/main/votes.json` to show the last known count
+## Client Configuration
 
-## Why This Works
+The plugin uses:
 
-- **No Cost**: Both Supabase and GitHub Actions are free for this scale
-- **No Login**: Users just click a button. They don't have to sign into GitHub on their Deck
-- **Data Ownership**: You have the live data in Supabase and a version-controlled history in GitHub
+- Supabase project URL
+- Supabase publishable key
+
+Both live in `src/lib/voting.ts`.
+
+Important:
+
+- `sb_publishable_...` is safe to ship in the client
+- legacy `anon` keys are also client-safe
+- `service_role` or `sb_secret` keys must never be shipped in the plugin
+
+## Current Failure Modes
+
+If voting breaks, check these first:
+
+1. The publishable key in `src/lib/voting.ts` still matches the Supabase project
+2. `anon` or `authenticated` still have grants on `report_votes` and `report_vote_totals`
+3. RLS policies still allow the current browser flow
+
+Typical symptoms:
+
+- `Invalid API key`
+  The key in the plugin is stale, rotated, or incorrect.
+
+- Permission or empty-row errors
+  Grants or RLS policies no longer match the client flow.
+
+## Planned Upgrade
+
+The current hashed `voter_id` model works, but the better long-term setup is:
+
+- enable Supabase anonymous auth
+- sign in anonymously from the plugin
+- store `user_id uuid` instead of `voter_id text`
+- enforce ownership with `auth.uid()`
+
+That will give Proton Pulse a proper anonymous user identity without shipping any secret key or relying on an app-local hash.

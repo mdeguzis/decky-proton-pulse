@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { ModalRoot, Focusable, DialogButton, SteamSpinner, GamepadButton, showModal } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
-import { toaster } from '@decky/api';
+import { toaster } from '../lib/notify';
 import type { SystemInfo } from '../types';
 import type { DisplayReportCard } from './ReportCard';
 import type { EditedReportEntry } from './tabs/ConfigureTab';
@@ -81,8 +81,8 @@ export interface ReportDetailModalProps {
   sysInfo: SystemInfo | null;
   currentLaunchOptions: string;
   onApply: (report: DisplayReportCard) => Promise<void>;
-  onUpvote: (report: DisplayReportCard) => Promise<void>;
-  onDownvote?: (report: DisplayReportCard) => Promise<void>;
+  onUpvote: (report: DisplayReportCard) => Promise<boolean>;
+  onDownvote?: (report: DisplayReportCard) => Promise<boolean>;
   onSaveEdit: (entry: EditedReportEntry) => void;
 }
 
@@ -185,7 +185,8 @@ export function ReportDetailModal({
     });
     setVoting(true);
     try {
-      await onUpvote(report);
+      const ok = await onUpvote(report);
+      if (!ok) return;
       // if switching from downvote, adjust both counts
       if (userVote === -1) {
         setLocalDownvotes(prev => Math.max(0, prev - 1));
@@ -208,7 +209,8 @@ export function ReportDetailModal({
     });
     setVoting(true);
     try {
-      await onDownvote(report);
+      const ok = await onDownvote(report);
+      if (!ok) return;
       if (userVote === 1) {
         setLocalUpvotes(prev => Math.max(0, prev - 1));
       }

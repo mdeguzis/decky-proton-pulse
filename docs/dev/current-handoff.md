@@ -3,7 +3,7 @@
 Last updated: 2026-04-02
 
 This file is the lightweight checkpoint for the next coding session.
-Use it to track what is working, what still needs on-device testing, and what polish work is still open.
+Use it to track what is working, what still needs on-device testing, and what cleanup or polish is still open.
 
 ## Current State
 
@@ -17,7 +17,7 @@ Use it to track what is working, what still needs on-device testing, and what po
 
 ## Current Blocker
 
-- No known data-source blocker at the moment.
+- No known data-source blocker right now.
 - The next architecture step is planning a production-grade CDN primary with GitHub Pages retained as backup.
 
 ## Verified Working
@@ -40,7 +40,7 @@ Use it to track what is working, what still needs on-device testing, and what po
   - summary header
   - diagnostics block
   - very plain report buttons/list
-- Re-test the same build on Steam stable once available, to determine whether this is beta-only or a broader SharedSteamUI issue.
+- Re-test the same build on Steam stable once available to see whether this is beta-only or a broader SharedSteamUI issue.
 
 ### ProtonDB Behavior
 
@@ -63,13 +63,13 @@ Use it to track what is working, what still needs on-device testing, and what po
   - spacing
   - width usage
   - whether the GPU segment feels too wide
-- Once the crash is fixed, the report list/details view still needs refinement to feel more Valve-like and less developer-tool-like.
+- Once the crash is fixed, the report list/details view still needs refinement so it feels more Valve-like and less like a developer tool.
 - The action area should likely return to a stronger “preview first” hierarchy after the Steam beta compatibility issue is understood.
 
 ## Likely Next Feature Work
 
 - Spec and implement a real CDN primary with GitHub Pages as secondary backup.
-- Add a fuller report-details page / subview that feels closer to Valve’s controller configuration preview flow.
+- Add a fuller report-details page or subview that feels closer to Valve’s controller configuration preview flow.
 - Improve sorting / filtering controls using stronger Steam-like visual grouping and focus treatment.
 - Consider adding more meaningful report metadata in the detail pane:
   - exact hardware match summary
@@ -98,4 +98,4 @@ Use it to track what is working, what still needs on-device testing, and what po
 ## Note For Future Codex Sessions
 
 Codex does not reliably retain project memory across sessions unless it is written into the repo or wiki.
-For ongoing work, prefer updating files like this one, the dev docs, or the wiki rather than relying on prior chat context alone.
+For ongoing work, prefer updating files like this one, the dev docs, or the wiki instead of relying on prior chat context alone.

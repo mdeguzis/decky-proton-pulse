@@ -2,7 +2,7 @@ import { logFrontendEvent } from './logger';
 import type { VoteTotals } from './cache';
 
 const SUPABASE_URL = 'https://ilsgdshkaocrmibwdezk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Imlsc2dkc2hrYW9jcm1pYndkZXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNDM0NzMsImV4cCI6MjA5MDkxOTQ3M30.jMZ05zOPGupbWYQI4vEjxq05T0QETCpte7EN3uQzqaU';
+const SUPABASE_ANON_KEY = 'sb_publishable_3Oqhm4JneafJNQw9BuUaxw_L9qZa-5V';
 const SUPABASE_REST_URL = `${SUPABASE_URL}/rest/v1`;
 
 const SALT_KEY = 'proton-pulse-voter-salt';
@@ -101,6 +101,32 @@ async function restRequest<T>(
   };
 }
 
+async function fetchExistingVote(
+  voterId: string,
+  appId: string,
+  reportKey: string,
+): Promise<1 | -1 | null> {
+  const result = await restRequest<VoteRow>('report_votes', {
+    method: 'GET',
+    headers: { Accept: 'application/vnd.pgrst.object+json' },
+  }, {
+    select: 'vote',
+    voter_id: `eq.${voterId}`,
+    app_id: `eq.${appId}`,
+    report_key: `eq.${reportKey}`,
+  });
+
+  if (result.status === 406) {
+    return null;
+  }
+
+  if (result.error || !result.data) {
+    return null;
+  }
+
+  return result.data.vote;
+}
+
 export function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -161,18 +187,39 @@ export async function submitVote(
   });
 
   try {
-    const { error } = await restRequest<null>('report_votes', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({
-        voter_id: voterId,
-        app_id: appId,
-        report_key: reportKey,
+    const existingVote = await fetchExistingVote(voterId, appId, reportKey);
+    if (existingVote === vote) {
+      lastVoteAt = Date.now();
+      void logFrontendEvent('DEBUG', 'Vote already matches requested value', {
+        appId,
+        reportKey,
         vote,
-      }),
-    }, {
-      on_conflict: 'voter_id,app_id,report_key',
-    });
+      });
+      return true;
+    }
+
+    const { error } = existingVote === null
+      ? await restRequest<null>('report_votes', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          voter_id: voterId,
+          app_id: appId,
+          report_key: reportKey,
+          vote,
+        }),
+      }, {
+        on_conflict: 'voter_id,app_id,report_key',
+      })
+      : await restRequest<null>('report_votes', {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ vote }),
+      }, {
+        voter_id: `eq.${voterId}`,
+        app_id: `eq.${appId}`,
+        report_key: `eq.${reportKey}`,
+      });
 
     lastVoteAt = Date.now();
 
@@ -239,25 +286,7 @@ export async function getUserVote(
 ): Promise<1 | -1 | null> {
   try {
     const voterId = await getVoterId();
-    const result = await restRequest<VoteRow>('report_votes', {
-      method: 'GET',
-      headers: { Accept: 'application/vnd.pgrst.object+json' },
-    }, {
-      select: 'vote',
-      voter_id: `eq.${voterId}`,
-      app_id: `eq.${appId}`,
-      report_key: `eq.${reportKey}`,
-    });
-
-    if (result.status === 406) {
-      return null;
-    }
-
-    if (result.error || !result.data) {
-      return null;
-    }
-
-    return result.data.vote;
+    return await fetchExistingVote(voterId, appId, reportKey);
   } catch {
     return null;
   }

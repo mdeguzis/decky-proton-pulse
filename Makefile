@@ -54,7 +54,7 @@ help:
 	@echo "  deploy            Build and deploy to Steam Deck (requires DECK_IP)"
 	@echo "  deploy-reload     Build, deploy, then restart plugin_loader (requires DECK_IP)"
 	@echo "  build-and-deploy  Clean, test, build, and deploy (requires DECK_IP)"
-	@echo "  clean             Remove build output (dist/)"
+	@echo "  clean             Remove build output (dist/) and generated release archives"
 	@echo ""
 	@echo "On-device debugging (require DECK_IP):"
 	@echo "  logs              Follow plugin app log in real time"
@@ -92,6 +92,7 @@ watch:
 test: test-py test-ts
 
 check-translations: node_modules
+	$(PNPM) run sync-version
 	$(PNPM) run check-translations
 
 translate: check-translations
@@ -120,7 +121,7 @@ deploy: build
 ifndef DECK_IP
 	$(error DECK_IP is required: DECK_IP=192.168.1.x make deploy)
 endif
-	bash scripts/deploy.sh --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
+	bash scripts/deploy.sh --skip-build --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
 
 deploy-reload: deploy reload
 
@@ -128,10 +129,11 @@ build-and-deploy: clean test build
 ifndef DECK_IP
 	$(error DECK_IP is required: DECK_IP=192.168.1.x make build-and-deploy)
 endif
-	bash scripts/deploy.sh --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
+	bash scripts/deploy.sh --skip-build --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
 
 clean:
 	rm -rf dist/
+	rm -f ./*.zip ./*.tar.gz
 
 # ─── On-device debugging ───────────────────────────────────────────────────────
 

@@ -1,15 +1,9 @@
-"""Logging helpers for Proton Pulse.
-
-Handles debug-log file rotation, log-level switching, and reading log
-tails for the frontend LogViewer.
-"""
+"""Logging helpers for Proton Pulse."""
 
 from __future__ import annotations
 
 import json
 import logging
-import logging.handlers
-import os
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
@@ -17,10 +11,10 @@ import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 def sync_set_log_level(
     level: str, debug_handler_ref: list[logging.Handler | None]
 ) -> bool:
-    """Set the log level on *decky.logger* and toggle the debug file handler.
+    """Set the log level on *decky.logger*.
 
-    *debug_handler_ref* is a single-element list so the caller (Plugin)
-    can share the mutable reference across calls.
+    *debug_handler_ref* is retained for backward-compatible callers, but
+    Proton Pulse no longer mirrors DEBUG output into a separate file.
     """
     valid = {
         "DEBUG": logging.DEBUG,
@@ -36,41 +30,21 @@ def sync_set_log_level(
     decky.logger.setLevel(numeric)
 
     if numeric == logging.DEBUG:
-        _enable_debug_log(debug_handler_ref)
         decky.logger.info(
             f"Log level changed from {previous_level} to DEBUG;"
-            " verbose frontend/backend logging enabled"
+            " verbose frontend/backend logging enabled in the main plugin log"
         )
     else:
         decky.logger.info(
             f"Log level changed from {previous_level} to {level};"
             " verbose debug logging disabled"
         )
-        _disable_debug_log(debug_handler_ref)
+    _disable_debug_log(debug_handler_ref)
     return True
 
 
-def _enable_debug_log(debug_handler_ref: list[logging.Handler | None]) -> None:
-    if debug_handler_ref[0] is not None:
-        return
-
-    debug_path = os.path.join(decky.DECKY_PLUGIN_LOG_DIR, "plugin-debug.log")
-    handler = logging.handlers.RotatingFileHandler(
-        debug_path, maxBytes=20 * 1024 * 1024, backupCount=3
-    )
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(
-        logging.Formatter(
-            "[%(asctime)s] [%(levelname)s] %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    )
-    decky.logger.addHandler(handler)
-    debug_handler_ref[0] = handler
-    decky.logger.debug("Debug log enabled")
-
-
 def _disable_debug_log(debug_handler_ref: list[logging.Handler | None]) -> None:
+    """Remove any legacy debug handler if one somehow exists."""
     handler = debug_handler_ref[0]
     if handler is None:
         return
@@ -80,27 +54,21 @@ def _disable_debug_log(debug_handler_ref: list[logging.Handler | None]) -> None:
 
 
 def get_log_contents() -> str:
-    """Grab the tail of each log file and stitch them together.
+    """Grab the tail of the main plugin log.
 
-    The frontend LogViewer polls this every few seconds.  Cap at 200
-    lines per file so it doesn't send a ton of text over the callable
-    bridge.
+    The frontend LogViewer polls this every few seconds. Cap at 200
+    lines so it doesn't send a ton of text over the callable bridge.
     """
-    log_paths = [
-        decky.DECKY_PLUGIN_LOG,
-        os.path.join(decky.DECKY_PLUGIN_LOG_DIR, "plugin-debug.log"),
-    ]
     chunks: list[str] = []
 
-    for path in log_paths:
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-            if lines:
-                chunks.append(f"===== {os.path.basename(path)} =====\n")
-                chunks.append("".join(lines[-200:]))
-        except FileNotFoundError:
-            continue
+    try:
+        with open(decky.DECKY_PLUGIN_LOG, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        if lines:
+            chunks.append(f"===== {decky.DECKY_PLUGIN_LOG.rsplit('/', 1)[-1]} =====\n")
+            chunks.append("".join(lines[-200:]))
+    except FileNotFoundError:
+        pass
 
     return "\n".join(chunks)
 

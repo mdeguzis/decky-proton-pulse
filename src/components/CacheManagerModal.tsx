@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Focusable, DialogButton, ConfirmModal, showModal } from '@decky/ui';
-import { toaster } from '@decky/api';
+import { toaster } from '../lib/notify';
 import { logFrontendEvent } from '../lib/logger';
 import { invalidate, invalidateAll, getCacheStats, getCachedAppIds, getCached } from '../lib/cache';
 import type { CacheEntry } from '../lib/cache';

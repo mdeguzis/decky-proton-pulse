@@ -7,6 +7,7 @@
 #   -t, --target   stable|beta|autobuild  (default: stable)
 #   -i, --deck-ip  IP address of the Steam Deck
 #   -u, --deck-user  SSH user on the Deck  (default: deck)
+#   --skip-build   Reuse an existing dist/ build instead of rebuilding
 #   -h, --help     Show this help message
 
 set -euo pipefail
@@ -16,6 +17,7 @@ TARGET="stable"
 DECK_IP=""
 DECK_USER="deck"
 DECK_PLUGIN_DIR="/home/deck/homebrew/plugins"
+SKIP_BUILD=0
 
 usage() {
   grep '^#' "$0" | grep -v '#!/' | sed 's/^# \{0,1\}//'
@@ -28,6 +30,7 @@ while [[ $# -gt 0 ]]; do
     -t|--target)    TARGET="$2";    shift 2 ;;
     -i|--deck-ip)   DECK_IP="$2";   shift 2 ;;
     -u|--deck-user) DECK_USER="$2"; shift 2 ;;
+    --skip-build)   SKIP_BUILD=1;   shift ;;
     -h|--help)      usage ;;
     *) echo "Unknown arg: $1  (use -h for help)"; exit 1 ;;
   esac
@@ -41,10 +44,14 @@ fi
 echo "=== Proton Pulse Deploy (target: $TARGET) ==="
 
 # Build
-pnpm build
+if [[ "$SKIP_BUILD" -eq 1 ]]; then
+  echo "Skipping build and reusing existing dist/"
+else
+  pnpm build
+fi
 
 # Package
-VERSION=$(node -e "const p=require('./package.json'); process.stdout.write(p.version)")
+VERSION=$(tr -d '[:space:]' < VERSION)
 ZIP_NAME="${PLUGIN_NAME}-v${VERSION}.zip"
 STAGING_DIR="/tmp/${PLUGIN_NAME}"
 

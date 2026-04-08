@@ -1,9 +1,10 @@
 // src/components/ProtonDBSubmitModal.tsx
 import { useState, useEffect } from 'react';
 import { ModalRoot, Focusable, DialogButton, Navigation } from '@decky/ui';
-import { callable, toaster } from '@decky/api';
+import { callable } from '@decky/api';
 import { t } from '../lib/i18n';
 import { logFrontendEvent } from '../lib/logger';
+import { toaster } from '../lib/notify';
 import { isSteamShortcutApp } from '../lib/steamApps';
 
 const getProtonDBSystemInfo = callable<[], string>('get_protondb_systeminfo');

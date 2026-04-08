@@ -11,7 +11,7 @@ import {
   ConfirmModal,
   showModal,
 } from '@decky/ui';
-import { toaster } from '@decky/api';
+import { toaster } from '../lib/notify';
 import type { DisplayReportCard } from './ReportCard';
 import type { EditedReportEntry } from './tabs/ConfigureTab';
 import { ProtonDBSubmitModal } from './ProtonDBSubmitModal';
