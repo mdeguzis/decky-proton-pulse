@@ -249,38 +249,29 @@ export function GeneralSettingsTab() {
 
       {advancedEnabled && (
         <div style={{ padding: '0 8px 20px' }}>
-          <Focusable
+          <DialogButton
             ref={bottomAnchorRef}
             onGamepadFocus={() => {
               scrollNearestScrollableAncestor(bottomAnchorRef.current);
             }}
+            onClick={() => {
+              scrollNearestScrollableAncestor(bottomAnchorRef.current);
+            }}
             style={{
-              minHeight: 40,
-              borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.06)',
-              background: 'rgba(255,255,255,0.02)',
+              minHeight: 28,
+              borderRadius: 8,
+              border: '1px solid transparent',
+              background: 'transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              color: 'transparent',
+              boxShadow: 'none',
+              padding: 0,
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                width: '100%',
-                padding: '0 12px',
-                color: '#7a9bb5',
-                fontSize: 10,
-                letterSpacing: 1.5,
-              }}
-            >
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-              <div>V</div>
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-            </div>
-          </Focusable>
+            {'\u200B'}
+          </DialogButton>
         </div>
       )}
     </Focusable>
