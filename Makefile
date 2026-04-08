@@ -27,9 +27,15 @@ SCREENSHOT_CAPTION ?=
 SCREENSHOT_MATCH ?=
 SCREENSHOT_MANIFEST ?= config/ui_screenshot_manifest.json
 PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
+VERSION := $(shell tr -d '[:space:]' < VERSION)
+RELEASE_TAG := v$(VERSION)
+RELEASE_ZIP := decky-proton-pulse-v$(VERSION).zip
+RELEASE_TITLE := Proton Pulse $(RELEASE_TAG)
+RELEASE_NOTES_FILE := /tmp/decky-proton-pulse-release-notes-$(VERSION).md
 
 .PHONY: help build watch test test-ts test-py typecheck check-translations translate setup deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
+        package release pre-release \
         capture-project-screenshots \
         fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
 
@@ -54,6 +60,9 @@ help:
 	@echo "  deploy            Build and deploy to Steam Deck (requires DECK_IP)"
 	@echo "  deploy-reload     Build, deploy, then restart plugin_loader (requires DECK_IP)"
 	@echo "  build-and-deploy  Clean, test, build, and deploy (requires DECK_IP)"
+	@echo "  package           Build and create the local release zip for the current VERSION"
+	@echo "  release           Build, package, and publish a GitHub release using CHANGELOG.md notes"
+	@echo "  pre-release       Build, package, and publish a GitHub pre-release using CHANGELOG.md notes"
 	@echo "  clean             Remove build output (dist/) and generated release archives"
 	@echo ""
 	@echo "On-device debugging (require DECK_IP):"
@@ -130,6 +139,18 @@ ifndef DECK_IP
 	$(error DECK_IP is required: DECK_IP=192.168.1.x make build-and-deploy)
 endif
 	bash scripts/deploy.sh --skip-build --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
+
+package: build
+	bash scripts/deploy.sh --skip-build
+
+$(RELEASE_NOTES_FILE): CHANGELOG.md VERSION scripts/release-notes.mjs
+	node scripts/release-notes.mjs > $(RELEASE_NOTES_FILE)
+
+release: package $(RELEASE_NOTES_FILE)
+	gh release create $(RELEASE_TAG) ./$(RELEASE_ZIP) --repo mdeguzis/decky-proton-pulse --title "$(RELEASE_TITLE)" --notes-file $(RELEASE_NOTES_FILE)
+
+pre-release: package $(RELEASE_NOTES_FILE)
+	gh release create $(RELEASE_TAG) ./$(RELEASE_ZIP) --repo mdeguzis/decky-proton-pulse --title "$(RELEASE_TITLE)" --notes-file $(RELEASE_NOTES_FILE) --prerelease
 
 clean:
 	rm -rf dist/
