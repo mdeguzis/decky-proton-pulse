@@ -1,12 +1,12 @@
 # Screenshot Automation
 
-This workflow defines how we capture and publish project UI screenshots into the wiki.
+This doc covers how we capture project UI screenshots and publish them to the wiki.
 
 ## Scope
 
-`make capture-project-screenshots` is a guided batch capture flow. It captures every screenshot defined in the project manifest, registers each image in the local screenshot catalog, and republishes the wiki gallery at the end.
+`make capture-project-screenshots` is a guided batch capture flow. It walks through every screenshot in the project manifest, registers each image in the local screenshot catalog, and refreshes the wiki gallery at the end.
 
-The current workflow is guided, not fully hands-off. It does not yet drive Steam Deck navigation automatically. For each manifest step, the operator positions the UI on the Deck, then confirms the capture in the terminal.
+Right now it is guided, not fully hands-off. It does not drive Steam Deck navigation yet. For each manifest step, the operator puts the Deck UI in the right state and confirms the capture in the terminal.
 
 ## Source of Truth
 
@@ -23,7 +23,7 @@ Each manifest entry is a JSON object with:
 - `key`: stable shot key within the group, for example `default`
 - `title`: human-readable screenshot title for the wiki gallery
 - `caption`: optional description shown under the screenshot in the gallery
-- `instructions`: operator guidance describing what to put on screen before capture
+- `instructions`: a short note explaining what should be on screen before capture
 
 ## Command
 
@@ -38,7 +38,7 @@ Optional filters:
 DECK_IP=$(cat ~/.deckip) SCREENSHOT_MATCH=manage-game make capture-project-screenshots
 ```
 
-## Output Flow
+## What Happens
 
 1. Load the screenshot manifest.
 2. Prompt the operator for each defined UI state.
@@ -48,13 +48,13 @@ DECK_IP=$(cat ~/.deckip) SCREENSHOT_MATCH=manage-game make capture-project-scree
 6. Copy catalogued screenshots into the wiki checkout.
 7. Regenerate `UI-Screenshot-Gallery.md`.
 
-## Follow-up Work
+## What Still Needs Work
 
-To make this fully automatic later, we would need a reliable UI-navigation layer that can:
+To make this fully automatic, we still need a reliable UI navigation layer that can:
 
-- route to the correct plugin tab or modal
+- route to the right plugin tab or modal
 - focus the intended game or state
-- wait for stable rendering before capture
-- recover safely if Steam UI state drifts
+- wait for the UI to settle before capture
+- recover if Steam UI state drifts
 
-Until then, the manifest-driven guided flow keeps the capture set reproducible and wiki-friendly.
+Until then, the manifest-driven guided flow gives us a repeatable capture set that still maps cleanly to the wiki.

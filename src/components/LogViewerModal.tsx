@@ -102,32 +102,36 @@ export function LogViewerModal({ logs, entryCount, closeModal }: Props) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignSelf: 'flex-start' }}>
-            <DialogButton
-              onClick={scrollToBottom}
-              style={{
-                minWidth: 0,
-                width: 'auto',
-                maxWidth: 150,
-                padding: '4px 10px',
-                fontSize: 11,
-                flex: '0 0 auto',
-              }}
-            >
-              {strings.jumpToLatest}
-            </DialogButton>
-            <DialogButton
-              onClick={handleCopy}
-              style={{
-                minWidth: 0,
-                width: 'auto',
-                maxWidth: 120,
-                padding: '4px 10px',
-                fontSize: 11,
-                flex: '0 0 auto',
-              }}
-            >
-              {copied ? strings.copied : strings.copyLogs}
-            </DialogButton>
+            <Focusable style={{ display: 'flex', flexShrink: 0 }}>
+              <DialogButton
+                onClick={scrollToBottom}
+                style={{
+                  minWidth: 0,
+                  width: 'auto',
+                  maxWidth: 150,
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  flex: '0 0 auto',
+                }}
+              >
+                {strings.jumpToLatest}
+              </DialogButton>
+            </Focusable>
+            <Focusable style={{ display: 'flex', flexShrink: 0 }}>
+              <DialogButton
+                onClick={handleCopy}
+                style={{
+                  minWidth: 0,
+                  width: 'auto',
+                  maxWidth: 120,
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  flex: '0 0 auto',
+                }}
+              >
+                {copied ? strings.copied : strings.copyLogs}
+              </DialogButton>
+            </Focusable>
           </div>
         </div>
 
@@ -138,7 +142,7 @@ export function LogViewerModal({ logs, entryCount, closeModal }: Props) {
             overflowY: 'auto',
             background: 'rgba(0,0,0,0.42)',
             borderRadius: 6,
-            padding: 10,
+            padding: '10px 10px 24px',
             fontSize: 10,
             fontFamily: 'monospace',
             color: '#bbb',

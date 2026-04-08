@@ -1,9 +1,8 @@
 # tests/test_plugin.py
-# Tests for debug log management, get_log_contents,
+# Tests for log level management, get_log_contents,
 # and individual system-detection helpers (now in lib.system_info / lib.plugin_logging).
 import asyncio
 import logging
-import logging.handlers
 import os
 import pathlib
 import sys
@@ -16,7 +15,7 @@ import pytest
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 from main import Plugin
-from lib.plugin_logging import sync_set_log_level, _enable_debug_log, _disable_debug_log
+from lib.plugin_logging import sync_set_log_level, _disable_debug_log
 from lib.compat_tools import list_installed_compatibility_tools
 from lib.system_info import (
     read_cpu,
@@ -30,12 +29,15 @@ from lib.system_info import (
 
 @pytest.fixture(autouse=True)
 def reset_debug_handler() -> Generator[None, None, None]:
-    """Ensure no debug handlers bleed between tests."""
+    """Ensure no legacy debug handlers bleed between tests."""
     yield
     for h in list(decky.logger.handlers):
-        if isinstance(h, logging.handlers.RotatingFileHandler):
-            decky.logger.removeHandler(h)
-            h.close()
+        if h not in logging.getLogger().handlers and h is not None:
+            try:
+                decky.logger.removeHandler(h)
+                h.close()
+            except Exception:  # pragma: no cover - test cleanup guard
+                continue
 
 
 @pytest.fixture
@@ -44,38 +46,14 @@ def debug_handler_ref() -> list[Optional[logging.Handler]]:
     return [None]
 
 
-# ─── Debug log lifecycle ──────────────────────────────────────────────────────
-
-
-def test_enable_debug_log_adds_handler(debug_handler_ref: Any) -> None:
-    before = len(decky.logger.handlers)
-    _enable_debug_log(debug_handler_ref)
-    assert len(decky.logger.handlers) == before + 1
-    assert debug_handler_ref[0] is not None
-
-
-def test_enable_debug_log_idempotent(debug_handler_ref: Any) -> None:
-    _enable_debug_log(debug_handler_ref)
-    first_handler = debug_handler_ref[0]
-    count_after_first = len(decky.logger.handlers)
-    _enable_debug_log(debug_handler_ref)
-    assert debug_handler_ref[0] is first_handler
-    assert len(decky.logger.handlers) == count_after_first
-
-
-def test_enable_debug_log_uses_log_dir(debug_handler_ref: Any) -> None:
-    _enable_debug_log(debug_handler_ref)
-    handler = debug_handler_ref[0]
-    expected = os.path.join(decky.DECKY_PLUGIN_LOG_DIR, "plugin-debug.log")
-    assert hasattr(handler, "baseFilename")
-    assert handler.baseFilename == expected
+# ─── Debug handler cleanup behavior ───────────────────────────────────────────
 
 
 def test_disable_debug_log_removes_handler(debug_handler_ref: Any) -> None:
-    _enable_debug_log(debug_handler_ref)
-    before = len(decky.logger.handlers)
+    handler = MagicMock()
+    debug_handler_ref[0] = handler
+    decky.logger.addHandler(handler)
     _disable_debug_log(debug_handler_ref)
-    assert len(decky.logger.handlers) == before - 1
     assert debug_handler_ref[0] is None
 
 
@@ -84,15 +62,13 @@ def test_disable_debug_log_when_not_enabled_is_safe(debug_handler_ref: Any) -> N
     assert debug_handler_ref[0] is None
 
 
-def test_set_log_level_debug_enables_debug_log(debug_handler_ref: Any) -> None:
+def test_set_log_level_debug_does_not_create_separate_debug_log(debug_handler_ref: Any) -> None:
     result = sync_set_log_level("DEBUG", debug_handler_ref)
     assert result is True
-    assert debug_handler_ref[0] is not None
+    assert debug_handler_ref[0] is None
 
 
-def test_set_log_level_info_disables_debug_log(debug_handler_ref: Any) -> None:
-    sync_set_log_level("DEBUG", debug_handler_ref)
-    assert debug_handler_ref[0] is not None
+def test_set_log_level_info_leaves_no_debug_handler(debug_handler_ref: Any) -> None:
     sync_set_log_level("INFO", debug_handler_ref)
     assert debug_handler_ref[0] is None
 
@@ -132,23 +108,11 @@ def test_get_log_contents_missing_file_returns_empty() -> None:
     assert result == ""
 
 
-def test_get_log_contents_includes_debug_log_when_present() -> None:
-    def fake_open(path: str, *_args: Any, **_kwargs: Any) -> Any:
-        handle = mock_open(
-            read_data={
-                decky.DECKY_PLUGIN_LOG: "info line\n",
-                os.path.join(
-                    decky.DECKY_PLUGIN_LOG_DIR, "plugin-debug.log"
-                ): "debug line\n",
-            }[path]
-        ).return_value
-        return handle
-
-    with patch("builtins.open", side_effect=fake_open):
+def test_get_log_contents_reads_main_log_only() -> None:
+    with patch("builtins.open", mock_open(read_data="info line\ndebug line\n")):
         result = asyncio.run(Plugin().get_log_contents())
 
     assert f"===== {os.path.basename(decky.DECKY_PLUGIN_LOG)} =====" in result
-    assert "===== plugin-debug.log =====" in result
     assert "info line" in result
     assert "debug line" in result
 

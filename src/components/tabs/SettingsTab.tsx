@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ToggleField, Focusable, GamepadButton, DialogButton, ConfirmModal, showModal, Menu, MenuItem, showContextMenu } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
-import { toaster } from '@decky/api';
+import { toaster } from '../../lib/notify';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
 import { cancelProtonGeInstall, getProtonGeManagerState, installCompatibilityToolArchive, installProtonGe, uninstallCompatibilityTool } from '../../lib/compatTools';

@@ -1,10 +1,11 @@
 {
   "name": "decky-proton-pulse",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Decky plugin that ranks ProtonDB reports by system compatibility and applies launch options.",
   "type": "module",
   "scripts": {
-    "build": "node scripts/check-translations.mjs --no-fail && rollup -c",
+    "sync-version": "node scripts/sync-version.mjs",
+    "build": "node scripts/sync-version.mjs && node scripts/check-translations.mjs --no-fail && rollup -c",
     "watch": "rollup -c -w",
     "test": "vitest run",
     "check-translations": "node scripts/check-translations.mjs"

@@ -72,21 +72,23 @@ describe('getVoterId', () => {
 
 describe('submitVote', () => {
   it('upserts the vote in one request', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ message: 'no rows' }, { status: 406 }))
+      .mockResolvedValueOnce(new Response(null, { status: 201 }));
 
     const { submitVote } = await import('./voting');
     const ok = await submitVote('123', 'report-1', 1);
 
     expect(ok).toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0]?.[0]).toContain('/report_votes?');
-    expect(fetchMock.mock.calls[0]?.[0]).toContain('on_conflict=voter_id%2Capp_id%2Creport_key');
-    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'POST' });
-    expect(fetchMock.mock.calls[0]?.[1]?.headers).toMatchObject({
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('/report_votes?');
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('on_conflict=voter_id%2Capp_id%2Creport_key');
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({ method: 'POST' });
+    expect(fetchMock.mock.calls[1]?.[1]?.headers).toMatchObject({
       Prefer: 'resolution=merge-duplicates,return=minimal',
     });
 
-    const insertBody = fetchMock.mock.calls[0]?.[1]?.body;
+    const insertBody = fetchMock.mock.calls[1]?.[1]?.body;
     expect(typeof insertBody).toBe('string');
     expect(JSON.parse(insertBody as string)).toMatchObject({
       app_id: '123',
@@ -96,10 +98,37 @@ describe('submitVote', () => {
   });
 
   it('returns false when the insert fails', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'bad insert' }, { status: 400 }));
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ message: 'no rows' }, { status: 406 }))
+      .mockResolvedValueOnce(jsonResponse({ message: 'bad insert' }, { status: 400 }));
 
     const { submitVote } = await import('./voting');
     await expect(submitVote('123', 'report-1', -1)).resolves.toBe(false);
+  });
+
+  it('patches an existing vote instead of trying to reinsert it', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ vote: -1 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const { submitVote } = await import('./voting');
+    await expect(submitVote('123', 'report-1', 1)).resolves.toBe(true);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({ method: 'PATCH' });
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('voter_id=eq.');
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('app_id=eq.123');
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('report_key=eq.report-1');
+    expect(fetchMock.mock.calls[1]?.[1]?.body).toBe(JSON.stringify({ vote: 1 }));
+  });
+
+  it('treats the same existing vote as a no-op success', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ vote: 1 }));
+
+    const { submitVote } = await import('./voting');
+    await expect(submitVote('123', 'report-1', 1)).resolves.toBe(true);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 

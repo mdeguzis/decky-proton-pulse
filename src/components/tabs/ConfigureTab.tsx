@@ -2,13 +2,13 @@
 import { Component, type ErrorInfo, type ReactNode, useState, useEffect, useMemo } from 'react';
 import { Focusable, GamepadButton, DialogButton, ConfirmModal, showModal, Dropdown, SteamSpinner } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
-import { toaster } from '@decky/api';
+import { toaster } from '../../lib/notify';
 import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
 import {
   getProtonDBReportsWithDiagnostics,
   type ReportFetchDiagnostics,
 } from '../../lib/protondb';
-import { getVoteTotals, submitVote } from '../../lib/voting';
+import { getUserVote, getVoteTotals, submitVote } from '../../lib/voting';
 import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
@@ -723,45 +723,48 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     }
   };
 
-  const handleUpvote = async (targetReport: DisplayReportCard) => {
-    if (!appId) return;
+  const handleUpvote = async (targetReport: DisplayReportCard): Promise<boolean> => {
+    if (!appId) return false;
     const key = reportKey(targetReport);
     void logFrontendEvent('INFO', 'Upvote requested', { appId, appName, reportKey: key });
 
+    const previousVote = await getUserVote(String(appId), key);
     const ok = await submitVote(String(appId), key, 1);
     if (ok) {
-      // optimistic update
       setVotes(prev => ({
         ...prev,
         [key]: {
-          upvotes: (prev[key]?.upvotes ?? 0) + 1,
-          downvotes: prev[key]?.downvotes ?? 0,
+          upvotes: (prev[key]?.upvotes ?? 0) + (previousVote === 1 ? 0 : 1),
+          downvotes: Math.max(0, (prev[key]?.downvotes ?? 0) - (previousVote === -1 ? 1 : 0)),
         },
       }));
       toaster.toast({ title: 'Proton Pulse', body: t().configure.voteSubmitted });
-    } else {
-      toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
+      return true;
     }
+    toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
+    return false;
   };
 
-  const handleDownvote = async (targetReport: DisplayReportCard) => {
-    if (!appId) return;
+  const handleDownvote = async (targetReport: DisplayReportCard): Promise<boolean> => {
+    if (!appId) return false;
     const key = reportKey(targetReport);
     void logFrontendEvent('INFO', 'Downvote requested', { appId, appName, reportKey: key });
 
+    const previousVote = await getUserVote(String(appId), key);
     const ok = await submitVote(String(appId), key, -1);
     if (ok) {
       setVotes(prev => ({
         ...prev,
         [key]: {
-          upvotes: prev[key]?.upvotes ?? 0,
-          downvotes: (prev[key]?.downvotes ?? 0) + 1,
+          upvotes: Math.max(0, (prev[key]?.upvotes ?? 0) - (previousVote === 1 ? 1 : 0)),
+          downvotes: (prev[key]?.downvotes ?? 0) + (previousVote === -1 ? 0 : 1),
         },
       }));
       toaster.toast({ title: 'Proton Pulse', body: t().configure.voteSubmitted });
-    } else {
-      toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
+      return true;
     }
+    toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
+    return false;
   };
 
   const openReportDetail = (report: DisplayReportCard) => {

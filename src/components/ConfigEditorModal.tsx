@@ -10,7 +10,7 @@ import {
   TextField,
   SteamSpinner,
 } from '@decky/ui';
-import { toaster } from '@decky/api';
+import { toaster } from '../lib/notify';
 import { LAUNCH_VAR_CATALOG, buildLaunchOptions, parseLaunchOptions, type LaunchVarDef } from '../lib/launchVars';
 import { addTrackedConfig, type TrackedConfig } from '../lib/trackedConfigs';
 import { getProtonGeManagerState, installProtonGe } from '../lib/compatTools';
