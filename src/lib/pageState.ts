@@ -13,7 +13,21 @@ export interface NavigatePayload {
 
 export const NAVIGATE_EVENT = 'proton-pulse:navigate';
 
+function rememberNavigate(payload: NavigatePayload): void {
+  pageState.initialPage = payload.tab;
+  pageState.appId = payload.appId;
+  pageState.appName = payload.appName;
+  pageState.pendingNavigate = payload;
+  pageState.pendingNavigateVersion += 1;
+}
+
+export function rememberReturnPath(pathname: string | null | undefined): void {
+  if (!pathname || pathname.includes('/proton-pulse')) return;
+  pageState.returnPath = pathname;
+}
+
 export function dispatchNavigate(payload: NavigatePayload): void {
+  rememberNavigate(payload);
   window.dispatchEvent(new CustomEvent<NavigatePayload>(NAVIGATE_EVENT, { detail: payload }));
 }
 
@@ -24,10 +38,16 @@ export const pageState: {
   appName: string;
   focusedAppId: number | null;
   focusedAppName: string;
+  returnPath: string | null;
+  pendingNavigate: NavigatePayload | null;
+  pendingNavigateVersion: number;
 } = {
   initialPage: 'manage',
   appId: null,
   appName: '',
   focusedAppId: null,
   focusedAppName: '',
+  returnPath: null,
+  pendingNavigate: null,
+  pendingNavigateVersion: 0,
 };

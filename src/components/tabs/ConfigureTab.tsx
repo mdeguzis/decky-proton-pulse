@@ -36,9 +36,12 @@ const STEAM_HEADER_URL = (id: number) =>
 const reportKey = (r: CdnReport) => `${r.timestamp}_${r.protonVersion}`;
 
 const FILTER_ORDER: FilterTier[] = ['nvidia', 'amd', 'intel', 'other', 'all'];
-const FILTER_LABELS: Record<FilterTier, string> = {
-  nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel', other: 'Other', all: 'All',
-};
+function filterLabel(tier: FilterTier): string {
+  const extras = t().extras!;
+  if (tier === 'all') return extras.all();
+  if (tier === 'other') return extras.other();
+  return tier === 'nvidia' ? 'NVIDIA' : tier === 'amd' ? 'AMD' : 'Intel';
+}
 const EDIT_STORAGE_PREFIX = 'edited-reports:';
 
 export interface EditedReportEntry {
@@ -209,6 +212,7 @@ function GameSummaryHeader({
   appName: string;
   reportsCount?: number;
 }) {
+  const extras = t().extras!;
   const isShortcut = isSteamShortcutApp(appId);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -223,8 +227,8 @@ function GameSummaryHeader({
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5' }}>
           {isShortcut
-            ? 'Non-Steam shortcut'
-            : `AppID ${appId}${typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}`}
+            ? extras.nonSteamShortcut()
+            : `${extras.appIdLabel(appId)}${typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}`}
         </div>
       </div>
     </div>
@@ -319,6 +323,7 @@ class ConfigureTabErrorBoundary extends Component<ConfigureTabBoundaryProps, Con
 }
 
 function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
+  const extras = t().extras!;
   const [reports, setReports]   = useState<CdnReport[]>([]);
   const [editedReports, setEditedReports] = useState<EditedReportEntry[]>([]);
   const [votes, setVotes]       = useState<Record<string, VoteTotals>>({});
@@ -794,20 +799,24 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const diagnosticsLines = !sysInfo
     ? []
     : [
-      `Tried App ID ${appId}`,
+      extras.diagnosticsTriedAppId(appId),
       reportDiagnostics
-        ? `Primary source: ${reportDiagnostics.source}`
-        : 'Primary source: pending',
+        ? extras.diagnosticsPrimarySource(String(reportDiagnostics.source))
+        : extras.diagnosticsPrimarySourcePending(),
       reportDiagnostics
-        ? `Report index response: ${reportDiagnostics.indexStatus ?? 'request failed'}`
-        : 'Report index response: pending',
+        ? extras.diagnosticsReportIndexResponse(String(reportDiagnostics.indexStatus ?? 'request failed'))
+        : extras.diagnosticsReportIndexPending(),
       reportDiagnostics
         ? (
           reportDiagnostics.source === 'live-summary'
-            ? `Live ProtonDB summary: ${reportDiagnostics.liveSummaryStatus ?? 'request failed'} · ${reportDiagnostics.liveSummaryTotal ?? 0} reports · ${reportDiagnostics.liveSummaryTier ?? 'unknown'} tier`
-            : `Live ProtonDB summary: ${reportDiagnostics.liveSummaryStatus ?? 'not tried'}`
+            ? extras.diagnosticsLiveSummary(
+              String(reportDiagnostics.liveSummaryStatus ?? 'request failed'),
+              reportDiagnostics.liveSummaryTotal ?? 0,
+              String(reportDiagnostics.liveSummaryTier ?? 'unknown'),
+            )
+            : extras.diagnosticsLiveSummary(String(reportDiagnostics.liveSummaryStatus ?? 'not tried'))
         )
-        : 'Live ProtonDB summary: pending',
+        : extras.diagnosticsLiveSummaryPending(),
     ];
 
   const showDiagnosticsState = !loading && (!sysInfo || (reports.length === 0 && editedReports.length === 0));
@@ -827,7 +836,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
           </div>
           {reportDiagnostics?.source === 'live-summary' && (
             <div style={{ padding: '0 16px 12px', color: '#9dc4e8', fontSize: 11, textAlign: 'center' }}>
-              ProtonDB live summary exists, but detailed report cards were not available from the CDN.
+              {extras.liveSummaryUnavailable()}
             </div>
           )}
           {!!diagnosticsLines.length && (
@@ -896,12 +905,12 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             <div
               style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
             >
-              GPU
+              {t().configManager.gpuFilter}
             </div>
             <Dropdown
               rgOptions={FILTER_ORDER.map((tier) => ({
                 data: tier,
-                label: tier === 'all' ? 'All' : FILTER_LABELS[tier],
+                label: filterLabel(tier),
               }))}
               selectedOption={filter}
               onChange={(opt) => setFilterMode(opt.data as FilterTier)}

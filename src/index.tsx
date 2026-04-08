@@ -7,6 +7,7 @@ import {
   ToggleField,
   staticClasses,
   Router,
+  Navigation,
 } from '@decky/ui';
 import { useEffect, useState } from 'react';
 import {
@@ -17,7 +18,7 @@ import {
 
 import { ProtonPulsePage } from './components/Modal';
 import { BrandGlyph } from './components/BrandGlyph';
-import { pageState, dispatchNavigate } from './lib/pageState';
+import { pageState, dispatchNavigate, rememberReturnPath } from './lib/pageState';
 import type { PageId } from './lib/pageState';
 import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextMenu';
 import { getSetting, setSetting } from './lib/settings';
@@ -47,13 +48,14 @@ function extractLibraryAppId(pathname: string): number | null {
 // ─── Sidebar panel ────────────────────────────────────────────────────────────
 function Content() {
   useLanguage(); // triggers re-render on language change
+  const extras = t().extras!;
   const [version, setVersion] = useState('...');
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
 
   useEffect(() => {
     void getPluginVersionSafe()
       .then(setVersion)
-      .catch(() => setVersion('backend offline'));
+      .catch(() => setVersion(extras.backendOfflineVersion()));
   }, []);
 
   useEffect(() => {
@@ -66,14 +68,28 @@ function Content() {
 
   const navigateTo = (tab: PageId) => {
     void logFrontendEvent('INFO', 'Sidebar navigation requested', { tab });
-    pageState.initialPage = tab;
-    pageState.appId = null;
-    pageState.appName = '';
+    rememberReturnPath(globalThis.location?.pathname);
+    const payload = { tab, appId: null, appName: '' };
+    const pathname = globalThis.location?.pathname ?? '';
+    const alreadyOpen = pathname.includes('/proton-pulse');
+    if (alreadyOpen) {
+      dispatchNavigate(payload);
+      Router.CloseSideMenus();
+      return;
+    }
+
     Router.CloseSideMenus();
-    Router.Navigate('/proton-pulse');
+    try {
+      Navigation.Navigate('/proton-pulse');
+    } catch {
+      Router.Navigate('/proton-pulse');
+    }
     window.setTimeout(() => {
-      dispatchNavigate({ tab, appId: null, appName: '' });
-    }, 0);
+      dispatchNavigate(payload);
+    }, 100);
+    window.setTimeout(() => {
+      dispatchNavigate(payload);
+    }, 400);
   };
 
   return (

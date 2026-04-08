@@ -16,6 +16,7 @@ const ISSUE_TEMPLATES: { data: IssueTemplate; labelKey: keyof ReturnType<typeof 
 ];
 
 export function AboutTab() {
+  const extras = t().extras!;
   const [selectedTemplate, setSelectedTemplate] = useState<IssueTemplate>('plugin_issue');
   const [submitting, setSubmitting] = useState(false);
 
@@ -30,7 +31,7 @@ export function AboutTab() {
     try {
       await openIssue(selectedTemplate);
     } catch {
-      toaster.toast({ title: 'Proton Pulse', body: 'Failed to open issue page.' });
+      toaster.toast({ title: 'Proton Pulse', body: extras.failedToOpenIssuePage() });
     } finally {
       setSubmitting(false);
     }

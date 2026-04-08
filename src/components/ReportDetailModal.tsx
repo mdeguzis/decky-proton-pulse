@@ -98,6 +98,7 @@ export function ReportDetailModal({
   onDownvote,
   onSaveEdit,
 }: ReportDetailModalProps) {
+  const extras = t().extras!;
   const isShortcut = isSteamShortcutApp(appId);
   const [applying, setApplying] = useState(false);
   const [voting, setVoting] = useState(false);
@@ -176,7 +177,7 @@ export function ReportDetailModal({
 
   const handleUpvote = async () => {
     if (userVote === 1) {
-      toaster.toast({ title: 'Proton Pulse', body: 'Already upvoted this report' });
+      toaster.toast({ title: 'Proton Pulse', body: extras.alreadyUpvoted() });
       return;
     }
     void logFrontendEvent('INFO', 'ReportDetail: Upvote requested', {
@@ -198,7 +199,7 @@ export function ReportDetailModal({
 
   const handleDownvote = async () => {
     if (userVote === -1) {
-      toaster.toast({ title: 'Proton Pulse', body: 'Already downvoted this report' });
+      toaster.toast({ title: 'Proton Pulse', body: extras.alreadyDownvoted() });
       return;
     }
     if (!onDownvote) return;
@@ -333,7 +334,7 @@ export function ReportDetailModal({
                 {appName || `App ${appId}`}
               </div>
               <div style={{ fontSize: 10, color: '#7a9bb5' }}>
-                {isShortcut ? 'Non-Steam shortcut' : `AppID ${appId}`}
+                {isShortcut ? extras.nonSteamShortcut() : extras.appIdLabel(appId)}
               </div>
             </div>
 
@@ -365,7 +366,7 @@ export function ReportDetailModal({
                   ? t().detail.matchesGpu
                   : t().detail.differentGpu}
               {' · '}
-              {confScore}/10 confidence
+              {extras.confidenceOutOfTen(confScore)}
             </span>
             {statusEntry && (
               <span

@@ -15,7 +15,7 @@ import {
 } from '@decky/ui';
 import type { FC } from 'react';
 import type { Export } from '@decky/ui';
-import { pageState, dispatchNavigate } from '../lib/pageState';
+import { pageState, dispatchNavigate, rememberReturnPath } from '../lib/pageState';
 import { logFrontendEvent } from '../lib/logger';
 
 // ─── Find Steam's LibraryContextMenu component ────────────────────────────────
@@ -272,9 +272,7 @@ const injectMenuItem = (
           ...contextSummary,
         });
         void probeSteamAppDetails(appid);
-        pageState.initialPage = 'manage-game';
-        pageState.appId = appid;
-        pageState.appName = appName;
+        rememberReturnPath(globalThis.location?.pathname);
         dispatchNavigate({ tab: 'manage-game', appId: appid, appName });
         Navigation.Navigate('/proton-pulse');
       }}

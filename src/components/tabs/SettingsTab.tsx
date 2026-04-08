@@ -67,8 +67,13 @@ function focusClipRowStyle(): React.CSSProperties {
 }
 
 function formatReleaseDate(value: string | null): string {
-  if (!value) return 'Unknown date';
+  if (!value) return t().compatTools.unknownDate;
   return value.slice(0, 10);
+}
+
+function isProtonFamilyTool(tool: InstalledCompatTool): boolean {
+  return [tool.directory_name, tool.display_name, tool.internal_name]
+    .some((value) => value.toLowerCase().includes('proton'));
 }
 
 function formatReleaseVersion(tagName: string): string {
@@ -89,15 +94,15 @@ function formatByteCount(value: number | null | undefined): string {
 }
 
 function formatEta(seconds: number | null | undefined): string {
-  if (!seconds || seconds <= 0 || !Number.isFinite(seconds)) return 'estimating...';
+  if (!seconds || seconds <= 0 || !Number.isFinite(seconds)) return t().compatTools.estimating;
   const rounded = Math.max(1, Math.round(seconds));
-  if (rounded < 60) return `${rounded}s left`;
+  if (rounded < 60) return t().compatTools.timeLeft(`${rounded}s`);
   const minutes = Math.floor(rounded / 60);
   const secs = rounded % 60;
-  if (minutes < 60) return secs ? `${minutes}m ${secs}s left` : `${minutes}m left`;
+  if (minutes < 60) return secs ? t().compatTools.timeLeft(`${minutes}m ${secs}s`) : t().compatTools.timeLeft(`${minutes}m`);
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  return mins ? `${hours}h ${mins}m left` : `${hours}h left`;
+  return mins ? t().compatTools.timeLeft(`${hours}h ${mins}m`) : t().compatTools.timeLeft(`${hours}h`);
 }
 
 function withRestartHint(message: string, shouldAppend = true): string {
@@ -106,10 +111,11 @@ function withRestartHint(message: string, shouldAppend = true): string {
 }
 
 function releaseStatusLabel(release: CompatToolRelease, installedReleaseTags: Set<string>, currentReleaseTag?: string | null): string {
-  if (release.tag_name === currentReleaseTag && installedReleaseTags.has(release.tag_name)) return 'Latest installed';
-  if (release.tag_name === currentReleaseTag) return 'Latest';
-  if (installedReleaseTags.has(release.tag_name)) return 'Installed';
-  return 'Available';
+  const extras = t().extras!;
+  if (release.tag_name === currentReleaseTag && installedReleaseTags.has(release.tag_name)) return extras.compatLatestInstalled();
+  if (release.tag_name === currentReleaseTag) return extras.compatLatest();
+  if (installedReleaseTags.has(release.tag_name)) return t().compatTools.installed;
+  return extras.compatAvailable();
 }
 
 function releaseStatusTone(release: CompatToolRelease, installedReleaseTags: Set<string>, currentReleaseTag?: string | null): React.CSSProperties {
@@ -156,6 +162,7 @@ function VersionBrowserModal({
   onInstall: (tagName: string) => void;
   onClose: () => void;
 }) {
+  const extras = t().extras!;
   const [filter, setFilter] = useState('');
 
   const filteredReleases = useMemo(() => {
@@ -170,9 +177,9 @@ function VersionBrowserModal({
 
   return (
     <ConfirmModal
-      strTitle="Other Proton-GE Versions"
-      strDescription="Browse and filter the full Proton-GE release list."
-      strOKButtonText="Close"
+      strTitle={extras.compatVersionBrowserTitle()}
+      strDescription={extras.compatVersionBrowserDescription()}
+      strOKButtonText={t().common.close}
       onOK={onClose}
       onCancel={onClose}
     >
@@ -181,7 +188,7 @@ function VersionBrowserModal({
           type="text"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter versions..."
+          placeholder={t().compatTools.filterPlaceholder}
           style={{
             width: '100%',
             boxSizing: 'border-box',
@@ -206,15 +213,15 @@ function VersionBrowserModal({
             letterSpacing: 0.6,
           }}
         >
-          <div>Name</div>
-          <div>Version</div>
-          <div>Status</div>
-          <div style={{ textAlign: 'right' }}>Action</div>
+          <div>{extras.compatNameColumn()}</div>
+          <div>{extras.compatVersionColumn()}</div>
+          <div>{extras.compatStatusColumn()}</div>
+          <div style={{ textAlign: 'right' }}>{extras.compatActionColumn()}</div>
         </div>
         <div style={{ maxHeight: 380, overflowY: 'auto', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           {filteredReleases.length === 0 ? (
             <div style={{ padding: '16px 0', fontSize: 12, color: '#9eb7cc' }}>
-              No versions matched that filter.
+              {extras.compatNoVersionsMatched()}
             </div>
           ) : (
             filteredReleases.map((release, index) => {
@@ -272,12 +279,12 @@ function VersionBrowserModal({
                         ...releaseStatusTone(release, installedReleaseTags, currentReleaseTag),
                       }}
                     >
-                      {isInstalling ? 'Installing' : releaseStatusLabel(release, installedReleaseTags, currentReleaseTag)}
+                      {isInstalling ? t().compatTools.installing : releaseStatusLabel(release, installedReleaseTags, currentReleaseTag)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <CompactActionButton
-                      label={isInstalling ? 'Installing...' : installed ? 'Reinstall' : 'Install'}
+                      label={isInstalling ? t().compatTools.refreshing : installed ? t().compatTools.reinstall : t().compatTools.install}
                       onClick={() => onInstall(release.tag_name)}
                       disabled={installingTag !== null}
                     />
@@ -299,13 +306,14 @@ function InstallArchiveModal({
   onInstall: (archivePath: string) => void;
   onClose: () => void;
 }) {
+  const extras = t().extras!;
   const [archivePath, setArchivePath] = useState('');
 
   return (
     <ConfirmModal
-      strTitle="Install From ZIP"
-      strDescription="Enter a local archive path on the Deck. Proton Pulse accepts .zip and tar-based archives."
-      strOKButtonText="Close"
+      strTitle={extras.compatInstallFromZipTitle()}
+      strDescription={extras.compatInstallFromZipDescription()}
+      strOKButtonText={t().common.close}
       onOK={onClose}
       onCancel={onClose}
     >
@@ -314,7 +322,7 @@ function InstallArchiveModal({
           type="text"
           value={archivePath}
           onChange={(e) => setArchivePath(e.target.value)}
-          placeholder="/home/deck/Downloads/GE-Proton8-3.tar.gz"
+          placeholder={t().compatTools.zipPlaceholder}
           style={{
             width: '100%',
             boxSizing: 'border-box',
@@ -327,10 +335,10 @@ function InstallArchiveModal({
           }}
         />
         <div style={{ fontSize: 11, color: '#8fa9bf', lineHeight: 1.45 }}>
-          Use this for older Proton-GE builds or custom compatibility tool archives you already copied onto the Deck.
+          {extras.compatInstallArchiveHint()}
         </div>
         <DialogButton onClick={() => archivePath.trim() && onInstall(archivePath.trim())} disabled={!archivePath.trim()}>
-          Install Archive
+          {extras.compatInstallArchive()}
         </DialogButton>
       </div>
     </ConfirmModal>
@@ -404,6 +412,7 @@ function CompactActionButton({
 }
 
 export function SettingsTab() {
+  const extras = t().extras!;
   const [autoUpdateCurrent, setAutoUpdateCurrent] = useState(() => getSetting(AUTO_UPDATE_KEY, false));
   const [managerState, setManagerState] = useState<ProtonGeManagerState | null>(null);
   const [loadingManager, setLoadingManager] = useState(true);
@@ -445,7 +454,7 @@ export function SettingsTab() {
       if (showSuccessToast) {
         toaster.toast({
           title: 'Proton Pulse',
-          body: 'Compatibility tools refreshed.',
+          body: extras.compatRefreshed(),
         });
       }
     } catch (error) {
@@ -453,7 +462,7 @@ export function SettingsTab() {
       void logFrontendEvent('ERROR', 'Failed to load Proton-GE manager state', {
         error: error instanceof Error ? error.message : String(error),
       });
-      toaster.toast({ title: 'Proton Pulse', body: 'Failed to load Proton-GE manager state.' });
+      toaster.toast({ title: 'Proton Pulse', body: extras.compatLoadFailed() });
     } finally {
       setLoadingManager(false);
     }
@@ -488,7 +497,7 @@ export function SettingsTab() {
             ? `${formatByteCount(installStatus.downloaded_bytes)} / ${formatByteCount(installStatus.total_bytes)}`
             : release.asset_size
               ? `${formatByteCount(installStatus.downloaded_bytes)} / ${formatByteCount(release.asset_size)}`
-              : `${installStatus.stage === 'finalizing' ? 'Finalizing...' : installStatus.stage === 'extracting' ? 'Extracting...' : 'Downloading...'}`
+              : `${installStatus.stage === 'finalizing' ? extras.compatFinalizing() : installStatus.stage === 'extracting' ? extras.compatExtracting() : extras.compatDownloading()}`
         )
         : undefined;
 
@@ -508,10 +517,10 @@ export function SettingsTab() {
         progressLabel: isInstalling && progressRatio !== null ? `${Math.round(progressRatio * 100)}%` : undefined,
         etaLabel: isInstalling ? formatEta(etaSeconds) : undefined,
         statusLabel: isInstalling
-          ? 'Installing'
+          ? t().compatTools.installing
           : releaseStatusLabel(release, installedReleaseTags, managerState.current_release?.tag_name),
         statusStyle: releaseStatusTone(release, installedReleaseTags, managerState.current_release?.tag_name),
-        actionLabel: isInstalling ? 'Cancel' : installed ? 'Uninstall' : 'Install',
+        actionLabel: isInstalling ? t().common.cancel : installed ? t().compatTools.uninstall : t().compatTools.install,
         actionDanger: isInstalling || installed,
         actionDisabled: isInstalling ? false : installingTag !== null || removingTool !== null,
         onAction: installed && matchedTool && matchedTool.source !== 'valve' && isManagedGeTool(matchedTool)
@@ -523,6 +532,7 @@ export function SettingsTab() {
     });
 
     const installedOnlyRows = managerState.installed_tools
+      .filter((tool) => isProtonFamilyTool(tool))
       .filter((tool) => !matchedDirectories.has(tool.directory_name))
       .filter((tool) => tool.source !== 'valve')
       .map((tool) => ({
@@ -536,20 +546,20 @@ export function SettingsTab() {
         displayName: tool.display_name,
         versionLabel: isManagedGeTool(tool)
           ? formatReleaseVersion(tool.internal_name || tool.display_name || tool.directory_name)
-          : 'Custom',
+          : extras.compatCustom(),
         versionMeta: undefined,
         progressRatio: null,
         progressLabel: undefined,
         etaLabel: undefined,
         statusLabel: removingTool === tool.directory_name
-          ? 'Removing'
+          ? t().compatTools.removing
           : tool.managed_slot === 'latest'
-            ? 'Latest Slot'
+            ? extras.compatLatestSlot()
             : isManagedGeTool(tool)
-              ? 'Installed'
-            : 'Custom',
+              ? t().compatTools.installed
+            : extras.compatCustom(),
         statusStyle: installedToolStatusTone(tool),
-        actionLabel: removingTool === tool.directory_name ? 'Removing...' : 'Uninstall',
+        actionLabel: removingTool === tool.directory_name ? t().compatTools.removing : t().compatTools.uninstall,
         actionDanger: true,
         actionDisabled: removingTool !== null || installingTag !== null,
         onAction: tool.source !== 'valve'
@@ -794,14 +804,14 @@ export function SettingsTab() {
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'start', gap: 16, marginBottom: 14 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff' }}>
-              Compatibility Tools
+              {t().compatTools.title}
             </div>
             <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 4, maxWidth: 520, lineHeight: 1.45 }}>
-              Proton tool management.
+              {t().compatTools.description}
             </div>
           </div>
           <CompactActionButton
-            label={loadingManager ? 'Refreshing...' : 'Refresh'}
+            label={loadingManager ? t().compatTools.refreshing : t().compatTools.refresh}
             onClick={() => {
               setAutoUpdateTriggered(false);
               void refreshManager(true, true);
@@ -823,8 +833,8 @@ export function SettingsTab() {
         >
           <div style={{ ...focusClipRowStyle(), margin: '0 10px 8px' }}>
             <ToggleField
-              label="Auto-update Current Version"
-              description="Keep the pinned latest Proton-GE release installed whenever Settings opens and refreshes."
+              label={extras.compatAutoUpdateCurrentVersion()}
+              description={t().compatTools.autoUpdateDescription}
               checked={autoUpdateCurrent}
               onChange={handleAutoUpdateToggle}
             />
@@ -832,10 +842,10 @@ export function SettingsTab() {
           <div style={{ padding: '4px 18px 0' }}>
             {installedCompatibilityRows.length > 0 ? (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#dbe8f4', marginBottom: 8 }}>Installed</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#dbe8f4', marginBottom: 8 }}>{t().compatTools.installed}</div>
                 <div style={{ ...compactCatalogStyle(), padding: '0 12px', borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}>
                   {installedCompatibilityRows.map((row, index) => {
-                    const menuLabel = row.removing ? 'Removing...' : 'Actions';
+                    const menuLabel = row.removing ? t().compatTools.removing : t().compatTools.actions;
                     return (
                       <div
                         key={row.key}
@@ -851,7 +861,7 @@ export function SettingsTab() {
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, color: '#eef7ff', fontWeight: 700, lineHeight: 1.35 }}>
                             {row.displayName}
-                            {row.statusLabel === 'Latest Slot' ? ' (Latest)' : ''}
+                            {row.statusLabel === extras.compatLatestSlot() ? ` (${extras.compatLatest()})` : ''}
                           </div>
                           <div style={{ fontSize: 11, color: '#d7e7f6', marginTop: 2, lineHeight: 1.35 }}>
                             {row.versionLabel}
@@ -875,7 +885,7 @@ export function SettingsTab() {
                               showContextMenu(
                                 <Menu label={row.displayName}>
                                   <MenuItem onClick={row.onAction}>
-                                    {menuLabel === 'Removing...' ? 'Removing...' : row.actionLabel ?? 'Uninstall'}
+                                    {menuLabel === t().compatTools.removing ? t().compatTools.removing : row.actionLabel ?? t().compatTools.uninstall}
                                   </MenuItem>
                                 </Menu>,
                                 e.currentTarget ?? window,
@@ -892,11 +902,11 @@ export function SettingsTab() {
               </div>
             ) : null}
 
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#dbe8f4', marginBottom: 8 }}>Not Installed</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#dbe8f4', marginBottom: 8 }}>{extras.compatNotInstalled()}</div>
             <div style={{ ...compactCatalogStyle(), padding: '0 12px', borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}>
               {!managerState || availableCompatibilityRows.length === 0 ? (
                 <div style={{ fontSize: 11, color: '#8fa9bf', padding: '14px 0' }}>
-                  {loadingManager ? 'Loading release feed...' : 'No Proton-GE releases were returned from GitHub.'}
+                  {loadingManager ? extras.compatLoadingReleaseFeed() : extras.compatNoReleasesReturned()}
                 </div>
               ) : (
                 visibleAvailableCompatibilityRows.map((row, index) => {
@@ -940,10 +950,10 @@ export function SettingsTab() {
                                   {row.progressLabel ?? `${progressPercent}%`}
                                 </div>
                                 <div style={{ fontSize: 10, color: '#7f9bb2', marginTop: 4, whiteSpace: 'nowrap' }}>
-                                  {row.versionMeta ?? 'Downloading...'}
+                                  {row.versionMeta ?? extras.compatDownloading()}
                                 </div>
                                 <div style={{ fontSize: 10, color: '#6faee8', marginTop: 2, whiteSpace: 'nowrap' }}>
-                                  {row.etaLabel ?? 'estimating...'}
+                                  {row.etaLabel ?? t().compatTools.estimating}
                                 </div>
                               </div>
                             </div>

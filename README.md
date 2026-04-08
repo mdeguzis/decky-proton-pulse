@@ -1,12 +1,12 @@
 # Decky Proton Pulse
 
-A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for the Steam Deck that pulls [ProtonDB](https://www.protondb.com) compatibility reports for any game in your library, scores them against your hardware, and lets you apply the most relevant launch options in a couple of button presses.
+A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for Steam Deck that pulls [ProtonDB](https://www.protondb.com) reports for the game you are looking at, scores them against your hardware, and lets you apply the useful launch options without typing them by hand.
 
 ---
 
 ## Acknowledgments & Credits
 
-Proton Pulse would not exist without the work of the open-source projects below. A sincere and prominent thank you to each of these developers and communities — components, patterns, and ideas were directly borrowed from, inspired by, or built on top of their code.
+Proton Pulse would not exist without the open-source projects below. Parts of this plugin were borrowed from them directly, and plenty more was shaped by their ideas and prior work.
 
 | Project | Author | License |
 |---|---|---|
@@ -21,52 +21,85 @@ If you find Proton Pulse useful, please consider starring or contributing to the
 
 ## What it does
 
-Getting Proton launch options right for a specific game usually involves searching ProtonDB, digging through a dozen reports, figuring out which ones were written by people with similar hardware, and then manually copying the flags into Steam's Properties dialog. Proton Pulse handles that workflow from the Steam Deck UI:
+Getting Proton launch options right for a game usually means opening ProtonDB, reading a pile of reports, guessing which ones match your hardware, and then copying flags into Steam by hand. Proton Pulse does that work from the Steam Deck UI:
 
 1. Open the plugin from the **Quick Access sidebar** or navigate to a game in your library.
 2. The plugin fetches ProtonDB reports and scores them against your GPU, driver, and Proton version.
-3. Pick a report and press **Apply** — the launch options are written directly to that game via the Steam CEF API. No typing required.
+3. Pick a report and press **Apply**. Proton Pulse writes the launch options straight to that game through Steam's CEF API.
 
-You can also review or clear applied options from the plugin's sidebar panel.
+You can also review, edit, or clear the options later from the sidebar.
 
 ## Features
 
-* **ProtonDB report fetching** — live summary and detailed reports pulled from the ProtonDB API with retry logic and caching
-* **Hardware-aware scoring** — reports ranked by relevance using GPU vendor, driver version, Proton build, report age, and compatibility tier
-* **System detection** — automatic detection of CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions
-* **Full-screen report modal** — browse scored reports with GPU filter tabs (Nvidia / AMD / Other), apply or clear launch options without leaving Game Mode
-* **ProtonDB badge** — displays the game's ProtonDB compatibility tier
-* **Report card view** — detailed per-report view with scoring breakdown
-* **Log viewer** — built-in log viewer with auto-scroll and polling for debug output
-* **Sidebar panel** — settings, log viewer, and plugin controls accessible from the Quick Access menu
-* **Library route patching** — hooks into `/library/app/:appid` via Decky's `routerHook`
-* **Rotating debug logs** — separate rotating file handler for troubleshooting
-* **Python backend** — structured logging, game guard, full test suite
+* **ProtonDB report fetching** — pulls from cached, mirrored, and live ProtonDB sources so the plugin still has options when one source comes up empty
+* **Hardware-aware scoring** — ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier
+* **Launch option management** — apply, review, edit, and clear launch options directly from the Steam Deck UI
+* **Saved configurations** — keep reusable per-game setups with custom variables and a live launch preview
+* **Compatibility tool management** — browse, install, refresh, and manage Proton and GE versions without leaving the plugin
+* **Detailed report browsing** — open full report cards with filters, diagnostics, vote counts, and score breakdowns
+* **ProtonDB contribution helpers** — vote on reports and prep system info for ProtonDB submissions from inside the plugin
+* **ProtonDB badge** — shows the game's ProtonDB tier at a glance
+* **System detection** — detects CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions automatically
+* **Sidebar tools** — quick access to settings, logs, cache tools, and plugin controls from the Decky panel
+* **Translations** — interface support for 10 languages, with coverage tracked from generated build metrics
+* **Diagnostics and logging** — built-in logs, cache inspection, performance metrics, and backend troubleshooting support
 
 ## Translation Coverage
 
-Proton Pulse supports 10 languages. Translation coverage is enforced at build time (90% minimum). Run `pnpm run check-translations` for the full report.
+<!-- translation-coverage:start -->
+Generated from [metrics/translation-coverage.json](metrics/translation-coverage.json) during `pnpm run build`.
 
-| Language | Code | Coverage |
-|---|---|---|
-| English | en | 100% (canonical) |
-| Deutsch | de | 99% |
-| Espanol | es | 98% |
-| Francais | fr | 96% |
-| Japanese | ja | 99% |
-| Korean | ko | 99% |
-| Portugues (BR) | pt-BR | 98% |
-| Russian | ru | 100% |
-| Turkce | tr | 100% |
-| Simplified Chinese | zh-CN | 100% |
+Proton Pulse supports 10 languages. Translation coverage is measured during build and can be enforced with `pnpm run check-translations` (90% minimum).
+
+| Language | Code | Coverage | Status |
+|---|---|---|---|
+| English | en | 100.0% (canonical) | canonical |
+| Deutsch | de | 100.0% | pass |
+| Español | es | 100.0% | pass |
+| Français | fr | 100.0% | pass |
+| 日本語 | ja | 100.0% | pass |
+| 한국어 | ko | 100.0% | pass |
+| Português (BR) | pt-BR | 100.0% | pass |
+| Русский | ru | 100.0% | pass |
+| Türkçe | tr | 100.0% | pass |
+| 简体中文 | zh-CN | 100.0% | pass |
+<!-- translation-coverage:end -->
 
 Want to help translate? See `src/lib/translations/` for the translation files.
 
 ## Installation
 
-> Installation from the Decky Plugin Marketplace is pending publication. For now, build and deploy from source.
+Proton Pulse currently supports two installation routes:
 
-See the [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) for setup and deployment instructions.
+### Install From Source
+
+Use this route if you want to build locally, tweak the plugin, or deploy straight to your Steam Deck.
+
+```bash
+git clone https://github.com/mdeguzis/decky-proton-pulse.git
+cd decky-proton-pulse
+make setup
+make build
+DECK_IP=192.168.1.x make deploy
+```
+
+Useful variants:
+
+```bash
+make watch
+DECK_IP=192.168.1.x make deploy-reload
+```
+
+See the [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) for the full setup and deployment workflow.
+
+### Install From Release ZIP
+
+Use this route if you just want a published build and do not need the source tree.
+
+1. Download the latest plugin ZIP from the [Releases page](https://github.com/mdeguzis/decky-proton-pulse/releases).
+2. Open Decky Loader on your Steam Deck.
+3. Use Decky Loader's manual ZIP install flow and select the downloaded release archive.
+4. Restart Decky Loader or Steam if the plugin does not appear immediately.
 
 ### Quick Start
 

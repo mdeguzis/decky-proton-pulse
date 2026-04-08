@@ -1,0 +1,93 @@
+[
+  {
+    "group": "manage-game",
+    "key": "default",
+    "title": "Manage Game Default",
+    "caption": "Default loaded Manage Game view for a supported library title.",
+    "instructions": "Open a game in the Steam library and wait for the Manage Game view to finish loading."
+  },
+  {
+    "group": "manage-game",
+    "key": "report-detail",
+    "title": "Manage Game Report Detail",
+    "caption": "Manage Game detail view showing the selected report preview and actions.",
+    "instructions": "From Manage Game, open one report and pause on its detail view."
+  },
+  {
+    "group": "manage-game",
+    "key": "report-action-menu",
+    "title": "Manage Game Report Action Menu",
+    "caption": "Action menu for the selected report with edit, submit, and clear actions.",
+    "instructions": "From the report detail view, open the action menu that shows Edit, Submit, Clear, and Cancel."
+  },
+  {
+    "group": "manage-game",
+    "key": "edit-modal",
+    "title": "Manage Game Edit Modal",
+    "caption": "Edit modal used to change RAM, notes, and other report-derived launch settings.",
+    "instructions": "From the report action menu, choose Edit and capture the modal with fields visible."
+  },
+  {
+    "group": "manage-configurations",
+    "key": "default",
+    "title": "Manage Configurations Default",
+    "caption": "Manage Configurations screen with profile controls and launch option toggles.",
+    "instructions": "Open the Manage Configurations page from the plugin sidebar."
+  },
+  {
+    "group": "compatibility-tools",
+    "key": "tab",
+    "title": "Compatibility Tools Tab",
+    "caption": "Compatibility tools screen showing discovered Proton versions and actions.",
+    "instructions": "Open the Compatibility Tools page from the plugin navigation."
+  },
+  {
+    "group": "compatibility-tools",
+    "key": "release-picker",
+    "title": "Compatibility Tools Release Picker",
+    "caption": "Compatibility tools picker focused on Proton release selection.",
+    "instructions": "Open the Compatibility Tools page and focus the current Proton release dropdown."
+  },
+  {
+    "group": "logs",
+    "key": "tab",
+    "title": "Logs Tab",
+    "caption": "Logs screen with focused scroll area and actions visible.",
+    "instructions": "Open the Logs tab with recent log content visible."
+  },
+  {
+    "group": "settings",
+    "key": "general",
+    "title": "Settings General",
+    "caption": "Main settings page showing the general configuration controls.",
+    "instructions": "Open the Settings tab and keep the default general settings section visible."
+  },
+  {
+    "group": "settings",
+    "key": "cache-manager-modal",
+    "title": "Cache Manager Modal",
+    "caption": "Cache manager modal used to inspect and clear plugin cache state.",
+    "instructions": "Open the Cache Manager modal from Settings."
+  },
+  {
+    "group": "settings",
+    "key": "language-selector",
+    "title": "Settings Language Selector",
+    "caption": "Settings flow while changing the plugin language and verifying translated UI.",
+    "instructions": "Open Settings and move to the language control or translated state you want documented."
+  },
+  {
+    "group": "issue-reporting",
+    "key": "category-menu",
+    "title": "Issue Reporting Category Menu",
+    "caption": "Issue reporting menu used to choose the kind of problem being reported.",
+    "instructions": "Open the issue reporting flow until the category menu with Game Report, Missing ProtonDB Reports, Plugin Issue, and Other is visible."
+  },
+  {
+    "group": "about",
+    "key": "tab",
+    "title": "About Tab",
+    "caption": "About page with project summary and project links.",
+    "instructions": "Open the About tab from the plugin navigation."
+  }
+]

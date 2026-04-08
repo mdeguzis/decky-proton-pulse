@@ -38,9 +38,12 @@ const VENDOR_CATEGORIES: Category[] = ['nvidia', 'amd', 'intel'];
 
 type GpuFilter = GpuVendor | 'all';
 const GPU_FILTER_ORDER: GpuFilter[] = ['all', 'nvidia', 'amd', 'intel'];
-const GPU_FILTER_LABELS: Record<GpuFilter, string> = {
-  all: 'All', nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel', other: 'Other',
-};
+function gpuFilterLabel(filter: GpuFilter): string {
+  const extras = t().extras!;
+  if (filter === 'all') return extras.all();
+  if (filter === 'other') return extras.other();
+  return filter.toUpperCase() === 'AMD' ? 'AMD' : filter === 'nvidia' ? 'NVIDIA' : 'Intel';
+}
 
 function categoryLabel(cat: Category): string {
   return t().configManager.toggleCategories[cat];
@@ -62,6 +65,7 @@ function isCategoryHidden(cat: Category, gpuFilter: GpuFilter): boolean {
 }
 
 export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, onSave, closeModal }: Props) {
+  const extras = t().extras!;
   const isShortcut = appId ? isSteamShortcutApp(appId) : false;
   const parsed = existingConfig
     ? parseLaunchOptions(existingConfig.launchOptions)
@@ -301,7 +305,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               </div>
               {appId && (
                 <div style={{ fontSize: 9, color: '#7a9bb5' }}>
-                  {isShortcut ? 'Non-Steam shortcut' : `AppID ${appId}`}
+                  {isShortcut ? extras.nonSteamShortcut() : extras.appIdLabel(appId)}
                 </div>
               )}
             </div>
@@ -360,7 +364,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           <Dropdown
             rgOptions={GPU_FILTER_ORDER.map((f) => ({
               data: f,
-              label: GPU_FILTER_LABELS[f],
+              label: gpuFilterLabel(f),
             }))}
             selectedOption={gpuFilter}
             onChange={(opt) => setGpuFilter(opt.data as GpuFilter)}
@@ -470,13 +474,13 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
             {customVars.map((cv, i) => (
               <Focusable key={i} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
                 <TextField
-                  label="KEY"
+                  label={extras.customVarKey()}
                   value={cv.key}
                   onChange={(e) => updateCustomVar(i, 'key', e.target.value)}
                 />
                 <span style={{ color: '#7a9bb5' }}>=</span>
                 <TextField
-                  label="VALUE"
+                  label={extras.customVarValue()}
                   value={cv.value}
                   onChange={(e) => updateCustomVar(i, 'value', e.target.value)}
                 />

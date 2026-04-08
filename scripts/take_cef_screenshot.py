@@ -8,6 +8,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from lib.screenshot_catalog import ScreenshotSpec, register_screenshot
+
 REMOTE_PYTHON = r"""
 import asyncio
 import base64
@@ -140,6 +147,26 @@ def main() -> int:
         default="",
         help="Optional local filename base, e.g. manage-this-game",
     )
+    parser.add_argument(
+        "--group",
+        default="",
+        help="Logical screenshot group, e.g. manage-game or settings",
+    )
+    parser.add_argument(
+        "--shot-key",
+        default="",
+        help="Stable key within the group, e.g. default or loading",
+    )
+    parser.add_argument(
+        "--title",
+        default="",
+        help="Optional human-readable title for the screenshot gallery",
+    )
+    parser.add_argument(
+        "--caption",
+        default="",
+        help="Optional caption to include when publishing to the wiki",
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir).resolve()
@@ -172,6 +199,19 @@ def main() -> int:
     run(["ssh", ssh_target, "rm", "-f", remote_path])
 
     local_path = output_dir / local_name
+    if args.group and args.shot_key:
+        entry = register_screenshot(
+            output_dir,
+            local_path,
+            ScreenshotSpec(
+                group=args.group,
+                shot_key=args.shot_key,
+                shot_title=args.title,
+                caption=args.caption,
+            ),
+        )
+        local_path = output_dir / entry.relative_path
+        print(f"Registered screenshot as: {entry.group}/{entry.shot_key}")
     print(f"Saved screenshot locally to: {local_path}")
     print("Copying screenshot to clipboard...")
     clipboard_command = copy_to_clipboard(local_path)

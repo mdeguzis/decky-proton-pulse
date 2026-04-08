@@ -32,6 +32,7 @@ function relativeTime(timestamp: number): string {
 }
 
 export function ManageTab({ appId, appName, gpuVendor }: Props) {
+  const extras = t().extras!;
   const [configs, setConfigs] = useState<TrackedConfig[]>([]);
   const [resolvedNames, setResolvedNames] = useState<Record<number, string>>({});
 
@@ -98,7 +99,7 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
     if (isSteamShortcutApp(config.appId)) {
       toaster.toast({
         title: 'Proton Pulse',
-        body: 'Non-Steam shortcuts cannot be submitted to ProtonDB.',
+        body: extras.shortcutCannotSubmit(),
       });
       return;
     }
@@ -178,7 +179,7 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
           const name = displayName(config);
           const isShortcut = isSteamShortcutApp(config.appId);
           const metaParts = [
-            isShortcut ? 'Non-Steam shortcut' : `AppID ${config.appId}`,
+            isShortcut ? extras.nonSteamShortcut() : extras.appIdLabel(config.appId),
             config.protonVersion,
             t().configManager.appliedAgo(relativeTime(config.appliedAt)),
           ].filter(Boolean).join(' · ');
