@@ -22,6 +22,7 @@ import { pageState, dispatchNavigate, rememberReturnPath } from './lib/pageState
 import type { PageId } from './lib/pageState';
 import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextMenu';
 import { getSetting, setSetting } from './lib/settings';
+import { NOTIFICATIONS_ENABLED_KEY } from './lib/notify';
 import { logFrontendEvent, callWithTimeout } from './lib/logger';
 import { TRANSLATIONS_LOADED } from './lib/translations';
 import { useLanguage, t } from './lib/i18n';
@@ -51,6 +52,7 @@ function Content() {
   const extras = t().extras!;
   const [version, setVersion] = useState('...');
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
 
   useEffect(() => {
     void getPluginVersionSafe()
@@ -145,6 +147,17 @@ function Content() {
               });
               setDebugEnabled(enabled);
               setSetting('debugEnabled', enabled);
+            }}
+          />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ToggleField
+            label={t().sidebar.notifications}
+            description={t().sidebar.notificationsDesc}
+            checked={notificationsEnabled}
+            onChange={(enabled) => {
+              setNotificationsEnabled(enabled);
+              setSetting(NOTIFICATIONS_ENABLED_KEY, enabled);
             }}
           />
         </PanelSectionRow>

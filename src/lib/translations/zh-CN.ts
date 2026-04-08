@@ -28,6 +28,8 @@ export const zhCN: TranslationTree = {
     viewLogsDesc: '打开实时插件日志查看器',
     debugLogs: '调试日志',
     debugLogsDesc: '无需打开设置即可启用详细日志',
+    notifications: '通知',
+    notificationsDesc: '显示 Proton Pulse 弹窗通知和声音',
     about: (v) => `关于：Proton Pulse v${v}`,
   },
   nav: {
@@ -100,6 +102,8 @@ export const zhCN: TranslationTree = {
     autoDetected: (lang) => `自动（检测到：${lang}）`,
     debugLogs: '调试日志',
     debugLogsDescription: '启用详细调试日志记录',
+    notifications: '通知',
+    notificationsDescription: '显示 Proton Pulse 的弹窗通知和声音',
     general: '常规',
   },
   compatTools: {

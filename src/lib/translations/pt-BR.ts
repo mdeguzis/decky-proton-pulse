@@ -28,6 +28,8 @@ export const ptBR: TranslationTree = {
     viewLogsDesc: 'Abrir o visualizador de logs do plugin em tempo real',
     debugLogs: 'Logs de Depuração',
     debugLogsDesc: 'Ativar registro detalhado sem abrir as Configurações',
+    notifications: 'Notificações',
+    notificationsDesc: 'Mostrar avisos e sons do Proton Pulse',
     about: (v) => `Sobre: Proton Pulse v${v}`,
   },
   nav: {
@@ -100,6 +102,8 @@ export const ptBR: TranslationTree = {
     autoDetected: (lang) => `Auto (detectado: ${lang})`,
     debugLogs: 'Logs de Depuração',
     debugLogsDescription: 'Ativar registro de depuração detalhado',
+    notifications: 'Notificações',
+    notificationsDescription: 'Mostrar notificações e sons do Proton Pulse',
     general: 'Geral',
   },
   compatTools: {

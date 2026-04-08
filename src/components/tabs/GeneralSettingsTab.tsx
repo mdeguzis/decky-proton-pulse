@@ -4,6 +4,7 @@ import type { GamepadEvent } from '@decky/ui';
 import { callable } from '@decky/api';
 import { useEffect, useRef, useState } from 'react';
 import { getSetting, setSetting } from '../../lib/settings';
+import { NOTIFICATIONS_ENABLED_KEY } from '../../lib/notify';
 import { logFrontendEvent, callWithTimeout } from '../../lib/logger';
 import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
 import { getCacheTtlMs, setCacheTtlHours, getCacheStats } from '../../lib/cache';
@@ -126,6 +127,7 @@ function MetricsInfoBox() {
 export function GeneralSettingsTab() {
   const extras = t().extras!;
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
@@ -181,6 +183,17 @@ export function GeneralSettingsTab() {
             description={t().settings.debugLogsDescription}
             checked={debugEnabled}
             onChange={handleDebugToggle}
+          />
+        </div>
+        <div style={focusClipRowStyle()}>
+          <ToggleField
+            label={t().settings.notifications}
+            description={t().settings.notificationsDescription}
+            checked={notificationsEnabled}
+            onChange={(enabled) => {
+              setNotificationsEnabled(enabled);
+              setSetting(NOTIFICATIONS_ENABLED_KEY, enabled);
+            }}
           />
         </div>
       </div>
