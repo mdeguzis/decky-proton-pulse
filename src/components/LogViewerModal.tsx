@@ -101,38 +101,46 @@ export function LogViewerModal({ logs, entryCount, closeModal }: Props) {
               {strings.entryCount(entryCount)}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignSelf: 'flex-start' }}>
-            <Focusable style={{ display: 'flex', flexShrink: 0 }}>
-              <DialogButton
-                onClick={scrollToBottom}
-                style={{
-                  minWidth: 0,
-                  width: 'auto',
-                  maxWidth: 150,
-                  padding: '4px 10px',
-                  fontSize: 11,
-                  flex: '0 0 auto',
-                }}
-              >
-                {strings.jumpToLatest}
-              </DialogButton>
-            </Focusable>
-            <Focusable style={{ display: 'flex', flexShrink: 0 }}>
-              <DialogButton
-                onClick={handleCopy}
-                style={{
-                  minWidth: 0,
-                  width: 'auto',
-                  maxWidth: 120,
-                  padding: '4px 10px',
-                  fontSize: 11,
-                  flex: '0 0 auto',
-                }}
-              >
-                {copied ? strings.copied : strings.copyLogs}
-              </DialogButton>
-            </Focusable>
-          </div>
+          <Focusable
+            flow-children="horizontal"
+            style={{ display: 'flex', gap: 8, flexShrink: 0, alignSelf: 'flex-start' }}
+            onGamepadDirection={(evt: GamepadEvent) => {
+              // Only consume left/right here; let up/down bubble to the scroll handler
+              if (
+                evt.detail.button === GamepadButton.DIR_LEFT ||
+                evt.detail.button === GamepadButton.DIR_RIGHT
+              ) {
+                return; // let Focusable handle horizontal focus movement
+              }
+            }}
+          >
+            <DialogButton
+              onClick={scrollToBottom}
+              style={{
+                minWidth: 0,
+                width: 'auto',
+                maxWidth: 150,
+                padding: '4px 10px',
+                fontSize: 11,
+                flex: '0 0 auto',
+              }}
+            >
+              {strings.jumpToLatest}
+            </DialogButton>
+            <DialogButton
+              onClick={handleCopy}
+              style={{
+                minWidth: 0,
+                width: 'auto',
+                maxWidth: 120,
+                padding: '4px 10px',
+                fontSize: 11,
+                flex: '0 0 auto',
+              }}
+            >
+              {copied ? strings.copied : strings.copyLogs}
+            </DialogButton>
+          </Focusable>
         </div>
 
         <div

@@ -1,9 +1,9 @@
 """Backend helper for writing metrics JSON to disk.
 
-The frontend collects perf metrics (fetch timings, cache hit rates, etc)
-in-memory and periodically flushes them here via the export_metrics
-callable. Files land in ~/.config/decky-proton-pulse/metrics/ with
-timestamped filenames so you can graph them over time.
+The frontend collects perf metrics (fetch timings, cache hit rates, …)
+in memory and periodically flushes them here via the export_metrics
+callable.  Files land in ~/.config/decky-proton-pulse/metrics/ with
+timestamped names so you can track trends over time.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 logger = logging.getLogger("proton-pulse")
 
 METRICS_DIR_NAME = "metrics"
-MAX_METRICS_FILES = 50  # keep the last N dumps, prune older ones
+MAX_METRICS_FILES = 50  # hang on to the last N dumps, toss older ones
 
 
 def _metrics_dir() -> Path:
@@ -28,7 +28,7 @@ def _metrics_dir() -> Path:
 
 
 def _prune_old_files(directory: Path, keep: int = MAX_METRICS_FILES) -> int:
-    """Remove oldest metric files if we have more than `keep`."""
+    """Tidy up: remove the oldest metric files once we have more than `keep`."""
     files = sorted(directory.glob("metrics-*.json"), key=lambda p: p.stat().st_mtime)
     if len(files) <= keep:
         return 0
@@ -42,12 +42,12 @@ def _prune_old_files(directory: Path, keep: int = MAX_METRICS_FILES) -> int:
 
 
 def export_metrics_to_disk(data: str) -> bool:
-    """Write metrics JSON payload from the frontend to a timestamped file.
+    """Write the frontend's metrics JSON payload to a timestamped file.
 
-    Returns True on success, False on failure.
+    Returns True on success, False if something goes wrong.
     """
     try:
-        # validate that the data is actually JSON
+        # Make sure we actually got valid JSON before writing it out
         parsed = json.loads(data)
 
         out_dir = _metrics_dir()

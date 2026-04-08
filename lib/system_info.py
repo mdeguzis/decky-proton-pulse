@@ -1,8 +1,8 @@
 """Hardware and OS detection helpers for Proton Pulse.
 
-Each reader is a standalone function so one failing detector doesn't
-take down the rest.  The ``collect_system_info`` orchestrator runs them
-all and returns a single dict for the frontend.
+Each reader is its own function so one failing detector doesn't drag
+down the rest.  The ``collect_system_info`` orchestrator runs them all
+and hands back a single dict for the frontend.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from .plugin_utils import system_command_env
 
 
 def read_cpu() -> str | None:
-    """Pull the CPU model name from ``/proc/cpuinfo``."""
+    """Grab the CPU model name from ``/proc/cpuinfo``."""
     with open("/proc/cpuinfo", "r", encoding="utf-8") as f:
         for line in f:
             if line.startswith("model name"):
@@ -26,7 +26,7 @@ def read_cpu() -> str | None:
 
 
 def read_ram_gb() -> int | None:
-    """Read total RAM in GB from ``/proc/meminfo``."""
+    """Figure out total RAM in GB from ``/proc/meminfo``."""
     with open("/proc/meminfo", "r", encoding="utf-8") as f:
         for line in f:
             if line.startswith("MemTotal"):
@@ -36,11 +36,10 @@ def read_ram_gb() -> int | None:
 
 
 def read_gpu() -> tuple[str | None, str | None]:
-    """Parse ``lspci`` output for the graphics card name and vendor.
+    """Ask ``lspci`` for the graphics card name and vendor.
 
-    The GPU shows up as *VGA compatible controller* on most systems, but
-    discrete cards sometimes show as *3D controller* or *display
-    controller* instead.
+    Most GPUs show up as *VGA compatible controller*, but discrete cards
+    sometimes appear as *3D controller* or *display controller* instead.
     """
     result = subprocess.run(
         ["lspci"],
@@ -61,7 +60,7 @@ def read_gpu() -> tuple[str | None, str | None]:
 
 
 def detect_gpu_vendor(gpu_string: str) -> str:
-    """Match a GPU name string to a vendor tag."""
+    """Turn a GPU name string into a short vendor tag."""
     lower = gpu_string.lower()
     if any(k in lower for k in ("nvidia", "geforce", "rtx", "gtx", "quadro")):
         return "nvidia"
@@ -73,7 +72,7 @@ def detect_gpu_vendor(gpu_string: str) -> str:
 
 
 def read_driver_version() -> str | None:
-    """Try nvidia-smi first, fall back to the DRM sysfs node."""
+    """Try nvidia-smi first; if that's not around, fall back to the DRM sysfs node."""
     try:
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"],
@@ -97,7 +96,7 @@ def read_driver_version() -> str | None:
 
 
 def read_kernel() -> str | None:
-    """Return the running kernel version via ``uname -r``."""
+    """Get the running kernel version via ``uname -r``."""
     result = subprocess.run(
         ["uname", "-r"],
         capture_output=True,
@@ -110,7 +109,7 @@ def read_kernel() -> str | None:
 
 
 def read_distro() -> str | None:
-    """Read the distribution pretty-name from ``/etc/os-release``."""
+    """Grab the distro pretty-name from ``/etc/os-release``."""
     try:
         with open("/etc/os-release", encoding="utf-8") as f:
             for line in f:
@@ -122,7 +121,7 @@ def read_distro() -> str | None:
 
 
 def read_custom_proton() -> str | None:
-    """List custom Proton installs in ``compatibilitytools.d``."""
+    """See what custom Proton builds live in ``compatibilitytools.d``."""
     compat_dir = os.path.join(
         decky.DECKY_USER_HOME, ".steam", "root", "compatibilitytools.d"
     )
@@ -139,8 +138,8 @@ def read_custom_proton() -> str | None:
 def collect_system_info() -> dict[str, object]:
     """Detect hardware and OS info for the frontend.
 
-    Each field is read independently so one failing detector doesn't
-    take down the whole thing.
+    Each field is read on its own so a single failing detector doesn't
+    take the whole thing down.
     """
     info: dict[str, object] = {
         "cpu": None,

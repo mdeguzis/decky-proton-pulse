@@ -1,7 +1,7 @@
 """Low-level utilities shared across the plugin backend.
 
-Functions here have no dependency on Plugin state -- they're pure helpers
-for environment sanitisation and archive handling.
+Nothing here depends on Plugin state — these are pure helpers for
+cleaning up the environment and safely unpacking archives.
 """
 
 from __future__ import annotations
@@ -13,17 +13,17 @@ from pathlib import Path
 
 
 def system_command_env() -> dict[str, str]:
-    """Build a clean env for shelling out to system tools.
+    """Build a clean env dict for shelling out to system tools.
 
-    Decky uses PyOxidizer to bundle its own Python runtime, which means
+    Decky bundles its own Python via PyOxidizer, which means
     LD_LIBRARY_PATH points at bundled OpenSSL/readline instead of the
-    system versions.  If that leaks into subprocess calls, curl dies with
+    system copies.  If that leaks into subprocess calls, curl dies with
     ``OPENSSL_3.2.0 not found`` (decky-loader#729) and bash hits
     ``undefined symbol: rl_trim_arg_from_keyseq`` (#756).  The SSL cert
-    vars point at the bundled CA bundle which system curl can't use either.
+    vars point at the bundled CA bundle that system curl can't use either.
 
     Stripping all of these lets lspci, curl, uname, and friends find
-    their own libs like normal.
+    their own libs the normal way.
     """
     env = os.environ.copy()
     for key in (
@@ -40,11 +40,11 @@ def system_command_env() -> dict[str, str]:
 
 
 def extract_archive_safely(archive_path: Path, extract_dir: Path) -> None:
-    """Unpack a zip or tar, ensuring nothing escapes *extract_dir*.
+    """Unpack a zip or tar, making sure nothing escapes *extract_dir*.
 
-    Malicious archives can contain entries with paths like
-    ``../../etc/passwd`` that write outside where you'd expect.  Every
-    member path is resolved and checked before extracting anything.
+    Malicious archives can sneak in entries with paths like
+    ``../../etc/passwd`` that write outside where you'd expect.  We
+    resolve and check every member path before extracting anything.
     """
     extract_root = extract_dir.resolve()
 

@@ -10,10 +10,10 @@ Cache layout::
         _meta/
             <url_hash>.json   # {etag, last_modified, fetched_at}
 
-Each cached file has a companion metadata entry that stores the ETag
-(or Last-Modified) returned by the CDN so subsequent fetches can use
-``If-None-Match`` / ``If-Modified-Since`` to avoid re-downloading
-unchanged data.
+Each cached file has a companion metadata entry that remembers the ETag
+(or Last-Modified) the CDN sent back, so the next fetch can use
+``If-None-Match`` / ``If-Modified-Since`` and skip re-downloading data
+that hasn't changed.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from typing import Any
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
-DEFAULT_TTL = 3600  # 1 hour -- data older than this triggers a revalidation
+DEFAULT_TTL = 3600  # 1 hour — anything older than this triggers a revalidation
 
 
 def _cache_root() -> Path:
@@ -42,7 +42,7 @@ def _meta_dir() -> Path:
 
 
 def _url_hash(url: str) -> str:
-    # Truncated SHA-256 -- just needs to be collision-resistant enough for filenames
+    # Truncated SHA-256 — just needs to be unique enough for filenames
     return hashlib.sha256(url.encode()).hexdigest()[:16]
 
 
@@ -50,14 +50,14 @@ def _url_hash(url: str) -> str:
 
 
 def cache_path_for(app_id: str, filename: str) -> Path:
-    """Return the on-disk path for a cached CDN file (creates parent dir)."""
+    """Where a cached CDN file lives on disk (creates the parent dir if needed)."""
     d = _cache_root() / app_id
     d.mkdir(parents=True, exist_ok=True)
     return d / filename
 
 
 def read_cached(app_id: str, filename: str) -> Any | None:
-    """Read a cached JSON file, or *None* if missing/corrupt."""
+    """Read a cached JSON file, or *None* if it's missing or corrupt."""
     p = cache_path_for(app_id, filename)
     if not p.exists():
         decky.logger.debug(f"Cache miss (not on disk): {app_id}/{filename}")
@@ -72,16 +72,16 @@ def read_cached(app_id: str, filename: str) -> Any | None:
 
 
 def write_cached(app_id: str, filename: str, data: Any) -> None:
-    """Write JSON data to the cache."""
+    """Stash JSON data into the cache."""
     p = cache_path_for(app_id, filename)
     p.write_text(json.dumps(data, separators=(",", ":")))
     decky.logger.debug(f"Cache write: {app_id}/{filename} ({p})")
 
 
 def get_meta(url: str) -> dict[str, Any]:
-    """Return stored metadata (etag, fetched_at) for a URL."""
-    # Meta files are keyed by URL hash, not by app_id, so the same URL
-    # always maps to the same metadata file regardless of caller context.
+    """Look up stored metadata (etag, fetched_at, …) for a URL."""
+    # Meta files are keyed by URL hash, not app_id, so the same URL
+    # always maps to the same metadata file no matter who's asking.
     p = _meta_dir() / f"{_url_hash(url)}.json"
     if not p.exists():
         return {}
@@ -92,9 +92,9 @@ def get_meta(url: str) -> dict[str, Any]:
 
 
 def set_meta(url: str, *, etag: str | None = None, last_modified: str | None = None) -> None:
-    """Persist cache metadata for a URL."""
+    """Save cache metadata for a URL."""
     p = _meta_dir() / f"{_url_hash(url)}.json"
-    # fetched_at is wall-clock time used by is_fresh() for TTL comparison
+    # fetched_at is wall-clock time — is_fresh() uses it for TTL checks
     p.write_text(json.dumps({
         "etag": etag,
         "last_modified": last_modified,
@@ -103,7 +103,7 @@ def set_meta(url: str, *, etag: str | None = None, last_modified: str | None = N
 
 
 def is_fresh(url: str, ttl: int = DEFAULT_TTL) -> bool:
-    """Return True if the cached data for *url* is younger than *ttl* seconds."""
+    """Is the cached data for *url* younger than *ttl* seconds?"""
     meta = get_meta(url)
     fetched_at = meta.get("fetched_at")
     if fetched_at is None:
@@ -116,7 +116,7 @@ def is_fresh(url: str, ttl: int = DEFAULT_TTL) -> bool:
 
 
 def conditional_headers(url: str) -> list[str]:
-    """Build curl ``-H`` values for conditional requests (ETag / Last-Modified)."""
+    """Build curl ``-H`` flags for conditional requests (ETag / Last-Modified)."""
     meta = get_meta(url)
     headers: list[str] = []
     if meta.get("etag"):

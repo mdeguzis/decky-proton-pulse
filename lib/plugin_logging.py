@@ -11,10 +11,10 @@ import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 def sync_set_log_level(
     level: str, debug_handler_ref: list[logging.Handler | None]
 ) -> bool:
-    """Set the log level on *decky.logger*.
+    """Adjust the log level on *decky.logger*.
 
-    *debug_handler_ref* is retained for backward-compatible callers, but
-    Proton Pulse no longer mirrors DEBUG output into a separate file.
+    *debug_handler_ref* is still here for backward-compatible callers,
+    but we no longer mirror DEBUG output into a separate file.
     """
     valid = {
         "DEBUG": logging.DEBUG,
@@ -44,7 +44,7 @@ def sync_set_log_level(
 
 
 def _disable_debug_log(debug_handler_ref: list[logging.Handler | None]) -> None:
-    """Remove any legacy debug handler if one somehow exists."""
+    """Clean up any leftover legacy debug handler if one somehow stuck around."""
     handler = debug_handler_ref[0]
     if handler is None:
         return
@@ -56,8 +56,8 @@ def _disable_debug_log(debug_handler_ref: list[logging.Handler | None]) -> None:
 def get_log_contents() -> str:
     """Grab the tail of the main plugin log.
 
-    The frontend LogViewer polls this every few seconds. Cap at 200
-    lines so it doesn't send a ton of text over the callable bridge.
+    The frontend LogViewer polls this every few seconds.  We cap it at
+    200 lines so we're not shoving a novel over the callable bridge.
     """
     chunks: list[str] = []
 
@@ -76,10 +76,10 @@ def get_log_contents() -> str:
 def log_frontend_event(
     level: str, message: str, context: dict[str, object] | None = None
 ) -> bool:
-    """Let the frontend write to the backend log file.
+    """Let the React frontend write into the backend log file.
 
-    The React side calls this via ``@decky/api`` callable so frontend
-    events show up in the same log stream as backend events.
+    Called via ``@decky/api`` callable so frontend events end up in the
+    same log stream as backend events — one place to look when debugging.
     """
     valid = {
         "DEBUG": logging.DEBUG,

@@ -1,8 +1,9 @@
 """HTTP helpers that shell out to curl.
 
-Uses curl instead of urllib/requests because SteamOS has known SSL cert
-issues with Python's bundled OpenSSL (see :func:`plugin_utils.system_command_env`).
-curl uses the system CA store and just works.
+We use curl instead of urllib/requests because SteamOS has known SSL
+cert issues with Python's bundled OpenSSL (see
+:func:`plugin_utils.system_command_env`).  curl uses the system CA store
+and just works.
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ from .plugin_utils import system_command_env
 def curl_json(
     url: str, *, headers: list[str] | None = None, timeout: int = 25
 ) -> list[Any] | dict[str, Any]:
-    """Fetch JSON by shelling out to curl."""
+    """Fetch JSON from a URL by shelling out to curl."""
     command = [
         "curl",
         "-LfsS",
@@ -71,10 +72,10 @@ def curl_download(  # pylint: disable=too-many-arguments,too-many-locals,too-man
         Callable[[subprocess.Popen[str] | None], None] | None
     ) = None,
 ) -> None:
-    """Download a file with curl, polling for progress and checking for cancel.
+    """Download a file with curl, polling for progress and watching for cancel.
 
-    *cancel_check* is called every loop iteration so curl can be killed
-    mid-download if the user backs out.
+    *cancel_check* is called every loop iteration so we can kill curl
+    mid-download if the user changes their mind.
     """
     command = [
         "curl",
@@ -99,8 +100,8 @@ def curl_download(  # pylint: disable=too-many-arguments,too-many-locals,too-man
         str(destination),
     ]
 
-    # we manage the process lifecycle manually (poll, terminate, kill)
-    # so context manager doesn't fit here
+    # We manage the process lifecycle by hand (poll, terminate, kill)
+    # so a context manager doesn't really fit here
     process = subprocess.Popen(  # pylint: disable=consider-using-with
         command,
         stdout=subprocess.PIPE,
