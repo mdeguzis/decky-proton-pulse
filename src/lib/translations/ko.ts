@@ -28,6 +28,8 @@ export const ko: TranslationTree = {
     viewLogsDesc: '실시간 플러그인 로그 뷰어 열기',
     debugLogs: '디버그 로그',
     debugLogsDesc: '설정을 열지 않고 상세 로그 활성화',
+    notifications: '알림',
+    notificationsDesc: 'Proton Pulse 토스트와 소리를 표시',
     about: (v) => `정보: Proton Pulse v${v}`,
   },
   nav: {
@@ -100,6 +102,8 @@ export const ko: TranslationTree = {
     autoDetected: (lang) => `자동 (감지됨: ${lang})`,
     debugLogs: '디버그 로그',
     debugLogsDescription: '상세 디버그 로그 기록 활성화',
+    notifications: '알림',
+    notificationsDescription: 'Proton Pulse 토스트 알림과 소리를 표시',
     general: '일반',
   },
   compatTools: {

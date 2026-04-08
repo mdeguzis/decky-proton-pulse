@@ -40,6 +40,8 @@ export const ru: TranslationTree = {
     viewLogsDesc: 'Открыть просмотрщик журналов плагина в реальном времени',
     debugLogs: 'Журнал отладки',
     debugLogsDesc: 'Включить подробное логирование без открытия настроек',
+    notifications: 'Уведомления',
+    notificationsDesc: 'Показывать тосты и звуки Proton Pulse',
     about: (v) => `О плагине: Proton Pulse v${v}`,
   },
   nav: {
@@ -124,6 +126,8 @@ export const ru: TranslationTree = {
     autoDetected: (lang) => `Авто (определено: ${lang})`,
     debugLogs: 'Журнал отладки',
     debugLogsDescription: 'Включить подробное ведение журнала отладки',
+    notifications: 'Уведомления',
+    notificationsDescription: 'Показывать тост-уведомления и звуки Proton Pulse',
     general: 'Общие',
   },
   compatTools: {

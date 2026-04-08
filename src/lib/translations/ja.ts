@@ -28,6 +28,8 @@ export const ja: TranslationTree = {
     viewLogsDesc: 'リアルタイムのプラグインログビューアを開く',
     debugLogs: 'デバッグログ',
     debugLogsDesc: '設定を開かずに詳細ログを有効にする',
+    notifications: '通知',
+    notificationsDesc: 'Proton Pulse の通知とサウンドを表示する',
     about: (v) => `概要: Proton Pulse v${v}`,
   },
   nav: {
@@ -100,6 +102,8 @@ export const ja: TranslationTree = {
     autoDetected: (lang) => `自動（検出: ${lang}）`,
     debugLogs: 'デバッグログ',
     debugLogsDescription: '詳細なデバッグログを有効にする',
+    notifications: '通知',
+    notificationsDescription: 'Proton Pulse のトースト通知とサウンドを表示する',
     general: '一般',
   },
   compatTools: {

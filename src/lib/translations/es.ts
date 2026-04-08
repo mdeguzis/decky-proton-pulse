@@ -28,6 +28,8 @@ export const es: TranslationTree = {
     viewLogsDesc: 'Abrir el visor de registros en vivo del plugin',
     debugLogs: 'Registros de depuración',
     debugLogsDesc: 'Activar el registro detallado sin abrir Ajustes',
+    notifications: 'Notificaciones',
+    notificationsDesc: 'Mostrar avisos y sonidos de Proton Pulse',
     about: (v) => `Acerca de: Proton Pulse v${v}`,
   },
   nav: {
@@ -100,6 +102,8 @@ export const es: TranslationTree = {
     autoDetected: (lang) => `Auto (detectado: ${lang})`,
     debugLogs: 'Registros de depuración',
     debugLogsDescription: 'Activar el registro de depuración detallado',
+    notifications: 'Notificaciones',
+    notificationsDescription: 'Mostrar notificaciones emergentes y sonidos de Proton Pulse',
     general: 'Ajustes generales',
   },
   compatTools: {

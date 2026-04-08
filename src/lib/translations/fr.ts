@@ -28,6 +28,8 @@ export const fr: TranslationTree = {
     viewLogsDesc: 'Ouvrir le visualiseur de journaux en direct du plugin',
     debugLogs: 'Journaux de débogage',
     debugLogsDesc: 'Activer la journalisation détaillée sans ouvrir les Paramètres',
+    notifications: 'Alertes',
+    notificationsDesc: 'Afficher les notifications et sons de Proton Pulse',
     about: (v) => `À propos : Proton Pulse v${v}`,
   },
   nav: {
@@ -100,6 +102,8 @@ export const fr: TranslationTree = {
     autoDetected: (lang) => `Auto (détecté : ${lang})`,
     debugLogs: 'Journaux de débogage',
     debugLogsDescription: 'Activer la journalisation de débogage détaillée',
+    notifications: 'Alertes',
+    notificationsDescription: 'Afficher les notifications toast et les sons de Proton Pulse',
     general: 'Général',
   },
   compatTools: {

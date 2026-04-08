@@ -28,6 +28,8 @@ export const de: TranslationTree = {
     viewLogsDesc: 'Live-Plugin-Protokollanzeige öffnen',
     debugLogs: 'Debug-Protokolle',
     debugLogsDesc: 'Ausführliche Protokollierung ohne Öffnen der Einstellungen aktivieren',
+    notifications: 'Benachrichtigungen',
+    notificationsDesc: 'Proton-Pulse-Toasts und Töne anzeigen',
     about: (v) => `Über: Proton Pulse v${v}`,
   },
   nav: {
@@ -100,6 +102,8 @@ export const de: TranslationTree = {
     autoDetected: (lang) => `Auto (erkannt: ${lang})`,
     debugLogs: 'Debug-Protokolle',
     debugLogsDescription: 'Ausführliche Debug-Protokollierung aktivieren',
+    notifications: 'Benachrichtigungen',
+    notificationsDescription: 'Toasts und Töne von Proton Pulse anzeigen',
     general: 'Allgemein',
   },
   compatTools: {

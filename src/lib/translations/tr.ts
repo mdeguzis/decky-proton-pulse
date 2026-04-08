@@ -28,6 +28,8 @@ export const tr: TranslationTree = {
     viewLogsDesc: 'Canlı eklenti günlük görüntüleyiciyi aç',
     debugLogs: 'Hata Ayıklama Günlükleri',
     debugLogsDesc: 'Ayarları açmadan ayrıntılı günlüğü etkinleştir',
+    notifications: 'Bildirimler',
+    notificationsDesc: 'Proton Pulse bildirimlerini ve seslerini göster',
     about: (v) => `Hakkında: Proton Pulse v${v}`,
   },
   nav: {
@@ -100,6 +102,8 @@ export const tr: TranslationTree = {
     autoDetected: (lang) => `Otomatik (algılanan: ${lang})`,
     debugLogs: 'Hata Ayıklama Günlükleri',
     debugLogsDescription: 'Ayrıntılı hata ayıklama günlüğünü etkinleştir',
+    notifications: 'Bildirimler',
+    notificationsDescription: 'Proton Pulse bildirimlerini ve seslerini göster',
     general: 'Genel',
   },
   compatTools: {

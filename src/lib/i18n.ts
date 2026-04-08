@@ -53,6 +53,8 @@ export interface TranslationTree {
     viewLogsDesc: string;
     debugLogs: string;
     debugLogsDesc: string;
+    notifications: string;
+    notificationsDesc: string;
     about: (version: string) => string;
   };
   nav: {
@@ -125,6 +127,8 @@ export interface TranslationTree {
     autoDetected: (lang: string) => string;
     debugLogs: string;
     debugLogsDescription: string;
+    notifications: string;
+    notificationsDescription: string;
     general: string;
   };
   compatTools: {
@@ -381,6 +385,8 @@ export const en: TranslationTree = {
     viewLogsDesc: 'Open the live plugin log viewer',
     debugLogs: 'Debug Logs',
     debugLogsDesc: 'Turn on verbose logging without opening Settings',
+    notifications: 'Notifications',
+    notificationsDesc: 'Show Proton Pulse toast popups and sounds',
     about: (v) => `About: Proton Pulse v${v}`,
   },
   nav: {
@@ -453,6 +459,8 @@ export const en: TranslationTree = {
     autoDetected: (lang) => `Auto (detected: ${lang})`,
     debugLogs: 'Debug Logs',
     debugLogsDescription: 'Enable verbose debug logging',
+    notifications: 'Notifications',
+    notificationsDescription: 'Show Proton Pulse toast notifications and sounds',
     general: 'General',
   },
   compatTools: {
