@@ -2,9 +2,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SidebarNavigation, Focusable, Navigation, Router } from '@decky/ui';
 import type { SidebarNavigationPage } from '@decky/ui';
-import { callable, toaster } from '@decky/api';
+import { callable } from '@decky/api';
 import { pageState, NAVIGATE_EVENT } from '../lib/pageState';
 import type { NavigatePayload } from '../lib/pageState';
+import { toaster } from '../lib/notify';
 import type { SystemInfo } from '../types';
 import { ConfigureTab } from './tabs/ConfigureTab';
 import { ManageTab } from './tabs/ManageTab';
@@ -128,9 +129,7 @@ export function ProtonPulsePage() {
   }, [doExit]);
 
   useEffect(() => {
-    if (activePage !== 'exit') {
-      pageState.initialPage = activePage as typeof pageState.initialPage;
-    }
+    pageState.initialPage = activePage as typeof pageState.initialPage;
   }, [activePage]);
 
   // cleanup timer on unmount
@@ -142,6 +141,7 @@ export function ProtonPulsePage() {
     ...(hasGame ? [{
       title: t().nav.manageThisGame,
       identifier: 'manage-game',
+      route: 'manage-game',
       content: (
         <ConfigureTab
           appId={appId}
@@ -153,33 +153,32 @@ export function ProtonPulsePage() {
     {
       title: t().nav.manageConfigurations,
       identifier: 'manage',
+      route: 'manage',
       content: <ManageTab appId={appId} appName={appName} gpuVendor={sysInfo?.gpu_vendor ?? null} />,
     },
     {
       title: t().nav.compatibilityTools,
       identifier: 'compatibility-tools',
+      route: 'compatibility-tools',
       content: <CompatibilityToolsTab />,
     },
     {
       title: t().nav.logs,
       identifier: 'logs',
+      route: 'logs',
       content: <LogsTab />,
     },
     {
       title: t().nav.settings,
       identifier: 'settings',
+      route: 'settings',
       content: <GeneralSettingsTab />,
     },
     {
       title: t().nav.about,
       identifier: 'about',
+      route: 'about',
       content: <AboutTab />,
-    },
-    'separator',
-    {
-      title: extras.exit(),
-      identifier: 'exit',
-      content: <div />,
     },
   ];
 
@@ -213,14 +212,12 @@ export function ProtonPulsePage() {
           page={activePage}
           onPageRequested={(page) => {
             void logFrontendEvent('DEBUG', 'Sidebar page requested', {
-              page,
+              requestedPage: typeof page === 'string' ? page : null,
               appId,
               appName,
             });
-            if (page === 'exit') {
-              doExit();
-              return;
-            }
+            if (typeof page !== 'string') return;
+            if (!pages.some((entry) => entry !== 'separator' && entry.route === page)) return;
             setActivePage(page);
           }}
           disableRouteReporting={true}
