@@ -43,13 +43,22 @@ export function LogViewerModal({ logs, entryCount, closeModal }: Props) {
   };
 
   const handleDirection = (evt: GamepadEvent) => {
-    if (!scrollRef.current) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
     if (evt.detail.button === GamepadButton.DIR_UP) {
       evt.preventDefault();
-      scrollRef.current.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
+      el.scrollBy({
+        top: el.scrollTop <= SCROLL_STEP ? -el.scrollTop : -SCROLL_STEP,
+        behavior: 'auto',
+      });
     } else if (evt.detail.button === GamepadButton.DIR_DOWN) {
       evt.preventDefault();
-      scrollRef.current.scrollBy({ top: SCROLL_STEP, behavior: 'smooth' });
+      const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+      el.scrollBy({
+        top: remaining <= SCROLL_STEP ? remaining : SCROLL_STEP,
+        behavior: 'auto',
+      });
     }
   };
 
@@ -79,8 +88,8 @@ export function LogViewerModal({ logs, entryCount, closeModal }: Props) {
         style={{
           display: 'flex',
           flexDirection: 'column',
-          height: 'calc(100vh - 40px)',
-          padding: '12px 16px 16px',
+          height: 'calc(100vh - 88px)',
+          padding: '12px 16px 20px',
           boxSizing: 'border-box',
         }}
       >
@@ -104,15 +113,7 @@ export function LogViewerModal({ logs, entryCount, closeModal }: Props) {
           <Focusable
             flow-children="horizontal"
             style={{ display: 'flex', gap: 8, flexShrink: 0, alignSelf: 'flex-start' }}
-            onGamepadDirection={(evt: GamepadEvent) => {
-              // Only consume left/right here; let up/down bubble to the scroll handler
-              if (
-                evt.detail.button === GamepadButton.DIR_LEFT ||
-                evt.detail.button === GamepadButton.DIR_RIGHT
-              ) {
-                return; // let Focusable handle horizontal focus movement
-              }
-            }}
+            onGamepadDirection={handleDirection}
           >
             <DialogButton
               onClick={scrollToBottom}
