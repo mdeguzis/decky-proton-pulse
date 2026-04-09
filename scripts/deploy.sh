@@ -37,6 +37,54 @@ banner() {
   echo ""
 }
 
+confirm_release_actions() {
+  local plugin_status plugin_head plugin_dirty store_branch_summary
+  plugin_head=$(git rev-parse --short HEAD)
+  plugin_status=$(git status --short || true)
+  plugin_dirty="clean"
+  if [[ -n "$plugin_status" ]]; then
+    plugin_dirty="dirty"
+  fi
+
+  echo ""
+  echo "Release confirmation"
+  echo "------------------------------------------------------------------------"
+  echo "Plugin repo:"
+  echo "  HEAD: ${plugin_head}"
+  echo "  Worktree: ${plugin_dirty}"
+  if [[ -n "$plugin_status" ]]; then
+    echo "  Pending changes:"
+    printf '%s\n' "$plugin_status" | sed 's/^/    /'
+  fi
+  echo ""
+  echo "Planned actions:"
+  if [[ -n "$GH_RELEASE" ]]; then
+    echo "  - Create or update GitHub ${GH_RELEASE} ${RELEASE_TAG}"
+    echo "  - Upload asset ${ZIP_NAME}"
+  fi
+  if [[ -n "$STORE_MODE" ]]; then
+    if [[ "$STORE_MODE" == "release" ]]; then
+      store_branch_summary="release tag ${RELEASE_TAG}"
+    else
+      store_branch_summary="current HEAD pre-release"
+    fi
+    echo "  - Refresh the Decky database checkout from upstream main"
+    echo "  - Rebuild branch add/decky-proton-pulse from upstream main"
+    echo "  - Update submodule plugins/decky-proton-pulse to ${store_branch_summary}"
+    echo "  - Create a database commit only if the submodule pointer changes"
+    echo "  - No plugin repo commit or amend is performed by this script"
+  fi
+  echo "------------------------------------------------------------------------"
+  read -r -p "Continue with these release actions? [y/N] " reply
+  case "$reply" in
+    y|Y|yes|YES) ;;
+    *)
+      echo "Release cancelled."
+      exit 0
+      ;;
+  esac
+}
+
 usage() {
   grep '^#' "$0" | grep -v '#!/' | sed 's/^# \{0,1\}//'
   exit 0
@@ -126,6 +174,7 @@ fi
 # ─── GitHub Release ────────────────────────────────────────────────────────────
 
 if [[ -n "$GH_RELEASE" ]]; then
+  confirm_release_actions
   banner "GitHub Release (${GH_RELEASE})"
 
   NOTES_FILE="/tmp/decky-proton-pulse-release-notes-${VERSION}.md"
