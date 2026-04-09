@@ -27,11 +27,6 @@ SCREENSHOT_CAPTION ?=
 SCREENSHOT_MATCH ?=
 SCREENSHOT_MANIFEST ?= config/ui_screenshot_manifest.json
 PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
-VERSION := $(shell tr -d '[:space:]' < VERSION)
-RELEASE_TAG := v$(VERSION)
-RELEASE_ZIP := decky-proton-pulse-v$(VERSION).zip
-RELEASE_TITLE := Proton Pulse $(RELEASE_TAG)
-RELEASE_NOTES_FILE := /tmp/decky-proton-pulse-release-notes-$(VERSION).md
 
 .PHONY: help build watch test test-ts test-py typecheck check-translations translate setup deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
@@ -128,18 +123,12 @@ setup:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv sync --group dev
 
 deploy: build
-ifndef DECK_IP
-	$(error DECK_IP is required: DECK_IP=192.168.1.x make deploy)
-endif
-	bash scripts/deploy.sh --skip-build --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
+	bash scripts/deploy.sh --skip-build --target $(TARGET) $(if $(DECK_IP),--deck-ip $(DECK_IP),) --deck-user $(DECK_USER)
 
 deploy-reload: deploy reload
 
 build-and-deploy: clean test build
-ifndef DECK_IP
-	$(error DECK_IP is required: DECK_IP=192.168.1.x make build-and-deploy)
-endif
-	bash scripts/deploy.sh --skip-build --target $(TARGET) --deck-ip $(DECK_IP) --deck-user $(DECK_USER)
+	bash scripts/deploy.sh --skip-build --target $(TARGET) $(if $(DECK_IP),--deck-ip $(DECK_IP),) --deck-user $(DECK_USER)
 
 package: build
 	bash scripts/deploy.sh --skip-build
@@ -147,11 +136,11 @@ package: build
 $(RELEASE_NOTES_FILE): CHANGELOG.md VERSION scripts/release-notes.mjs
 	node scripts/release-notes.mjs > $(RELEASE_NOTES_FILE)
 
-release: package $(RELEASE_NOTES_FILE)
-	gh release create $(RELEASE_TAG) ./$(RELEASE_ZIP) --repo mdeguzis/decky-proton-pulse --title "$(RELEASE_TITLE)" --notes-file $(RELEASE_NOTES_FILE)
+release: package
+	bash scripts/deploy.sh --skip-build --release
 
-pre-release: package $(RELEASE_NOTES_FILE)
-	gh release create $(RELEASE_TAG) ./$(RELEASE_ZIP) --repo mdeguzis/decky-proton-pulse --title "$(RELEASE_TITLE)" --notes-file $(RELEASE_NOTES_FILE) --prerelease
+pre-release: package
+	bash scripts/deploy.sh --skip-build --prerelease
 
 clean:
 	rm -rf dist/
