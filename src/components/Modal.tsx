@@ -3,8 +3,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { SidebarNavigation, Focusable, Navigation, Router } from '@decky/ui';
 import type { SidebarNavigationPage } from '@decky/ui';
 import { callable } from '@decky/api';
-import { pageState, NAVIGATE_EVENT } from '../lib/pageState';
-import type { NavigatePayload } from '../lib/pageState';
+import { pageState, NAVIGATE_EVENT, normalizeDeckRoutePath, toNavigationPath } from '../lib/pageState';
+import type { NavigatePayload, PageId } from '../lib/pageState';
 import { toaster } from '../lib/notify';
 import type { SystemInfo } from '../types';
 import { ConfigureTab } from './tabs/ConfigureTab';
@@ -15,6 +15,7 @@ import { GeneralSettingsTab } from './tabs/GeneralSettingsTab';
 import { AboutTab } from './tabs/AboutTab';
 import { logFrontendEvent, callWithTimeout } from '../lib/logger';
 import { useLanguage, t } from '../lib/i18n';
+import { registerScreenshotPageAutomation } from '../lib/screenshotAutomation';
 
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
 const getSystemInfoSafe = () => callWithTimeout(() => getSystemInfo(), 'get_system_info');
@@ -100,10 +101,11 @@ export function ProtonPulsePage() {
     exitPendingRef.current = false;
     if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
     const returnPath = pageState.returnPath;
-    const currentPath = globalThis.location?.pathname ?? null;
+    const currentPath = normalizeDeckRoutePath(globalThis.location?.pathname ?? null);
     const targetPath = returnPath && returnPath !== currentPath
       ? returnPath
       : DEFAULT_EXIT_PATH;
+    const navigationTargetPath = toNavigationPath(targetPath);
 
     pageState.returnPath = null;
     pageState.pendingNavigate = null;
@@ -116,38 +118,37 @@ export function ProtonPulsePage() {
 
     Router.CloseSideMenus();
     void logFrontendEvent('DEBUG', 'Exit step: Router.CloseSideMenus()', {
-      currentPath: globalThis.location?.pathname ?? null,
+      currentPath: normalizeDeckRoutePath(globalThis.location?.pathname ?? null),
     });
     window.setTimeout(() => {
       if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
-      void logFrontendEvent('DEBUG', 'Exit fallback: history.back()', {
-        currentPath: globalThis.location?.pathname ?? null,
+      void logFrontendEvent('DEBUG', 'Exit fallback: target route navigation', {
+        currentPath: normalizeDeckRoutePath(globalThis.location?.pathname ?? null),
+        navigationTargetPath,
+        targetPath,
       });
-      window.history.back();
+      try {
+        if (navigationTargetPath) {
+          Navigation.Navigate(navigationTargetPath);
+        } else {
+          Router.Navigate(targetPath);
+        }
+      } catch {
+        Router.Navigate(targetPath);
+      }
     }, 50);
     window.setTimeout(() => {
       if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
       void logFrontendEvent('DEBUG', 'Exit fallback: Navigation.NavigateBack()', {
-        currentPath: globalThis.location?.pathname ?? null,
+        currentPath: normalizeDeckRoutePath(globalThis.location?.pathname ?? null),
+        targetPath,
       });
       try {
         Navigation.NavigateBack();
       } catch {
-        // Continue to route fallback below if Decky cannot navigate back.
-      }
-    }, 175);
-    window.setTimeout(() => {
-      if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
-      void logFrontendEvent('DEBUG', 'Exit fallback: target route navigation', {
-        currentPath: globalThis.location?.pathname ?? null,
-        targetPath,
-      });
-      try {
-        Navigation.Navigate(targetPath);
-      } catch {
         Router.Navigate(targetPath);
       }
-    }, 325);
+    }, 200);
   }, []);
 
   const handleCancel = useCallback(() => {
@@ -171,6 +172,21 @@ export function ProtonPulsePage() {
   useEffect(() => {
     pageState.initialPage = activePage as typeof pageState.initialPage;
   }, [activePage]);
+
+  useEffect(() => registerScreenshotPageAutomation(
+    async (payload) => {
+      void logFrontendEvent('DEBUG', 'Screenshot automation page navigation requested', payload);
+      appliedPendingVersionRef.current = pageState.pendingNavigateVersion;
+      applyNavigation(payload);
+      void logFrontendEvent('DEBUG', 'Screenshot automation page navigation state set', {
+        requestedTab: payload.tab,
+        appId: payload.appId,
+        appName: payload.appName,
+        pathname: globalThis.location?.pathname ?? null,
+      });
+    },
+    () => activePage as PageId,
+  ), [activePage, applyNavigation]);
 
   // cleanup timer on unmount
   useEffect(() => () => { if (exitTimerRef.current) clearTimeout(exitTimerRef.current); }, []);

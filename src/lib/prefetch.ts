@@ -61,6 +61,12 @@ interface AppOverview {
   bIsShortcut?: boolean;
 }
 
+export interface InstalledGameStats {
+  installedSteamGames: number;
+  localNonSteamGames: number;
+  installedSteamAppIds: string[];
+}
+
 function readTimestamp(app: AppOverview, ...keys: Array<keyof AppOverview>): number {
   for (const key of keys) {
     const value = app[key];
@@ -86,7 +92,9 @@ function isLocalNonSteamGame(app: AppOverview): boolean {
   return isSteamShortcutApp(app.appid);
 }
 
-function getInstalledGames(): AppOverview[] {
+function enumerateInstalledGames(
+  options: { logResults?: boolean; countLocalNonSteam?: boolean } = {},
+): { installedGames: AppOverview[]; localNonSteam: number } {
   try {
     // collectionStore.allAppsCollection is Steam's internal collection of all
     // library apps. It has an allApps getter or similar. Different Steam
@@ -94,14 +102,14 @@ function getInstalledGames(): AppOverview[] {
     const cs = (globalThis as any).collectionStore;
     if (!cs) {
       void logFrontendEvent('DEBUG', 'collectionStore not available for prefetch');
-      return [];
+      return { installedGames: [], localNonSteam: 0 };
     }
 
     // allAppsCollection.allApps is an array of app overviews
     const collection = cs.allAppsCollection;
     if (!collection) {
       void logFrontendEvent('DEBUG', 'allAppsCollection not available');
-      return [];
+      return { installedGames: [], localNonSteam: 0 };
     }
 
     // get the internal app list - try common property names
@@ -124,23 +132,43 @@ function getInstalledGames(): AppOverview[] {
       steamInstalled.push(app);
     }
 
-    if (localNonSteam > 0) {
+    if (options.countLocalNonSteam !== false && localNonSteam > 0) {
       countLocalNonSteamGame(localNonSteam);
     }
 
-    void logFrontendEvent('DEBUG', 'Enumerated installed games', {
-      total: apps.length,
-      installed: steamInstalled.length,
-      localNonSteam,
-    });
+    if (options.logResults !== false) {
+      void logFrontendEvent('DEBUG', 'Enumerated installed games', {
+        total: apps.length,
+        installed: steamInstalled.length,
+        localNonSteam,
+      });
+    }
 
-    return steamInstalled;
+    return { installedGames: steamInstalled, localNonSteam };
   } catch (err) {
-    void logFrontendEvent('ERROR', 'Failed to enumerate installed games', {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return [];
+    if (options.logResults !== false) {
+      void logFrontendEvent('ERROR', 'Failed to enumerate installed games', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+    return { installedGames: [], localNonSteam: 0 };
   }
+}
+
+function getInstalledGames(): AppOverview[] {
+  return enumerateInstalledGames().installedGames;
+}
+
+export function getInstalledGameStats(): InstalledGameStats {
+  const { installedGames, localNonSteam } = enumerateInstalledGames({
+    logResults: false,
+    countLocalNonSteam: false,
+  });
+  return {
+    installedSteamGames: installedGames.length,
+    localNonSteamGames: localNonSteam,
+    installedSteamAppIds: installedGames.map((game) => String(game.appid)),
+  };
 }
 
 function getRecentlyPlayed(games: AppOverview[], days: number): AppOverview[] {

@@ -4,90 +4,103 @@
     "key": "default",
     "title": "Manage Game Default",
     "caption": "Default loaded Manage Game view for a supported library title.",
-    "instructions": "Open a game in the Steam library and wait for the Manage Game view to finish loading."
+    "instructions": "Open a game in the Steam library and wait for the Manage Game view to finish loading.",
+    "automation": { "tab": "manage-game", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 1200 }
   },
   {
     "group": "manage-game",
     "key": "report-detail",
     "title": "Manage Game Report Detail",
     "caption": "Manage Game detail view showing the selected report preview and actions.",
-    "instructions": "From Manage Game, open one report and pause on its detail view."
+    "instructions": "From Manage Game, open one report and pause on its detail view.",
+    "automation": { "tab": "manage-game", "target": "manage-game/report-detail", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 900 }
   },
   {
     "group": "manage-game",
-    "key": "report-action-menu",
-    "title": "Manage Game Report Action Menu",
-    "caption": "Action menu for the selected report with edit, submit, and clear actions.",
-    "instructions": "From the report detail view, open the action menu that shows Edit, Submit, Clear, and Cancel."
+    "key": "hardware-compare",
+    "title": "Manage Game Hardware Compare",
+    "caption": "Side-by-side comparison between the report hardware and our current system.",
+    "instructions": "From the report detail view, open the Our System comparison modal.",
+    "automation": { "tab": "manage-game", "target": "manage-game/hardware-compare", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 900 }
   },
   {
     "group": "manage-game",
     "key": "edit-modal",
     "title": "Manage Game Edit Modal",
     "caption": "Edit modal used to change RAM, notes, and other report-derived launch settings.",
-    "instructions": "From the report action menu, choose Edit and capture the modal with fields visible."
+    "instructions": "From the report detail view, choose Edit and capture the modal with fields visible.",
+    "automation": { "tab": "manage-game", "target": "manage-game/edit-modal", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 900 }
   },
   {
     "group": "manage-configurations",
     "key": "default",
     "title": "Manage Configurations Default",
     "caption": "Manage Configurations screen with profile controls and launch option toggles.",
-    "instructions": "Open the Manage Configurations page from the plugin sidebar."
+    "instructions": "Open the Manage Configurations page from the plugin sidebar.",
+    "automation": { "tab": "manage", "waitMs": 800 }
   },
   {
     "group": "compatibility-tools",
     "key": "tab",
     "title": "Compatibility Tools Tab",
     "caption": "Compatibility tools screen showing discovered Proton versions and actions.",
-    "instructions": "Open the Compatibility Tools page from the plugin navigation."
+    "instructions": "Open the Compatibility Tools page from the plugin navigation.",
+    "automation": { "tab": "compatibility-tools", "waitMs": 1000 }
   },
   {
     "group": "compatibility-tools",
     "key": "release-picker",
     "title": "Compatibility Tools Release Picker",
     "caption": "Compatibility tools picker focused on Proton release selection.",
-    "instructions": "Open the Compatibility Tools page and focus the current Proton release dropdown."
+    "instructions": "Open the Compatibility Tools page and open the version browser.",
+    "automation": { "tab": "compatibility-tools", "target": "compatibility-tools/release-picker", "waitMs": 1000 }
   },
   {
     "group": "logs",
     "key": "tab",
-    "title": "Logs Tab",
-    "caption": "Logs screen with focused scroll area and actions visible.",
-    "instructions": "Open the Logs tab with recent log content visible."
+    "title": "Logs Viewer",
+    "caption": "Log viewer modal with scrolling content and actions visible.",
+    "instructions": "Open the Logs tab and bring up the full log viewer.",
+    "automation": { "tab": "logs", "target": "logs/viewer", "waitMs": 700 }
   },
   {
     "group": "settings",
     "key": "general",
     "title": "Settings General",
     "caption": "Main settings page showing the general configuration controls.",
-    "instructions": "Open the Settings tab and keep the default general settings section visible."
+    "instructions": "Open the Settings tab and keep the default general settings section visible.",
+    "automation": { "tab": "settings", "waitMs": 800 }
   },
   {
     "group": "settings",
     "key": "cache-manager-modal",
     "title": "Cache Manager Modal",
     "caption": "Cache manager modal used to inspect and clear plugin cache state.",
-    "instructions": "Open the Cache Manager modal from Settings."
+    "instructions": "Open the Cache Manager modal from Settings.",
+    "automation": { "tab": "settings", "target": "settings/cache-manager-modal", "waitMs": 900 }
   },
   {
     "group": "settings",
     "key": "language-selector",
     "title": "Settings Language Selector",
     "caption": "Settings flow while changing the plugin language and verifying translated UI.",
-    "instructions": "Open Settings and move to the language control or translated state you want documented."
+    "instructions": "Open Settings and open the language selector.",
+    "automation": { "tab": "settings", "target": "settings/language-selector", "waitMs": 700 }
   },
   {
     "group": "issue-reporting",
-    "key": "category-menu",
-    "title": "Issue Reporting Category Menu",
-    "caption": "Issue reporting menu used to choose the kind of problem being reported.",
-    "instructions": "Open the issue reporting flow until the category menu with Game Report, Missing ProtonDB Reports, Plugin Issue, and Other is visible."
+    "key": "template-selector",
+    "title": "Issue Reporting Template Selector",
+    "caption": "About page with the issue template selector opened for choosing the report type.",
+    "instructions": "Open the About tab and open the issue template selector.",
+    "automation": { "tab": "about", "target": "about/issue-template-selector", "waitMs": 800 }
   },
   {
     "group": "about",
     "key": "tab",
     "title": "About Tab",
     "caption": "About page with project summary and project links.",
-    "instructions": "Open the About tab from the plugin navigation."
+    "instructions": "Open the About tab from the plugin navigation.",
+    "automation": { "tab": "about", "waitMs": 800 }
   }
 ]

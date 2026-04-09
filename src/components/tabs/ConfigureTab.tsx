@@ -15,6 +15,10 @@ import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types
 import { logFrontendEvent } from '../../lib/logger';
 import { getLaunchOptionsFromDetails, getSteamAppDetails } from '../../lib/steamApps';
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
+import {
+  registerScreenshotAutomationHandler,
+  runRegisteredScreenshotAutomationHandler,
+} from '../../lib/screenshotAutomation';
 import { ReportCard, type DisplayReportCard } from '../ReportCard';
 import { ReportDetailModal } from '../ReportDetailModal';
 import { t } from '../../lib/i18n';
@@ -784,6 +788,32 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       window,
     );
   };
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/report-detail', async () => {
+    const firstReport = sortedReports[0];
+    if (!firstReport) {
+      throw new Error('No report is available for the Manage Game detail screenshot.');
+    }
+    openReportDetail(firstReport);
+  }), [sortedReports, appId, appName, sysInfo, currentLaunchOptions]);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/hardware-compare', async () => {
+    const firstReport = sortedReports[0];
+    if (!firstReport) {
+      throw new Error('No report is available for the Manage Game hardware comparison screenshot.');
+    }
+    openReportDetail(firstReport);
+    await runRegisteredScreenshotAutomationHandler('manage-game/report-detail/hardware-compare');
+  }), [sortedReports, appId, appName, sysInfo, currentLaunchOptions]);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/edit-modal', async () => {
+    const firstReport = sortedReports[0];
+    if (!firstReport) {
+      throw new Error('No report is available for the Manage Game edit modal screenshot.');
+    }
+    openReportDetail(firstReport);
+    await runRegisteredScreenshotAutomationHandler('manage-game/report-detail/edit-modal');
+  }), [sortedReports, appId, appName, sysInfo, currentLaunchOptions]);
 
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {

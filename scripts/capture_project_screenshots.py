@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -29,29 +30,30 @@ def run_capture_command(
     output_dir: Path,
 ) -> None:
     """Invoke the existing single-capture script for one manifest entry."""
-    subprocess.run(
-        [
-            sys.executable,
-            str(SCRIPT_DIR / "take_cef_screenshot.py"),
-            "--deck-ip",
-            deck_ip,
-            "--deck-user",
-            deck_user,
-            "--output-dir",
-            str(output_dir),
-            "--filename-base",
-            entry.key,
-            "--group",
-            entry.group,
-            "--shot-key",
-            entry.key,
-            "--title",
-            entry.title,
-            "--caption",
-            entry.caption,
-        ],
-        check=True,
-    )
+    command = [
+        sys.executable,
+        str(SCRIPT_DIR / "take_cef_screenshot.py"),
+        "--deck-ip",
+        deck_ip,
+        "--deck-user",
+        deck_user,
+        "--output-dir",
+        str(output_dir),
+        "--filename-base",
+        entry.key,
+        "--group",
+        entry.group,
+        "--shot-key",
+        entry.key,
+        "--title",
+        entry.title,
+        "--caption",
+        entry.caption,
+    ]
+    if entry.automation:
+        command.extend(["--prepare-action-json", json.dumps(entry.automation)])
+
+    subprocess.run(command, check=True)
 
 
 def publish_to_wiki(screenshots_dir: Path, wiki_dir: Path) -> None:

@@ -2,16 +2,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ToggleField, Focusable, GamepadButton, DialogButton, ConfirmModal, showModal, Menu, MenuItem, showContextMenu } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
+import { openFilePicker, FileSelectionType } from '@decky/api';
 import { toaster } from '../../lib/notify';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
 import { cancelProtonGeInstall, getProtonGeManagerState, installCompatibilityToolArchive, installProtonGe, uninstallCompatibilityTool } from '../../lib/compatTools';
 import type { CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { t } from '../../lib/i18n';
+import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
 
 const AUTO_UPDATE_KEY = 'compat-auto-update-proton-ge';
 const RESTART_HINT = ' Steam may need a restart before the new compatibility tool appears everywhere.';
-const RELEASE_GRID_TEMPLATE = 'minmax(0, 1.15fr) 92px 112px 166px';
+const RELEASE_GRID_TEMPLATE = 'minmax(0, 1fr) 72px 104px 112px';
 type CompatibilityRowType = 'proton-ge' | 'custom';
 
 interface CompatibilityCatalogRow {
@@ -35,6 +37,55 @@ interface CompatibilityCatalogRow {
   actionDanger?: boolean;
   actionDisabled?: boolean;
   onAction?: () => void;
+  reinstallLabel?: string;
+  onReinstall?: () => void;
+}
+
+function buildInstallProgressDetails(
+  installStatus: ProtonGeManagerState['install_status'] | null,
+  assetSize: number | null | undefined,
+): {
+  progressRatio: number | null;
+  progressLabel: string;
+  progressMeta: string;
+  etaLabel: string;
+} {
+  const elapsedSeconds = installStatus?.started_at
+    ? Math.max(1, Math.round(Date.now() / 1000 - installStatus.started_at))
+    : null;
+  const progressRatio = installStatus?.progress_fraction ?? null;
+  const progressPercent = Math.round(
+    Math.max(0, Math.min(100, (progressRatio ?? 0.08) * 100)),
+  );
+  const etaSeconds =
+    installStatus?.total_bytes
+    && installStatus.downloaded_bytes !== null
+    && elapsedSeconds
+    && installStatus.downloaded_bytes > 0
+      ? (
+        (installStatus.total_bytes - installStatus.downloaded_bytes)
+        / (installStatus.downloaded_bytes / elapsedSeconds)
+      )
+      : null;
+  const progressMeta =
+    installStatus?.total_bytes && installStatus.downloaded_bytes !== null
+      ? `${formatByteCount(installStatus.downloaded_bytes)} / ${formatByteCount(installStatus.total_bytes)}`
+      : assetSize
+        ? `${formatByteCount(installStatus?.downloaded_bytes)} / ${formatByteCount(assetSize)}`
+        : `${
+          installStatus?.stage === 'finalizing'
+            ? t().extras!.compatFinalizing()
+            : installStatus?.stage === 'extracting'
+              ? t().extras!.compatExtracting()
+              : t().extras!.compatDownloading()
+        }`;
+
+  return {
+    progressRatio,
+    progressLabel: `${progressPercent}%`,
+    progressMeta,
+    etaLabel: formatEta(etaSeconds),
+  };
 }
 
 function sectionStyle(): React.CSSProperties {
@@ -152,14 +203,18 @@ function VersionBrowserModal({
   installedReleaseTags,
   currentReleaseTag,
   installingTag,
+  installStatus,
   onInstall,
+  onOpenArchiveInstaller,
   onClose,
 }: {
   releases: CompatToolRelease[];
   installedReleaseTags: Set<string>;
   currentReleaseTag?: string | null;
   installingTag: string | null;
+  installStatus: ProtonGeManagerState['install_status'] | null;
   onInstall: (tagName: string) => void;
+  onOpenArchiveInstaller: () => void;
   onClose: () => void;
 }) {
   const extras = t().extras!;
@@ -183,28 +238,37 @@ function VersionBrowserModal({
       onOK={onClose}
       onCancel={onClose}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 640 }}>
-        <input
-          type="text"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder={t().compatTools.filterPlaceholder}
-          style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            background: '#162535',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 8,
-            color: '#e8f4ff',
-            fontSize: 12,
-            padding: '8px 10px',
-          }}
-        />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0, width: 'min(720px, calc(100vw - 96px))', maxWidth: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 10, alignItems: 'center' }}>
+          <input
+            type="text"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder={t().compatTools.filterPlaceholder}
+            style={{
+              width: '100%',
+              minWidth: 0,
+              boxSizing: 'border-box',
+              background: '#162535',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 8,
+              color: '#e8f4ff',
+              fontSize: 12,
+              padding: '8px 10px',
+            }}
+          />
+          <CompactActionButton
+            label={t().compatTools.installFromZip}
+            onClick={onOpenArchiveInstaller}
+            disabled={installingTag !== null}
+            fullWidth={false}
+          />
+        </div>
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: RELEASE_GRID_TEMPLATE,
-            gap: 10,
+            gap: 8,
             padding: '0 0 8px',
             fontSize: 10,
             fontWeight: 700,
@@ -227,6 +291,9 @@ function VersionBrowserModal({
             filteredReleases.map((release, index) => {
               const installed = installedReleaseTags.has(release.tag_name);
               const isInstalling = installingTag === release.tag_name;
+              const progress = isInstalling
+                ? buildInstallProgressDetails(installStatus, release.asset_size)
+                : null;
               return (
                 <div
                   key={release.tag_name}
@@ -234,7 +301,7 @@ function VersionBrowserModal({
                     position: 'relative',
                     display: 'grid',
                     gridTemplateColumns: RELEASE_GRID_TEMPLATE,
-                    gap: 10,
+                    gap: 8,
                     alignItems: 'center',
                     padding: '10px 0',
                     borderBottom: index === filteredReleases.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.06)',
@@ -258,24 +325,57 @@ function VersionBrowserModal({
                   ) : null}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 12, color: '#eef7ff', fontWeight: 600 }}>Proton-GE</div>
-                    <div style={{ fontSize: 10, color: '#7f9bb2', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {release.tag_name} · {formatReleaseDate(release.published_at)}
-                    </div>
+                    {isInstalling ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 10, alignItems: 'center', marginTop: 8 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ height: 8, borderRadius: 999, background: 'rgba(111,198,255,0.12)', overflow: 'hidden' }}>
+                            <div
+                              style={{
+                                width: `${Math.max(4, Math.round(Math.max(0, Math.min(100, (progress?.progressRatio ?? 0.08) * 100))))}%`,
+                                height: '100%',
+                                borderRadius: 999,
+                                background: 'linear-gradient(90deg, rgba(82,173,235,0.9) 0%, rgba(122,213,255,0.98) 100%)',
+                                transition: 'width 240ms ease',
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ minWidth: 88, textAlign: 'right' }}>
+                          <div style={{ fontSize: 12, color: '#eef7ff', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                            {progress?.progressLabel ?? '0%'}
+                          </div>
+                          <div style={{ fontSize: 10, color: '#7f9bb2', marginTop: 4, whiteSpace: 'nowrap' }}>
+                            {progress?.progressMeta ?? extras.compatDownloading()}
+                          </div>
+                          <div style={{ fontSize: 10, color: '#6faee8', marginTop: 2, whiteSpace: 'nowrap' }}>
+                            {progress?.etaLabel ?? t().compatTools.estimating}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 10, color: '#7f9bb2', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {release.tag_name} · {formatReleaseDate(release.published_at)}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ fontSize: 12, color: '#d7e7f6', fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ fontSize: 11, color: '#d7e7f6', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                     {formatReleaseVersion(release.tag_name)}
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <span
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        minWidth: 86,
-                        padding: '3px 8px',
+                        maxWidth: '100%',
+                        minWidth: 0,
+                        padding: '3px 7px',
                         borderRadius: 999,
                         fontSize: 10,
                         fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                         ...releaseStatusTone(release, installedReleaseTags, currentReleaseTag),
                       }}
                     >
@@ -287,6 +387,7 @@ function VersionBrowserModal({
                       label={isInstalling ? t().compatTools.refreshing : installed ? t().compatTools.reinstall : t().compatTools.install}
                       onClick={() => onInstall(release.tag_name)}
                       disabled={installingTag !== null}
+                      fullWidth={false}
                     />
                   </div>
                 </div>
@@ -308,6 +409,37 @@ function InstallArchiveModal({
 }) {
   const extras = t().extras!;
   const [archivePath, setArchivePath] = useState('');
+  const [pickingArchive, setPickingArchive] = useState(false);
+
+  const handleBrowseArchive = async () => {
+    setPickingArchive(true);
+    try {
+      const picked = await openFilePicker(
+        FileSelectionType.FILE,
+        '/home/deck/Downloads',
+        true,
+        false,
+        undefined,
+        ['zip', 'tar', 'gz', 'xz', 'bz2', 'tgz', 'tbz2'],
+        false,
+        true,
+        1,
+      );
+      if (picked?.realpath || picked?.path) {
+        setArchivePath(picked.realpath || picked.path);
+      }
+    } catch (error) {
+      void logFrontendEvent('WARNING', 'Archive file picker failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      toaster.toast({
+        title: 'Proton Pulse',
+        body: 'Could not open the file picker. You can still enter a path manually.',
+      });
+    } finally {
+      setPickingArchive(false);
+    }
+  };
 
   return (
     <ConfirmModal
@@ -317,27 +449,37 @@ function InstallArchiveModal({
       onOK={onClose}
       onCancel={onClose}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 640 }}>
-        <input
-          type="text"
-          value={archivePath}
-          onChange={(e) => setArchivePath(e.target.value)}
-          placeholder={t().compatTools.zipPlaceholder}
-          style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            background: '#162535',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 8,
-            color: '#e8f4ff',
-            fontSize: 12,
-            padding: '8px 10px',
-          }}
-        />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0, width: 'min(680px, calc(100vw - 96px))', maxWidth: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 10, alignItems: 'center' }}>
+          <input
+            type="text"
+            value={archivePath}
+            onChange={(e) => setArchivePath(e.target.value)}
+            placeholder={t().compatTools.zipPlaceholder}
+            style={{
+              width: '100%',
+              minWidth: 0,
+              boxSizing: 'border-box',
+              background: '#162535',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 8,
+              color: '#e8f4ff',
+              fontSize: 12,
+              padding: '8px 10px',
+            }}
+          />
+          <DialogButton
+            onClick={() => void handleBrowseArchive()}
+            disabled={pickingArchive}
+            style={{ minWidth: 44, width: 44, padding: '0 10px', fontSize: 12 }}
+          >
+            ...
+          </DialogButton>
+        </div>
         <div style={{ fontSize: 11, color: '#8fa9bf', lineHeight: 1.45 }}>
           {extras.compatInstallArchiveHint()}
         </div>
-        <DialogButton onClick={() => archivePath.trim() && onInstall(archivePath.trim())} disabled={!archivePath.trim()}>
+        <DialogButton onClick={() => archivePath.trim() && onInstall(archivePath.trim())} disabled={!archivePath.trim() || pickingArchive}>
           {extras.compatInstallArchive()}
         </DialogButton>
       </div>
@@ -393,11 +535,11 @@ function CompactActionButton({
       onClick={onClick}
       onOKButton={disabled ? undefined : onClick}
       style={{
-        minWidth: fullWidth ? '100%' : 110,
+        minWidth: fullWidth ? '100%' : 96,
         width: fullWidth ? '100%' : undefined,
         height: 34,
-        padding: '0 12px',
-        fontSize: 12,
+        padding: '0 10px',
+        fontSize: 11,
         boxShadow: active ? '0 0 0 1px rgba(160, 210, 255, 0.38) inset, 0 0 16px rgba(111, 174, 232, 0.18)' : undefined,
         ...(danger ? {
           background: 'linear-gradient(180deg, #702c2c 0%, #5d1f1f 100%)',
@@ -478,28 +620,9 @@ export function SettingsTab() {
       const installed = !!matchedTool;
       const isInstalling = installingTag === release.tag_name;
       const installStatus = managerState.install_status;
-      const elapsedSeconds = installStatus.started_at ? Math.max(1, Math.round(Date.now() / 1000 - installStatus.started_at)) : null;
-      const progressRatio = isInstalling && installStatus.tag_name === release.tag_name
-        ? installStatus.progress_fraction
+      const progress = isInstalling && installStatus.tag_name === release.tag_name
+        ? buildInstallProgressDetails(installStatus, release.asset_size)
         : null;
-      const etaSeconds =
-        isInstalling
-        && installStatus.tag_name === release.tag_name
-        && installStatus.total_bytes
-        && installStatus.downloaded_bytes
-        && elapsedSeconds
-        && installStatus.downloaded_bytes > 0
-          ? ((installStatus.total_bytes - installStatus.downloaded_bytes) / (installStatus.downloaded_bytes / elapsedSeconds))
-          : null;
-      const progressMeta = isInstalling && installStatus.tag_name === release.tag_name
-        ? (
-          installStatus.total_bytes && installStatus.downloaded_bytes !== null
-            ? `${formatByteCount(installStatus.downloaded_bytes)} / ${formatByteCount(installStatus.total_bytes)}`
-            : release.asset_size
-              ? `${formatByteCount(installStatus.downloaded_bytes)} / ${formatByteCount(release.asset_size)}`
-              : `${installStatus.stage === 'finalizing' ? extras.compatFinalizing() : installStatus.stage === 'extracting' ? extras.compatExtracting() : extras.compatDownloading()}`
-        )
-        : undefined;
 
       return {
         key: `release:${release.tag_name}`,
@@ -512,10 +635,10 @@ export function SettingsTab() {
         removing: false,
         displayName: matchedTool?.managed_slot === 'latest' ? 'Proton-GE-Latest' : 'Proton-GE',
         versionLabel: formatReleaseVersion(release.tag_name),
-        versionMeta: progressMeta,
-        progressRatio,
-        progressLabel: isInstalling && progressRatio !== null ? `${Math.round(progressRatio * 100)}%` : undefined,
-        etaLabel: isInstalling ? formatEta(etaSeconds) : undefined,
+        versionMeta: progress?.progressMeta,
+        progressRatio: progress?.progressRatio,
+        progressLabel: progress?.progressLabel,
+        etaLabel: progress?.etaLabel,
         statusLabel: isInstalling
           ? t().compatTools.installing
           : releaseStatusLabel(release, installedReleaseTags, managerState.current_release?.tag_name),
@@ -528,6 +651,10 @@ export function SettingsTab() {
           : isInstalling
             ? () => void handleCancelInstall()
             : () => void handleInstallRelease(release.tag_name),
+        reinstallLabel: installed ? t().compatTools.reinstall : undefined,
+        onReinstall: installed && !isInstalling
+          ? () => void handleInstallRelease(release.tag_name, true)
+          : undefined,
       };
     });
 
@@ -535,22 +662,29 @@ export function SettingsTab() {
       .filter((tool) => isProtonFamilyTool(tool))
       .filter((tool) => !matchedDirectories.has(tool.directory_name))
       .filter((tool) => tool.source !== 'valve')
-      .map((tool) => ({
+      .map((tool) => {
+        const isLatestSlotInstall = tool.managed_slot === 'latest'
+          && managerState.install_status.install_as_latest
+          && managerState.install_status.state === 'running';
+        const progress = isLatestSlotInstall
+          ? buildInstallProgressDetails(managerState.install_status, managerState.current_release?.asset_size)
+          : null;
+        return ({
         key: `installed:${tool.directory_name}`,
         kind: 'installed-only' as const,
         type: isManagedGeTool(tool) ? ('proton-ge' as const) : ('custom' as const),
         tool,
         installed: true,
-        installing: false,
+        installing: isLatestSlotInstall,
         removing: removingTool === tool.directory_name,
         displayName: tool.display_name,
         versionLabel: isManagedGeTool(tool)
           ? formatReleaseVersion(tool.internal_name || tool.display_name || tool.directory_name)
           : extras.compatCustom(),
-        versionMeta: undefined,
-        progressRatio: null,
-        progressLabel: undefined,
-        etaLabel: undefined,
+        versionMeta: progress?.progressMeta,
+        progressRatio: progress?.progressRatio,
+        progressLabel: progress?.progressLabel,
+        etaLabel: progress?.etaLabel,
         statusLabel: removingTool === tool.directory_name
           ? t().compatTools.removing
           : tool.managed_slot === 'latest'
@@ -565,7 +699,15 @@ export function SettingsTab() {
         onAction: tool.source !== 'valve'
           ? () => void handleUninstallTool(tool)
           : undefined,
-      }));
+        reinstallLabel: isManagedGeTool(tool) ? t().compatTools.reinstall : undefined,
+        onReinstall: isManagedGeTool(tool)
+          ? () => void handleInstallRelease(
+            tool.latest_tag ?? managerState.current_release?.tag_name ?? null,
+            true,
+          )
+          : undefined,
+      });
+      });
 
     return [...releaseRows, ...installedOnlyRows].sort((a, b) => {
       if (a.installed !== b.installed) return a.installed ? -1 : 1;
@@ -701,13 +843,13 @@ export function SettingsTab() {
     }
   };
 
-  const handleInstallRelease = async (tagName?: string | null) => {
+  const handleInstallRelease = async (tagName?: string | null, forceReinstall = false) => {
     const nextTag = tagName ?? managerState?.current_release?.tag_name ?? null;
     if (!nextTag) return;
     const installAsLatest = nextTag === managerState?.current_release?.tag_name;
 
     setInstallingTag(nextTag);
-    const result = await installProtonGe(nextTag, installAsLatest);
+    const result = await installProtonGe(nextTag, installAsLatest, forceReinstall);
     toaster.toast({
       title: 'Proton Pulse',
       body: result.success ? withRestartHint(result.message) : `Install failed: ${result.message}`,
@@ -755,7 +897,9 @@ export function SettingsTab() {
         installedReleaseTags={installedReleaseTags}
         currentReleaseTag={managerState?.current_release?.tag_name ?? null}
         installingTag={installingTag}
+        installStatus={managerState?.install_status ?? null}
         onInstall={(tagName) => void handleInstallRelease(tagName)}
+        onOpenArchiveInstaller={handleOpenArchiveInstaller}
         onClose={() => modal.Close()}
       />,
     );
@@ -783,6 +927,10 @@ export function SettingsTab() {
       />,
     );
   };
+
+  useEffect(() => registerScreenshotAutomationHandler('compatibility-tools/release-picker', async () => {
+    handleOpenVersionBrowser();
+  }), [installedReleaseTags, installingTag, managerState]);
 
   return (
     <Focusable onGamepadDirection={handleRootDirection}>
@@ -863,9 +1011,38 @@ export function SettingsTab() {
                             {row.displayName}
                             {row.statusLabel === extras.compatLatestSlot() ? ` (${extras.compatLatest()})` : ''}
                           </div>
-                          <div style={{ fontSize: 11, color: '#d7e7f6', marginTop: 2, lineHeight: 1.35 }}>
-                            {row.versionLabel}
-                          </div>
+                          {row.installing ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 10, alignItems: 'center', marginTop: 8 }}>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ height: 8, borderRadius: 999, background: 'rgba(111,198,255,0.12)', overflow: 'hidden' }}>
+                                  <div
+                                    style={{
+                                      width: `${Math.max(4, Math.round(Math.max(0, Math.min(100, (row.progressRatio ?? 0.08) * 100))))}%`,
+                                      height: '100%',
+                                      borderRadius: 999,
+                                      background: 'linear-gradient(90deg, rgba(82,173,235,0.9) 0%, rgba(122,213,255,0.98) 100%)',
+                                      transition: 'width 240ms ease',
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div style={{ minWidth: 88, textAlign: 'right' }}>
+                                <div style={{ fontSize: 12, color: '#eef7ff', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                                  {row.progressLabel ?? `${Math.round(Math.max(0, Math.min(100, (row.progressRatio ?? 0.08) * 100)))}%`}
+                                </div>
+                                <div style={{ fontSize: 10, color: '#7f9bb2', marginTop: 4, whiteSpace: 'nowrap' }}>
+                                  {row.versionMeta ?? extras.compatDownloading()}
+                                </div>
+                                <div style={{ fontSize: 10, color: '#6faee8', marginTop: 2, whiteSpace: 'nowrap' }}>
+                                  {row.etaLabel ?? t().compatTools.estimating}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 11, color: '#d7e7f6', marginTop: 2, lineHeight: 1.35 }}>
+                              {row.versionLabel}
+                            </div>
+                          )}
                         </div>
                         <Focusable
                           style={{ marginLeft: 'auto', boxShadow: 'none', display: 'flex', justifyContent: 'right' }}
@@ -884,6 +1061,14 @@ export function SettingsTab() {
                             onClick={(e: MouseEvent) =>
                               showContextMenu(
                                 <Menu label={row.displayName}>
+                                  <MenuItem onClick={() => {}}>
+                                    {t().common.cancel}
+                                  </MenuItem>
+                                  {row.onReinstall && row.reinstallLabel ? (
+                                    <MenuItem onClick={row.onReinstall}>
+                                      {row.reinstallLabel}
+                                    </MenuItem>
+                                  ) : null}
                                   <MenuItem onClick={row.onAction}>
                                     {menuLabel === t().compatTools.removing ? t().compatTools.removing : row.actionLabel ?? t().compatTools.uninstall}
                                   </MenuItem>
@@ -980,6 +1165,9 @@ export function SettingsTab() {
                             onClick={(e: MouseEvent) =>
                               showContextMenu(
                                 <Menu label={row.release?.tag_name ?? row.displayName}>
+                                  <MenuItem onClick={() => {}}>
+                                    {t().common.cancel}
+                                  </MenuItem>
                                   {row.onAction && row.actionLabel ? (
                                     <MenuItem onClick={row.onAction}>{row.actionLabel}</MenuItem>
                                   ) : null}

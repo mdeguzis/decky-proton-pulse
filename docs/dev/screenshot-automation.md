@@ -4,9 +4,9 @@ This doc covers how we capture project UI screenshots and publish them to the wi
 
 ## Scope
 
-`make capture-project-screenshots` is a guided batch capture flow. It walks through every screenshot in the project manifest, registers each image in the local screenshot catalog, and refreshes the wiki gallery at the end.
+`make capture-project-screenshots` is the project screenshot capture flow. It walks through the screenshot manifest, drives the Deck UI to the requested route or modal, registers each image in the local screenshot catalog, and refreshes the wiki gallery at the end.
 
-Right now it is guided, not fully hands-off. It does not drive Steam Deck navigation yet. For each manifest step, the operator puts the Deck UI in the right state and confirms the capture in the terminal.
+The flow is now mostly automated for the wired states. It uses the plugin's screenshot automation bridge plus remote CEF debugging to navigate, wait, and capture the visible Steam UI. Manual verification is still important because Steam UI state can drift and a capture can be "close but wrong" if the visible page does not fully settle.
 
 ## Source of Truth
 
@@ -48,13 +48,16 @@ DECK_IP=$(cat ~/.deckip) SCREENSHOT_MATCH=manage-game make capture-project-scree
 6. Copy catalogued screenshots into the wiki checkout.
 7. Regenerate `UI-Screenshot-Gallery.md`.
 
+The published gallery preserves manifest order, so it should read like the plugin's real navigation flow instead of an alphabetical list.
+
 ## What Still Needs Work
 
-To make this fully automatic, we still need a reliable UI navigation layer that can:
+The remaining work is mostly about expanding coverage to more modal states and making waits even more robust for Steam UI drift. Current high-value additions are:
 
-- route to the right plugin tab or modal
-- focus the intended game or state
-- wait for the UI to settle before capture
-- recover if Steam UI state drifts
-
-Until then, the manifest-driven guided flow gives us a repeatable capture set that still maps cleanly to the wiki.
+- Manage Configurations config editor modal
+- Manage Configurations ProtonDB submit modal
+- Manage Game missing-version decision modal
+- Manage Game installed-version picker modal
+- Compatibility Tools install-from-ZIP modal
+- Logs tab base view
+- Settings advanced cache/performance section

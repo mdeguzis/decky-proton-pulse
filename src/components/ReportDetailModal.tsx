@@ -18,6 +18,7 @@ import { checkProtonVersionAvailability } from '../lib/compatTools';
 import { logFrontendEvent } from '../lib/logger';
 import { getUserVote } from '../lib/voting';
 import { t } from '../lib/i18n';
+import { registerScreenshotAutomationHandler } from '../lib/screenshotAutomation';
 
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
@@ -414,6 +415,17 @@ export function ReportDetailModal({
     );
   };
 
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/report-detail/edit-modal', async () => {
+    handleEditConfig();
+  }), [report, appId, appName]);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/report-detail/hardware-compare', async () => {
+    if (!sysInfo) {
+      throw new Error('System info is not loaded for the hardware comparison screenshot.');
+    }
+    handleOpenHardwareCompare();
+  }), [report, sysInfo]);
+
   const statusEntry = versionStatus !== 'loading'
     ? getVersionStatusStyles()[versionStatus]
     : null;
@@ -656,10 +668,15 @@ export function ReportDetailModal({
                   onClick={handleOpenHardwareCompare}
                   disabled={!sysInfo}
                   style={{
-                    fontSize: 10,
+                    flex: '0 0 auto',
+                    width: 'fit-content',
+                    minWidth: 116,
+                    maxWidth: 132,
+                    fontSize: 9,
                     minHeight: 0,
-                    padding: '3px 10px',
+                    padding: '2px 12px',
                     whiteSpace: 'nowrap',
+                    alignSelf: 'flex-start',
                   }}
                 >
                   Our System

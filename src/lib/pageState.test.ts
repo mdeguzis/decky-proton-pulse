@@ -1,6 +1,13 @@
 // src/lib/pageState.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NAVIGATE_EVENT, dispatchNavigate, pageState, rememberReturnPath } from './pageState';
+import {
+  NAVIGATE_EVENT,
+  dispatchNavigate,
+  normalizeDeckRoutePath,
+  pageState,
+  rememberReturnPath,
+  toNavigationPath,
+} from './pageState';
 import type { NavigatePayload } from './pageState';
 
 // Shim window with an EventTarget so CustomEvent dispatch works in Node.
@@ -105,8 +112,27 @@ describe('rememberReturnPath', () => {
     expect(pageState.returnPath).toBe('/library/app/123');
   });
 
+  it('normalizes duplicated /routes prefixes before storing', () => {
+    rememberReturnPath('/routes/routes/library/home');
+    expect(pageState.returnPath).toBe('/routes/library/home');
+  });
+
   it('ignores plugin paths', () => {
     rememberReturnPath('/proton-pulse');
     expect(pageState.returnPath).toBeNull();
+  });
+});
+
+describe('route normalization helpers', () => {
+  it('collapses repeated /routes prefixes', () => {
+    expect(normalizeDeckRoutePath('/routes/routes/library/home')).toBe('/routes/library/home');
+  });
+
+  it('converts /routes paths into Navigation.Navigate-friendly paths', () => {
+    expect(toNavigationPath('/routes/library/home')).toBe('/library/home');
+  });
+
+  it('passes through plugin-local paths unchanged for navigation', () => {
+    expect(toNavigationPath('/proton-pulse')).toBe('/proton-pulse');
   });
 });

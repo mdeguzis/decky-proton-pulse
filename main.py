@@ -322,7 +322,10 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     ################################################################
 
     async def install_proton_ge(
-        self, version: str | None = None, install_as_latest: bool = False
+        self,
+        version: str | None = None,
+        install_as_latest: bool = False,
+        force_reinstall: bool = False,
     ) -> dict[str, Any]:
         """Kick off a background Proton-GE install for the requested version."""
         releases = get_releases_sync(False)
@@ -390,6 +393,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
                     result = install_sync(
                         normalized,
                         install_as_latest,
+                        force_reinstall,
                         status_ref,
                         lock_ref,
                         cancel_ref,

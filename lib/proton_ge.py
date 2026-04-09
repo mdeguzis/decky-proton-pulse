@@ -292,6 +292,7 @@ def finalize_extracted_compat_tool(
 def install_sync(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-return-statements,too-many-statements
     version: str | None,
     install_as_latest: bool,
+    force_reinstall: bool,
     status: dict[str, Any],
     lock: threading.Lock,
     cancel_flag: threading.Event,
@@ -350,6 +351,8 @@ def install_sync(  # pylint: disable=too-many-arguments,too-many-positional-argu
 
     # check if already installed before downloading
     if (
+        not force_reinstall
+        and
         install_as_latest
         and existing_latest
         and installed_tool_matches_version(existing_latest, normalized)
@@ -361,7 +364,7 @@ def install_sync(  # pylint: disable=too-many-arguments,too-many-positional-argu
             "message": f"{slot} already points to {normalized}.",
             "release": release,
         }
-    if not install_as_latest and any(
+    if not force_reinstall and not install_as_latest and any(
         installed_tool_matches_version(t, normalized) for t in installed
     ):
         return {
@@ -381,6 +384,7 @@ def install_sync(  # pylint: disable=too-many-arguments,too-many-positional-argu
 
     return _do_download_and_install(
         normalized, release, download_url, install_as_latest,
+        force_reinstall,
         _set, _cancel, _set_process,
     )
 
@@ -390,6 +394,7 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
     release: dict[str, Any],
     download_url: str,
     install_as_latest: bool,
+    force_reinstall: bool,
     _set: Any,
     _cancel: Any,
     _set_process: Any,
@@ -450,7 +455,7 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
             result = finalize_extracted_compat_tool(
                 normalized, extract_dir, cd,
                 destination_name=dest_name,
-                replace_existing=install_as_latest,
+                replace_existing=install_as_latest or force_reinstall,
             )
             if result.get("success") and install_as_latest:
                 write_latest_metadata(

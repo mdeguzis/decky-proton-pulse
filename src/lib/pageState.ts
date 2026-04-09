@@ -13,6 +13,26 @@ export interface NavigatePayload {
 
 export const NAVIGATE_EVENT = 'proton-pulse:navigate';
 
+function collapseRepeatedRoutesPrefix(pathname: string): string {
+  return pathname.replace(/^\/routes(?:\/routes)+/u, '/routes');
+}
+
+export function normalizeDeckRoutePath(pathname: string | null | undefined): string | null {
+  if (!pathname) return null;
+  const trimmed = pathname.trim();
+  if (!trimmed) return null;
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return collapseRepeatedRoutesPrefix(withLeadingSlash);
+}
+
+export function toNavigationPath(pathname: string | null | undefined): string | null {
+  const normalized = normalizeDeckRoutePath(pathname);
+  if (!normalized) return null;
+  return normalized.startsWith('/routes/')
+    ? normalized.slice('/routes'.length)
+    : normalized;
+}
+
 function rememberNavigate(payload: NavigatePayload): void {
   pageState.initialPage = payload.tab;
   pageState.appId = payload.appId;
@@ -22,8 +42,9 @@ function rememberNavigate(payload: NavigatePayload): void {
 }
 
 export function rememberReturnPath(pathname: string | null | undefined): void {
-  if (!pathname || pathname.includes('/proton-pulse')) return;
-  pageState.returnPath = pathname;
+  const normalized = normalizeDeckRoutePath(pathname);
+  if (!normalized || normalized.includes('/proton-pulse')) return;
+  pageState.returnPath = normalized;
 }
 
 export function dispatchNavigate(payload: NavigatePayload): void {
