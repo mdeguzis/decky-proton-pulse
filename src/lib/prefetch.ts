@@ -1,13 +1,13 @@
 // src/lib/prefetch.ts
 //
 // On plugin startup, enumerate the user's installed Steam games and
-// prefetch ProtonDB data for recently played ones. This warms the
-// cache so games load instantly when the user opens them.
+// prefetch ProtonDB data for the top uncached entries. This warms the
+// cache so games load quickly when the user opens them.
 //
 // Steam's internal collectionStore.allAppsCollection has the full
-// library. We filter to installed games, sort by last-played time,
-// and fetch data for the top N. Each fetch is throttled so we dont
-// hammer the CDN on startup.
+// library. We filter to installed games, rank them by play/update/purchase
+// timestamps, then fetch data for the top N uncached entries. Each fetch
+// is throttled so we dont hammer the CDN on startup.
 
 import { fetchNoCors } from '@decky/api';
 import { logFrontendEvent } from './logger';
@@ -15,14 +15,16 @@ import { setCache, getCachedAppIds, initCache } from './cache';
 import type { VoteTotals } from './cache';
 import {
   startDetailedSpan,
+  countLocalNonSteamGame,
   countPrefetchedGame,
   countFetch,
 } from './metrics';
+import { isSteamShortcutApp } from './steamApps';
 import type { CdnReport, ProtonDBSummary, ProtonRating } from '../types';
 
 // ── config ──────────────────────────────────────────────────────────────────
 
-// only prefetch games played in the last N days
+// recent-play window used only for logging and sort priority
 const RECENTLY_PLAYED_DAYS = 30;
 // max games to prefetch per startup
 const MAX_PREFETCH = 50;
@@ -45,7 +47,43 @@ interface AppOverview {
   appid: number;
   display_name: string;
   rt_last_time_played?: number; // unix timestamp, 0 if never
+  rtLastTimePlayed?: number;
+  rt_last_updated?: number;
+  rtLastUpdated?: number;
+  rt_purchased?: number;
+  rtPurchased?: number;
+  bHasAnyLocalContent?: boolean;
+  iInstallFolder?: number;
+  strInstallFolder?: string;
   installed?: boolean;
+  is_shortcut?: boolean;
+  isShortcut?: boolean;
+  bIsShortcut?: boolean;
+}
+
+function readTimestamp(app: AppOverview, ...keys: Array<keyof AppOverview>): number {
+  for (const key of keys) {
+    const value = app[key];
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      return value;
+    }
+  }
+  return 0;
+}
+
+function isInstalledGame(app: AppOverview): boolean {
+  if (!app?.appid || app.appid <= 0) return false;
+  if (app.installed === true) return true;
+  if (app.bHasAnyLocalContent === true) return true;
+  if (typeof app.iInstallFolder === 'number' && app.iInstallFolder >= 0) return true;
+  if (typeof app.strInstallFolder === 'string' && app.strInstallFolder.trim().length > 0) return true;
+  return false;
+}
+
+function isLocalNonSteamGame(app: AppOverview): boolean {
+  const shortcutFlags = [app.is_shortcut, app.isShortcut, app.bIsShortcut];
+  if (shortcutFlags.some((value) => value === true)) return true;
+  return isSteamShortcutApp(app.appid);
 }
 
 function getInstalledGames(): AppOverview[] {
@@ -75,20 +113,28 @@ function getInstalledGames(): AppOverview[] {
     }
 
     // filter to installed games only (not tools, soundtracks, etc)
-    const installed = apps.filter((app: any) => {
-      // only include things that look like games with an appid
-      if (!app?.appid || app.appid <= 0) return false;
-      // rt_installed_at > 0 or some other indicator of installed state
-      // different Steam versions might use different field names
-      return true;
-    });
+    const installed = apps.filter(isInstalledGame);
+    const steamInstalled: AppOverview[] = [];
+    let localNonSteam = 0;
+    for (const app of installed) {
+      if (isLocalNonSteamGame(app)) {
+        localNonSteam++;
+        continue;
+      }
+      steamInstalled.push(app);
+    }
+
+    if (localNonSteam > 0) {
+      countLocalNonSteamGame(localNonSteam);
+    }
 
     void logFrontendEvent('DEBUG', 'Enumerated installed games', {
       total: apps.length,
-      installed: installed.length,
+      installed: steamInstalled.length,
+      localNonSteam,
     });
 
-    return installed;
+    return steamInstalled;
   } catch (err) {
     void logFrontendEvent('ERROR', 'Failed to enumerate installed games', {
       error: err instanceof Error ? err.message : String(err),
@@ -100,8 +146,33 @@ function getInstalledGames(): AppOverview[] {
 function getRecentlyPlayed(games: AppOverview[], days: number): AppOverview[] {
   const cutoff = Date.now() / 1000 - days * 24 * 60 * 60;
   return games
-    .filter(g => (g.rt_last_time_played ?? 0) > cutoff)
-    .sort((a, b) => (b.rt_last_time_played ?? 0) - (a.rt_last_time_played ?? 0));
+    .filter(g => readTimestamp(g, 'rt_last_time_played', 'rtLastTimePlayed') > cutoff)
+    .sort(
+      (a, b) =>
+        readTimestamp(b, 'rt_last_time_played', 'rtLastTimePlayed')
+        - readTimestamp(a, 'rt_last_time_played', 'rtLastTimePlayed'),
+    );
+}
+
+function rankPrefetchCandidates(games: AppOverview[]): AppOverview[] {
+  return [...games].sort((a, b) => {
+    const playedDiff =
+      readTimestamp(b, 'rt_last_time_played', 'rtLastTimePlayed')
+      - readTimestamp(a, 'rt_last_time_played', 'rtLastTimePlayed');
+    if (playedDiff !== 0) return playedDiff;
+
+    const updatedDiff =
+      readTimestamp(b, 'rt_last_updated', 'rtLastUpdated')
+      - readTimestamp(a, 'rt_last_updated', 'rtLastUpdated');
+    if (updatedDiff !== 0) return updatedDiff;
+
+    const purchasedDiff =
+      readTimestamp(b, 'rt_purchased', 'rtPurchased')
+      - readTimestamp(a, 'rt_purchased', 'rtPurchased');
+    if (purchasedDiff !== 0) return purchasedDiff;
+
+    return b.appid - a.appid;
+  });
 }
 
 // ── individual game prefetch ────────────────────────────────────────────────
@@ -225,7 +296,8 @@ export async function runStartupPrefetch(): Promise<void> {
     }
 
     const recent = getRecentlyPlayed(games, RECENTLY_PLAYED_DAYS);
-    void logFrontendEvent('INFO', 'Prefetch: found recently played games', {
+    const ranked = rankPrefetchCandidates(games);
+    void logFrontendEvent('INFO', 'Prefetch candidate summary', {
       installed: games.length,
       recentlyPlayed: recent.length,
       cutoffDays: RECENTLY_PLAYED_DAYS,
@@ -233,14 +305,15 @@ export async function runStartupPrefetch(): Promise<void> {
 
     // filter out games already cached and warm
     const alreadyCached = getCachedAppIds();
-    const toPrefetch = recent
+    const toPrefetch = ranked
       .map(g => String(g.appid))
       .filter(id => !alreadyCached.has(id))
       .slice(0, MAX_PREFETCH);
 
     if (!toPrefetch.length) {
-      void logFrontendEvent('INFO', 'Prefetch: all recent games already cached', {
+      void logFrontendEvent('INFO', 'Prefetch: all ranked candidates already cached', {
         cachedCount: alreadyCached.size,
+        candidateCount: ranked.length,
       });
       batchSpan.end(true, { reason: 'all-cached', cached: alreadyCached.size });
       prefetchRunning = false;
@@ -251,6 +324,8 @@ export async function runStartupPrefetch(): Promise<void> {
       count: toPrefetch.length,
       maxPrefetch: MAX_PREFETCH,
       firstFew: toPrefetch.slice(0, 5),
+      recentCandidates: recent.length,
+      rankedCandidates: ranked.length,
     });
 
     const { ok, failed } = await prefetchBatch(toPrefetch);

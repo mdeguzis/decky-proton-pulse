@@ -14,7 +14,10 @@ import {
   countPrefetchedGame,
   countCacheEviction,
   countFetchError,
+  countLocalNonSteamGame,
   getCounters,
+  getCombinedCategoryStats,
+  getPrefetchFailureSummary,
   getSummary,
   getSummaryText,
   getRawEntries,
@@ -43,6 +46,7 @@ describe('metrics counters', () => {
     countPrefetchedGame();
     countCacheEviction();
     countFetchError();
+    countLocalNonSteamGame(4);
 
     const c = getCounters();
     expect(c.cacheHits).toBe(2);
@@ -51,6 +55,7 @@ describe('metrics counters', () => {
     expect(c.prefetchedGames).toBe(1);
     expect(c.cacheEvictions).toBe(1);
     expect(c.fetchErrors).toBe(1);
+    expect(c.localNonSteamGames).toBe(4);
   });
 });
 
@@ -104,6 +109,33 @@ describe('getSummary', () => {
   });
 });
 
+describe('getCombinedCategoryStats', () => {
+  it('combines multiple timing categories into one aggregate', () => {
+    startSpan('fetch-cdn-index', '730')();
+    startSpan('fetch-live-summary', '730')();
+    startSpan('cache-read', 'init')();
+
+    const combined = getCombinedCategoryStats(['fetch-cdn-index', 'fetch-live-summary']);
+    expect(combined).not.toBeNull();
+    expect(combined!.count).toBe(2);
+    expect(combined!.avgMs).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('getPrefetchFailureSummary', () => {
+  it('summarizes failed prefetch reasons', () => {
+    startDetailedSpan('prefetch-game', '730').end(false, { reason: 'index-miss', status: 404 });
+    startDetailedSpan('prefetch-game', '440').end(false, { reason: 'index-miss', status: 404 });
+    startDetailedSpan('prefetch-game', '570').end(false, { reason: 'index-empty' });
+    startDetailedSpan('fetch-cdn-index', '730').end(false, { reason: 'timeout' });
+
+    const summary = getPrefetchFailureSummary();
+    expect(summary.total).toBe(3);
+    expect(summary.byReason['index-miss']).toBe(2);
+    expect(summary.byReason['index-empty']).toBe(1);
+  });
+});
+
 describe('getSummaryText', () => {
   it('produces a human-readable string', () => {
     countCacheHit();
@@ -113,5 +145,6 @@ describe('getSummaryText', () => {
     expect(text).toContain('Cache hits:       2');
     expect(text).toContain('Cache misses:     1');
     expect(text).toContain('Cache hit rate:   66.7%');
+    expect(text).toContain('Non-Steam local:  0');
   });
 });

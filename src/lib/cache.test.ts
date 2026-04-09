@@ -11,6 +11,15 @@ vi.mock('./metrics', () => ({
   countCacheHit: vi.fn(),
   countCacheMiss: vi.fn(),
   countCacheEviction: vi.fn(),
+  getCombinedCategoryStats: vi.fn(() => ({
+    count: 2,
+    totalMs: 180,
+    avgMs: 90,
+    minMs: 70,
+    maxMs: 110,
+    p95Ms: 110,
+    errorCount: 0,
+  })),
 }));
 
 import {
@@ -104,6 +113,9 @@ describe('cache', () => {
     expect(stats.maxSize).toBe(200);
     expect(stats.oldestMs).not.toBeNull();
     expect(stats.newestMs).not.toBeNull();
+    expect(stats.networkFetchAvgMs).toBe(90);
+    expect(stats.networkFetchP95Ms).toBe(110);
+    expect(stats.networkFetchMaxMs).toBe(110);
   });
 
   it('getCachedAppIds returns all cached IDs', () => {

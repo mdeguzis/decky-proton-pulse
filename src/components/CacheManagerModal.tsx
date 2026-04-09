@@ -11,6 +11,7 @@ import { logFrontendEvent } from '../lib/logger';
 import { invalidate, invalidateAll, getCacheStats, getCachedAppIds, getCached } from '../lib/cache';
 import type { CacheEntry } from '../lib/cache';
 import { getProtonDBReportsWithDiagnostics } from '../lib/protondb';
+import { getSteamAppOverview } from '../lib/steamApps';
 import { getVoteTotals } from '../lib/voting';
 import { t } from '../lib/i18n';
 
@@ -25,8 +26,20 @@ function resolveGameName(appId: string, entry: CacheEntry): string {
     return entry.reports[0].title;
   }
   try {
-    const overview = (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(Number(appId));
-    if (overview?.display_name) return overview.display_name;
+    const numericAppId = Number(appId);
+    const overview = getSteamAppOverview(numericAppId);
+    const overviewName = overview?.display_name ?? overview?.strDisplayName;
+    if (typeof overviewName === 'string' && overviewName.trim()) return overviewName;
+
+    const collection = (globalThis as any).collectionStore?.allAppsCollection;
+    const allApps = Array.isArray(collection?.allApps)
+      ? collection.allApps
+      : collection?.apps && Symbol.iterator in collection.apps
+        ? Array.from(collection.apps)
+        : [];
+    const libraryEntry = allApps.find((app: any) => Number(app?.appid) === numericAppId);
+    const libraryName = libraryEntry?.display_name ?? libraryEntry?.strDisplayName ?? libraryEntry?.name;
+    if (typeof libraryName === 'string' && libraryName.trim()) return libraryName;
   } catch { /* not available */ }
   return `App ${appId}`;
 }
@@ -151,6 +164,14 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
             {extras.clearAll()}
           </Focusable>
         </div>
+        {stats.networkFetchAvgMs !== null && (
+          <div style={{ fontSize: 10, color: '#5dade2', marginBottom: 10 }}>
+            {extras.cdnFetchAvg()}: {stats.networkFetchAvgMs}ms
+            {stats.networkFetchP95Ms !== null ? ` (p95: ${stats.networkFetchP95Ms}ms` : ''}
+            {stats.networkFetchMaxMs !== null ? `${stats.networkFetchP95Ms !== null ? ', ' : ' ('}max: ${stats.networkFetchMaxMs}ms` : ''}
+            {(stats.networkFetchP95Ms !== null || stats.networkFetchMaxMs !== null) ? ')' : ''}
+          </div>
+        )}
 
         {/* search filter */}
         <input

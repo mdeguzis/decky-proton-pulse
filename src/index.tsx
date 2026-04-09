@@ -201,11 +201,40 @@ export default definePlugin(() => {
 
   // Auto-install latest Proton-GE on load if the user has the setting enabled
   const geAutoUpdateTimer = setTimeout(() => {
-    if (!getSetting('compat-auto-update-proton-ge', false)) return;
+    if (!getSetting('compat-auto-update-proton-ge', false)) {
+      void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check skipped', {
+        reason: 'disabled',
+      });
+      return;
+    }
     void (async () => {
       try {
+        void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check started');
         const state = await getProtonGeManagerState(true);
-        if (!state.current_release || state.current_latest_slot_installed || state.install_status.state === 'running') return;
+        if (!state.current_release) {
+          void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check finished', {
+            reason: 'no-current-release',
+          });
+          return;
+        }
+        if (state.current_latest_slot_installed) {
+          void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check finished', {
+            reason: 'already-up-to-date',
+            tag: state.current_release.tag_name,
+          });
+          return;
+        }
+        if (state.install_status.state === 'running') {
+          void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check finished', {
+            reason: 'install-already-running',
+            tag: state.install_status.tag_name,
+          });
+          return;
+        }
+
+        void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update install needed', {
+          tag: state.current_release.tag_name,
+        });
         const result = await installProtonGe(state.current_release.tag_name, true);
         void logFrontendEvent('INFO', 'Startup auto-install Proton-GE-Latest', { tag: state.current_release.tag_name, result });
       } catch (e) {
