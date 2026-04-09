@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Focusable, DialogButton, showModal } from '@decky/ui';
 import { t } from '../../lib/i18n';
 import { getLogText, subscribeToLogs, getLogCount } from '../../lib/logger';
+import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
 import { LogViewerModal } from '../LogViewerModal';
 
 export function LogsTab() {
@@ -22,6 +23,10 @@ export function LogsTab() {
   const openViewer = () => {
     showModal(<LogViewerModal logs={logs} entryCount={entryCount} />);
   };
+
+  useEffect(() => registerScreenshotAutomationHandler('logs/viewer', async () => {
+    openViewer();
+  }), [logs, entryCount]);
 
   const lines = logs.split('\n').filter(Boolean);
   const latestLines = lines.slice(-5).join('\n');

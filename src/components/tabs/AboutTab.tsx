@@ -1,12 +1,12 @@
 // src/components/tabs/AboutTab.tsx
-
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Focusable, DialogButton, Dropdown, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '../../lib/notify';
 import { BrandLogo } from '../BrandLogo';
 import { t } from '../../lib/i18n';
 import { openIssue, type IssueTemplate } from '../../lib/issueReport';
+import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
 
 const ISSUE_TEMPLATES: { data: IssueTemplate; labelKey: keyof ReturnType<typeof t>['about'] }[] = [
   { data: 'game_report', labelKey: 'issueTemplateGameReport' },
@@ -19,6 +19,7 @@ export function AboutTab() {
   const extras = t().extras!;
   const [selectedTemplate, setSelectedTemplate] = useState<IssueTemplate>('plugin_issue');
   const [submitting, setSubmitting] = useState(false);
+  const templatePickerRef = useRef<HTMLDivElement>(null);
 
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
@@ -38,6 +39,12 @@ export function AboutTab() {
   };
 
   const aboutStrings = t().about;
+
+  useEffect(() => registerScreenshotAutomationHandler('about/issue-template-selector', async () => {
+    const picker = templatePickerRef.current;
+    const button = picker?.querySelector<HTMLElement>('button,[role="button"]');
+    button?.click();
+  }), []);
 
   return (
     <Focusable onGamepadDirection={handleRootDirection} style={{ padding: 8, fontSize: 12, color: '#ccc' }}>
@@ -82,7 +89,7 @@ export function AboutTab() {
           {aboutStrings.submitIssueHint}
         </div>
         <Focusable style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
-          <div style={{ flex: 1 }}>
+          <div ref={templatePickerRef} style={{ flex: 1 }}>
             <Dropdown
               rgOptions={ISSUE_TEMPLATES.map((tpl) => ({
                 data: tpl.data,

@@ -16,6 +16,7 @@ DEFAULT_SCREENSHOT_MANIFEST = (
 class ScreenshotManifestEntry:
     """One guided screenshot step in the project capture manifest."""
 
+    automation: dict[str, object] | None
     caption: str
     group: str
     instructions: str
@@ -26,6 +27,7 @@ class ScreenshotManifestEntry:
 class ScreenshotManifestEntryPayload(TypedDict, total=False):
     """Serialized manifest entry loaded from JSON."""
 
+    automation: dict[str, object]
     caption: str
     group: str
     instructions: str
@@ -49,6 +51,7 @@ def load_screenshot_manifest(
         payload = cast(ScreenshotManifestEntryPayload, item)
         entries.append(
             ScreenshotManifestEntry(
+                automation=payload.get("automation"),
                 caption=str(payload.get("caption", "")).strip(),
                 group=str(payload.get("group", "")).strip(),
                 instructions=str(payload.get("instructions", "")).strip(),

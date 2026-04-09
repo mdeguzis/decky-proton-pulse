@@ -7,8 +7,10 @@ import { getSetting, setSetting } from '../../lib/settings';
 import { NOTIFICATIONS_ENABLED_KEY } from '../../lib/notify';
 import { logFrontendEvent, callWithTimeout } from '../../lib/logger';
 import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
-import { getCacheTtlMs, setCacheTtlHours, getCacheStats } from '../../lib/cache';
+import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
+import { getCacheTtlMs, setCacheTtlHours, getCacheStats, getCachedAppIds } from '../../lib/cache';
 import { getSummary, getPrefetchFailureSummary } from '../../lib/metrics';
+import { getInstalledGameStats } from '../../lib/prefetch';
 import { CacheManagerModalContent } from '../CacheManagerModal';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
@@ -101,6 +103,12 @@ function MetricsInfoBox() {
     : extras.notAvailable();
   const topPrefetchFailure = Object.entries(prefetchFailures.byReason)
     .sort((a, b) => b[1] - a[1])[0] ?? null;
+  const installedStats = getInstalledGameStats();
+  const cachedAppIds = getCachedAppIds();
+  const cachedInstalledGames = installedStats.installedSteamAppIds.filter((appId) => cachedAppIds.has(appId)).length;
+  const installedCoverage = installedStats.installedSteamGames > 0
+    ? `${((cachedInstalledGames / installedStats.installedSteamGames) * 100).toFixed(1)}%`
+    : extras.notAvailable();
 
   const infoStyle: React.CSSProperties = {
     background: '#0d1b2a',
@@ -135,6 +143,7 @@ function MetricsInfoBox() {
       <div><span style={labelStyle}>{extras.uptime()}</span>{upMin}m</div>
       <div><span style={labelStyle}>{extras.cacheHitRate()}</span>{hitRate} ({extras.hitsAndMisses(counters.cacheHits, counters.cacheMisses)})</div>
       <div><span style={labelStyle}>{extras.cachedGames()}</span>{cacheStats.size} / {cacheStats.maxSize}</div>
+      <div><span style={labelStyle}>Installed coverage</span>{installedCoverage} ({cachedInstalledGames} / {installedStats.installedSteamGames})</div>
       <div><span style={labelStyle}>{extras.prefetched()}</span>{counters.prefetchedGames} games</div>
       <div><span style={labelStyle}>{extras.totalFetches()}</span>{counters.totalFetches}{counters.fetchErrors > 0 ? extras.errorsSuffix(counters.fetchErrors) : ''}</div>
       <div><span style={labelStyle}>Local games</span>{counters.localNonSteamGames} skipped</div>
@@ -165,6 +174,7 @@ export function GeneralSettingsTab() {
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
+  const languageRowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void setLogLevelSafe(debugEnabled ? 'DEBUG' : 'INFO').catch((error) => {
@@ -197,13 +207,28 @@ export function GeneralSettingsTab() {
     }
   };
 
+  useEffect(() => registerScreenshotAutomationHandler('settings/cache-manager-modal', async () => {
+    if (!advancedEnabled) {
+      setAdvancedEnabled(true);
+      setSetting(ADVANCED_SETTINGS_KEY, true);
+      await new Promise((resolve) => window.setTimeout(resolve, 150));
+    }
+    showModal(<CacheManagerModalContent />);
+  }), [advancedEnabled]);
+
+  useEffect(() => registerScreenshotAutomationHandler('settings/language-selector', async () => {
+    const row = languageRowRef.current;
+    const button = row?.querySelector<HTMLElement>('button,[role="button"]');
+    button?.click();
+  }), []);
+
   return (
     <Focusable onGamepadDirection={handleRootDirection}>
       <div style={sectionStyle()}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
           {t().settings.general}
         </div>
-        <div style={focusClipRowStyle()}>
+        <div ref={languageRowRef} style={focusClipRowStyle()}>
           <DropdownItem
             label={t().settings.language}
             rgOptions={langOptions}

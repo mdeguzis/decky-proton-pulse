@@ -74,7 +74,8 @@ help:
 	@echo "  take-screenshot-wiki  Capture and register a grouped wiki screenshot"
 	@echo "                    Required: SCREENSHOT_GROUP=... SCREENSHOT_KEY=..."
 	@echo "                    Optional: SCREENSHOT_TITLE='Manage Game default' SCREENSHOT_CAPTION='...'"
-	@echo "  capture-project-screenshots  Guided batch capture for the full project screenshot manifest"
+	@echo "  capture-project-screenshots  Zero-prompt batch capture for the screenshot manifest"
+	@echo "                    Uses --auto and captures each manifest step without prompting"
 	@echo "                    Optional: SCREENSHOT_MATCH=manage-game to limit the run"
 	@echo "  publish-screenshots-wiki  Copy catalogued screenshots into ../decky-proton-pulse.wiki"
 	@echo "                    Also copies the saved PNG to the local clipboard when supported."
@@ -190,7 +191,7 @@ endif
 
 capture-project-screenshots:
 	$(call require_deck_ip)
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/capture_project_screenshots.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --manifest $(SCREENSHOT_MANIFEST) --match "$(SCREENSHOT_MATCH)" --output-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/capture_project_screenshots.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --manifest $(SCREENSHOT_MANIFEST) --match "$(SCREENSHOT_MATCH)" --auto --output-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki
 
 publish-screenshots-wiki:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/publish_screenshots_to_wiki.py --screenshots-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki

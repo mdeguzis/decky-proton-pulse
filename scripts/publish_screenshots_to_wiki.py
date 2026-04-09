@@ -12,7 +12,8 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from lib.screenshot_catalog import publish_screenshots_to_wiki
+from lib.screenshot_catalog import publish_screenshots_to_wiki_filtered, slugify
+from lib.screenshot_manifest import DEFAULT_SCREENSHOT_MANIFEST, load_screenshot_manifest
 
 
 def main() -> int:
@@ -29,12 +30,31 @@ def main() -> int:
         default="../decky-proton-pulse.wiki",
         help="Local wiki checkout to publish screenshots into",
     )
+    parser.add_argument(
+        "--manifest",
+        default=str(DEFAULT_SCREENSHOT_MANIFEST),
+        help="Screenshot manifest JSON file used to define the live gallery set",
+    )
     args = parser.parse_args()
 
     screenshots_dir = Path(args.screenshots_dir).resolve()
     wiki_dir = Path(args.wiki_dir).resolve()
+    manifest_entries = load_screenshot_manifest(Path(args.manifest).resolve())
+    allowed_keys = {
+        (slugify(entry.group), slugify(entry.key))
+        for entry in manifest_entries
+    }
+    ordered_keys = [
+        (slugify(entry.group), slugify(entry.key))
+        for entry in manifest_entries
+    ]
 
-    published = publish_screenshots_to_wiki(screenshots_dir, wiki_dir)
+    published = publish_screenshots_to_wiki_filtered(
+        screenshots_dir,
+        wiki_dir,
+        allowed_keys=allowed_keys,
+        ordered_keys=ordered_keys,
+    )
     print(f"Published {len(published):,} wiki artifact(s)")
     for path in published:
         print(path)

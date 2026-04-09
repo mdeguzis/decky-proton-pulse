@@ -26,6 +26,7 @@ import { NOTIFICATIONS_ENABLED_KEY } from './lib/notify';
 import { logFrontendEvent, callWithTimeout } from './lib/logger';
 import { TRANSLATIONS_LOADED } from './lib/translations';
 import { useLanguage, t } from './lib/i18n';
+import { installScreenshotAutomationBridge } from './lib/screenshotAutomation';
 import { initCache } from './lib/cache';
 import { runStartupPrefetch } from './lib/prefetch';
 import { startAutoFlush, stopAutoFlush, flushMetricsToDisk } from './lib/metrics';
@@ -244,6 +245,7 @@ export default definePlugin(() => {
   }, 8000);
 
   routerHook.addRoute('/proton-pulse', ProtonPulsePage);
+  const teardownScreenshotAutomation = installScreenshotAutomationBridge();
   const syncFocusedGameFromPath = () => {
     const pathname = globalThis.location?.pathname ?? '';
     const focusedAppId = extractLibraryAppId(pathname);
@@ -292,6 +294,7 @@ export default definePlugin(() => {
       routerHook.removePatch('/library/app/:appid', gamePagePatch);
       clearInterval(focusedGamePoll);
       menuPatch.unpatch();
+      teardownScreenshotAutomation();
     },
   };
 });

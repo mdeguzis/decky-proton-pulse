@@ -205,14 +205,16 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
             </div>
           )}
           {filtered.map(row => (
-            <Focusable key={row.appId} style={{ width: '100%' }}>
-              <div style={{
+            <div
+              key={row.appId}
+              style={{
                 display: 'flex',
                 alignItems: 'center',
                 padding: '10px 0',
                 borderBottom: '1px solid rgba(255,255,255,0.06)',
                 gap: 12,
-              }}>
+              }}
+            >
                 {/* game info - left side */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
@@ -242,6 +244,7 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
                     alignItems: 'center',
                     justifyContent: 'center',
                     opacity: refreshing.has(row.appId) ? 0.4 : 1,
+                    order: 2,
                   }}
                   disabled={refreshing.has(row.appId)}
                   onClick={() => void handleRefresh(row.appId, row.gameName)}
@@ -260,13 +263,13 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#f44336',
+                    order: 1,
                   }}
                   onClick={() => handleDelete(row.appId, row.gameName)}
                 >
                   ✕
                 </DialogButton>
-              </div>
-            </Focusable>
+            </div>
           ))}
         </div>
       </div>
