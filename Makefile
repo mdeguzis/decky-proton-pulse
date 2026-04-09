@@ -13,6 +13,7 @@ DECK_IP   ?=
 DECK_USER ?= deck
 DECK_HOST ?= $(if $(DECK_IP),$(DECK_IP),steamdeck)
 TARGET    ?= stable
+DRY_RUN ?= true
 UV_CACHE_DIR ?= /tmp/uv-cache
 PROTONDB_REPO_URL ?= https://github.com/bdefore/protondb-data
 PROTONDB_PROJECT_REPO_DIR := $(abspath ../protondb-data)
@@ -56,8 +57,10 @@ help:
 	@echo "  deploy-reload     Build, deploy, then restart plugin_loader (requires DECK_IP)"
 	@echo "  build-and-deploy  Clean, test, build, and deploy (requires DECK_IP)"
 	@echo "  package           Build and create the local release zip for the current VERSION"
-	@echo "  release           Build, package, and publish a GitHub release using CHANGELOG.md notes"
-	@echo "  pre-release       Build, package, and publish a GitHub pre-release using CHANGELOG.md notes"
+	@echo "  release           Build, package, and prepare a GitHub release using CHANGELOG.md notes"
+	@echo "                    Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
+	@echo "  pre-release       Build, package, and prepare a GitHub pre-release using CHANGELOG.md notes"
+	@echo "                    Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
 	@echo "  clean             Remove build output (dist/) and generated release archives"
 	@echo ""
 	@echo "On-device debugging (require DECK_IP):"
@@ -137,10 +140,10 @@ $(RELEASE_NOTES_FILE): CHANGELOG.md VERSION scripts/release-notes.mjs
 	node scripts/release-notes.mjs > $(RELEASE_NOTES_FILE)
 
 release: package
-	bash scripts/deploy.sh --skip-build --release
+	DRY_RUN=$(DRY_RUN) bash scripts/deploy.sh --skip-build --release
 
 pre-release: package
-	bash scripts/deploy.sh --skip-build --prerelease
+	DRY_RUN=$(DRY_RUN) bash scripts/deploy.sh --skip-build --prerelease
 
 clean:
 	rm -rf dist/
