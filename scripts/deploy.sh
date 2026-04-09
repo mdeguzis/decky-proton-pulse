@@ -26,6 +26,10 @@ DECK_PLUGIN_DIR="/home/deck/homebrew/plugins"
 SKIP_BUILD=0
 GH_RELEASE=""
 STORE_MODE=""
+DRY_RUN="${DRY_RUN:-true}"
+PLUGIN_DIRTY_STATE="clean"
+PLUGIN_SOURCE_STATUS=""
+PLUGIN_GENERATED_STATUS=""
 
 # ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -37,30 +41,120 @@ banner() {
   echo ""
 }
 
-confirm_release_actions() {
-  local plugin_status plugin_head plugin_dirty store_branch_summary
-  plugin_head=$(git rev-parse --short HEAD)
-  plugin_status=$(git status --short || true)
-  plugin_dirty="clean"
-  if [[ -n "$plugin_status" ]]; then
-    plugin_dirty="dirty"
+is_truthy() {
+  case "${1,,}" in
+    1|true|yes|on) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+resolve_release_commit() {
+  local tag_name="$1"
+  if git rev-parse -q --verify "refs/tags/${tag_name}" >/dev/null 2>&1; then
+    git rev-list -n1 "$tag_name"
+    return 0
   fi
+
+  if git fetch origin "refs/tags/${tag_name}:refs/tags/${tag_name}" >/dev/null 2>&1; then
+    git rev-list -n1 "$tag_name"
+    return 0
+  fi
+
+  return 1
+}
+
+classify_plugin_worktree() {
+  local plugin_status status_line status_path
+  plugin_status=$(git status --short || true)
+  PLUGIN_DIRTY_STATE="clean"
+  PLUGIN_SOURCE_STATUS=""
+  PLUGIN_GENERATED_STATUS=""
+
+  if [[ -z "$plugin_status" ]]; then
+    return
+  fi
+
+  while IFS= read -r status_line; do
+    [[ -z "$status_line" ]] && continue
+    status_path="${status_line:3}"
+    case "$status_path" in
+      metrics/translation-coverage.json|metrics/translation-coverage.md|package.json|pyproject.toml|uv.lock)
+        PLUGIN_GENERATED_STATUS+="${status_line}"$'\n'
+        ;;
+      *)
+        PLUGIN_SOURCE_STATUS+="${status_line}"$'\n'
+        ;;
+    esac
+  done <<< "$plugin_status"
+
+  if [[ -n "$PLUGIN_SOURCE_STATUS" ]]; then
+    PLUGIN_DIRTY_STATE="source changes"
+  elif [[ -n "$PLUGIN_GENERATED_STATUS" ]]; then
+    PLUGIN_DIRTY_STATE="generated-only"
+  fi
+}
+
+auto_commit_release_derived_changes() {
+  classify_plugin_worktree
+  if [[ "$PLUGIN_DIRTY_STATE" != "generated-only" ]]; then
+    return
+  fi
+
+  echo ""
+  echo "Auto-updating release-derived files in plugin repo..."
+  printf '%s' "$PLUGIN_GENERATED_STATUS" | sed 's/^/  /'
+  git add metrics/translation-coverage.json metrics/translation-coverage.md package.json pyproject.toml uv.lock
+  if git diff --cached --quiet; then
+    echo "No staged release-derived changes required."
+    return
+  fi
+  git commit --amend --no-edit
+  echo "Amended HEAD with release-derived files."
+}
+
+confirm_release_actions() {
+  local plugin_head store_branch_summary
+  plugin_head=$(git rev-parse --short HEAD)
+  classify_plugin_worktree
 
   echo ""
   echo "Release confirmation"
   echo "------------------------------------------------------------------------"
-  echo "Plugin repo:"
+  echo "Plugin repo"
   echo "  HEAD: ${plugin_head}"
-  echo "  Worktree: ${plugin_dirty}"
-  if [[ -n "$plugin_status" ]]; then
-    echo "  Pending changes:"
-    printf '%s\n' "$plugin_status" | sed 's/^/    /'
+  echo "  Worktree: ${PLUGIN_DIRTY_STATE}"
+  if is_truthy "$DRY_RUN"; then
+    echo "  Release mode: DRY RUN"
+  else
+    echo "  Release mode: LIVE"
+  fi
+  if [[ -n "$PLUGIN_SOURCE_STATUS" ]]; then
+    echo ""
+    echo "Source changes"
+    printf '%s' "$PLUGIN_SOURCE_STATUS" | sed 's/^/    /'
+    echo "  These files will be included in the packaged plugin from the current working tree."
+    echo "  This script does not add, commit, or amend plugin repo files for you."
+  fi
+  if [[ -n "$PLUGIN_GENERATED_STATUS" ]]; then
+    echo ""
+    echo "Generated/release-derived changes"
+    printf '%s' "$PLUGIN_GENERATED_STATUS" | sed 's/^/    /'
+    if is_truthy "$DRY_RUN"; then
+      echo "  These files are release-derived drift and may be safe to regenerate or commit separately."
+    else
+      echo "  These files will be auto-staged and amended into HEAD after confirmation."
+    fi
   fi
   echo ""
-  echo "Planned actions:"
+  echo "Planned actions"
   if [[ -n "$GH_RELEASE" ]]; then
-    echo "  - Create or update GitHub ${GH_RELEASE} ${RELEASE_TAG}"
-    echo "  - Upload asset ${ZIP_NAME}"
+    if is_truthy "$DRY_RUN"; then
+      echo "  - Would create or update GitHub ${GH_RELEASE} ${RELEASE_TAG}"
+      echo "  - Would upload asset ${ZIP_NAME}"
+    else
+      echo "  - Create or update GitHub ${GH_RELEASE} ${RELEASE_TAG}"
+      echo "  - Upload asset ${ZIP_NAME}"
+    fi
   fi
   if [[ -n "$STORE_MODE" ]]; then
     if [[ "$STORE_MODE" == "release" ]]; then
@@ -68,10 +162,21 @@ confirm_release_actions() {
     else
       store_branch_summary="current HEAD pre-release"
     fi
-    echo "  - Refresh the Decky database checkout from upstream main"
-    echo "  - Rebuild branch add/decky-proton-pulse from upstream main"
-    echo "  - Update submodule plugins/decky-proton-pulse to ${store_branch_summary}"
-    echo "  - Create a database commit only if the submodule pointer changes"
+    if is_truthy "$DRY_RUN"; then
+      echo "  - Would refresh the Decky database checkout from upstream main"
+      echo "  - Would reuse the matching Decky database submission branch for this plugin"
+      echo "  - Would detect an active Decky database PR on that branch when possible"
+      echo "  - Would update submodule plugins/decky-proton-pulse to ${store_branch_summary}"
+      echo "  - Would amend the existing database submission commit when updating an active PR"
+      echo "  - Would create a database commit only if the submodule pointer changes"
+    else
+      echo "  - Refresh the Decky database checkout from upstream main"
+      echo "  - Reuse the matching Decky database submission branch for this plugin"
+      echo "  - Detect an active Decky database PR on that branch when possible"
+      echo "  - Update submodule plugins/decky-proton-pulse to ${store_branch_summary}"
+      echo "  - Amend the existing database submission commit when updating an active PR"
+      echo "  - Create a database commit only if the submodule pointer changes"
+    fi
     echo "  - No plugin repo commit or amend is performed by this script"
   fi
   echo "------------------------------------------------------------------------"
@@ -175,28 +280,37 @@ fi
 
 if [[ -n "$GH_RELEASE" ]]; then
   confirm_release_actions
+  if ! is_truthy "$DRY_RUN"; then
+    auto_commit_release_derived_changes
+  fi
   banner "GitHub Release (${GH_RELEASE})"
 
-  NOTES_FILE="/tmp/decky-proton-pulse-release-notes-${VERSION}.md"
-  node scripts/release-notes.mjs > "$NOTES_FILE"
-
-  GH_ARGS=(
-    gh release create "$RELEASE_TAG" "./${ZIP_NAME}"
-    --repo mdeguzis/decky-proton-pulse
-    --title "Proton Pulse ${RELEASE_TAG}"
-    --notes-file "$NOTES_FILE"
-  )
-  [[ "$GH_RELEASE" == "prerelease" ]] && GH_ARGS+=(--prerelease)
-
-  # If the tag already exists, skip creating and just upload the asset
-  if gh release view "$RELEASE_TAG" --repo mdeguzis/decky-proton-pulse &>/dev/null; then
-    echo "Release $RELEASE_TAG already exists -- uploading asset only."
-    gh release upload "$RELEASE_TAG" "./${ZIP_NAME}" --repo mdeguzis/decky-proton-pulse --clobber
+  if is_truthy "$DRY_RUN"; then
+    echo "DRY_RUN=true: skipping GitHub release changes."
+    echo "Would prepare notes and create/update ${RELEASE_TAG} with asset ${ZIP_NAME}."
   else
-    "${GH_ARGS[@]}"
-  fi
 
-  echo "Done: https://github.com/mdeguzis/decky-proton-pulse/releases/tag/${RELEASE_TAG}"
+    NOTES_FILE="/tmp/decky-proton-pulse-release-notes-${VERSION}.md"
+    node scripts/release-notes.mjs > "$NOTES_FILE"
+
+    GH_ARGS=(
+      gh release create "$RELEASE_TAG" "./${ZIP_NAME}"
+      --repo mdeguzis/decky-proton-pulse
+      --title "Proton Pulse ${RELEASE_TAG}"
+      --notes-file "$NOTES_FILE"
+    )
+    [[ "$GH_RELEASE" == "prerelease" ]] && GH_ARGS+=(--prerelease)
+
+    # If the tag already exists, skip creating and just upload the asset
+    if gh release view "$RELEASE_TAG" --repo mdeguzis/decky-proton-pulse &>/dev/null; then
+      echo "Release $RELEASE_TAG already exists -- uploading asset only."
+      gh release upload "$RELEASE_TAG" "./${ZIP_NAME}" --repo mdeguzis/decky-proton-pulse --clobber
+    else
+      "${GH_ARGS[@]}"
+    fi
+
+    echo "Done: https://github.com/mdeguzis/decky-proton-pulse/releases/tag/${RELEASE_TAG}"
+  fi
 fi
 
 # ─── Store Submission ──────────────────────────────────────────────────────────
@@ -211,36 +325,56 @@ if [[ -n "$STORE_MODE" ]]; then
   PLUGIN_DB_ORIGIN="git@github.com:mdeguzis/decky-plugin-database.git"
   PLUGIN_DB_UPSTREAM="https://github.com/SteamDeckHomebrew/decky-plugin-database.git"
   SUBMODULE="plugins/decky-proton-pulse"
-  DEFAULT_STORE_BRANCH="add/decky-proton-pulse"
 
   if [[ -d "$PROJECT_PLUGIN_DB_DIR/.git" ]]; then
     PLUGIN_DB_DIR="$PROJECT_PLUGIN_DB_DIR"
   fi
 
-  # Clone if needed
   if [[ ! -d "$PLUGIN_DB_DIR/.git" ]]; then
-    echo "Cloning plugin database fork..."
-    git clone "$PLUGIN_DB_ORIGIN" "$PLUGIN_DB_DIR"
+    if is_truthy "$DRY_RUN"; then
+      echo "DRY_RUN=true: would clone plugin database fork into $PLUGIN_DB_DIR"
+    else
+      echo "Cloning plugin database fork..."
+      git clone "$PLUGIN_DB_ORIGIN" "$PLUGIN_DB_DIR"
+    fi
   fi
-  git -C "$PLUGIN_DB_DIR" remote add upstream "$PLUGIN_DB_UPSTREAM" 2>/dev/null || true
 
-  # Sync local checkout with upstream so the store branch can be recreated cleanly
-  echo "Syncing local database checkout with upstream..."
-  git -C "$PLUGIN_DB_DIR" fetch upstream
-  git -C "$PLUGIN_DB_DIR" fetch origin
-  git -C "$PLUGIN_DB_DIR" checkout main
-  git -C "$PLUGIN_DB_DIR" reset --hard upstream/main
+  if [[ -d "$PLUGIN_DB_DIR/.git" ]]; then
+    git -C "$PLUGIN_DB_DIR" remote add upstream "$PLUGIN_DB_UPSTREAM" 2>/dev/null || true
+  fi
+
+  if ! is_truthy "$DRY_RUN"; then
+    echo "Syncing local database checkout with upstream..."
+    git -C "$PLUGIN_DB_DIR" fetch upstream
+    git -C "$PLUGIN_DB_DIR" fetch origin
+    git -C "$PLUGIN_DB_DIR" checkout main
+    git -C "$PLUGIN_DB_DIR" reset --hard upstream/main
+  fi
+
+  TREE_REF="HEAD"
+  if [[ -d "$PLUGIN_DB_DIR/.git" ]] && git -C "$PLUGIN_DB_DIR" show-ref --verify --quiet "refs/remotes/upstream/main"; then
+    TREE_REF="upstream/main"
+  elif [[ -d "$PLUGIN_DB_DIR/.git" ]] && git -C "$PLUGIN_DB_DIR" show-ref --verify --quiet "refs/remotes/origin/main"; then
+    TREE_REF="origin/main"
+  fi
+
+  if [[ -d "$PLUGIN_DB_DIR/.git" ]] && git -C "$PLUGIN_DB_DIR" ls-tree -d --name-only "$TREE_REF" "$SUBMODULE" | grep -q .; then
+    BRANCH="update/${PLUGIN_NAME}"
+  else
+    BRANCH="add/${PLUGIN_NAME}"
+  fi
 
   # Determine target commit
   if [[ "$STORE_MODE" == "release" ]]; then
-    TAG=$(git -P tag -l 'v*' --sort=-v:refname | head -1)
-    if [[ -z "$TAG" ]]; then
-      echo "ERROR: No release tags found."
-      exit 1
+    TAG="$RELEASE_TAG"
+    if COMMIT="$(resolve_release_commit "$TAG")"; then
+      MSG="Update decky-proton-pulse to ${TAG}"
+      echo "Target: release tag $TAG ($COMMIT)"
+    else
+      COMMIT=$(git rev-parse HEAD)
+      MSG="Update decky-proton-pulse to ${TAG}"
+      echo "WARNING: Could not resolve tag $TAG locally or from origin; falling back to current HEAD ($COMMIT)"
     fi
-    COMMIT=$(git rev-parse "$TAG")
-    MSG="Update decky-proton-pulse to ${TAG}"
-    echo "Target: release tag $TAG ($COMMIT)"
   else
     COMMIT=$(git rev-parse HEAD)
     SHORT=$(git rev-parse --short HEAD)
@@ -248,32 +382,96 @@ if [[ -n "$STORE_MODE" ]]; then
     echo "Target: latest commit $SHORT ($COMMIT)"
   fi
 
-  BRANCH="$DEFAULT_STORE_BRANCH"
-  if git -C "$PLUGIN_DB_DIR" show-ref --verify --quiet "refs/remotes/origin/$DEFAULT_STORE_BRANCH"; then
-    BRANCH="$DEFAULT_STORE_BRANCH"
-  elif git -C "$PLUGIN_DB_DIR" show-ref --verify --quiet "refs/heads/$DEFAULT_STORE_BRANCH"; then
-    BRANCH="$DEFAULT_STORE_BRANCH"
+  ACTIVE_PR_NUMBER=""
+  ACTIVE_PR_URL=""
+  if command -v gh >/dev/null 2>&1 && ! is_truthy "$DRY_RUN"; then
+    ACTIVE_PR_NUMBER="$(
+      gh pr list \
+        --repo SteamDeckHomebrew/decky-plugin-database \
+        --head "mdeguzis:${BRANCH}" \
+        --state open \
+        --json number \
+        --jq '.[0].number // ""' 2>/dev/null || true
+    )"
+    ACTIVE_PR_URL="$(
+      gh pr list \
+        --repo SteamDeckHomebrew/decky-plugin-database \
+        --head "mdeguzis:${BRANCH}" \
+        --state open \
+        --json url \
+        --jq '.[0].url // ""' 2>/dev/null || true
+    )"
   fi
 
-  # Create branch and update submodule
-  cd "$PLUGIN_DB_DIR"
-  if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
-    git checkout -B "$BRANCH" "origin/$BRANCH"
+  echo "Database branch: $BRANCH"
+  if [[ -n "$ACTIVE_PR_NUMBER" ]]; then
+    echo "Active Decky database PR detected: #${ACTIVE_PR_NUMBER} ${ACTIVE_PR_URL}"
   else
-    git checkout -B "$BRANCH" upstream/main
+    echo "No active Decky database PR detected for branch $BRANCH"
   fi
-  git reset --hard upstream/main
-  if [[ ! -d "$SUBMODULE" ]]; then
-    git submodule add git@github.com:mdeguzis/decky-proton-pulse.git "$SUBMODULE"
+
+  CURRENT_DB_PLUGIN_COMMIT=""
+  if [[ -d "$PLUGIN_DB_DIR/.git" ]]; then
+    CURRENT_DB_PLUGIN_COMMIT="$(
+      git -C "$PLUGIN_DB_DIR" ls-tree "${BRANCH}" "$SUBMODULE" 2>/dev/null | awk '{print $3}' || true
+    )"
+    if [[ -z "$CURRENT_DB_PLUGIN_COMMIT" ]]; then
+      CURRENT_DB_PLUGIN_COMMIT="$(
+        git -C "$PLUGIN_DB_DIR" ls-tree "origin/${BRANCH}" "$SUBMODULE" 2>/dev/null | awk '{print $3}' || true
+      )"
+    fi
   fi
-  git submodule update --init "$SUBMODULE"
-  git -C "$SUBMODULE" fetch origin
-  git -C "$SUBMODULE" checkout "$COMMIT"
-  git add "$SUBMODULE"
-  if git diff --cached --quiet; then
-    echo "Database PR branch already points at $COMMIT; no new commit needed."
+
+  echo "Store submission target commit: $COMMIT"
+  if [[ -n "$CURRENT_DB_PLUGIN_COMMIT" ]]; then
+    echo "Current database submodule commit: $CURRENT_DB_PLUGIN_COMMIT"
+    if [[ "$CURRENT_DB_PLUGIN_COMMIT" == "$COMMIT" ]]; then
+      echo "Store submission status: no PR update needed; branch already references the target plugin commit."
+    else
+      echo "Store submission status: PR branch will advance the submodule pointer."
+    fi
   else
-    git commit -m "$MSG"
+    echo "Current database submodule commit: (not present yet)"
+    echo "Store submission status: PR branch will add the plugin submodule."
+  fi
+
+  if is_truthy "$DRY_RUN"; then
+    echo ""
+    echo "DRY_RUN=true: skipping Decky database branch changes."
+    echo "Would update $SUBMODULE in $PLUGIN_DB_DIR on branch $BRANCH to $COMMIT."
+  else
+    # Create branch and update submodule
+    cd "$PLUGIN_DB_DIR"
+    BRANCH_EXISTS=0
+    if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+      BRANCH_EXISTS=1
+      git checkout -B "$BRANCH" "origin/$BRANCH"
+    elif git show-ref --verify --quiet "refs/heads/$BRANCH"; then
+      BRANCH_EXISTS=1
+      git checkout "$BRANCH"
+    else
+      git checkout -B "$BRANCH" upstream/main
+    fi
+    if [[ "$BRANCH_EXISTS" -eq 1 ]]; then
+      git rebase upstream/main
+    fi
+    if [[ ! -d "$SUBMODULE" ]]; then
+      git submodule add git@github.com:mdeguzis/decky-proton-pulse.git "$SUBMODULE"
+    fi
+    git submodule update --init "$SUBMODULE"
+    git -C "$SUBMODULE" fetch origin
+    git -C "$SUBMODULE" checkout "$COMMIT"
+    git add "$SUBMODULE"
+    if git diff --cached --quiet; then
+      echo "Database PR branch already points at $COMMIT; no new commit needed."
+    else
+      if [[ -n "$ACTIVE_PR_NUMBER" ]] || { [[ "$BRANCH_EXISTS" -eq 1 ]] && [[ "$(git rev-parse HEAD)" != "$(git rev-parse upstream/main)" ]]; }; then
+        echo "Amending existing Decky database submission commit on $BRANCH"
+        git commit --amend --no-edit
+      else
+        git commit -m "$MSG"
+      fi
+    fi
   fi
 
   echo ""
@@ -281,7 +479,11 @@ if [[ -n "$STORE_MODE" ]]; then
   echo ""
   echo "Next steps:"
   echo "  cd $PLUGIN_DB_DIR && git push origin $BRANCH --force-with-lease"
-  echo "  Existing PR branch should update in place: https://github.com/SteamDeckHomebrew/decky-plugin-database/pull/1020"
+  if [[ -n "$ACTIVE_PR_URL" ]]; then
+    echo "  Existing PR should update in place: $ACTIVE_PR_URL"
+  else
+    echo "  Open or update PR: https://github.com/SteamDeckHomebrew/decky-plugin-database/pulls"
+  fi
 fi
 
 # ─── Cleanup ───────────────────────────────────────────────────────────────────
