@@ -134,10 +134,10 @@ function HardwareCompareModal({
     <ModalRoot onCancel={closeModal}>
       <div style={{ padding: 18, minWidth: 620, maxWidth: 760 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff', marginBottom: 6 }}>
-          Hardware Comparison
+          {t().detail.hardwareComparisonTitle}
         </div>
         <div style={{ fontSize: 12, color: '#9db0c4', marginBottom: 14, lineHeight: 1.5 }}>
-          Left side is the ProtonDB report. Right side is our current system.
+          {t().detail.hardwareComparisonDescription}
         </div>
 
         <div
@@ -157,7 +157,7 @@ function HardwareCompareModal({
             Report
           </div>
           <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700 }}>
-            Our System
+            {t().detail.ourSystem}
           </div>
 
           <InfoCompareRow label={t().detail.gpu} left={report.gpu || '-'} right={sysInfo?.gpu || '-'} />
@@ -662,7 +662,7 @@ export function ReportDetailModal({
 
             <SectionHeader
               title={t().detail.hardwareMatch}
-              caption="These rows come from the report itself."
+              caption={t().detail.hardwareMatchCaption}
               action={(
                 <DialogButton
                   onClick={handleOpenHardwareCompare}
@@ -679,11 +679,11 @@ export function ReportDetailModal({
                     alignSelf: 'flex-start',
                   }}
                 >
-                  Our System
+                  {t().detail.ourSystem}
                 </DialogButton>
               )}
             />
-            <InfoSection title="Report Hardware">
+            <InfoSection title={t().detail.reportHardware}>
               <InfoRow label={t().detail.gpu} value={report.gpu || '-'} />
               <InfoRow label={t().detail.os} value={report.os || '-'} />
               <InfoRow label={t().detail.kernel} value={report.kernel || '-'} />

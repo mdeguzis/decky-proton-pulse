@@ -1,5 +1,6 @@
 // src/components/tabs/AboutTab.tsx
 import { useEffect, useRef, useState } from 'react';
+import { callable } from '@decky/api';
 import { Focusable, DialogButton, Dropdown, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '../../lib/notify';
@@ -7,6 +8,11 @@ import { BrandLogo } from '../BrandLogo';
 import { t } from '../../lib/i18n';
 import { openIssue, type IssueTemplate } from '../../lib/issueReport';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
+import { callWithTimeout } from '../../lib/logger';
+
+const getPluginVersion = callable<[], string>('get_plugin_version');
+const getPluginVersionSafe = () =>
+  callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000);
 
 const ISSUE_TEMPLATES: { data: IssueTemplate; labelKey: keyof ReturnType<typeof t>['about'] }[] = [
   { data: 'game_report', labelKey: 'issueTemplateGameReport' },
@@ -19,6 +25,7 @@ export function AboutTab() {
   const extras = t().extras!;
   const [selectedTemplate, setSelectedTemplate] = useState<IssueTemplate>('plugin_issue');
   const [submitting, setSubmitting] = useState(false);
+  const [version, setVersion] = useState('...');
   const templatePickerRef = useRef<HTMLDivElement>(null);
 
   const handleRootDirection = (evt: GamepadEvent) => {
@@ -46,13 +53,19 @@ export function AboutTab() {
     button?.click();
   }), []);
 
+  useEffect(() => {
+    void getPluginVersionSafe()
+      .then(setVersion)
+      .catch(() => setVersion('...'));
+  }, []);
+
   return (
     <Focusable onGamepadDirection={handleRootDirection} style={{ padding: 8, fontSize: 12, color: '#ccc' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
         <BrandLogo size={42} />
         <div>
           <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Proton Pulse</div>
-          <div style={{ color: '#888' }}>v0.1.0</div>
+          <div style={{ color: '#888' }}>{`v${version}`}</div>
         </div>
       </div>
       <div style={{ marginBottom: 16, lineHeight: 1.5 }}>

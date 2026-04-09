@@ -143,14 +143,18 @@ function MetricsInfoBox() {
       <div><span style={labelStyle}>{extras.uptime()}</span>{upMin}m</div>
       <div><span style={labelStyle}>{extras.cacheHitRate()}</span>{hitRate} ({extras.hitsAndMisses(counters.cacheHits, counters.cacheMisses)})</div>
       <div><span style={labelStyle}>{extras.cachedGames()}</span>{cacheStats.size} / {cacheStats.maxSize}</div>
-      <div><span style={labelStyle}>Installed coverage</span>{installedCoverage} ({cachedInstalledGames} / {installedStats.installedSteamGames})</div>
-      <div><span style={labelStyle}>{extras.prefetched()}</span>{counters.prefetchedGames} games</div>
+      <div><span style={labelStyle}>{extras.installedCoverage()}</span>{installedCoverage} ({cachedInstalledGames} / {installedStats.installedSteamGames})</div>
+      <div><span style={labelStyle}>{extras.prefetched()}</span>{extras.gamesCount(counters.prefetchedGames)}</div>
       <div><span style={labelStyle}>{extras.totalFetches()}</span>{counters.totalFetches}{counters.fetchErrors > 0 ? extras.errorsSuffix(counters.fetchErrors) : ''}</div>
-      <div><span style={labelStyle}>Local games</span>{counters.localNonSteamGames} skipped</div>
+      <div><span style={labelStyle}>{extras.localGames()}</span>{extras.skippedCount(counters.localNonSteamGames)}</div>
       {prefetchFailures.total > 0 && (
         <div>
-          <span style={labelStyle}>Fetch issues</span>
-          {topPrefetchFailure ? `${prefetchFailures.total} prefetch failures, mostly ${formatPrefetchReason(topPrefetchFailure[0])} (${topPrefetchFailure[1]})` : `${prefetchFailures.total} prefetch failures`}
+          <span style={labelStyle}>{extras.fetchIssues()}</span>
+          {extras.prefetchFailuresSummary(
+            prefetchFailures.total,
+            topPrefetchFailure ? formatPrefetchReason(topPrefetchFailure[0]) : undefined,
+            topPrefetchFailure?.[1],
+          )}
         </div>
       )}
       {cdnIdx && (

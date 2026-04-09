@@ -90,15 +90,20 @@ export interface TranslationTree {
     edit: string;
     upvote: string;
     clear: string;
+    hardwareComparisonTitle: string;
+    hardwareComparisonDescription: string;
     launchPreview: string;
     currentLaunchOptions: string;
     noLaunchOptions: string;
     hardwareMatch: string;
+    hardwareMatchCaption: string;
     gpu: string;
     os: string;
     kernel: string;
     driver: string;
     report: string;
+    reportHardware: string;
+    ourSystem: string;
     gpuTier: string;
     edited: string;
     customVariant: string;
@@ -313,6 +318,9 @@ export interface TranslationTree {
     manageCache: () => string;
     manageCacheDescription: () => string;
     performance: () => string;
+    installedCoverage: () => string;
+    localGames: () => string;
+    fetchIssues: () => string;
     export: () => string;
     uptime: () => string;
     cacheHitRate: () => string;
@@ -324,6 +332,13 @@ export interface TranslationTree {
     evictions: () => string;
     hitsAndMisses: (hits: number, misses: number) => string;
     errorsSuffix: (errors: number) => string;
+    skippedCount: (count: number) => string;
+    gamesCount: (count: number) => string;
+    prefetchFailuresSummary: (
+      total: number,
+      topReason?: string,
+      topCount?: number,
+    ) => string;
     notAvailable: () => string;
     compatVersionBrowserTitle: () => string;
     compatVersionBrowserDescription: () => string;
@@ -431,15 +446,20 @@ export const en: TranslationTree = {
     edit: 'Edit',
     upvote: 'Upvote',
     clear: 'Clear',
+    hardwareComparisonTitle: 'Hardware Comparison',
+    hardwareComparisonDescription: 'Left side is the ProtonDB report. Right side is our current system.',
     launchPreview: 'Launch Preview',
     currentLaunchOptions: 'Current Launch Options',
     noLaunchOptions: 'No launch options set',
     hardwareMatch: 'Hardware Match',
+    hardwareMatchCaption: 'These rows come from the report itself.',
     gpu: 'GPU',
     os: 'OS',
     kernel: 'Kernel',
     driver: 'Driver',
     report: 'Report',
+    reportHardware: 'Report Hardware',
+    ourSystem: 'Our System',
     gpuTier: 'GPU Tier',
     edited: 'Edited',
     customVariant: 'Custom Variant',
@@ -654,6 +674,9 @@ export const en: TranslationTree = {
     manageCache: () => 'Manage Cache...',
     manageCacheDescription: () => 'View, refresh, or remove cached game data',
     performance: () => 'Performance',
+    installedCoverage: () => 'Installed coverage',
+    localGames: () => 'Local games',
+    fetchIssues: () => 'Fetch issues',
     export: () => 'Export',
     uptime: () => 'Uptime',
     cacheHitRate: () => 'Cache hit rate',
@@ -665,6 +688,12 @@ export const en: TranslationTree = {
     evictions: () => 'Evictions',
     hitsAndMisses: (hits, misses) => `${hits} hits / ${misses} misses`,
     errorsSuffix: (errors) => ` (${errors} errors)`,
+    skippedCount: (count) => `${count} skipped`,
+    gamesCount: (count) => `${count} games`,
+    prefetchFailuresSummary: (total, topReason, topCount) =>
+      topReason && typeof topCount === 'number'
+        ? `${total} prefetch failures, mostly ${topReason} (${topCount})`
+        : `${total} prefetch failures`,
     notAvailable: () => 'n/a',
     compatVersionBrowserTitle: () => 'Other Proton-GE Versions',
     compatVersionBrowserDescription: () => 'Browse and filter the full Proton-GE release list.',

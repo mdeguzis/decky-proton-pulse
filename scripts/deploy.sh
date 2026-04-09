@@ -155,10 +155,18 @@ fi
 if [[ -n "$STORE_MODE" ]]; then
   banner "Decky Plugin Database (${STORE_MODE})"
 
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+  PROJECT_PLUGIN_DB_DIR="$(cd "${PROJECT_ROOT}/.." && pwd)/decky-plugin-database"
   PLUGIN_DB_DIR="$HOME/decky-plugin-database-plugin-mdg"
   PLUGIN_DB_ORIGIN="git@github.com:mdeguzis/decky-plugin-database.git"
   PLUGIN_DB_UPSTREAM="https://github.com/SteamDeckHomebrew/decky-plugin-database.git"
   SUBMODULE="plugins/decky-proton-pulse"
+  DEFAULT_STORE_BRANCH="add/decky-proton-pulse"
+
+  if [[ -d "$PROJECT_PLUGIN_DB_DIR/.git" ]]; then
+    PLUGIN_DB_DIR="$PROJECT_PLUGIN_DB_DIR"
+  fi
 
   # Clone if needed
   if [[ ! -d "$PLUGIN_DB_DIR/.git" ]]; then
@@ -167,14 +175,14 @@ if [[ -n "$STORE_MODE" ]]; then
   fi
   git -C "$PLUGIN_DB_DIR" remote add upstream "$PLUGIN_DB_UPSTREAM" 2>/dev/null || true
 
-  # Sync fork with upstream
-  echo "Syncing fork with upstream..."
+  # Sync local checkout with upstream so the store branch can be recreated cleanly
+  echo "Syncing local database checkout with upstream..."
   git -C "$PLUGIN_DB_DIR" fetch upstream
+  git -C "$PLUGIN_DB_DIR" fetch origin
   git -C "$PLUGIN_DB_DIR" checkout main
   git -C "$PLUGIN_DB_DIR" reset --hard upstream/main
-  git -C "$PLUGIN_DB_DIR" push origin main --force
 
-  # Determine target commit and branch name
+  # Determine target commit
   if [[ "$STORE_MODE" == "release" ]]; then
     TAG=$(git -P tag -l 'v*' --sort=-v:refname | head -1)
     if [[ -z "$TAG" ]]; then
@@ -182,34 +190,49 @@ if [[ -n "$STORE_MODE" ]]; then
       exit 1
     fi
     COMMIT=$(git rev-parse "$TAG")
-    BRANCH="update/decky-proton-pulse-${TAG}"
     MSG="Update decky-proton-pulse to ${TAG}"
     echo "Target: release tag $TAG ($COMMIT)"
   else
     COMMIT=$(git rev-parse HEAD)
     SHORT=$(git rev-parse --short HEAD)
-    BRANCH="update/decky-proton-pulse-pre-${SHORT}"
     MSG="Update decky-proton-pulse to pre-release ${SHORT}"
     echo "Target: latest commit $SHORT ($COMMIT)"
   fi
 
+  BRANCH="$DEFAULT_STORE_BRANCH"
+  if git -C "$PLUGIN_DB_DIR" show-ref --verify --quiet "refs/remotes/origin/$DEFAULT_STORE_BRANCH"; then
+    BRANCH="$DEFAULT_STORE_BRANCH"
+  elif git -C "$PLUGIN_DB_DIR" show-ref --verify --quiet "refs/heads/$DEFAULT_STORE_BRANCH"; then
+    BRANCH="$DEFAULT_STORE_BRANCH"
+  fi
+
   # Create branch and update submodule
   cd "$PLUGIN_DB_DIR"
-  git checkout -B "$BRANCH"
+  if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+    git checkout -B "$BRANCH" "origin/$BRANCH"
+  else
+    git checkout -B "$BRANCH" upstream/main
+  fi
+  git reset --hard upstream/main
   if [[ ! -d "$SUBMODULE" ]]; then
     git submodule add git@github.com:mdeguzis/decky-proton-pulse.git "$SUBMODULE"
   fi
+  git submodule update --init "$SUBMODULE"
   git -C "$SUBMODULE" fetch origin
   git -C "$SUBMODULE" checkout "$COMMIT"
   git add "$SUBMODULE"
-  git commit -m "$MSG"
+  if git diff --cached --quiet; then
+    echo "Database PR branch already points at $COMMIT; no new commit needed."
+  else
+    git commit -m "$MSG"
+  fi
 
   echo ""
   echo "Done: branch '$BRANCH' ready at $PLUGIN_DB_DIR"
   echo ""
   echo "Next steps:"
-  echo "  cd $PLUGIN_DB_DIR && git push origin $BRANCH"
-  echo "  Open PR: https://github.com/SteamDeckHomebrew/decky-plugin-database/pulls"
+  echo "  cd $PLUGIN_DB_DIR && git push origin $BRANCH --force-with-lease"
+  echo "  Existing PR branch should update in place: https://github.com/SteamDeckHomebrew/decky-plugin-database/pull/1020"
 fi
 
 # ─── Cleanup ───────────────────────────────────────────────────────────────────

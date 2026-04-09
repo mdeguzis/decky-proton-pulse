@@ -17,6 +17,7 @@ import type { FC } from 'react';
 import type { Export } from '@decky/ui';
 import { pageState, dispatchNavigate, rememberReturnPath } from '../lib/pageState';
 import { logFrontendEvent } from '../lib/logger';
+import { selectMenuAppContext } from '../lib/gameContext';
 
 // ─── Find Steam's LibraryContextMenu component ────────────────────────────────
 
@@ -249,13 +250,20 @@ const injectMenuItem = (
         const focusedAppName = pageState.focusedAppName ?? '';
         const routeAppId = resolveAppIdFromRoute();
         const treeAppId = resolveAppIdFromItems(items, initialAppId);
-        const appid = treeAppId || focusedAppId || routeAppId || initialAppId;
         const steamOverview =
-          (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appid) ?? null;
+          (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(
+            treeAppId || routeAppId || initialAppId || focusedAppId
+          ) ?? null;
         const lookedUpAppName =
           steamOverview?.display_name ?? '';
-        const appName =
-          focusedAppName || lookedUpAppName;
+        const { appId: appid, appName } = selectMenuAppContext({
+          focusedAppId,
+          focusedAppName,
+          initialAppId,
+          lookedUpAppName,
+          routeAppId,
+          treeAppId,
+        });
         if (!appid) {
           void logFrontendEvent('WARNING', 'Game context menu selection missing app id');
           return;

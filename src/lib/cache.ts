@@ -40,7 +40,7 @@ export interface CacheEntry {
   votes: Record<string, VoteTotals>;
   cachedAt: number;       // Date.now() when cached
   lastAccessedAt: number; // for LRU eviction
-  source: 'cdn' | 'live-summary' | 'prefetch';
+  source: 'cdn' | 'live-detailed' | 'live-summary' | 'prefetch';
 }
 
 // ── in-memory layer ─────────────────────────────────────────────────────────

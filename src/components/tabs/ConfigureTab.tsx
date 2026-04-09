@@ -127,7 +127,7 @@ function MissingVersionModal({
     <ConfirmModal
       strTitle={t().configure.requiredProtonVersion}
       strDescription={t().configure.requiresVersion(requiredVersion)}
-      strOKButtonText="Cancel"
+      strOKButtonText={t().common.cancel}
       onOK={onCancel}
       onCancel={onCancel}
     >
@@ -171,7 +171,7 @@ function InstalledVersionPickerModal({
     <ConfirmModal
       strTitle={t().configure.pickInstalledVersion}
       strDescription={t().configure.chooseInstalledTool}
-      strOKButtonText="Cancel"
+      strOKButtonText={t().common.cancel}
       onOK={onCancel}
       onCancel={onCancel}
     >

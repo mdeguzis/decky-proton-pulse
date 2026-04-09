@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -26,7 +27,13 @@ from aiohttp import ClientSession
 
 DEBUG_LIST_URL = "http://127.0.0.1:8080/json/list"
 PREPARE_ACTION_JSON = __PREPARE_ACTION_JSON__
+DEBUG_ENABLED = __DEBUG_ENABLED__
 PLUGIN_ROUTE = "/proton-pulse"
+
+
+def debug_log(message):
+    if DEBUG_ENABLED:
+        print(message, file=sys.stderr)
 
 
 async def evaluate_page(ws, next_id_ref, expression):
@@ -183,7 +190,8 @@ async def main():
             )
         control_page = control_state["page"]
         capture_page = capture_state["page"]
-        await dismiss_visible_overlay(session, capture_page)
+        if PREPARE_ACTION_JSON:
+            await dismiss_visible_overlay(session, capture_page)
 
         out = f"/tmp/proton-pulse-screenshot-{time.strftime('%Y-%m-%d_%H-%M-%S')}.png"
         async with session.ws_connect(control_page["webSocketDebuggerUrl"]) as ws:
@@ -225,17 +233,14 @@ async def main():
                 "({ pathname: location.pathname, href: location.href, title: document.title, bridge: !!window.__PROTON_PULSE_SCREENSHOT__ })",
             )
             next_id = next_id_ref[0]
-            print(
-                f"Using control target: {json.dumps({'title': control_page.get('title'), 'url': control_page.get('url'), 'info': location_result})}",
-                file=sys.stderr,
+            debug_log(
+                f"Using control target: {json.dumps({'title': control_page.get('title'), 'url': control_page.get('url'), 'info': location_result})}"
             )
-            print(
-                f"Using capture target: {json.dumps({'title': capture_page.get('title'), 'url': capture_page.get('url'), 'info': capture_state['info']})}",
-                file=sys.stderr,
+            debug_log(
+                f"Using capture target: {json.dumps({'title': capture_page.get('title'), 'url': capture_page.get('url'), 'info': capture_state['info']})}"
             )
-            print(
-                f"Discovered debug targets: {json.dumps([{'title': state['page'].get('title'), 'url': state['page'].get('url'), 'info': state['info']} for state in page_states])}",
-                file=sys.stderr,
+            debug_log(
+                f"Discovered debug targets: {json.dumps([{'title': state['page'].get('title'), 'url': state['page'].get('url'), 'info': state['info']} for state in page_states])}"
             )
 
             if PREPARE_ACTION_JSON:
@@ -259,7 +264,7 @@ async def main():
                         "returnByValue": True,
                     },
                 )
-                print(f"Preparation result: {json.dumps(prep_result)}", file=sys.stderr)
+                debug_log(f"Preparation result: {json.dumps(prep_result)}")
                 next_id_ref = [next_id]
                 location_after_prepare = await evaluate_page(
                     ws,
@@ -267,7 +272,7 @@ async def main():
                     "({ pathname: location.pathname, href: location.href, title: document.title, bridge: !!window.__PROTON_PULSE_SCREENSHOT__ })",
                 )
                 next_id = next_id_ref[0]
-                print(f"Post-prepare page info: {json.dumps(location_after_prepare)}", file=sys.stderr)
+                debug_log(f"Post-prepare page info: {json.dumps(location_after_prepare)}")
 
                 page_states = await inspect_all_pages(session)
                 capture_state = choose_capture_target(page_states)
@@ -276,10 +281,9 @@ async def main():
                         "Lost the Steam CEF debug target after screenshot preparation."
                     )
                 capture_page = capture_state["page"]
-                print(
+                debug_log(
                     "Refreshed capture target after prepare: "
-                    f"{json.dumps({'title': capture_page.get('title'), 'url': capture_page.get('url'), 'info': capture_state['info']})}",
-                    file=sys.stderr,
+                    f"{json.dumps({'title': capture_page.get('title'), 'url': capture_page.get('url'), 'info': capture_state['info']})}"
                 )
 
         async with session.ws_connect(capture_page["webSocketDebuggerUrl"]) as ws:
@@ -319,7 +323,7 @@ async def main():
                     "returnByValue": True,
                 },
             )
-            print(f"Capture target page info: {json.dumps(capture_info)}", file=sys.stderr)
+            debug_log(f"Capture target page info: {json.dumps(capture_info)}")
             result = await capture_call(
                 "Page.captureScreenshot",
                 {"format": "png", "fromSurface": True},
@@ -440,6 +444,11 @@ def main() -> int:
         default="",
         help="Optional screenshot automation action JSON passed into the live plugin UI before capture.",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print detailed CEF target/debug information during capture.",
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir).resolve()
@@ -447,10 +456,20 @@ def main() -> int:
 
     ssh_target = f"{args.deck_user}@{args.deck_ip}"
 
+    debug_enabled = args.debug or os.environ.get("DEBUG", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
     try:
         remote_python = REMOTE_PYTHON.replace(
             "__PREPARE_ACTION_JSON__",
             json.dumps(args.prepare_action_json),
+        ).replace(
+            "__DEBUG_ENABLED__",
+            "True" if debug_enabled else "False",
         )
         remote = run(
             ["ssh", ssh_target, "python3", "-"],

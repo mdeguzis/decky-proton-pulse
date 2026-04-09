@@ -37,6 +37,39 @@ const fakeSummary: ProtonDBSummary = {
   trendingTier: 'platinum', bestReportedTier: 'platinum', confidence: 'good',
 };
 
+const fakeLiveDetailedPayload = {
+  reports: [
+    {
+      timestamp: 1710000000,
+      responses: {
+        verdict: 'yes',
+        triedOob: 'yes',
+        protonVersion: 'GE-Proton10-1',
+        notes: {
+          concludingNotes: 'Runs great on Deck',
+        },
+      },
+      device: {
+        inferred: {
+          steam: {
+            cpu: 'AMD Custom APU',
+            gpu: 'AMD Custom GPU 0405',
+            gpuDriver: 'Mesa',
+            kernel: '6.1.1-valve',
+            os: 'SteamOS',
+            ram: '14 GB',
+          },
+        },
+      },
+      contributor: {
+        steam: {
+          playtimeLinux: 300,
+        },
+      },
+    },
+  ],
+};
+
 // CDN returns capitalized ratings -- the fetch layer must lowercase them
 const fakeCdnRaw = [
   {
@@ -130,6 +163,9 @@ describe('getProtonDBReports', () => {
   it('falls back to live ProtonDB summary when CDN index 404s', async () => {
     mockFetch
       .mockResolvedValueOnce(makeResponse(404, null))
+      .mockResolvedValueOnce(makeResponse(200, { reports: 416416, timestamp: 1775704890 }))
+      .mockResolvedValueOnce(makeResponse(404, null))
+      .mockResolvedValueOnce(makeResponse(404, null))
       .mockResolvedValueOnce(makeResponse(200, fakeSummary));
     const result = await getProtonDBReportsWithDiagnostics('1145350');
     expect(result.reports).toEqual([]);
@@ -140,7 +176,62 @@ describe('getProtonDBReports', () => {
       'https://mdeguzis.github.io/proton-pulse-data/data/1145350/index.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(2,
+      'https://www.protondb.com/data/counts.json'
+    );
+    expect(mockFetch.mock.calls[2]?.[0]).toMatch(
+      /^https:\/\/www\.protondb\.com\/data\/reports\/all-devices\/app\/\d+\.json$/
+    );
+    expect(mockFetch.mock.calls[3]?.[0]).toMatch(
+      /^https:\/\/www\.protondb\.com\/data\/reports\/all-devices\/app\/\d+\.json$/
+    );
+    expect(mockFetch).toHaveBeenNthCalledWith(5,
       'https://www.protondb.com/api/v1/reports/summaries/1145350.json'
+    );
+  });
+
+  it('falls back to live ProtonDB detailed reports when CDN index 404s', async () => {
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(404, null))
+      .mockResolvedValueOnce(makeResponse(200, { reports: 416416, timestamp: 1775704890 }))
+      .mockResolvedValueOnce(makeResponse(200, fakeLiveDetailedPayload));
+
+    const result = await getProtonDBReportsWithDiagnostics('2358720');
+
+    expect(result.diagnostics.source).toBe('live-detailed');
+    expect(result.reports).toHaveLength(1);
+    expect(result.reports[0]).toMatchObject({
+      appId: '2358720',
+      rating: 'platinum',
+      protonVersion: 'GE-Proton10-1',
+      notes: 'Runs great on Deck',
+    });
+    expect(mockFetch).toHaveBeenNthCalledWith(1,
+      'https://mdeguzis.github.io/proton-pulse-data/data/2358720/index.json'
+    );
+    expect(mockFetch).toHaveBeenNthCalledWith(2,
+      'https://www.protondb.com/data/counts.json'
+    );
+    expect(mockFetch.mock.calls[2]?.[0]).toMatch(
+      /^https:\/\/www\.protondb\.com\/data\/reports\/all-devices\/app\/\d+\.json$/
+    );
+  });
+
+  it('tries the legacy live detailed URL before falling back to summary', async () => {
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(404, null))
+      .mockResolvedValueOnce(makeResponse(200, { reports: 416416, timestamp: 1775704890 }))
+      .mockResolvedValueOnce(makeResponse(404, null))
+      .mockResolvedValueOnce(makeResponse(200, fakeLiveDetailedPayload));
+
+    const result = await getProtonDBReportsWithDiagnostics('2358720');
+
+    expect(result.diagnostics.source).toBe('live-detailed');
+    expect(result.reports).toHaveLength(1);
+    expect(mockFetch.mock.calls[2]?.[0]).toMatch(
+      /^https:\/\/www\.protondb\.com\/data\/reports\/all-devices\/app\/\d+\.json$/
+    );
+    expect(mockFetch.mock.calls[3]?.[0]).toMatch(
+      /^https:\/\/www\.protondb\.com\/data\/reports\/all-devices\/app\/\d+\.json$/
     );
   });
 
@@ -148,6 +239,9 @@ describe('getProtonDBReports', () => {
     mockFetch
       .mockResolvedValueOnce(makeResponse(200, ['2023']))
       .mockResolvedValueOnce(makeResponse(200, []))
+      .mockResolvedValueOnce(makeResponse(200, { reports: 416416, timestamp: 1775704890 }))
+      .mockResolvedValueOnce(makeResponse(404, null))
+      .mockResolvedValueOnce(makeResponse(404, null))
       .mockResolvedValueOnce(makeResponse(200, fakeSummary));
 
     const result = await getProtonDBReportsWithDiagnostics('2561580');
@@ -161,6 +255,15 @@ describe('getProtonDBReports', () => {
       'https://mdeguzis.github.io/proton-pulse-data/data/2561580/2023.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(3,
+      'https://www.protondb.com/data/counts.json'
+    );
+    expect(mockFetch.mock.calls[3]?.[0]).toMatch(
+      /^https:\/\/www\.protondb\.com\/data\/reports\/all-devices\/app\/\d+\.json$/
+    );
+    expect(mockFetch.mock.calls[4]?.[0]).toMatch(
+      /^https:\/\/www\.protondb\.com\/data\/reports\/all-devices\/app\/\d+\.json$/
+    );
+    expect(mockFetch).toHaveBeenNthCalledWith(6,
       'https://www.protondb.com/api/v1/reports/summaries/2561580.json'
     );
   });
@@ -194,4 +297,3 @@ describe('getProtonDBReports', () => {
     expect(result).toHaveLength(2);
   });
 });
-
