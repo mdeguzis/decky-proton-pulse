@@ -1,8 +1,8 @@
 // src/lib/protondb.ts
 //
 // Fetches ProtonDB reports and summary data from the CDN (proton-pulse-data
-// GitHub Pages site) with a fallback to the live ProtonDB API when the CDN
-// doesn't have data for a game yet.
+// GitHub Pages site) with a fallback to live ProtonDB detailed data or summary
+// data when the CDN doesn't have data for a game yet.
 //
 // All data reads go through the local cache first. On cache miss, we fetch
 // from the network and write the result back into cache. Every fetch is
@@ -22,9 +22,24 @@ const APP_INDEX_URL =
   "https://mdeguzis.github.io/proton-pulse-data/data/{id}/index.json";
 const YEAR_URL =
   "https://mdeguzis.github.io/proton-pulse-data/data/{id}/{year}.json";
+const LIVE_COUNTS_URL = "https://www.protondb.com/data/counts.json";
+const LIVE_REPORTS_URL =
+  "https://www.protondb.com/data/reports/{device}/app/{hash}.json";
+const LIVE_REPORT_DEVICE = "all-devices";
+const LIVE_REPORT_HASH_DEVICE = "any";
+const LIVE_REPORT_FAULT_KEYS = [
+  "audioFaults",
+  "graphicalFaults",
+  "inputFaults",
+  "performanceFaults",
+  "saveGameFaults",
+  "significantBugs",
+  "stabilityFaults",
+  "windowingFaults",
+] as const;
 
 export interface ReportFetchDiagnostics {
-  source: "cdn" | "live-summary" | "none";
+  source: "cdn" | "live-detailed" | "live-summary" | "none";
   indexUrl: string;
   indexStatus: number | null;
   years: string[];
@@ -105,6 +120,188 @@ function normalizeReports(
       : "pending";
     return { ...r, rating };
   });
+}
+
+function normalizeWhitespace(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function inferDuration(playtimeMinutes: unknown): string {
+  if (typeof playtimeMinutes !== "number" || playtimeMinutes <= 0) {
+    return "unreported";
+  }
+  if (playtimeMinutes < 60) {
+    return "underOneHour";
+  }
+  if (playtimeMinutes < 240) {
+    return "oneToFourHours";
+  }
+  if (playtimeMinutes < 900) {
+    return "severalHours";
+  }
+  return "allTheTime";
+}
+
+function computeJsHash(seed: string): number {
+  let hashValue = 0;
+  for (const ch of `${seed}m`) {
+    hashValue = ((hashValue << 5) - hashValue + ch.charCodeAt(0)) | 0;
+  }
+  return Math.abs(hashValue);
+}
+
+function buildJsHashFragment(
+  multiplier: number | string,
+  prefix: number | string,
+  modulus: number,
+): string {
+  const remainder = Number(prefix) % modulus;
+  const multiplierValue = Number(multiplier);
+  const productRepr = Number.isFinite(multiplierValue * remainder)
+    ? String(multiplierValue * remainder)
+    : "NaN";
+  return `${prefix}p${productRepr}`;
+}
+
+function computeLiveReportHash(
+  appId: number,
+  reportCount: number,
+  timestamp: number,
+  deviceKey: string,
+): number {
+  const left = buildJsHashFragment(appId, reportCount, timestamp);
+  const right = buildJsHashFragment(deviceKey, appId, timestamp);
+  return computeJsHash(`p${left}*vRT${right}undefined`);
+}
+
+function computeLiveReportHashLegacy(
+  appId: number,
+  reportCount: number,
+  timestamp: number,
+  page: string | number,
+): number {
+  const left = `${reportCount}p${appId * (reportCount % timestamp)}`;
+  const pageValue = Number(page);
+  const rightMultiplier = Number.isFinite(pageValue * (appId % timestamp))
+    ? String(pageValue * (appId % timestamp))
+    : "nan";
+  const right = `${appId}p${rightMultiplier}`;
+  return computeJsHash(`p${left}*vRT${right}${String(null)}`);
+}
+
+function buildLiveReportCandidateUrls(
+  appId: string,
+  reportCount: number,
+  timestamp: number,
+): string[] {
+  const currentHash = computeLiveReportHash(
+    Number(appId),
+    reportCount,
+    timestamp,
+    LIVE_REPORT_HASH_DEVICE,
+  );
+  const legacyHash = computeLiveReportHashLegacy(
+    Number(appId),
+    reportCount,
+    timestamp,
+    "all",
+  );
+  return [currentHash, legacyHash].map((hash) =>
+    LIVE_REPORTS_URL.replace("{device}", LIVE_REPORT_DEVICE).replace(
+      "{hash}",
+      String(hash),
+    ),
+  );
+}
+
+function inferLiveRating(
+  responses: Record<string, unknown> | null,
+): ProtonRating {
+  const verdict = normalizeWhitespace(responses?.verdict).toLowerCase();
+  if (!verdict) {
+    return "pending";
+  }
+  if (verdict === "no") {
+    return "borked";
+  }
+  if (verdict !== "yes") {
+    return "pending";
+  }
+
+  const faultCount = LIVE_REPORT_FAULT_KEYS.reduce((count, key) => (
+    responses?.[key] === "yes" ? count + 1 : count
+  ), 0);
+  if (faultCount >= 3) {
+    return "bronze";
+  }
+  if (faultCount === 2) {
+    return "silver";
+  }
+  if (faultCount === 1) {
+    return "gold";
+  }
+  if (responses?.triedOob === "yes" || responses?.verdictOob === "yes") {
+    return "platinum";
+  }
+  return "gold";
+}
+
+function normalizeLiveDetailedReports(
+  appId: string,
+  rawReports: unknown[],
+  title = "",
+): CdnReport[] {
+  const normalized: CdnReport[] = [];
+  for (const entry of rawReports) {
+    const report = asRecord(entry);
+    if (!report) {
+      continue;
+    }
+    const responses = asRecord(report.responses);
+    const device = asRecord(report.device);
+    const inferred = asRecord(device?.inferred);
+    const steam = asRecord(inferred?.steam);
+    const contributor = asRecord(report.contributor);
+    const contributorSteam = asRecord(contributor?.steam);
+    const notesSource = responses?.notes;
+    const notesRecord = asRecord(notesSource);
+    const notes = normalizeWhitespace(
+      notesRecord?.concludingNotes
+      ?? notesRecord?.verdict
+      ?? (typeof notesSource === "string" ? notesSource : ""),
+    );
+    const playtime =
+      typeof contributorSteam?.playtimeLinux === "number"
+        ? contributorSteam.playtimeLinux
+        : contributorSteam?.playtime;
+    const timestamp = report.timestamp;
+    if (typeof timestamp !== "number" || timestamp <= 0) {
+      continue;
+    }
+
+    normalized.push({
+      appId,
+      cpu: normalizeWhitespace(steam?.cpu),
+      duration: inferDuration(playtime),
+      gpu: normalizeWhitespace(steam?.gpu),
+      gpuDriver: normalizeWhitespace(steam?.gpuDriver),
+      kernel: normalizeWhitespace(steam?.kernel),
+      notes,
+      os: normalizeWhitespace(steam?.os),
+      protonVersion: normalizeWhitespace(responses?.protonVersion) || "Unknown",
+      ram: normalizeWhitespace(steam?.ram),
+      rating: inferLiveRating(responses),
+      timestamp,
+      title,
+    });
+  }
+  return normalized;
 }
 
 export async function getProtonDBReports(appId: string): Promise<CdnReport[]> {
@@ -310,6 +507,11 @@ async function fallbackToLiveSummary(
   reports: CdnReport[];
   diagnostics: ReportFetchDiagnostics;
 }> {
+  const detailedReports = await fetchLiveDetailedReports(appId, diagnostics, reason);
+  if (detailedReports && detailedReports.length > 0) {
+    return { reports: detailedReports, diagnostics };
+  }
+
   const url = diagnostics.liveSummaryUrl;
   try {
     const ft0 = Date.now();
@@ -364,3 +566,96 @@ async function fallbackToLiveSummary(
   }
 }
 
+async function fetchLiveDetailedReports(
+  appId: string,
+  diagnostics: ReportFetchDiagnostics,
+  reason: string,
+): Promise<CdnReport[] | null> {
+  try {
+    await logFrontendEvent("INFO", "NET >> live detailed counts request started", {
+      appId,
+      reason,
+      url: LIVE_COUNTS_URL,
+    });
+    const countsResp = await fetchNoCors(LIVE_COUNTS_URL);
+    await logFrontendEvent("INFO", `NET << live detailed counts response ${countsResp.status}`, {
+      appId,
+      reason,
+      url: LIVE_COUNTS_URL,
+      status: countsResp.status,
+    });
+    if (countsResp.status !== 200) {
+      return null;
+    }
+
+    const countsBody = asRecord(await countsResp.json());
+    const reportCount = countsBody?.reports;
+    const timestamp = countsBody?.timestamp;
+    if (
+      typeof reportCount !== "number"
+      || typeof timestamp !== "number"
+      || reportCount <= 0
+      || timestamp <= 0
+    ) {
+      await logFrontendEvent("WARNING", "Live detailed counts payload was unusable", {
+        appId,
+        reason,
+        reportCount,
+        timestamp,
+      });
+      return null;
+    }
+
+    const candidateUrls = buildLiveReportCandidateUrls(appId, reportCount, timestamp);
+    for (const candidateUrl of candidateUrls) {
+      await logFrontendEvent("INFO", "NET >> live detailed report request started", {
+        appId,
+        reason,
+        url: candidateUrl,
+      });
+      const response = await fetchNoCors(candidateUrl);
+      await logFrontendEvent("INFO", `NET << live detailed report response ${response.status}`, {
+        appId,
+        reason,
+        url: candidateUrl,
+        status: response.status,
+      });
+      if (response.status !== 200) {
+        continue;
+      }
+
+      const payload = asRecord(await response.json());
+      const rawReports = Array.isArray(payload?.reports) ? payload.reports : null;
+      if (!rawReports) {
+        continue;
+      }
+
+      const reports = normalizeLiveDetailedReports(
+        appId,
+        rawReports,
+        normalizeWhitespace(payload?.title),
+      );
+      if (!reports.length) {
+        continue;
+      }
+
+      diagnostics.source = "live-detailed";
+      setCache(appId, reports, null, {}, "live-detailed");
+      await logFrontendEvent("INFO", "Live ProtonDB detailed fallback succeeded", {
+        appId,
+        reason,
+        url: candidateUrl,
+        reports: reports.length,
+      });
+      return reports;
+    }
+  } catch (error) {
+    await logFrontendEvent("ERROR", "Live ProtonDB detailed fallback failed", {
+      appId,
+      reason,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  return null;
+}
