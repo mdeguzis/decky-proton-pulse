@@ -40,22 +40,30 @@ export interface CounterSnapshot {
   cacheMisses: number;
   cacheEvictions: number;
   fetchErrors: number;
+  localNonSteamGames: number;
   prefetchedGames: number;
   totalFetches: number;
+}
+
+export interface CategoryStats {
+  count: number;
+  totalMs: number;
+  avgMs: number;
+  minMs: number;
+  maxMs: number;
+  p95Ms: number;
+  errorCount: number;
+}
+
+export interface PrefetchFailureSummary {
+  total: number;
+  byReason: Record<string, number>;
 }
 
 export interface MetricsSummary {
   counters: CounterSnapshot;
   // per-category aggregates
-  categories: Record<string, {
-    count: number;
-    totalMs: number;
-    avgMs: number;
-    minMs: number;
-    maxMs: number;
-    p95Ms: number;
-    errorCount: number;
-  }>;
+  categories: Record<string, CategoryStats>;
   uptimeMs: number;
   collectedAt: string; // ISO timestamp
   entryCount: number;
@@ -73,6 +81,7 @@ const counters: CounterSnapshot = {
   cacheMisses: 0,
   cacheEvictions: 0,
   fetchErrors: 0,
+  localNonSteamGames: 0,
   prefetchedGames: 0,
   totalFetches: 0,
 };
@@ -123,6 +132,7 @@ export function countCacheHit() { counters.cacheHits++; }
 export function countCacheMiss() { counters.cacheMisses++; }
 export function countCacheEviction() { counters.cacheEvictions++; }
 export function countFetchError() { counters.fetchErrors++; }
+export function countLocalNonSteamGame(count = 1) { counters.localNonSteamGames += count; }
 export function countPrefetchedGame() { counters.prefetchedGames++; }
 export function countFetch() { counters.totalFetches++; }
 
@@ -172,6 +182,44 @@ export function getSummary(): MetricsSummary {
   };
 }
 
+export function getCombinedCategoryStats(categoriesToCombine: MetricCategory[]): CategoryStats | null {
+  const matchingEntries = entries.filter((entry) => entry && categoriesToCombine.includes(entry.category));
+  if (!matchingEntries.length) return null;
+
+  const durations = matchingEntries.map((entry) => entry.durationMs).sort((a, b) => a - b);
+  const total = durations.reduce((sum, duration) => sum + duration, 0);
+  const errorCount = matchingEntries.filter((entry) => !entry.success).length;
+
+  return {
+    count: matchingEntries.length,
+    totalMs: total,
+    avgMs: Math.round(total / matchingEntries.length),
+    minMs: durations[0] ?? 0,
+    maxMs: durations[durations.length - 1] ?? 0,
+    p95Ms: percentile(durations, 95),
+    errorCount,
+  };
+}
+
+export function getPrefetchFailureSummary(): PrefetchFailureSummary {
+  const byReason: Record<string, number> = {};
+
+  for (const entry of entries) {
+    if (!entry || entry.category !== 'prefetch-game' || entry.success) continue;
+    const reason = typeof entry.metadata?.reason === 'string'
+      ? entry.metadata.reason
+      : typeof entry.metadata?.status === 'number'
+        ? `status-${entry.metadata.status}`
+        : 'unknown';
+    byReason[reason] = (byReason[reason] ?? 0) + 1;
+  }
+
+  return {
+    total: Object.values(byReason).reduce((sum, count) => sum + count, 0),
+    byReason,
+  };
+}
+
 // human-readable text block for the Logs tab
 export function getSummaryText(): string {
   const s = getSummary();
@@ -185,6 +233,7 @@ export function getSummaryText(): string {
   lines.push(`  Cache misses:     ${s.counters.cacheMisses}`);
   lines.push(`  Cache evictions:  ${s.counters.cacheEvictions}`);
   lines.push(`  Fetch errors:     ${s.counters.fetchErrors}`);
+  lines.push(`  Non-Steam local:  ${s.counters.localNonSteamGames}`);
   lines.push(`  Prefetched games: ${s.counters.prefetchedGames}`);
   lines.push(`  Total fetches:    ${s.counters.totalFetches}`);
 
@@ -259,6 +308,7 @@ export function resetMetrics() {
   counters.cacheMisses = 0;
   counters.cacheEvictions = 0;
   counters.fetchErrors = 0;
+  counters.localNonSteamGames = 0;
   counters.prefetchedGames = 0;
   counters.totalFetches = 0;
 }

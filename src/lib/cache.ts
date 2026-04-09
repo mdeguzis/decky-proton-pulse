@@ -16,6 +16,7 @@ import {
   countCacheMiss,
   countCacheEviction,
   startSpan,
+  getCombinedCategoryStats,
 } from './metrics';
 import type { CdnReport, ProtonDBSummary } from '../types';
 
@@ -235,6 +236,9 @@ export function getCacheStats(): {
   ttlMs: number;
   oldestMs: number | null;
   newestMs: number | null;
+  networkFetchAvgMs: number | null;
+  networkFetchP95Ms: number | null;
+  networkFetchMaxMs: number | null;
 } {
   let oldest: number | null = null;
   let newest: number | null = null;
@@ -242,12 +246,16 @@ export function getCacheStats(): {
     if (oldest === null || entry.cachedAt < oldest) oldest = entry.cachedAt;
     if (newest === null || entry.cachedAt > newest) newest = entry.cachedAt;
   }
+  const networkFetchStats = getCombinedCategoryStats(['fetch-cdn-index', 'fetch-live-summary']);
   return {
     size: memCache.size,
     maxSize: MAX_CACHE_ENTRIES,
     ttlMs: getCacheTtlMs(),
     oldestMs: oldest ? Date.now() - oldest : null,
     newestMs: newest ? Date.now() - newest : null,
+    networkFetchAvgMs: networkFetchStats?.avgMs ?? null,
+    networkFetchP95Ms: networkFetchStats?.p95Ms ?? null,
+    networkFetchMaxMs: networkFetchStats?.maxMs ?? null,
   };
 }
 

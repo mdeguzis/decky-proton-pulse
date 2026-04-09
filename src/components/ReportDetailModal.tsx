@@ -54,6 +54,50 @@ function InfoSection({ title, children }: { title: string; children: ReactNode }
   );
 }
 
+function SectionHeader({
+  title,
+  action,
+  caption,
+}: {
+  title: string;
+  action?: ReactNode;
+  caption?: string;
+}) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          padding: '10px 0 4px',
+          borderBottom: '1px solid #2a3a4a',
+        }}
+      >
+        <div
+          style={{
+            fontSize: 10,
+            color: '#7a9bb5',
+            fontWeight: 700,
+            letterSpacing: 0.6,
+            textTransform: 'uppercase',
+            flex: 1,
+          }}
+        >
+          {title}
+        </div>
+        {action}
+      </div>
+      {caption ? (
+        <div style={{ fontSize: 10, color: '#8ea6bc', paddingTop: 6 }}>
+          {caption}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div
@@ -70,6 +114,113 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <span style={{ color: '#9db0c4', flexShrink: 0 }}>{label}</span>
       <span style={{ color: '#e8f4ff', textAlign: 'right', wordBreak: 'break-word' }}>{value}</span>
     </div>
+  );
+}
+
+function HardwareCompareModal({
+  closeModal,
+  report,
+  sysInfo,
+}: {
+  closeModal?: () => void;
+  report: DisplayReportCard;
+  sysInfo: SystemInfo | null;
+}) {
+  const systemRam = sysInfo?.ram_gb ? `${sysInfo.ram_gb} GB` : '-';
+  const systemGpuTier = sysInfo?.gpu_vendor ? sysInfo.gpu_vendor.toUpperCase() : '-';
+
+  return (
+    <ModalRoot onCancel={closeModal}>
+      <div style={{ padding: 18, minWidth: 620, maxWidth: 760 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff', marginBottom: 6 }}>
+          Hardware Comparison
+        </div>
+        <div style={{ fontSize: 12, color: '#9db0c4', marginBottom: 14, lineHeight: 1.5 }}>
+          Left side is the ProtonDB report. Right side is our current system.
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '140px minmax(0, 1fr) minmax(0, 1fr)',
+            gap: 0,
+            border: '1px solid #2a3a4a',
+            borderRadius: 8,
+            overflow: 'hidden',
+            background: 'rgba(13, 19, 28, 0.96)',
+            marginBottom: 14,
+          }}
+        >
+          <div style={{ padding: '10px 12px', background: '#162333' }} />
+          <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700 }}>
+            Report
+          </div>
+          <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700 }}>
+            Our System
+          </div>
+
+          <InfoCompareRow label={t().detail.gpu} left={report.gpu || '-'} right={sysInfo?.gpu || '-'} />
+          <InfoCompareRow label={t().detail.gpuTier} left={report.gpuTier.toUpperCase()} right={systemGpuTier} />
+          <InfoCompareRow label={t().detail.os} left={report.os || '-'} right={sysInfo?.distro || '-'} />
+          <InfoCompareRow label={t().detail.kernel} left={report.kernel || '-'} right={sysInfo?.kernel || '-'} />
+          <InfoCompareRow label={t().detail.driver} left={report.gpuDriver || '-'} right={sysInfo?.driver_version || '-'} />
+          <InfoCompareRow label={t().detail.ram} left={report.ram || '-'} right={systemRam} />
+        </div>
+
+        <DialogButton onClick={closeModal}>
+          {t().common.close}
+        </DialogButton>
+      </div>
+    </ModalRoot>
+  );
+}
+
+function InfoCompareRow({
+  label,
+  left,
+  right,
+}: {
+  label: string;
+  left: string;
+  right: string;
+}) {
+  return (
+    <>
+      <div
+        style={{
+          padding: '10px 12px',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          color: '#9db0c4',
+          fontSize: 12,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          padding: '10px 12px',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          borderLeft: '1px solid rgba(255,255,255,0.04)',
+          color: '#e8f4ff',
+          fontSize: 12,
+          wordBreak: 'break-word',
+        }}
+      >
+        {left}
+      </div>
+      <div
+        style={{
+          padding: '10px 12px',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          borderLeft: '1px solid rgba(255,255,255,0.04)',
+          color: '#e8f4ff',
+          fontSize: 12,
+          wordBreak: 'break-word',
+        }}
+      >
+        {right}
+      </div>
+    </>
   );
 }
 
@@ -252,6 +403,15 @@ export function ReportDetailModal({
         body: t().toast.clearFailed(e instanceof Error ? e.message : String(e)),
       });
     }
+  };
+
+  const handleOpenHardwareCompare = () => {
+    showModal(
+      <HardwareCompareModal
+        report={report}
+        sysInfo={sysInfo}
+      />,
+    );
   };
 
   const statusEntry = versionStatus !== 'loading'
@@ -488,7 +648,25 @@ export function ReportDetailModal({
               />
             </InfoSection>
 
-            <InfoSection title={t().detail.hardwareMatch}>
+            <SectionHeader
+              title={t().detail.hardwareMatch}
+              caption="These rows come from the report itself."
+              action={(
+                <DialogButton
+                  onClick={handleOpenHardwareCompare}
+                  disabled={!sysInfo}
+                  style={{
+                    fontSize: 10,
+                    minHeight: 0,
+                    padding: '3px 10px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Our System
+                </DialogButton>
+              )}
+            />
+            <InfoSection title="Report Hardware">
               <InfoRow label={t().detail.gpu} value={report.gpu || '-'} />
               <InfoRow label={t().detail.os} value={report.os || '-'} />
               <InfoRow label={t().detail.kernel} value={report.kernel || '-'} />

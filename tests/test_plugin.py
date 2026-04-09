@@ -1,6 +1,7 @@
-# tests/test_plugin.py
-# Tests for log level management, get_log_contents,
-# and individual system-detection helpers (now in lib.system_info / lib.plugin_logging).
+"""Tests for plugin logging and system-info helpers."""
+
+# pyright: reportMissingImports=false, reportMissingModuleSource=false
+# pylint: disable=wrong-import-position,missing-function-docstring,redefined-outer-name,broad-exception-caught
 import asyncio
 import logging
 import os
@@ -10,21 +11,22 @@ from typing import Any, Generator, Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from unittest.mock import patch, mock_open, MagicMock
-import pytest
-import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
+from unittest.mock import MagicMock, mock_open, patch
 
-from main import Plugin
-from lib.plugin_logging import sync_set_log_level, _disable_debug_log
+import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
+import pytest
 from lib.compat_tools import list_installed_compatibility_tools
+from lib.plugin_logging import _disable_debug_log, sync_set_log_level
 from lib.system_info import (
     read_cpu,
-    read_gpu,
-    read_driver_version,
-    read_kernel,
-    read_distro,
     read_custom_proton,
+    read_distro,
+    read_driver_version,
+    read_gpu,
+    read_kernel,
 )
+
+from main import Plugin
 
 
 @pytest.fixture(autouse=True)
@@ -62,7 +64,9 @@ def test_disable_debug_log_when_not_enabled_is_safe(debug_handler_ref: Any) -> N
     assert debug_handler_ref[0] is None
 
 
-def test_set_log_level_debug_does_not_create_separate_debug_log(debug_handler_ref: Any) -> None:
+def test_set_log_level_debug_does_not_create_separate_debug_log(
+    debug_handler_ref: Any,
+) -> None:
     result = sync_set_log_level("DEBUG", debug_handler_ref)
     assert result is True
     assert debug_handler_ref[0] is None
@@ -165,7 +169,9 @@ def test_read_gpu_parses_3d_controller() -> None:
 
 
 def test_read_gpu_no_gpu_returns_none() -> None:
-    lspci_output = "00:1f.3 Audio device: Intel Audio\n00:14.0 USB controller: Intel USB\n"
+    lspci_output = (
+        "00:1f.3 Audio device: Intel Audio\n00:14.0 USB controller: Intel USB\n"
+    )
     mock_result = MagicMock(returncode=0, stdout=lspci_output)
     with patch("lib.system_info.subprocess.run", return_value=mock_result):
         gpu, vendor = read_gpu()
@@ -196,13 +202,15 @@ def test_read_driver_version_fallback_drm(tmp_path: pathlib.Path) -> None:
     version_file = tmp_path / "version"
     version_file.write_text("6.2.0\n")
 
-    def fake_run(cmd: Any, **kwargs: Any) -> MagicMock:
+    def fake_run(cmd: Any, **_kwargs: Any) -> MagicMock:
         if cmd[0] == "nvidia-smi":
             raise FileNotFoundError("not installed")
         return MagicMock(returncode=0)
 
-    with patch("lib.system_info.subprocess.run", side_effect=fake_run), \
-         patch("lib.system_info.glob.glob", return_value=[str(version_file)]):
+    with (
+        patch("lib.system_info.subprocess.run", side_effect=fake_run),
+        patch("lib.system_info.glob.glob", return_value=[str(version_file)]),
+    ):
         result = read_driver_version()
     assert result == "6.2.0"
 
@@ -210,8 +218,10 @@ def test_read_driver_version_fallback_drm(tmp_path: pathlib.Path) -> None:
 def test_read_driver_version_nvidia_smi_nonzero_and_no_drm() -> None:
     """nvidia-smi returns non-zero and no DRM path exists --> None."""
     mock_result = MagicMock(returncode=1, stdout="")
-    with patch("lib.system_info.subprocess.run", return_value=mock_result), \
-         patch("lib.system_info.glob.glob", return_value=[]):
+    with (
+        patch("lib.system_info.subprocess.run", return_value=mock_result),
+        patch("lib.system_info.glob.glob", return_value=[]),
+    ):
         result = read_driver_version()
     assert result is None
 

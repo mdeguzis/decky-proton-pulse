@@ -8,7 +8,7 @@ import { NOTIFICATIONS_ENABLED_KEY } from '../../lib/notify';
 import { logFrontendEvent, callWithTimeout } from '../../lib/logger';
 import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
 import { getCacheTtlMs, setCacheTtlHours, getCacheStats } from '../../lib/cache';
-import { getSummary } from '../../lib/metrics';
+import { getSummary, getPrefetchFailureSummary } from '../../lib/metrics';
 import { CacheManagerModalContent } from '../CacheManagerModal';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
@@ -51,6 +51,29 @@ function scrollNearestScrollableAncestor(node: HTMLDivElement | null): void {
 
 const ADVANCED_SETTINGS_KEY = 'advanced-settings-enabled';
 
+function formatCacheTtl(hours: number): string {
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return remainingHours === 0 ? `${days}d` : `${days}d ${remainingHours}h`;
+}
+
+function stripUnitHint(label: string): string {
+  return label.replace(/[\s\u3000]*[(（][^)）]+[)）]\s*$/u, '').trim();
+}
+
+function formatPrefetchReason(reason: string): string {
+  switch (reason) {
+    case 'index-miss':
+      return 'CDN misses';
+    case 'index-empty':
+      return 'empty CDN entries';
+    default:
+      if (reason.startsWith('status-')) return `HTTP ${reason.slice(7)}`;
+      return reason.replace(/-/g, ' ');
+  }
+}
+
 // compact metrics info box for the advanced settings area
 function MetricsInfoBox() {
   const extras = t().extras!;
@@ -66,6 +89,7 @@ function MetricsInfoBox() {
   if (!stats) return null;
 
   const { counters, categories } = stats;
+  const prefetchFailures = getPrefetchFailureSummary();
   const upMin = Math.floor(stats.uptimeMs / 60000);
 
   // pull avg fetch time from cdn-index category if available
@@ -75,6 +99,8 @@ function MetricsInfoBox() {
   const hitRate = hitTotal > 0
     ? ((counters.cacheHits / hitTotal) * 100).toFixed(1) + '%'
     : extras.notAvailable();
+  const topPrefetchFailure = Object.entries(prefetchFailures.byReason)
+    .sort((a, b) => b[1] - a[1])[0] ?? null;
 
   const infoStyle: React.CSSProperties = {
     background: '#0d1b2a',
@@ -111,6 +137,13 @@ function MetricsInfoBox() {
       <div><span style={labelStyle}>{extras.cachedGames()}</span>{cacheStats.size} / {cacheStats.maxSize}</div>
       <div><span style={labelStyle}>{extras.prefetched()}</span>{counters.prefetchedGames} games</div>
       <div><span style={labelStyle}>{extras.totalFetches()}</span>{counters.totalFetches}{counters.fetchErrors > 0 ? extras.errorsSuffix(counters.fetchErrors) : ''}</div>
+      <div><span style={labelStyle}>Local games</span>{counters.localNonSteamGames} skipped</div>
+      {prefetchFailures.total > 0 && (
+        <div>
+          <span style={labelStyle}>Fetch issues</span>
+          {topPrefetchFailure ? `${prefetchFailures.total} prefetch failures, mostly ${formatPrefetchReason(topPrefetchFailure[0])} (${topPrefetchFailure[1]})` : `${prefetchFailures.total} prefetch failures`}
+        </div>
+      )}
       {cdnIdx && (
         <div><span style={labelStyle}>{extras.cdnFetchAvg()}</span>{cdnIdx.avgMs}ms (p95: {cdnIdx.p95Ms}ms, max: {cdnIdx.maxMs}ms)</div>
       )}
@@ -126,6 +159,7 @@ function MetricsInfoBox() {
 
 export function GeneralSettingsTab() {
   const extras = t().extras!;
+  const cacheStats = getCacheStats();
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
@@ -222,13 +256,13 @@ export function GeneralSettingsTab() {
           </div>
           <div style={focusClipRowStyle()}>
             <SliderField
-              label={extras.cacheTtlHours()}
-              description={extras.cacheTtlDescription(cacheTtlHours)}
+              label={stripUnitHint(extras.cacheTtlHours())}
+              description={`Data re-fetched after ${formatCacheTtl(cacheTtlHours)}`}
               value={cacheTtlHours}
               min={1}
-              max={168}
+              max={720}
               step={1}
-              showValue
+              showValue={false}
               onChange={(val) => {
                 setCacheTtlLocal(val);
                 setCacheTtlHours(val);
@@ -248,6 +282,12 @@ export function GeneralSettingsTab() {
               <div style={{ fontSize: 11, color: '#7a9bb5' }}>
                 {extras.manageCacheDescription()}
               </div>
+              {cacheStats.networkFetchAvgMs !== null && (
+                <div style={{ fontSize: 10, color: '#5dade2', marginTop: 4 }}>
+                  {extras.cdnFetchAvg()}: {cacheStats.networkFetchAvgMs}ms
+                  {cacheStats.networkFetchP95Ms !== null ? ` (p95: ${cacheStats.networkFetchP95Ms}ms)` : ''}
+                </div>
+              )}
             </DialogButton>
           </div>
         </div>
