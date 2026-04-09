@@ -25,9 +25,7 @@ If you find Proton Pulse useful, please consider starring or contributing to the
 
 This plugin was built with the help of AI coding tools. I use these for brainstorming, wiring up tricky parts, chasing down bugs, and knocking out boilerplate code. I review, test, and rework everything that comes out the other end before it goes anywhere.
 
-Every change still has to pass the same bar: strict typing in both TypeScript and Python, linting, unit tests, and hands-on smoke testing on a real Steam Deck. Design calls and final say are mine.
-
-If something looks wrong, open an issue. Doesn't matter if a person or a model wrote the line.
+Every change still has to pass the same bar: strict typing in both TypeScript and Python, linting, unit tests, and hands-on smoke testing on a real Steam Deck. 
 
 ---
 
