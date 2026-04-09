@@ -21,6 +21,16 @@ If you find Proton Pulse useful, please consider starring or contributing to the
 
 ---
 
+## AI-Assisted Development
+
+This plugin was built with the help of AI coding tools, primarily [Claude](https://claude.ai) (Anthropic) and [Kiro](https://kiro.dev) (Amazon). I use these for brainstorming, wiring up tricky parts, chasing down bugs, and knocking out boilerplate. I review, test, and rework everything that comes out the other end before it goes anywhere.
+
+Every change still has to pass the same bar: strict typing in both TypeScript and Python, linting, unit tests, and hands-on smoke testing on a real Steam Deck. Design calls and final say are mine.
+
+If something looks wrong, open an issue. Doesn't matter if a person or a model wrote the line.
+
+---
+
 ## What it does
 
 Getting Proton launch options right usually means opening ProtonDB, reading a pile of reports, guessing which ones match your hardware, and then copying flags into Steam by hand. Proton Pulse handles that from the Steam Deck UI:
