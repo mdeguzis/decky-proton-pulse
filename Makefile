@@ -31,11 +31,12 @@ PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 
 .PHONY: help build watch test test-ts test-py typecheck check-translations translate setup deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
-        package release pre-release \
+        package release pre-release github-release github-pre-release \
         capture-project-screenshots \
         fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
 
 help:
+	@echo "================ usage ================ "
 	@echo "Usage: make <target>"
 	@echo "       DECK_IP=x.x.x.x make deploy"
 	@echo "       DECK_IP=x.x.x.x DECK_USER=deck TARGET=stable make deploy"
@@ -44,52 +45,58 @@ help:
 	@echo "  echo '192.168.1.x' > ~/.deckip"
 	@echo "  echo 'export DECK_IP=192.168.1.x' >> ~/.zshenv"
 	@echo ""
-	@echo "  build             Clean, test, then build frontend"
-	@echo "  watch             Watch frontend for changes (pnpm watch)"
-	@echo "  test              Run all tests (Python + TypeScript)"
-	@echo "  check-translations  Enforce translation coverage and refresh coverage metrics"
-	@echo "  translate         Alias for check-translations"
-	@echo "  typecheck         Run strict pyright type checking on all Python code"
-	@echo "  test-ts           Run TypeScript tests only (vitest)"
-	@echo "  test-py           Run Python tests only (pytest via uv)"
-	@echo "  setup             Install all dependencies (pnpm + uv)"
-	@echo "  deploy            Build and deploy to Steam Deck (requires DECK_IP)"
-	@echo "  deploy-reload     Build, deploy, then restart plugin_loader (requires DECK_IP)"
-	@echo "  build-and-deploy  Clean, test, build, and deploy (requires DECK_IP)"
-	@echo "  package           Build and create the local release zip for the current VERSION"
-	@echo "  release           Build, package, and prepare a GitHub release using CHANGELOG.md notes"
-	@echo "                    Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
-	@echo "  pre-release       Build, package, and prepare a GitHub pre-release using CHANGELOG.md notes"
-	@echo "                    Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
-	@echo "  clean             Remove build output (dist/) and generated release archives"
+	@echo "============= main targets ============= "
+	@printf "  %-27s %s\n" "build" "Clean, test, then build frontend"
+	@printf "  %-27s %s\n" "watch" "Watch frontend for changes (pnpm watch)"
+	@printf "  %-27s %s\n" "test" "Run all tests (Python + TypeScript)"
+	@printf "  %-27s %s\n" "check-translations" "Enforce translation coverage and refresh coverage metrics"
+	@printf "  %-27s %s\n" "translate" "Alias for check-translations"
+	@printf "  %-27s %s\n" "typecheck" "Run strict pyright type checking on all Python code"
+	@printf "  %-27s %s\n" "test-ts" "Run TypeScript tests only (vitest)"
+	@printf "  %-27s %s\n" "test-py" "Run Python tests only (pytest via uv)"
+	@printf "  %-27s %s\n" "setup" "Install all dependencies (pnpm + uv)"
+	@printf "  %-27s %s\n" "deploy" "Build and deploy to Steam Deck (requires DECK_IP)"
+	@printf "  %-27s %s\n" "deploy-reload" "Build, deploy, then restart plugin_loader (requires DECK_IP)"
+	@printf "  %-27s %s\n" "build-and-deploy" "Clean, test, build, and deploy (requires DECK_IP)"
+	@printf "  %-27s %s\n" "package" "Build and create the local release zip for the current VERSION"
+	@printf "  %-27s %s\n" "release" "Build, package, and prepare a GitHub release using CHANGELOG.md notes"
+	@printf "  %-27s %s\n" "" "Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
+	@printf "  %-27s %s\n" "pre-release" "Build, package, and prepare a GitHub pre-release using CHANGELOG.md notes"
+	@printf "  %-27s %s\n" "" "Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
+	@printf "  %-27s %s\n" "github-release" "GitHub-only release flow (no Decky database submission)"
+	@printf "  %-27s %s\n" "" "Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
+	@printf "  %-27s %s\n" "github-pre-release" "GitHub-only pre-release flow (no Decky database submission)"
+	@printf "  %-27s %s\n" "" "Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
+	@printf "  %-27s %s\n" "clean" "Remove build output (dist/) and generated release archives"
 	@echo ""
+	@echo "============= device targets ============= "
 	@echo "On-device debugging (require DECK_IP):"
-	@echo "  logs              Follow plugin app log in real time"
-	@echo "  get-logs          Sync plugin logs from the Steam Deck into the project root"
-	@echo "  take-screenshot   Capture the current Steam UI into ../screenshots/"
-	@echo "                    Optional: SCREENSHOT_BASE=my-name make take-screenshot"
-	@echo "                    Optional catalog metadata: SCREENSHOT_GROUP=manage-game SCREENSHOT_KEY=default"
-	@echo "  take-screenshot-wiki  Capture and register a grouped wiki screenshot"
-	@echo "                    Required: SCREENSHOT_GROUP=... SCREENSHOT_KEY=..."
-	@echo "                    Optional: SCREENSHOT_TITLE='Manage Game default' SCREENSHOT_CAPTION='...'"
-	@echo "  capture-project-screenshots  Zero-prompt batch capture for the screenshot manifest"
-	@echo "                    Uses --auto and captures each manifest step without prompting"
-	@echo "                    Optional: SCREENSHOT_MATCH=manage-game to limit the run"
-	@echo "  publish-screenshots-wiki  Copy catalogued screenshots into ../decky-proton-pulse.wiki"
-	@echo "                    Also copies the saved PNG to the local clipboard when supported."
-	@echo "                    Linux tip: install wl-clipboard for Wayland clipboard copy."
-	@echo "                    Warning: this may capture private on-screen content such as account, chat, or store UI."
-	@echo "  take-video        Record the current Steam UI into ../videos/ until Ctrl+C"
-	@echo "                    Optional: SCREENSHOT_BASE=my-name make take-video"
-	@echo "                    Note: press Enter to stop and finalize cleanly."
-	@echo "  fetch-protondb    Clone or update upstream protondb-data for local inspection"
-	@echo "                    Prefers ../protondb-data when present, otherwise uses ~/src/protondb-data"
-	@echo "  check-protondb-data  Run the proton-pulse-data splitter against the local upstream repo into /tmp"
-	@echo "                    Optional: APP_ID=1145350 make check-protondb-data"
-	@echo "  logs-loader       Follow plugin_loader journal in real time"
-	@echo "  reload            Restart plugin_loader on the Deck (equivalent to Decky UI reload)"
-	@echo "  cef-debug-enable  Enable remote CEF debugging (React DevTools on port 8081)"
-	@echo "  live-reload-enable  Configure LIVE_RELOAD=1 on plugin_loader service"
+	@printf "  %-27s %s\n" "logs" "Follow plugin app log in real time"
+	@printf "  %-27s %s\n" "get-logs" "Sync plugin logs from the Steam Deck into the project root"
+	@printf "  %-27s %s\n" "take-screenshot" "Capture the current Steam UI into ../screenshots/"
+	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_BASE=my-name make take-screenshot"
+	@printf "  %-27s %s\n" "" "Optional catalog metadata: SCREENSHOT_GROUP=manage-game SCREENSHOT_KEY=default"
+	@printf "  %-27s %s\n" "take-screenshot-wiki" "Capture and register a grouped wiki screenshot"
+	@printf "  %-27s %s\n" "" "Required: SCREENSHOT_GROUP=... SCREENSHOT_KEY=..."
+	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_TITLE='Manage Game default' SCREENSHOT_CAPTION='...'"
+	@printf "  %-27s %s\n" "capture-project-screenshots" "Zero-prompt batch capture for the screenshot manifest"
+	@printf "  %-27s %s\n" "" "Uses --auto and captures each manifest step without prompting"
+	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_MATCH=manage-game to limit the run"
+	@printf "  %-27s %s\n" "publish-screenshots-wiki" "Copy catalogued screenshots into ../decky-proton-pulse.wiki"
+	@printf "  %-27s %s\n" "" "Also copies the saved PNG to the local clipboard when supported."
+	@printf "  %-27s %s\n" "" "Linux tip: install wl-clipboard for Wayland clipboard copy."
+	@printf "  %-27s %s\n" "" "Warning: this may capture private on-screen content such as account, chat, or store UI."
+	@printf "  %-27s %s\n" "take-video" "Record the current Steam UI into ../videos/ until Ctrl+C"
+	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_BASE=my-name make take-video"
+	@printf "  %-27s %s\n" "" "Note: press Enter to stop and finalize cleanly."
+	@printf "  %-27s %s\n" "fetch-protondb" "Clone or update upstream protondb-data for local inspection"
+	@printf "  %-27s %s\n" "" "Prefers ../protondb-data when present, otherwise uses ~/src/protondb-data"
+	@printf "  %-27s %s\n" "check-protondb-data" "Run the proton-pulse-data splitter against the local upstream repo into /tmp"
+	@printf "  %-27s %s\n" "" "Optional: APP_ID=1145350 make check-protondb-data"
+	@printf "  %-27s %s\n" "logs-loader" "Follow plugin_loader journal in real time"
+	@printf "  %-27s %s\n" "reload" "Restart plugin_loader on the Deck (equivalent to Decky UI reload)"
+	@printf "  %-27s %s\n" "cef-debug-enable" "Enable remote CEF debugging (React DevTools on port 8081)"
+	@printf "  %-27s %s\n" "live-reload-enable" "Configure LIVE_RELOAD=1 on plugin_loader service"
 
 build: clean test
 	$(PNPM) build
@@ -144,6 +151,12 @@ release: package
 
 pre-release: package
 	DRY_RUN=$(DRY_RUN) bash scripts/deploy.sh --skip-build --prerelease
+
+github-release: package
+	DRY_RUN=$(DRY_RUN) bash scripts/deploy.sh --skip-build --github-release
+
+github-pre-release: package
+	DRY_RUN=$(DRY_RUN) bash scripts/deploy.sh --skip-build --github-prerelease
 
 clean:
 	rm -rf dist/

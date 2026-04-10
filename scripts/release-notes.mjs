@@ -25,11 +25,11 @@ function getFallbackCommitNotes() {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
-    const lines = raw
+    const lines = [...new Set(raw
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean)
-      .map((line) => `- ${line}`);
+      .map((line) => `- ${line}`))];
     if (lines.length > 0) {
       return lines;
     }
