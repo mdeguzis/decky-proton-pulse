@@ -284,7 +284,20 @@ export const ja: TranslationTree = {
     cacheEmpty: () => 'キャッシュは空です',
     cacheNoMatches: () => '一致なし',
     cacheStatsSummary: (size, maxSize, oldest) => `${maxSize} 件中 ${size} 件をキャッシュ${oldest ? ` | 最古 ${oldest}` : ''}`,
-    cacheRowSummary: (appId, reportCount, source, age) => `App ${appId} | ${reportCount} 件のレポート | ${source} | ${age}`,
+    cacheRowSummary: (appId, reportCount, source, age) => `AppID ${appId} | ${reportCount} 件のレポート | ${source} | ${age}`,
+    cacheSourceLabel: (source) => {
+      switch (source) {
+        case 'prefetch': return 'プリフェッチ';
+        case 'live-detailed': return 'ライブ詳細';
+        case 'live-summary': return 'ライブ要約';
+        case 'cdn':
+        default:
+          return 'CDN';
+      }
+    },
+    cacheAgeMinutesAgo: (minutes) => `${minutes}分前`,
+    cacheAgeHoursAgo: (hours) => `${hours}時間前`,
+    cacheAgeDaysAgo: (days) => `${days}日前`,
     advancedSettings: () => '詳細設定',
     advancedSettingsDescription: () => 'キャッシュ制御と開発者ツールを表示します',
     cacheSection: () => 'キャッシュ',

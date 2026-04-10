@@ -284,7 +284,20 @@ export const tr: TranslationTree = {
     cacheEmpty: () => 'Önbellek boş',
     cacheNoMatches: () => 'Eşleşme yok',
     cacheStatsSummary: (size, maxSize, oldest) => `${maxSize} içinden ${size} önbellekte${oldest ? ` | en eski ${oldest}` : ''}`,
-    cacheRowSummary: (appId, reportCount, source, age) => `App ${appId} | ${reportCount} rapor | ${source} | ${age}`,
+    cacheRowSummary: (appId, reportCount, source, age) => `AppID ${appId} | ${reportCount} rapor | ${source} | ${age}`,
+    cacheSourceLabel: (source) => {
+      switch (source) {
+        case 'prefetch': return 'Önceden getirildi';
+        case 'live-detailed': return 'Canlı ayrıntı';
+        case 'live-summary': return 'Canlı özet';
+        case 'cdn':
+        default:
+          return 'CDN';
+      }
+    },
+    cacheAgeMinutesAgo: (minutes) => `${minutes} dk önce`,
+    cacheAgeHoursAgo: (hours) => `${hours} sa önce`,
+    cacheAgeDaysAgo: (days) => `${days} gün önce`,
     advancedSettings: () => 'Gelişmiş Ayarlar',
     advancedSettingsDescription: () => 'Önbellek denetimlerini ve geliştirici araçlarını göster',
     cacheSection: () => 'Önbellek',

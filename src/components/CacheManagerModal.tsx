@@ -45,11 +45,12 @@ function resolveGameName(appId: string, entry: CacheEntry): string {
 }
 
 function formatAge(ms: number): string {
+  const extras = t().extras!;
   const mins = Math.floor(ms / 60000);
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 60) return extras.cacheAgeMinutesAgo(mins);
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  if (hrs < 24) return extras.cacheAgeHoursAgo(hrs);
+  return extras.cacheAgeDaysAgo(Math.floor(hrs / 24));
 }
 
 // the modal content, used with showModal(<CacheManagerModalContent />)
@@ -228,7 +229,12 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
                     {row.gameName}
                   </div>
                   <div style={{ fontSize: 10, color: '#556b7a', marginTop: 2 }}>
-                    {extras.cacheRowSummary(row.appId, row.entry.reports.length, row.entry.source, formatAge(Date.now() - row.entry.cachedAt))}
+                    {extras.cacheRowSummary(
+                      row.appId,
+                      row.entry.reports.length,
+                      extras.cacheSourceLabel(row.entry.source),
+                      formatAge(Date.now() - row.entry.cachedAt),
+                    )}
                   </div>
                 </div>
 

@@ -284,7 +284,20 @@ export const zhCN: TranslationTree = {
     cacheEmpty: () => '缓存为空',
     cacheNoMatches: () => '无匹配项',
     cacheStatsSummary: (size, maxSize, oldest) => `${size}/${maxSize} 已缓存${oldest ? ` | 最旧 ${oldest}` : ''}`,
-    cacheRowSummary: (appId, reportCount, source, age) => `App ${appId} | ${reportCount} 份报告 | ${source} | ${age}`,
+    cacheRowSummary: (appId, reportCount, source, age) => `AppID ${appId} | ${reportCount} 份报告 | ${source} | ${age}`,
+    cacheSourceLabel: (source) => {
+      switch (source) {
+        case 'prefetch': return '预取';
+        case 'live-detailed': return '实时详细';
+        case 'live-summary': return '实时摘要';
+        case 'cdn':
+        default:
+          return 'CDN';
+      }
+    },
+    cacheAgeMinutesAgo: (minutes) => `${minutes} 分钟前`,
+    cacheAgeHoursAgo: (hours) => `${hours} 小时前`,
+    cacheAgeDaysAgo: (days) => `${days} 天前`,
     advancedSettings: () => '高级设置',
     advancedSettingsDescription: () => '显示缓存控制和开发者工具',
     cacheSection: () => '缓存',

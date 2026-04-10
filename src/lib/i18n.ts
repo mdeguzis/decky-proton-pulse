@@ -22,6 +22,13 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   'tr': 'Türkçe',
 };
 
+const LANGUAGE_ALIASES: Record<string, Language> = {
+  zh: 'zh-CN',
+  cn: 'zh-CN',
+  jp: 'ja',
+  br: 'pt-BR',
+};
+
 // ---------------------------------------------------------------------------
 // TranslationTree
 // ---------------------------------------------------------------------------
@@ -310,6 +317,10 @@ export interface TranslationTree {
     cacheNoMatches: () => string;
     cacheStatsSummary: (size: number, maxSize: number, oldest: string | null) => string;
     cacheRowSummary: (appId: string, reportCount: number, source: string, age: string) => string;
+    cacheSourceLabel: (source: string) => string;
+    cacheAgeMinutesAgo: (minutes: number) => string;
+    cacheAgeHoursAgo: (hours: number) => string;
+    cacheAgeDaysAgo: (days: number) => string;
     advancedSettings: () => string;
     advancedSettingsDescription: () => string;
     cacheSection: () => string;
@@ -665,7 +676,20 @@ export const en: TranslationTree = {
     cacheEmpty: () => 'The cache is empty',
     cacheNoMatches: () => 'No matches',
     cacheStatsSummary: (size, maxSize, oldest) => `${size} of ${maxSize} cached${oldest ? ` | oldest ${oldest}` : ''}`,
-    cacheRowSummary: (appId, reportCount, source, age) => `App ${appId} | ${reportCount} reports | ${source} | ${age}`,
+    cacheRowSummary: (appId, reportCount, source, age) => `AppID ${appId} | ${reportCount} reports | ${source} | ${age}`,
+    cacheSourceLabel: (source) => {
+      switch (source) {
+        case 'prefetch': return 'Prefetch';
+        case 'live-detailed': return 'Live detailed';
+        case 'live-summary': return 'Live summary';
+        case 'cdn':
+        default:
+          return 'CDN';
+      }
+    },
+    cacheAgeMinutesAgo: (minutes) => `${minutes}m ago`,
+    cacheAgeHoursAgo: (hours) => `${hours}h ago`,
+    cacheAgeDaysAgo: (days) => `${days}d ago`,
     advancedSettings: () => 'Advanced Settings',
     advancedSettingsDescription: () => 'Show cache controls and developer tools',
     cacheSection: () => 'Cache',
@@ -801,6 +825,14 @@ export function detectLanguage(): Language {
   return 'en';
 }
 
+export function normalizeLanguagePreference(value: string | null | undefined): Language | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if ((LANGUAGES as readonly string[]).includes(trimmed)) return trimmed as Language;
+  return LANGUAGE_ALIASES[trimmed.toLowerCase()] ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Reactive state
 // ---------------------------------------------------------------------------
@@ -809,11 +841,13 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 let languageVersion = 0;
 let resolvedLang: Language = resolveLanguage();
+let storageListenerInstalled = false;
 
 function resolveLanguage(): Language {
   const stored = getSetting<string>('language', 'auto');
   if (stored === 'auto') return detectLanguage();
-  if ((LANGUAGES as readonly string[]).includes(stored)) return stored as Language;
+  const normalized = normalizeLanguagePreference(stored);
+  if (normalized) return normalized;
   return 'en';
 }
 
@@ -822,6 +856,19 @@ function notifyListeners(): void {
   resolvedLang = resolveLanguage();
   listeners.forEach((l) => l());
 }
+
+function installStorageListener(): void {
+  if (storageListenerInstalled || typeof globalThis.addEventListener !== 'function') {
+    return;
+  }
+  globalThis.addEventListener('storage', (event: StorageEvent) => {
+    if (event.key !== 'proton-pulse:language') return;
+    notifyListeners();
+  });
+  storageListenerInstalled = true;
+}
+
+installStorageListener();
 
 // ---------------------------------------------------------------------------
 // setLanguage / getActiveLanguage

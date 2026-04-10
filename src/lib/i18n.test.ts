@@ -14,6 +14,7 @@ import {
   detectLanguage,
   setLanguage,
   getActiveLanguage,
+  normalizeLanguagePreference,
   registerTranslation,
   t,
 } from './i18n';
@@ -133,6 +134,19 @@ describe('detectLanguage()', () => {
       },
     });
     expect(detectLanguage()).toBe('de');
+  });
+});
+
+describe('normalizeLanguagePreference()', () => {
+  it('maps short aliases to supported language codes', () => {
+    expect(normalizeLanguagePreference('cn')).toBe('zh-CN');
+    expect(normalizeLanguagePreference('jp')).toBe('ja');
+    expect(normalizeLanguagePreference('br')).toBe('pt-BR');
+  });
+
+  it('returns exact supported codes unchanged', () => {
+    expect(normalizeLanguagePreference('de')).toBe('de');
+    expect(normalizeLanguagePreference('zh-CN')).toBe('zh-CN');
   });
 });
 

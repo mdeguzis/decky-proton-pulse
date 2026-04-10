@@ -284,7 +284,20 @@ export const es: TranslationTree = {
     cacheEmpty: () => 'La caché está vacía',
     cacheNoMatches: () => 'Sin coincidencias',
     cacheStatsSummary: (size, maxSize, oldest) => `${size} de ${maxSize} en caché${oldest ? ` | más antiguo ${oldest}` : ''}`,
-    cacheRowSummary: (appId, reportCount, source, age) => `App ${appId} | ${reportCount} informes | ${source} | ${age}`,
+    cacheRowSummary: (appId, reportCount, source, age) => `AppID ${appId} | ${reportCount} informes | ${source} | ${age}`,
+    cacheSourceLabel: (source) => {
+      switch (source) {
+        case 'prefetch': return 'Precargado';
+        case 'live-detailed': return 'Detalle en vivo';
+        case 'live-summary': return 'Resumen en vivo';
+        case 'cdn':
+        default:
+          return 'CDN';
+      }
+    },
+    cacheAgeMinutesAgo: (minutes) => `hace ${minutes} min`,
+    cacheAgeHoursAgo: (hours) => `hace ${hours} h`,
+    cacheAgeDaysAgo: (days) => `hace ${days} d`,
     advancedSettings: () => 'Ajustes avanzados',
     advancedSettingsDescription: () => 'Mostrar controles de caché y herramientas de desarrollo',
     cacheSection: () => 'Caché',

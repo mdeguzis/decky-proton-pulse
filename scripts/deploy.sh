@@ -65,6 +65,24 @@ resolve_release_commit() {
   return 1
 }
 
+fetch_submodule_release_ref() {
+  local submodule_dir="$1"
+  local tag_name="$2"
+  local commit="$3"
+
+  if git -C "$submodule_dir" cat-file -e "${commit}^{commit}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  git -C "$submodule_dir" fetch origin "refs/tags/${tag_name}:refs/tags/${tag_name}" >/dev/null 2>&1 || true
+  if git -C "$submodule_dir" cat-file -e "${commit}^{commit}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  git -C "$submodule_dir" fetch origin "${commit}" >/dev/null 2>&1 || true
+  git -C "$submodule_dir" cat-file -e "${commit}^{commit}" >/dev/null 2>&1
+}
+
 classify_plugin_worktree() {
   local plugin_status status_line status_path
   plugin_status=$(git status --short || true)
@@ -563,6 +581,13 @@ if [[ -n "$STORE_MODE" ]]; then
     fi
     git submodule update --init "$SUBMODULE"
     git -C "$SUBMODULE" fetch origin
+    if [[ "$STORE_MODE" == "release" ]]; then
+      if ! fetch_submodule_release_ref "$SUBMODULE" "$RELEASE_TAG" "$COMMIT"; then
+        echo "ERROR: Could not fetch release commit $COMMIT (${RELEASE_TAG}) into $SUBMODULE."
+        echo "Push the plugin commit/tag first, then retry the store submission step."
+        exit 1
+      fi
+    fi
     git -C "$SUBMODULE" checkout "$COMMIT"
     git add "$SUBMODULE"
     if git diff --cached --quiet; then

@@ -154,7 +154,7 @@ function HardwareCompareModal({
         >
           <div style={{ padding: '10px 12px', background: '#162333' }} />
           <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700 }}>
-            Report
+            {t().detail.report}
           </div>
           <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700 }}>
             {t().detail.ourSystem}
@@ -250,7 +250,8 @@ export function ReportDetailModal({
   onDownvote,
   onSaveEdit,
 }: ReportDetailModalProps) {
-  const extras = t().extras!;
+  const strings = t();
+  const extras = strings.extras!;
   const isShortcut = isSteamShortcutApp(appId);
   const [applying, setApplying] = useState(false);
   const [voting, setVoting] = useState(false);
@@ -525,7 +526,7 @@ export function ReportDetailModal({
                 flexShrink: 0,
               }}
             >
-              {report.rating}
+              {strings.ratings[report.rating]}
             </span>
           </div>
 
