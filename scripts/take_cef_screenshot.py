@@ -27,6 +27,7 @@ from aiohttp import ClientSession
 
 DEBUG_LIST_URL = "http://127.0.0.1:8080/json/list"
 PREPARE_ACTION_JSON = __PREPARE_ACTION_JSON__
+LANGUAGE = __LANGUAGE__
 DEBUG_ENABLED = __DEBUG_ENABLED__
 PLUGIN_ROUTE = "/proton-pulse"
 
@@ -243,12 +244,16 @@ async def main():
                 f"Discovered debug targets: {json.dumps([{'title': state['page'].get('title'), 'url': state['page'].get('url'), 'info': state['info']} for state in page_states])}"
             )
 
-            if PREPARE_ACTION_JSON:
-                escaped = json.dumps(PREPARE_ACTION_JSON)
+            if PREPARE_ACTION_JSON or LANGUAGE:
+                action_json = PREPARE_ACTION_JSON or "{}"
+                escaped_action = json.dumps(action_json)
+                escaped_language = json.dumps(LANGUAGE)
                 expression = (
                     "(async () => {"
-                    f"const raw = {escaped};"
+                    f"const raw = {escaped_action};"
                     "const action = JSON.parse(raw);"
+                    f"const language = {escaped_language};"
+                    "if (language) action.language = language;"
                     "const bridge = window.__PROTON_PULSE_SCREENSHOT__;"
                     "if (!bridge || typeof bridge.run !== 'function') {"
                     "throw new Error('Proton Pulse screenshot automation bridge is not available.');"
@@ -440,6 +445,11 @@ def main() -> int:
         help="Optional caption to include when publishing to the wiki",
     )
     parser.add_argument(
+        "--language",
+        default="en",
+        help="Screenshot language code used for language-specific galleries",
+    )
+    parser.add_argument(
         "--prepare-action-json",
         default="",
         help="Optional screenshot automation action JSON passed into the live plugin UI before capture.",
@@ -448,6 +458,11 @@ def main() -> int:
         "--debug",
         action="store_true",
         help="Print detailed CEF target/debug information during capture.",
+    )
+    parser.add_argument(
+        "--prepare-only",
+        action="store_true",
+        help="Run screenshot automation preparation without capturing or copying an image.",
     )
     args = parser.parse_args()
 
@@ -468,6 +483,9 @@ def main() -> int:
             "__PREPARE_ACTION_JSON__",
             json.dumps(args.prepare_action_json),
         ).replace(
+            "__LANGUAGE__",
+            json.dumps(args.language),
+        ).replace(
             "__DEBUG_ENABLED__",
             "True" if debug_enabled else "False",
         )
@@ -483,6 +501,10 @@ def main() -> int:
     remote_path = remote.stdout.strip()
     if remote.stderr:
         print(remote.stderr.strip(), file=sys.stderr)
+    if args.prepare_only:
+        if remote_path:
+            print(remote_path)
+        return 0
     if not remote_path:
         print("Remote screenshot command did not return a file path.", file=sys.stderr)
         return 1
@@ -503,6 +525,7 @@ def main() -> int:
             local_path,
             ScreenshotSpec(
                 group=args.group,
+                language=args.language,
                 shot_key=args.shot_key,
                 shot_title=args.title,
                 caption=args.caption,

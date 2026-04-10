@@ -2,10 +2,12 @@ import { Navigation, Router } from '@decky/ui';
 import { dispatchNavigate, pageState, toNavigationPath } from './pageState';
 import type { PageId } from './pageState';
 import { logFrontendEvent } from './logger';
+import { getActiveLanguage, normalizeLanguagePreference, setLanguage } from './i18n';
 
 export interface ScreenshotAutomationAction {
   appId?: number | null;
   appName?: string;
+  language?: string;
   tab?: PageId;
   target?: string;
   useFocusedApp?: boolean;
@@ -150,6 +152,15 @@ async function runAutomationAction(action: ScreenshotAutomationAction): Promise<
     currentPageGetterReady: Boolean(currentPageGetter),
   });
   await resetTransientUiState();
+  const requestedLanguage = normalizeLanguagePreference(action.language ?? null);
+  if (requestedLanguage && requestedLanguage !== getActiveLanguage()) {
+    setLanguage(requestedLanguage);
+    await delay(150);
+    void logFrontendEvent('DEBUG', 'Screenshot automation language applied', {
+      requestedLanguage,
+      activeLanguage: getActiveLanguage(),
+    });
+  }
   if (action.tab) {
     const { appId, appName } = resolveAppContext(action);
     await ensurePluginRouteOpen();

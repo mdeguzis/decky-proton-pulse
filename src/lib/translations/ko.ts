@@ -284,7 +284,20 @@ export const ko: TranslationTree = {
     cacheEmpty: () => '캐시가 비어 있습니다',
     cacheNoMatches: () => '일치 항목 없음',
     cacheStatsSummary: (size, maxSize, oldest) => `${maxSize}개 중 ${size}개 캐시됨${oldest ? ` | 가장 오래된 항목 ${oldest}` : ''}`,
-    cacheRowSummary: (appId, reportCount, source, age) => `App ${appId} | 보고서 ${reportCount}개 | ${source} | ${age}`,
+    cacheRowSummary: (appId, reportCount, source, age) => `AppID ${appId} | 보고서 ${reportCount}개 | ${source} | ${age}`,
+    cacheSourceLabel: (source) => {
+      switch (source) {
+        case 'prefetch': return '프리패치';
+        case 'live-detailed': return '실시간 상세';
+        case 'live-summary': return '실시간 요약';
+        case 'cdn':
+        default:
+          return 'CDN';
+      }
+    },
+    cacheAgeMinutesAgo: (minutes) => `${minutes}분 전`,
+    cacheAgeHoursAgo: (hours) => `${hours}시간 전`,
+    cacheAgeDaysAgo: (days) => `${days}일 전`,
     advancedSettings: () => '고급 설정',
     advancedSettingsDescription: () => '캐시 제어와 개발자 도구 표시',
     cacheSection: () => '캐시',

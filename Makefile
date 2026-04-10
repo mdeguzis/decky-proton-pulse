@@ -76,12 +76,14 @@ help:
 	@printf "  %-27s %s\n" "take-screenshot" "Capture the current Steam UI into ../screenshots/"
 	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_BASE=my-name make take-screenshot"
 	@printf "  %-27s %s\n" "" "Optional catalog metadata: SCREENSHOT_GROUP=manage-game SCREENSHOT_KEY=default"
+	@printf "  %-27s %s\n" "" "Optional language gallery: LANG=cn (also supports SCREENSHOT_LANGUAGE=...)"
 	@printf "  %-27s %s\n" "take-screenshot-wiki" "Capture and register a grouped wiki screenshot"
 	@printf "  %-27s %s\n" "" "Required: SCREENSHOT_GROUP=... SCREENSHOT_KEY=..."
 	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_TITLE='Manage Game default' SCREENSHOT_CAPTION='...'"
 	@printf "  %-27s %s\n" "capture-project-screenshots" "Zero-prompt batch capture for the screenshot manifest"
 	@printf "  %-27s %s\n" "" "Uses --auto and captures each manifest step without prompting"
 	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_MATCH=manage-game to limit the run"
+	@printf "  %-27s %s\n" "" "Optional language gallery: LANG=cn or LANG=all (also supports SCREENSHOT_LANGUAGE=...)"
 	@printf "  %-27s %s\n" "publish-screenshots-wiki" "Copy catalogued screenshots into ../decky-proton-pulse.wiki"
 	@printf "  %-27s %s\n" "" "Also copies the saved PNG to the local clipboard when supported."
 	@printf "  %-27s %s\n" "" "Linux tip: install wl-clipboard for Wayland clipboard copy."
@@ -181,7 +183,7 @@ take-screenshot:
 	$(call require_deck_ip)
 	@echo "Capturing the current Steam UI via CEF remote debugging..."
 	@echo "This may include private on-screen content visible on the Steam Deck."
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),) $(if $(SCREENSHOT_GROUP),--group $(SCREENSHOT_GROUP),) $(if $(SCREENSHOT_KEY),--shot-key $(SCREENSHOT_KEY),) $(if $(SCREENSHOT_TITLE),--title "$(SCREENSHOT_TITLE)",) $(if $(SCREENSHOT_CAPTION),--caption "$(SCREENSHOT_CAPTION)",)
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots --language $(if $(SCREENSHOT_LANGUAGE),$(SCREENSHOT_LANGUAGE),$(if $(LANG),$(LANG),en)) $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),) $(if $(SCREENSHOT_GROUP),--group $(SCREENSHOT_GROUP),) $(if $(SCREENSHOT_KEY),--shot-key $(SCREENSHOT_KEY),) $(if $(SCREENSHOT_TITLE),--title "$(SCREENSHOT_TITLE)",) $(if $(SCREENSHOT_CAPTION),--caption "$(SCREENSHOT_CAPTION)",)
 
 take-screenshot-wiki:
 	$(call require_deck_ip)
@@ -196,7 +198,7 @@ endif
 
 capture-project-screenshots:
 	$(call require_deck_ip)
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/capture_project_screenshots.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --manifest $(SCREENSHOT_MANIFEST) --match "$(SCREENSHOT_MATCH)" --auto --output-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/capture_project_screenshots.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --manifest $(SCREENSHOT_MANIFEST) --match "$(SCREENSHOT_MATCH)" --auto --output-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki --language $(if $(SCREENSHOT_LANGUAGE),$(SCREENSHOT_LANGUAGE),$(if $(LANG),$(LANG),en))
 
 publish-screenshots-wiki:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/publish_screenshots_to_wiki.py --screenshots-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki

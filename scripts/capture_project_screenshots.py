@@ -20,6 +20,10 @@ from lib.screenshot_manifest import (
     filter_screenshot_manifest,
     load_screenshot_manifest,
 )
+from lib.screenshot_catalog import (
+    SUPPORTED_SCREENSHOT_LANGUAGES,
+    normalize_language,
+)
 
 
 def run_capture_command(
@@ -28,6 +32,7 @@ def run_capture_command(
     deck_ip: str,
     deck_user: str,
     output_dir: Path,
+    language: str,
 ) -> None:
     """Invoke the existing single-capture script for one manifest entry."""
     command = [
@@ -49,6 +54,8 @@ def run_capture_command(
         entry.title,
         "--caption",
         entry.caption,
+        "--language",
+        language,
     ]
     if entry.automation:
         command.extend(["--prepare-action-json", json.dumps(entry.automation)])
@@ -69,6 +76,35 @@ def publish_to_wiki(screenshots_dir: Path, wiki_dir: Path) -> None:
         ],
         check=True,
     )
+
+
+def restore_capture_language(*, deck_ip: str, deck_user: str) -> None:
+    """Switch the live plugin UI back to English after a capture run."""
+    try:
+        subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT_DIR / "take_cef_screenshot.py"),
+                "--deck-ip",
+                deck_ip,
+                "--deck-user",
+                deck_user,
+                "--output-dir",
+                str(Path("/tmp")),
+                "--language",
+                "en",
+                "--prepare-only",
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=None,
+        )
+    except subprocess.CalledProcessError as exc:
+        print(
+            "Warning: could not restore the live plugin language to English: "
+            f"{exc}",
+            file=sys.stderr,
+        )
 
 
 def wait_for_readiness(entry: ScreenshotManifestEntry, *, deck_ip: str, deck_user: str) -> bool:
@@ -137,7 +173,18 @@ def main() -> int:
         default="../decky-proton-pulse.wiki",
         help="Local wiki checkout",
     )
+    parser.add_argument(
+        "--language",
+        default="en",
+        help="Screenshot language code used for catalog and wiki subpages",
+    )
     args = parser.parse_args()
+    requested_language = args.language.strip()
+    languages = (
+        list(SUPPORTED_SCREENSHOT_LANGUAGES)
+        if requested_language.lower() == "all"
+        else [normalize_language(requested_language)]
+    )
 
     manifest_entries = filter_screenshot_manifest(
         load_screenshot_manifest(Path(args.manifest).resolve()),
@@ -153,30 +200,59 @@ def main() -> int:
 
     captured_count = 0
     total = len(manifest_entries)
-    for index, entry in enumerate(manifest_entries, start=1):
+    quit_requested = False
+    try:
+        for language in languages:
+            print("")
+            print("#" * 80)
+            print(f"Capturing language: {language}")
+            print("#" * 80)
+            language_started = False
+            try:
+                for index, entry in enumerate(manifest_entries, start=1):
+                    print("")
+                    print("=" * 80)
+                    if args.auto:
+                        print(
+                            f"[{language}] [{index}/{total}] "
+                            f"{entry.group}/{entry.key} - {entry.title}"
+                        )
+                        if not wait_for_readiness(
+                            entry, deck_ip=args.deck_ip, deck_user=args.deck_user
+                        ):
+                            print(
+                                f"  Skipping {entry.key}: CEF endpoint not reachable",
+                                file=sys.stderr,
+                            )
+                            continue
+                        action = "capture"
+                    else:
+                        print(f"Language: {language}")
+                        action = prompt_for_step(index, total, entry)
+                    if action == "quit":
+                        quit_requested = True
+                        break
+                    if action == "skip":
+                        continue
+                    language_started = True
+                    run_capture_command(
+                        entry,
+                        deck_ip=args.deck_ip,
+                        deck_user=args.deck_user,
+                        output_dir=screenshots_dir,
+                        language=language,
+                    )
+                    captured_count += 1
+            finally:
+                if language_started:
+                    publish_to_wiki(screenshots_dir, wiki_dir)
+                    print(f"Published wiki gallery after language: {language}")
+            if quit_requested:
+                break
+    finally:
         print("")
-        print("=" * 80)
-        if args.auto:
-            print(f"[{index}/{total}] {entry.group}/{entry.key} - {entry.title}")
-            if not wait_for_readiness(entry, deck_ip=args.deck_ip, deck_user=args.deck_user):
-                print(f"  Skipping {entry.key}: CEF endpoint not reachable", file=sys.stderr)
-                continue
-            action = "capture"
-        else:
-            action = prompt_for_step(index, total, entry)
-        if action == "quit":
-            break
-        if action == "skip":
-            continue
-        run_capture_command(
-            entry,
-            deck_ip=args.deck_ip,
-            deck_user=args.deck_user,
-            output_dir=screenshots_dir,
-        )
-        captured_count += 1
-
-    publish_to_wiki(screenshots_dir, wiki_dir)
+        print("Restoring live plugin language to English...")
+        restore_capture_language(deck_ip=args.deck_ip, deck_user=args.deck_user)
     print("")
     print(f"Captured {captured_count} screenshot(s) and refreshed the wiki gallery.")
     return 0

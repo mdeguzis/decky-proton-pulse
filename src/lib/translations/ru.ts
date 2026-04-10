@@ -308,7 +308,20 @@ export const ru: TranslationTree = {
     cacheEmpty: () => 'Кэш пуст',
     cacheNoMatches: () => 'Совпадений нет',
     cacheStatsSummary: (size, maxSize, oldest) => `${size} из ${maxSize} в кэше${oldest ? ` | самый старый ${oldest}` : ''}`,
-    cacheRowSummary: (appId, reportCount, source, age) => `App ${appId} | ${reportCount} отчётов | ${source} | ${age}`,
+    cacheRowSummary: (appId, reportCount, source, age) => `AppID ${appId} | ${reportCount} отчётов | ${source} | ${age}`,
+    cacheSourceLabel: (source) => {
+      switch (source) {
+        case 'prefetch': return 'Предзагрузка';
+        case 'live-detailed': return 'Подробно онлайн';
+        case 'live-summary': return 'Сводка онлайн';
+        case 'cdn':
+        default:
+          return 'CDN';
+      }
+    },
+    cacheAgeMinutesAgo: (minutes) => `${minutes} мин назад`,
+    cacheAgeHoursAgo: (hours) => `${hours} ч назад`,
+    cacheAgeDaysAgo: (days) => `${days} дн назад`,
     advancedSettings: () => 'Расширенные настройки',
     advancedSettingsDescription: () => 'Показать управление кэшем и инструменты разработчика',
     cacheSection: () => 'Кэш',

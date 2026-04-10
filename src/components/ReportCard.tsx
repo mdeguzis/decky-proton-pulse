@@ -32,6 +32,7 @@ function truncate(str: string, maxLen: number): string {
 }
 
 export function ReportCard({ report, selected, focused = false, onSelect, onFocus, onUpvote }: Props) {
+  const strings = t();
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
   const cappedScore = Math.min(100, report.score);
   const confScore = (cappedScore / 10).toFixed(1);
@@ -86,7 +87,7 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
                   letterSpacing: 0.3,
                 }}
               >
-                {t().reports.editedBadge}
+                  {strings.reports.editedBadge}
               </span>
               {report.editLabel ? (
                 <span style={{ marginLeft: 8, fontSize: 10, color: '#b7d4ee' }}>
@@ -100,10 +101,10 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
             {formatProtonLabel(report.protonVersion)}
           </div>
           <div style={{ fontSize: 11, color: '#8fb4d5', marginBottom: 8 }}>
-            {[report.gpu, report.os].filter(Boolean).join(' · ') || t().reports.hardwareUnavailable}
+            {[report.gpu, report.os].filter(Boolean).join(' · ') || strings.reports.hardwareUnavailable}
           </div>
           <div style={{ fontSize: 10, color: '#9cb3c7', marginBottom: 8 }}>
-            {t().common.daysAgo(report.recencyDays)}
+            {strings.common.daysAgo(report.recencyDays)}
           </div>
           {report.notes && (
             <div style={{ fontSize: 11, color: '#cad7e4', lineHeight: 1.45 }}>
@@ -134,7 +135,7 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
               whiteSpace: 'nowrap',
             }}
           >
-            {report.rating}
+            {strings.ratings[report.rating]}
           </span>
           <span style={{ fontSize: 11, color: '#d9e8f4' }}>
             {report.gpuTier.toUpperCase()}

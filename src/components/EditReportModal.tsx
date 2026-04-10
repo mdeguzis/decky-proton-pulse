@@ -117,6 +117,7 @@ export interface EditReportModalProps {
 }
 
 export function EditReportModal({ closeModal, report, onSave }: EditReportModalProps) {
+  const strings = t();
   const [label, setLabel]               = useState('');
   const [protonVersion, setProtonVersion] = useState(report.protonVersion);
   const [rating, setRating]             = useState(report.rating);
@@ -264,19 +265,30 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
     return diffs;
   }, [protonVersion, rating, gpu, gpuDriver, os, kernel, ram, notes, report]);
 
-  const hasChanges = changes.length > 0;
+  const localizedChanges = useMemo(() => changes.map((change) => {
+    if (change.field !== strings.editReport.rating) {
+      return change;
+    }
+    return {
+      ...change,
+      from: strings.ratings[change.from as keyof typeof strings.ratings] ?? change.from,
+      to: strings.ratings[change.to as keyof typeof strings.ratings] ?? change.to,
+    };
+  }), [changes, strings.editReport.rating, strings.ratings]);
+
+  const hasChanges = localizedChanges.length > 0;
 
   const handleSubmitToProtonDB = () => {
-    const strings = t().protondbSubmit;
-    const changesText = changes.map((c) => strings.changed(c.field, c.from, c.to)).join('\n');
+    const submitStrings = strings.protondbSubmit;
+    const changesText = localizedChanges.map((c) => submitStrings.changed(c.field, c.from, c.to)).join('\n');
     showModal(
       <ConfirmModal
-        strTitle={strings.confirmTitle}
-        strDescription={`${strings.confirmChanges}\n\n${changesText}`}
-        strOKButtonText={strings.confirmSubmit}
+        strTitle={submitStrings.confirmTitle}
+        strDescription={`${submitStrings.confirmChanges}\n\n${changesText}`}
+        strOKButtonText={submitStrings.confirmSubmit}
         onOK={() => {
           void logFrontendEvent('INFO', 'EditReport: Submit to ProtonDB confirmed', {
-            appId: report.appId, changes: changes.length,
+            appId: report.appId, changes: localizedChanges.length,
           });
           const appIdNum = parseInt(report.appId, 10);
           showModal(
@@ -294,6 +306,11 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
   const dropdownOptions = versionOptions.map((opt) => ({
     data: opt.value,
     label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
+  }));
+
+  const ratingOptions = RATING_OPTIONS.map((value) => ({
+    data: value,
+    label: strings.ratings[value],
   }));
 
   return (
@@ -325,7 +342,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
             </div>
           ) : (
             <DropdownItem
-              label={installing ? t().detail.installing(installing) : t().detail.protonVersion}
+              label={installing ? strings.detail.installing(installing) : strings.detail.protonVersion}
               rgOptions={dropdownOptions}
               selectedOption={protonVersion}
               onChange={(opt) => handleVersionChange(opt.data)}
@@ -335,8 +352,8 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
         </PanelSectionRow>
         <PanelSectionRow>
           <DropdownItem
-            label={t().editReport.rating}
-            rgOptions={RATING_OPTIONS.map((r) => ({ data: r, label: r }))}
+            label={strings.editReport.rating}
+            rgOptions={ratingOptions}
             selectedOption={rating}
             onChange={(opt) => setRating(opt.data)}
           />
@@ -388,7 +405,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
       <PanelSection>
         <PanelSectionRow>
           <DialogButton onClick={handleSave} disabled={!!installing}>
-            {installing ? t().common.loading : t().editReport.saveEdits}
+            {installing ? strings.common.loading : strings.editReport.saveEdits}
           </DialogButton>
         </PanelSectionRow>
         <PanelSectionRow>
@@ -397,7 +414,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
             disabled={!hasChanges || !!installing}
             style={{ background: hasChanges ? undefined : '#333', opacity: hasChanges ? 1 : 0.5 }}
           >
-            {t().protondbSubmit.submitToProtonDB}
+            {strings.protondbSubmit.submitToProtonDB}
           </DialogButton>
         </PanelSectionRow>
       </PanelSection>
