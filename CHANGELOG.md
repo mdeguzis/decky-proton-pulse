@@ -1,6 +1,14 @@
 # Changelog
 
 All notable changes to Proton Pulse should be recorded here.
+## v0.3.0
+
+- fix: Fix Wukong report fallback, complete translations, and preserve modal screenshots
+- simplify makefile
+- Update README.md
+- Add tool disclaimer to readme
+- fix: screenshot flow, compat tools reinstall, and nav regressions
+
 
 ## v0.2.0
 
