@@ -135,6 +135,7 @@ export const fr: TranslationTree = {
     unknownDate: 'Date inconnue',
     estimating: 'estimation...',
     timeLeft: (time) => `${time} restant`,
+    archivePickerFailed: 'Impossible d’ouvrir le sélecteur de fichiers. Vous pouvez toujours saisir un chemin manuellement.',
   },
   configure: {
     quitGameFirst: 'Veuillez quitter le jeu en premier',
@@ -160,6 +161,7 @@ export const fr: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `L'installation de ${failedV} a échoué. Utilisation de ${fallbackV} à la place.`,
     installFailedNoFallback: (v) => `L'installation de ${v} a échoué. Application avec la version demandée quand même.`,
     appliedFor: (name) => `Appliqué pour ${name}`,
+    renderErrorIntro: 'Gérer ce jeu a rencontré une erreur de rendu dans l’environnement actuel de l’interface Steam.',
   },
   toast: {
     installed: (v) => `${v} installé.`,
@@ -228,6 +230,8 @@ export const fr: TranslationTree = {
     customToggleScope: 'Portée',
     customToggleScopeGame: 'Appliquer à ce jeu',
     customToggleScopeGlobal: 'Appliquer globalement',
+    customToggleScopeLocalShort: 'Par jeu',
+    customToggleScopeGlobalShort: 'Globale',
     customToggleType: 'Type de valeur',
     customToggleTypeString: 'Chaîne',
     customToggleTypeBool: 'Booléen',

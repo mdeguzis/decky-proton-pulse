@@ -135,6 +135,7 @@ export const ko: TranslationTree = {
     unknownDate: '날짜 알 수 없음',
     estimating: '추정 중...',
     timeLeft: (time) => `${time} 남음`,
+    archivePickerFailed: '파일 선택기를 열 수 없습니다. 경로는 직접 입력할 수 있습니다.',
   },
   configure: {
     quitGameFirst: '먼저 게임을 종료해 주세요',
@@ -160,6 +161,7 @@ export const ko: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `${failedV} 설치에 실패했습니다. 대신 ${fallbackV}을(를) 사용합니다.`,
     installFailedNoFallback: (v) => `${v} 설치에 실패했습니다. 요청한 버전으로 그대로 적용합니다.`,
     appliedFor: (name) => `${name}에 적용됨`,
+    renderErrorIntro: '현재 Steam UI 환경에서 이 게임 관리 화면에 렌더링 오류가 발생했습니다.',
   },
   toast: {
     installed: (v) => `${v}이(가) 설치되었습니다.`,
@@ -228,6 +230,8 @@ export const ko: TranslationTree = {
     customToggleScope: '적용 범위',
     customToggleScopeGame: '이 게임에 적용',
     customToggleScopeGlobal: '전역 적용',
+    customToggleScopeLocalShort: '로컬',
+    customToggleScopeGlobalShort: '전역',
     customToggleType: '유형',
     customToggleTypeString: '문자열',
     customToggleTypeBool: '불리언',

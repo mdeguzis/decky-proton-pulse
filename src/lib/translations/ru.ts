@@ -159,6 +159,7 @@ export const ru: TranslationTree = {
     unknownDate: 'Дата неизвестна',
     estimating: 'оценка...',
     timeLeft: (time) => `осталось ${time}`,
+    archivePickerFailed: 'Не удалось открыть выбор файла. Путь всё равно можно ввести вручную.',
   },
   configure: {
     quitGameFirst: 'Сначала выйдите из игры',
@@ -184,6 +185,7 @@ export const ru: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `Не удалось установить ${failedV}. Вместо этого используется ${fallbackV}.`,
     installFailedNoFallback: (v) => `Не удалось установить ${v}. Применение выполняется с запрошенной версией.`,
     appliedFor: (name) => `Применено для ${name}`,
+    renderErrorIntro: 'На экране «Управление этой игрой» произошла ошибка отрисовки в текущей среде интерфейса Steam.',
   },
   toast: {
     installed: (v) => `${v} установлено.`,
@@ -252,6 +254,8 @@ export const ru: TranslationTree = {
     customToggleScope: 'Область применения',
     customToggleScopeGame: 'Применить к этой игре',
     customToggleScopeGlobal: 'Применить глобально',
+    customToggleScopeLocalShort: 'Локально',
+    customToggleScopeGlobalShort: 'Глобально',
     customToggleType: 'Тип',
     customToggleTypeString: 'Строка',
     customToggleTypeBool: 'Булево',

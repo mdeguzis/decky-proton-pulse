@@ -1,0 +1,78 @@
+name: Coverage Badges
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: coverage-badges-pages
+  cancel-in-progress: true
+
+jobs:
+  build-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync Python dependencies
+        run: uv sync --group dev
+
+      - name: Collect TypeScript coverage
+        run: pnpm test:coverage
+
+      - name: Collect Python coverage
+        run: uv run --group dev python -m pytest --cov=main --cov=lib --cov-report=json:coverage/python/coverage.json
+
+      - name: Generate badge JSON
+        run: pnpm coverage:badges
+
+      - name: Set up Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: coverage/site
+
+  deploy-pages:
+    needs: build-coverage
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -15,7 +15,12 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from lib.screenshot_catalog import ScreenshotSpec, register_screenshot
+from lib.screenshot_catalog import (
+    SUPPORTED_SCREENSHOT_LANGUAGES,
+    ScreenshotSpec,
+    normalize_language,
+    register_screenshot,
+)
 
 REMOTE_PYTHON = r"""
 import asyncio
@@ -446,7 +451,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--language",
-        default="en",
+        default="",
         help="Screenshot language code used for language-specific galleries",
     )
     parser.add_argument(
@@ -466,6 +471,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    normalized_language = normalize_language(args.language)
+    if normalized_language not in SUPPORTED_SCREENSHOT_LANGUAGES:
+        normalized_language = ""
+
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -484,7 +493,7 @@ def main() -> int:
             json.dumps(args.prepare_action_json),
         ).replace(
             "__LANGUAGE__",
-            json.dumps(args.language),
+            json.dumps(normalized_language),
         ).replace(
             "__DEBUG_ENABLED__",
             "True" if debug_enabled else "False",
@@ -525,7 +534,7 @@ def main() -> int:
             local_path,
             ScreenshotSpec(
                 group=args.group,
-                language=args.language,
+                language=normalized_language,
                 shot_key=args.shot_key,
                 shot_title=args.title,
                 caption=args.caption,

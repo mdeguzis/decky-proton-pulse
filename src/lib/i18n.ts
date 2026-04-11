@@ -167,6 +167,7 @@ export interface TranslationTree {
     unknownDate: string;
     estimating: string;
     timeLeft: (time: string) => string;
+    archivePickerFailed: string;
   };
   configure: {
     quitGameFirst: string;
@@ -192,6 +193,7 @@ export interface TranslationTree {
     installFailedFallback: (failedVersion: string, fallbackVersion: string) => string;
     installFailedNoFallback: (version: string) => string;
     appliedFor: (appName: string) => string;
+    renderErrorIntro: string;
   };
   toast: {
     installed: (version: string) => string;
@@ -260,6 +262,8 @@ export interface TranslationTree {
     customToggleScope: string;
     customToggleScopeGame: string;
     customToggleScopeGlobal: string;
+    customToggleScopeLocalShort: string;
+    customToggleScopeGlobalShort: string;
     customToggleType: string;
     customToggleTypeString: string;
     customToggleTypeBool: string;
@@ -563,6 +567,7 @@ export const en: TranslationTree = {
     unknownDate: 'Unknown date',
     estimating: 'estimating...',
     timeLeft: (time) => `${time} left`,
+    archivePickerFailed: 'Could not open the file picker. You can still enter a path manually.',
   },
   configure: {
     quitGameFirst: 'Please quit the game first',
@@ -588,6 +593,7 @@ export const en: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `Could not install ${failedV}. Using ${fallbackV} instead.`,
     installFailedNoFallback: (v) => `Could not install ${v}. Applying the profile anyway with the requested version.`,
     appliedFor: (name) => `Applied to ${name}`,
+    renderErrorIntro: 'Manage This Game hit a render error in the current Steam UI environment.',
   },
   toast: {
     installed: (v) => `Installed ${v}.`,
@@ -656,6 +662,8 @@ export const en: TranslationTree = {
     customToggleScope: 'Apply Scope',
     customToggleScopeGame: 'Apply to this game',
     customToggleScopeGlobal: 'Apply globally',
+    customToggleScopeLocalShort: 'Local',
+    customToggleScopeGlobalShort: 'Global',
     customToggleType: 'Type',
     customToggleTypeString: 'String',
     customToggleTypeBool: 'Boolean',

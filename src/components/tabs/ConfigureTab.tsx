@@ -313,7 +313,7 @@ class ConfigureTabErrorBoundary extends Component<ConfigureTabBoundaryProps, Con
               whiteSpace: 'pre-wrap',
             }}
           >
-            Manage This Game hit a render error in the current Steam UI environment.
+            {t().configure.renderErrorIntro}
             {this.state.message ? `\n\n${this.state.message}` : ''}
             {hint ? `\n\n${hint}` : ''}
             {this.state.stack ? `\n\nComponent stack:\n${this.state.stack.trim()}` : ''}

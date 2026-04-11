@@ -135,6 +135,7 @@ export const tr: TranslationTree = {
     unknownDate: 'Bilinmeyen tarih',
     estimating: 'tahmin ediliyor...',
     timeLeft: (time) => `${time} kaldı`,
+    archivePickerFailed: 'Dosya seçici açılamadı. Yolu yine de elle girebilirsiniz.',
   },
   configure: {
     quitGameFirst: 'Lütfen önce oyundan çıkın',
@@ -160,6 +161,7 @@ export const tr: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `${failedV} yüklemesi başarısız oldu. Bunun yerine ${fallbackV} kullanılıyor.`,
     installFailedNoFallback: (v) => `${v} yüklemesi başarısız oldu. İstenen sürümle yine de uygulanıyor.`,
     appliedFor: (name) => `${name} için uygulandı`,
+    renderErrorIntro: 'Bu Oyunu Yönet ekranı mevcut Steam arayüzü ortamında bir render hatasıyla karşılaştı.',
   },
   toast: {
     installed: (v) => `${v} yüklendi.`,
@@ -228,6 +230,8 @@ export const tr: TranslationTree = {
     customToggleScope: 'Uygulama kapsamı',
     customToggleScopeGame: 'Bu oyuna uygula',
     customToggleScopeGlobal: 'Genel uygula',
+    customToggleScopeLocalShort: 'Yerel',
+    customToggleScopeGlobalShort: 'Genel',
     customToggleType: 'Tür',
     customToggleTypeString: 'Metin',
     customToggleTypeBool: 'Bool',

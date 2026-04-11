@@ -18,6 +18,7 @@ const UI_PROPS = new Set(['label', 'description', 'title', 'body', 'placeholder'
 const IGNORED_CALLEES = new Set(['logFrontendEvent']);
 const IGNORE_TEXT = [
   /^Proton Pulse$/,
+  /^Proton-GE$/,
   /^https?:\/\//,
   /^#?[0-9a-f]{3,8}$/i,
   /^rgba?\(/i,
@@ -26,6 +27,9 @@ const IGNORE_TEXT = [
   /^AppID\b/,
   /^[A-Z0-9_]+$/,
   /^[./]/,
+  /^ms \(p95:$/,
+  /^ms, max:$/,
+  /^ms\)$/,
 ];
 
 function shouldInspect(filePath) {

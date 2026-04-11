@@ -4,7 +4,7 @@ import type { GamepadEvent } from '@decky/ui';
 import { callable, openFilePicker, FileSelectionType } from '@decky/api';
 import { useEffect, useRef, useState } from 'react';
 import { getSetting, setSetting } from '../../lib/settings';
-import { NOTIFICATIONS_ENABLED_KEY, toaster } from '../../lib/notify';
+import { NOTIFICATIONS_ENABLED_KEY } from '../../lib/notify';
 import { logFrontendEvent, callWithTimeout } from '../../lib/logger';
 import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
@@ -181,6 +181,8 @@ export function GeneralSettingsTab() {
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const languageRowRef = useRef<HTMLDivElement>(null);
   const [backupBusy, setBackupBusy] = useState(false);
+  const [backupStatusMessage, setBackupStatusMessage] = useState('');
+  const [backupStatusTone, setBackupStatusTone] = useState<'neutral' | 'success' | 'error'>('neutral');
 
   useEffect(() => {
     void setLogLevelSafe(debugEnabled ? 'DEBUG' : 'INFO').catch((error) => {
@@ -232,12 +234,13 @@ export function GeneralSettingsTab() {
     setBackupBusy(true);
     try {
       const result = await exportLocalDataBackup();
-      toaster.toast({
-        title: 'Proton Pulse',
-        body: result.success && result.path
-          ? extras.backupExported(result.path)
-          : result.message,
-      });
+      if (result.success && result.path) {
+        setBackupStatusTone('success');
+        setBackupStatusMessage(extras.backupExported(result.path));
+      } else {
+        setBackupStatusTone('error');
+        setBackupStatusMessage(result.message);
+      }
     } finally {
       setBackupBusy(false);
     }
@@ -268,12 +271,13 @@ export function GeneralSettingsTab() {
           onOK={() => {
             void (async () => {
               const result = await importLocalDataBackup(archivePath);
-              toaster.toast({
-                title: 'Proton Pulse',
-                body: result.success
-                  ? extras.backupImported(result.restoredCount ?? 0)
-                  : result.message,
-              });
+              if (result.success) {
+                setBackupStatusTone('success');
+                setBackupStatusMessage(extras.backupImported(result.restoredCount ?? 0));
+              } else {
+                setBackupStatusTone('error');
+                setBackupStatusMessage(result.message);
+              }
               modal?.Close();
               if (result.success) {
                 window.setTimeout(() => globalThis.location?.reload(), 500);
@@ -287,10 +291,8 @@ export function GeneralSettingsTab() {
       void logFrontendEvent('WARNING', 'Local data backup picker failed', {
         error: error instanceof Error ? error.message : String(error),
       });
-      toaster.toast({
-        title: 'Proton Pulse',
-        body: extras.backupPickerFailed(),
-      });
+      setBackupStatusTone('error');
+      setBackupStatusMessage(extras.backupPickerFailed());
     } finally {
       setBackupBusy(false);
     }
@@ -394,8 +396,28 @@ export function GeneralSettingsTab() {
 
       {advancedEnabled && (
         <div style={sectionStyle()}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 4 }}>
-            {extras.localDataSection()}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 4, marginRight: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff' }}>
+              {extras.localDataSection()}
+            </div>
+            {backupStatusMessage && (
+              <div
+                style={{
+                  fontSize: 10,
+                  color:
+                    backupStatusTone === 'success'
+                      ? '#9dc4e8'
+                      : backupStatusTone === 'error'
+                        ? '#f3b3b3'
+                        : '#7a9bb5',
+                  textAlign: 'right',
+                  maxWidth: 360,
+                  lineHeight: 1.35,
+                }}
+              >
+                {backupStatusMessage}
+              </div>
+            )}
           </div>
           <div style={{ fontSize: 11, color: '#7a9bb5', margin: '0 8px 10px' }}>
             {extras.localDataSectionDescription()}
