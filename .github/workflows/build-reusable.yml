@@ -60,7 +60,9 @@ jobs:
 
       - name: Fetch base branch for diff coverage
         if: ${{ github.event_name == 'pull_request' }}
-        run: git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
 
       - name: Enforce diff coverage
         if: ${{ github.event_name == 'pull_request' }}
@@ -115,7 +117,9 @@ jobs:
 
       - name: Fetch base branch for diff coverage
         if: ${{ github.event_name == 'pull_request' }}
-        run: git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
 
       - name: Enforce diff coverage
         if: ${{ github.event_name == 'pull_request' }}
