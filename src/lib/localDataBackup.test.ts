@@ -123,11 +123,15 @@ describe('localDataBackup', () => {
   });
 
   it('rejects invalid backup payloads', () => {
-    expect(() => applyLocalDataBackupPayload({
+    const invalidPayload = {
       format: 'proton-pulse-local-backup',
       version: 2,
       exportedAt: '2026-04-10T00:00:00.000Z',
       entries: {},
-    })).toThrow('Backup file is not a valid Proton Pulse local data export.');
+    } as unknown as Parameters<typeof applyLocalDataBackupPayload>[0];
+
+    expect(() => applyLocalDataBackupPayload(invalidPayload)).toThrow(
+      'Backup file is not a valid Proton Pulse local data export.',
+    );
   });
 });

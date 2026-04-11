@@ -1,0 +1,16 @@
+name: Build Arch Linux
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-reusable.yml
+    with:
+      workflow_name: Arch Linux Build
+      container_image: archlinux:latest
+      install_cmd: |
+        pacman -Sy --noconfirm archlinux-keyring
+        pacman -S --noconfirm bash ca-certificates curl git make rsync unzip xz
