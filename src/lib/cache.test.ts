@@ -219,4 +219,30 @@ describe('cache', () => {
     expect(stats.networkFetchP95Ms).toBeNull();
     expect(stats.networkFetchMaxMs).toBeNull();
   });
+
+  it('evicts least-recently-used entries once the cache exceeds the cap', () => {
+    for (let i = 0; i < 201; i++) {
+      setCache(String(i), [fakeReport], null, {});
+    }
+
+    const stats = getCacheStats();
+    expect(stats.size).toBe(200);
+    expect(getCached('0')).toBeNull();
+    expect(getCached('200')?.appId).toBe('200');
+  });
+
+  it('tolerates storage initialization and persist failures', async () => {
+    vi.resetModules();
+    vi.doMock('./settings', () => ({
+      getSetting: vi.fn(() => { throw new Error('broken storage'); }),
+      setSetting: vi.fn(() => { throw new Error('disk full'); }),
+    }));
+    vi.doMock('./logger', () => ({
+      logFrontendEvent: vi.fn().mockResolvedValue(true),
+    }));
+
+    const freshCache = await import('./cache');
+    expect(freshCache.getCached('730')).toBeNull();
+    expect(() => freshCache.setCache('730', [fakeReport], null, {})).not.toThrow();
+  });
 });

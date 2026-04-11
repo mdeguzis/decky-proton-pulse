@@ -100,6 +100,28 @@ PRs are easiest to review when they include:
 
 Small PRs move faster than large ones. If a change is big, splitting it into a couple of focused PRs is usually better.
 
+### DCO Sign-Off
+
+This repository enforces DCO sign-off on pull requests. Every commit in the PR needs a `Signed-off-by` trailer from the commit author.
+
+The easiest way to add it is when you create the commit:
+
+```bash
+git commit -s -m "your message"
+```
+
+If you already created a local commit without the sign-off, you can add it with:
+
+```bash
+git commit --amend -s --no-edit
+```
+
+Then push the updated commit:
+
+```bash
+git push --force-with-lease
+```
+
 ## Issues
 
 Bug reports are most helpful when they include:

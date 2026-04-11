@@ -43,3 +43,23 @@ def test_prune_old_files_keeps_newest_entries(tmp_path: Path) -> None:
     assert files[1].exists() is False
     assert files[2].exists() is True
     assert files[3].exists() is True
+
+
+def test_prune_old_files_ignores_unlink_errors(tmp_path: Path) -> None:
+    first = tmp_path / "metrics-1.json"
+    second = tmp_path / "metrics-2.json"
+    first.write_text("{}")
+    second.write_text("{}")
+
+    with patch("pathlib.Path.unlink", side_effect=[OSError("busy"), None]):
+        removed = _prune_old_files(tmp_path, keep=0)
+
+    assert removed == 2
+
+
+def test_export_metrics_to_disk_handles_write_errors(tmp_path: Path) -> None:
+    with (
+        patch.object(decky, "DECKY_USER_HOME", str(tmp_path)),
+        patch("pathlib.Path.write_text", side_effect=OSError("disk full")),
+    ):
+        assert export_metrics_to_disk('{"cacheHits":3}') is False

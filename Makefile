@@ -27,9 +27,10 @@ SCREENSHOT_TITLE ?=
 SCREENSHOT_CAPTION ?=
 SCREENSHOT_MATCH ?=
 SCREENSHOT_MANIFEST ?= config/ui_screenshot_manifest.json
+SCREENSHOT_TARGET ?=
 PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 
-.PHONY: default help build install watch test coverage test-ts test-py typecheck check-translations check-ui-strings translate setup ensure-mise deploy deploy-reload build-and-deploy clean \
+.PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup ensure-mise deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release pre-release github-release github-pre-release \
         capture-project-screenshots \
@@ -53,6 +54,7 @@ help:
 	@printf "  %-27s %s\n" "watch" "Watch frontend for changes (pnpm watch)"
 	@printf "  %-27s %s\n" "test" "Run all tests, print a per-language coverage table, and enforce minimums"
 	@printf "  %-27s %s\n" "coverage" "Run both coverage suites and fail below the enforced minimums"
+	@printf "  %-27s %s\n" "coverage-diff" "Fail if changed lines drop below the diff coverage minimum"
 	@printf "  %-27s %s\n" "check-translations" "Enforce translation coverage and refresh coverage metrics"
 	@printf "  %-27s %s\n" "check-ui-strings" "Scan UI sources for likely hardcoded English strings"
 	@printf "  %-27s %s\n" "translate" "Alias for check-translations"
@@ -89,6 +91,7 @@ help:
 	@printf "  %-27s %s\n" "" "Uses --auto and captures each manifest step without prompting"
 	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_MATCH=manage-game to limit the run"
 	@printf "  %-27s %s\n" "" "Optional language gallery: LANG=cn or LANG=all (also supports SCREENSHOT_LANGUAGE=...)"
+	@printf "  %-27s %s\n" "" "Optional review target: SCREENSHOT_TARGET=../screenshots/review or SCREENSHOT_TARGET=gist"
 	@printf "  %-27s %s\n" "publish-screenshots-wiki" "Copy catalogued screenshots into ../decky-proton-pulse.wiki"
 	@printf "  %-27s %s\n" "" "Also copies the saved PNG to the local clipboard when supported."
 	@printf "  %-27s %s\n" "" "Linux tip: install wl-clipboard for Wayland clipboard copy."
@@ -155,6 +158,10 @@ coverage: node_modules
 	$(PNPM) run coverage:check
 	$(PNPM) run coverage:summary
 	$(PNPM) run coverage:badges
+
+coverage-diff: node_modules
+	$(PNPM) run coverage:check
+	$(PNPM) run coverage:diff
 
 check-translations: node_modules
 	$(PNPM) run sync-version
@@ -265,8 +272,12 @@ endif
 	@$(MAKE) publish-screenshots-wiki
 
 capture-project-screenshots:
-	$(call require_deck_ip)
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/capture_project_screenshots.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --manifest $(SCREENSHOT_MANIFEST) --match "$(SCREENSHOT_MATCH)" --auto --output-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki --language $(if $(SCREENSHOT_LANGUAGE),$(SCREENSHOT_LANGUAGE),$(if $(LANG),$(LANG),en))
+	@if [ -n "$(DECK_IP)" ]; then \
+		UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/capture_project_screenshots.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --manifest $(SCREENSHOT_MANIFEST) --match "$(SCREENSHOT_MATCH)" --auto --output-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki --language $(if $(SCREENSHOT_LANGUAGE),$(SCREENSHOT_LANGUAGE),$(if $(LANG),$(LANG),en)) $(if $(SCREENSHOT_TARGET),--target "$(SCREENSHOT_TARGET)",); \
+	else \
+		echo "No DECK_IP set; capturing local review screenshots"; \
+		UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/capture_project_screenshots.py --manifest $(SCREENSHOT_MANIFEST) --match "$(SCREENSHOT_MATCH)" --auto --output-dir ../screenshots/review --skip-publish --language $(if $(SCREENSHOT_LANGUAGE),$(SCREENSHOT_LANGUAGE),$(if $(LANG),$(LANG),en)) $(if $(SCREENSHOT_TARGET),--target "$(SCREENSHOT_TARGET)",); \
+	fi
 
 publish-screenshots-wiki:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/publish_screenshots_to_wiki.py --screenshots-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki

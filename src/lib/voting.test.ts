@@ -68,6 +68,18 @@ describe('getVoterId', () => {
     expect(first).toMatch(/^[0-9a-f]{64}$/);
     expect(second).toBe(first);
   });
+
+  it('falls back to unknown when Steam user lookup throws', async () => {
+    vi.stubGlobal('SteamClient', {
+      User: {
+        GetCurrentUser: () => { throw new Error('no steam'); },
+      },
+    });
+
+    const { getVoterId } = await import('./voting');
+    const voterId = await getVoterId();
+    expect(voterId).toHaveLength(64);
+  });
 });
 
 describe('submitVote', () => {
@@ -130,6 +142,24 @@ describe('submitVote', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('returns false while the cooldown is active', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ message: 'no rows' }, { status: 406 }))
+      .mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+    const { submitVote } = await import('./voting');
+    expect(await submitVote('123', 'report-1', 1)).toBe(true);
+    expect(await submitVote('123', 'report-1', -1)).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns false when the request throws', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('network down'));
+
+    const { submitVote } = await import('./voting');
+    await expect(submitVote('123', 'report-1', 1)).resolves.toBe(false);
+  });
 });
 
 describe('getVoteTotals', () => {
@@ -152,6 +182,13 @@ describe('getVoteTotals', () => {
     const { getVoteTotals } = await import('./voting');
     await expect(getVoteTotals('999')).resolves.toEqual({});
   });
+
+  it('returns an empty object when fetch throws', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('offline'));
+
+    const { getVoteTotals } = await import('./voting');
+    await expect(getVoteTotals('999')).resolves.toEqual({});
+  });
 });
 
 describe('getUserVote', () => {
@@ -164,6 +201,18 @@ describe('getUserVote', () => {
 
   it('returns null on 406 no-row responses', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'no rows' }, { status: 406 }));
+
+    const { getUserVote } = await import('./voting');
+    await expect(getUserVote('42', 'report-2')).resolves.toBeNull();
+  });
+
+  it('returns null when voter lookup throws', async () => {
+    vi.stubGlobal('crypto', {
+      getRandomValues: () => { throw new Error('no crypto'); },
+      subtle: {
+        digest: vi.fn(),
+      },
+    });
 
     const { getUserVote } = await import('./voting');
     await expect(getUserVote('42', 'report-2')).resolves.toBeNull();

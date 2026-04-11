@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -55,6 +57,16 @@ jobs:
 
       - name: Build
         run: make build
+
+      - name: Fetch base branch for diff coverage
+        if: ${{ github.event_name == 'pull_request' }}
+        run: git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
+
+      - name: Enforce diff coverage
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          DIFF_COVERAGE_BASE: origin/${{ github.base_ref }}
+        run: pnpm run coverage:diff
 
   build-container:
     if: ${{ inputs.container_image != '' }}
@@ -70,6 +82,8 @@ jobs:
 
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -98,3 +112,13 @@ jobs:
 
       - name: Build
         run: make build
+
+      - name: Fetch base branch for diff coverage
+        if: ${{ github.event_name == 'pull_request' }}
+        run: git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
+
+      - name: Enforce diff coverage
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          DIFF_COVERAGE_BASE: origin/${{ github.base_ref }}
+        run: pnpm run coverage:diff

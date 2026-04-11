@@ -6,6 +6,7 @@ dependencies = []
 
 [dependency-groups]
 dev = [
+    "diff-cover>=9.7.1",
     "mypy>=1.20.0",
     "pylint>=4.0.5",
     "pytest>=8.0",
@@ -38,5 +39,5 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 80
+fail_under = 90
 show_missing = true
