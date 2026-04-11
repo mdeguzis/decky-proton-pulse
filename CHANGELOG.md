@@ -1,7 +1,27 @@
 # Changelog
 
 All notable changes to Proton Pulse should be recorded here.
+
+## Unreleased
+
+- No unreleased changes yet.
+
+## v0.5.0
+
+- autogen changelog
+- update makefile
+- update tag
+- test: tighten coverage gates and local dev flows
+- handle local service reloads
+- fix: handle decky dir root folders
+- fix: avoid timestamp for metrics when there are no changes
+- fix: ensure decky loader is installed, handle bazzite install
+- feat: add other distro autobuilds
+- ci: add reusable distro builds and coverage reporting
+- test coverage
+
 ## v0.3.0
+
 ## v0.4.0
 
 - Add coverage badges and refine custom toggle workflow
@@ -21,7 +41,6 @@ All notable changes to Proton Pulse should be recorded here.
 - Update README.md
 - Add tool disclaimer to readme
 - fix: screenshot flow, compat tools reinstall, and nav regressions
-
 
 ## v0.2.0
 
