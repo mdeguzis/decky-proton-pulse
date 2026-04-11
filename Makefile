@@ -29,7 +29,7 @@ SCREENSHOT_MATCH ?=
 SCREENSHOT_MANIFEST ?= config/ui_screenshot_manifest.json
 PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 
-.PHONY: help build watch test test-ts test-py typecheck check-translations translate setup deploy deploy-reload build-and-deploy clean \
+.PHONY: help build watch test test-ts test-py typecheck check-translations check-ui-strings translate setup deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release pre-release github-release github-pre-release \
         capture-project-screenshots \
@@ -50,6 +50,7 @@ help:
 	@printf "  %-27s %s\n" "watch" "Watch frontend for changes (pnpm watch)"
 	@printf "  %-27s %s\n" "test" "Run all tests (Python + TypeScript)"
 	@printf "  %-27s %s\n" "check-translations" "Enforce translation coverage and refresh coverage metrics"
+	@printf "  %-27s %s\n" "check-ui-strings" "Scan UI sources for likely hardcoded English strings"
 	@printf "  %-27s %s\n" "translate" "Alias for check-translations"
 	@printf "  %-27s %s\n" "typecheck" "Run strict pyright type checking on all Python code"
 	@printf "  %-27s %s\n" "test-ts" "Run TypeScript tests only (vitest)"
@@ -111,6 +112,9 @@ test: test-py test-ts
 check-translations: node_modules
 	$(PNPM) run sync-version
 	$(PNPM) run check-translations
+
+check-ui-strings: node_modules
+	$(PNPM) run check-ui-strings
 
 translate: check-translations
 
@@ -212,37 +216,10 @@ take-video:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --with aiohttp python scripts/take_cef_video.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../videos $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),)
 
 fetch-protondb:
-	@mkdir -p "$(dir $(PROTONDB_REPO_DIR))"
-	@if [ -d "$(PROTONDB_REPO_DIR)/.git" ] && git -C "$(PROTONDB_REPO_DIR)" rev-parse --verify HEAD >/dev/null 2>&1; then \
-		echo "Updating $(PROTONDB_REPO_DIR)..."; \
-		git -C "$(PROTONDB_REPO_DIR)" sparse-checkout set reports; \
-		git -C "$(PROTONDB_REPO_DIR)" pull --rebase; \
-	elif [ -e "$(PROTONDB_REPO_DIR)" ]; then \
-		echo "Resetting incomplete checkout at $(PROTONDB_REPO_DIR)..."; \
-		rm -rf "$(PROTONDB_REPO_DIR)"; \
-		echo "Cloning $(PROTONDB_REPO_URL) -> $(PROTONDB_REPO_DIR)"; \
-		git clone --depth=1 --filter=blob:none --sparse "$(PROTONDB_REPO_URL)" "$(PROTONDB_REPO_DIR)"; \
-		git -C "$(PROTONDB_REPO_DIR)" sparse-checkout set reports; \
-	else \
-		echo "Cloning $(PROTONDB_REPO_URL) -> $(PROTONDB_REPO_DIR)"; \
-		git clone --depth=1 --filter=blob:none --sparse "$(PROTONDB_REPO_URL)" "$(PROTONDB_REPO_DIR)"; \
-		git -C "$(PROTONDB_REPO_DIR)" sparse-checkout set reports; \
-	fi
+	bash scripts/fetch-protondb.sh "$(PROTONDB_REPO_URL)" "$(PROTONDB_REPO_DIR)"
 
 check-protondb-data: fetch-protondb
-	@mkdir -p "$(PROTONDB_LOCAL_OUTPUT)"
-	@OUT_DIR="$$(mktemp -d "$(PROTONDB_LOCAL_OUTPUT).XXXXXX")"; \
-		echo "Using upstream repo: $(PROTONDB_REPO_DIR)"; \
-		echo "Writing split output to $$OUT_DIR"; \
-		UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --with ijson python ../proton-pulse-data/scripts/split_reports.py "$(PROTONDB_REPO_DIR)/reports" "$$OUT_DIR"; \
-		if [ -n "$(APP_ID)" ]; then \
-			if [ -f "$$OUT_DIR/data/$(APP_ID)/index.json" ]; then \
-				echo "Found AppID $(APP_ID) in split output:"; \
-				ls -1 "$$OUT_DIR/data/$(APP_ID)"; \
-			else \
-				echo "AppID $(APP_ID) was not found in split output."; \
-			fi; \
-		fi
+	bash scripts/check-protondb-data.sh "$(PROTONDB_REPO_DIR)" "$(PROTONDB_LOCAL_OUTPUT)" "$(UV_CACHE_DIR)" "$(APP_ID)"
 
 reload:
 	@echo "⏱ Reloading Steam Deck decky plugin service..."

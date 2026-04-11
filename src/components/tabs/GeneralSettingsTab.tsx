@@ -1,10 +1,10 @@
 // src/components/tabs/GeneralSettingsTab.tsx
-import { DropdownItem, Focusable, GamepadButton, ToggleField, SliderField, DialogButton, showModal } from '@decky/ui';
+import { DropdownItem, Focusable, GamepadButton, ToggleField, SliderField, DialogButton, ConfirmModal, showModal } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
-import { callable } from '@decky/api';
+import { callable, openFilePicker, FileSelectionType } from '@decky/api';
 import { useEffect, useRef, useState } from 'react';
 import { getSetting, setSetting } from '../../lib/settings';
-import { NOTIFICATIONS_ENABLED_KEY } from '../../lib/notify';
+import { NOTIFICATIONS_ENABLED_KEY, toaster } from '../../lib/notify';
 import { logFrontendEvent, callWithTimeout } from '../../lib/logger';
 import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
@@ -12,6 +12,7 @@ import { getCacheTtlMs, setCacheTtlHours, getCacheStats, getCachedAppIds } from 
 import { getSummary, getPrefetchFailureSummary } from '../../lib/metrics';
 import { getInstalledGameStats } from '../../lib/prefetch';
 import { CacheManagerModalContent } from '../CacheManagerModal';
+import { exportLocalDataBackup, importLocalDataBackup } from '../../lib/localDataBackup';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const setLogLevelSafe = (level: string) =>
@@ -179,6 +180,7 @@ export function GeneralSettingsTab() {
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const languageRowRef = useRef<HTMLDivElement>(null);
+  const [backupBusy, setBackupBusy] = useState(false);
 
   useEffect(() => {
     void setLogLevelSafe(debugEnabled ? 'DEBUG' : 'INFO').catch((error) => {
@@ -225,6 +227,74 @@ export function GeneralSettingsTab() {
     const button = row?.querySelector<HTMLElement>('button,[role="button"]');
     button?.click();
   }), []);
+
+  const handleExportLocalData = async () => {
+    setBackupBusy(true);
+    try {
+      const result = await exportLocalDataBackup();
+      toaster.toast({
+        title: 'Proton Pulse',
+        body: result.success && result.path
+          ? extras.backupExported(result.path)
+          : result.message,
+      });
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handleImportLocalData = async () => {
+    setBackupBusy(true);
+    try {
+      const picked = await openFilePicker(
+        FileSelectionType.FILE,
+        '/home/deck/Downloads',
+        true,
+        false,
+        undefined,
+        ['zip'],
+        false,
+        true,
+        1,
+      );
+      const archivePath = picked?.realpath || picked?.path;
+      if (!archivePath) return;
+      const modal = showModal(
+        <ConfirmModal
+          strTitle={extras.importLocalDataConfirmTitle()}
+          strDescription={extras.importLocalDataConfirmDescription(archivePath)}
+          strOKButtonText={extras.importLocalData()}
+          strCancelButtonText={t().common.cancel}
+          onOK={() => {
+            void (async () => {
+              const result = await importLocalDataBackup(archivePath);
+              toaster.toast({
+                title: 'Proton Pulse',
+                body: result.success
+                  ? extras.backupImported(result.restoredCount ?? 0)
+                  : result.message,
+              });
+              modal?.Close();
+              if (result.success) {
+                window.setTimeout(() => globalThis.location?.reload(), 500);
+              }
+            })();
+          }}
+          onCancel={() => modal?.Close()}
+        />,
+      );
+    } catch (error) {
+      void logFrontendEvent('WARNING', 'Local data backup picker failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      toaster.toast({
+        title: 'Proton Pulse',
+        body: extras.backupPickerFailed(),
+      });
+    } finally {
+      setBackupBusy(false);
+    }
+  };
 
   return (
     <Focusable onGamepadDirection={handleRootDirection}>
@@ -317,6 +387,37 @@ export function GeneralSettingsTab() {
                   {cacheStats.networkFetchP95Ms !== null ? ` (p95: ${cacheStats.networkFetchP95Ms}ms)` : ''}
                 </div>
               )}
+            </DialogButton>
+          </div>
+        </div>
+      )}
+
+      {advancedEnabled && (
+        <div style={sectionStyle()}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 4 }}>
+            {extras.localDataSection()}
+          </div>
+          <div style={{ fontSize: 11, color: '#7a9bb5', margin: '0 8px 10px' }}>
+            {extras.localDataSectionDescription()}
+          </div>
+          <div style={{ ...focusClipRowStyle(), paddingBottom: 8 }}>
+            <DialogButton onClick={() => void handleExportLocalData()} disabled={backupBusy}>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>
+                {extras.backupLocalData()}
+              </div>
+              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+                {extras.backupLocalDataDescription()}
+              </div>
+            </DialogButton>
+          </div>
+          <div style={focusClipRowStyle()}>
+            <DialogButton onClick={() => void handleImportLocalData()} disabled={backupBusy}>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>
+                {extras.importLocalData()}
+              </div>
+              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+                {extras.importLocalDataDescription()}
+              </div>
             </DialogButton>
           </div>
         </div>

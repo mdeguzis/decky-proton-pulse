@@ -285,7 +285,7 @@ const injectMenuItem = (
         Navigation.Navigate('/proton-pulse');
       }}
     >
-      ProtonDB Config
+      Proton Pulse
     </MenuItem>
   );
 };

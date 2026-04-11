@@ -12,6 +12,7 @@ orchestration layer that wires everything together.
 from __future__ import annotations
 
 import logging
+import json
 import os
 import shutil
 import subprocess
@@ -166,6 +167,66 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     async def export_metrics(self, data: str) -> bool:
         """Dump frontend metrics JSON to disk so you can poke at it offline."""
         return export_metrics_to_disk(data)
+
+    async def export_local_data_backup(self, payload_json: str) -> dict[str, Any]:
+        """Write a zip backup of the frontend's local Proton Pulse data."""
+        try:
+            payload = json.loads(payload_json)
+        except json.JSONDecodeError as exc:
+            return {"success": False, "message": f"Backup payload was invalid JSON: {exc}"}
+
+        if payload.get("format") != "proton-pulse-local-backup":
+            return {"success": False, "message": "Backup payload format is not supported."}
+
+        downloads_dir = Path(decky.DECKY_USER_HOME) / "Downloads"
+        downloads_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+        archive_path = downloads_dir / f"proton-pulse-local-backup-{timestamp}.zip"
+        try:
+            with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr(
+                    "proton-pulse-local-backup.json",
+                    json.dumps(payload, indent=2, sort_keys=True),
+                )
+        except OSError as exc:
+            decky.logger.error(f"Failed to export Proton Pulse local backup: {exc}")
+            return {"success": False, "message": f"Could not write backup archive: {exc}"}
+
+        return {
+            "success": True,
+            "message": f"Local backup exported to {archive_path}",
+            "path": str(archive_path),
+        }
+
+    async def import_local_data_backup(self, archive_path: str) -> dict[str, Any]:
+        """Read a Proton Pulse local data backup zip and return its JSON payload."""
+        source = Path((archive_path or "").strip()).expanduser()
+        if not source.is_file():
+            return {"success": False, "message": f"Backup archive was not found: {archive_path}"}
+
+        try:
+            with zipfile.ZipFile(source, "r") as archive:
+                try:
+                    raw_payload = archive.read("proton-pulse-local-backup.json").decode("utf-8")
+                except KeyError:
+                    return {"success": False, "message": "Backup archive is missing proton-pulse-local-backup.json."}
+        except (OSError, zipfile.BadZipFile) as exc:
+            decky.logger.error(f"Failed to read Proton Pulse local backup {archive_path}: {exc}")
+            return {"success": False, "message": f"Could not read backup archive: {exc}"}
+
+        try:
+            payload = json.loads(raw_payload)
+        except json.JSONDecodeError as exc:
+            return {"success": False, "message": f"Backup archive payload was invalid JSON: {exc}"}
+
+        if payload.get("format") != "proton-pulse-local-backup":
+            return {"success": False, "message": "Backup archive format is not supported."}
+
+        return {
+            "success": True,
+            "message": f"Imported local backup from {source.name}",
+            "payload": raw_payload,
+        }
 
     async def is_game_running(self) -> bool:
         """Quick check: is a Steam game process alive right now?"""

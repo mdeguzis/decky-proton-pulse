@@ -15,6 +15,8 @@ const SKIP_VALUES = new Set([
 
 const SKIP_KEYS = new Set([
   'compatTools.zipPlaceholder',
+  'manage.protondbConfig',
+  'configManager.customToggleBadge',
 ]);
 
 const LANGUAGES = [
@@ -152,6 +154,36 @@ function formatCoverage(value) {
   return `${value.toFixed(1)}%`;
 }
 
+function charDisplayWidth(char) {
+  const code = char.codePointAt(0) ?? 0;
+  if (
+    (code >= 0x1100 && code <= 0x115f)
+    || (code >= 0x2329 && code <= 0x232a)
+    || (code >= 0x2e80 && code <= 0xa4cf)
+    || (code >= 0xac00 && code <= 0xd7a3)
+    || (code >= 0xf900 && code <= 0xfaff)
+    || (code >= 0xfe10 && code <= 0xfe19)
+    || (code >= 0xfe30 && code <= 0xfe6f)
+    || (code >= 0xff00 && code <= 0xff60)
+    || (code >= 0xffe0 && code <= 0xffe6)
+    || (code >= 0x1f300 && code <= 0x1f64f)
+    || (code >= 0x1f900 && code <= 0x1f9ff)
+    || (code >= 0x20000 && code <= 0x3fffd)
+  ) {
+    return 2;
+  }
+  return 1;
+}
+
+function displayWidth(text) {
+  return Array.from(text).reduce((sum, char) => sum + charDisplayWidth(char), 0);
+}
+
+function padDisplay(text, width) {
+  const padding = Math.max(0, width - displayWidth(text));
+  return text + ' '.repeat(padding);
+}
+
 function compareAgainstEnglish(language, englishEntries) {
   if (language.canonical) {
     return {
@@ -252,6 +284,34 @@ function updateReadme(markdownBody) {
 function printConsoleReport(metrics) {
   const totalKeys = metrics[0]?.total ?? 0;
 
+  const printCoverageSummary = () => {
+    console.log('\nCoverage Summary:');
+    console.log('-'.repeat(78));
+    console.log(
+      padDisplay('Lang', 8)
+      + padDisplay('Name', 18)
+      + padDisplay('Translated', 13)
+      + padDisplay('Total', 8)
+      + padDisplay('Coverage', 11)
+      + 'Status',
+    );
+    console.log('-'.repeat(78));
+
+    for (const metric of metrics) {
+      const status = metric.canonical
+        ? 'CANONICAL'
+        : metric.coveragePercent >= MIN_COVERAGE ? 'PASS' : 'FAIL';
+      console.log(
+        padDisplay(metric.code, 8)
+        + padDisplay(metric.name, 18)
+        + padDisplay(String(metric.translated), 13)
+        + padDisplay(String(metric.total), 8)
+        + padDisplay(formatCoverage(metric.coveragePercent), 11)
+        + status,
+      );
+    }
+  };
+
   console.log('\nTranslation Coverage Report');
   console.log('='.repeat(78));
   console.log(`Canonical translation keys: ${totalKeys}`);
@@ -266,6 +326,7 @@ function printConsoleReport(metrics) {
 
   if (withGaps.length === 0) {
     console.log('\nAll non-English languages are fully translated.');
+    printCoverageSummary();
     return;
   }
 
@@ -287,31 +348,7 @@ function printConsoleReport(metrics) {
     }
   }
 
-  console.log('\nCoverage Summary:');
-  console.log('-'.repeat(78));
-  console.log(
-    'Lang'.padEnd(8)
-    + 'Name'.padEnd(18)
-    + 'Translated'.padEnd(13)
-    + 'Total'.padEnd(8)
-    + 'Coverage'.padEnd(11)
-    + 'Status',
-  );
-  console.log('-'.repeat(78));
-
-  for (const metric of metrics) {
-    const status = metric.canonical
-      ? 'CANONICAL'
-      : metric.coveragePercent >= MIN_COVERAGE ? 'PASS' : 'FAIL';
-    console.log(
-      metric.code.padEnd(8)
-      + metric.name.padEnd(18)
-      + String(metric.translated).padEnd(13)
-      + String(metric.total).padEnd(8)
-      + formatCoverage(metric.coveragePercent).padEnd(11)
-      + status,
-    );
-  }
+  printCoverageSummary();
 }
 
 function main() {
