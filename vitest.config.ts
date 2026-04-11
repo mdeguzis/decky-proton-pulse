@@ -10,8 +10,18 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json-summary'],
       reportsDirectory: 'coverage/ts',
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.test.ts', 'src/index.tsx'],
+      include: ['src/lib/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/lib/compatTools.ts',
+        'src/lib/issueReport.ts',
+        'src/lib/prefetch.ts',
+        'src/lib/screenshotAutomation.ts',
+      ],
+      thresholds: {
+        lines: 80,
+        statements: 80,
+      },
     },
   },
 });

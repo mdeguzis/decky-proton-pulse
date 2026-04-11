@@ -2,10 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyLocalDataBackupPayload,
   buildLocalDataBackupPayload,
+  exportLocalDataBackup,
+  importLocalDataBackup,
 } from './localDataBackup';
 
+const { callableMock } = vi.hoisted(() => ({
+  callableMock: vi.fn(),
+}));
+
 vi.mock('@decky/api', () => ({
-  callable: () => vi.fn(),
+  callable: () => callableMock,
 }));
 vi.mock('./i18n', () => ({
   setLanguage: vi.fn(),
@@ -25,6 +31,7 @@ vi.stubGlobal('localStorage', localStorageMock);
 describe('localDataBackup', () => {
   beforeEach(() => {
     localStorageMock.clear();
+    callableMock.mockReset();
   });
 
   it('captures only Proton Pulse local storage entries', () => {
@@ -59,5 +66,68 @@ describe('localDataBackup', () => {
     expect(localStorageMock.getItem('proton-pulse:language')).toBe('"fr"');
     expect(localStorageMock.getItem('proton-pulse:custom-toggles')).toBe('[{"id":"x"}]');
     expect(localStorageMock.getItem('proton-pulse:notifications-enabled')).toBeNull();
+  });
+
+  it('exports the serialized payload through the backend callable', async () => {
+    callableMock.mockResolvedValue({
+      success: true,
+      message: 'Exported',
+      path: '/tmp/backup.zip',
+    });
+    localStorageMock.setItem('proton-pulse:language', '"de"');
+
+    await expect(exportLocalDataBackup()).resolves.toEqual({
+      success: true,
+      message: 'Exported',
+      path: '/tmp/backup.zip',
+    });
+
+    expect(callableMock).toHaveBeenCalledTimes(1);
+    expect(callableMock.mock.calls[0]?.[0]).toContain('"format":"proton-pulse-local-backup"');
+    expect(callableMock.mock.calls[0]?.[0]).toContain('"language":"\\"de\\""');
+  });
+
+  it('imports a backend payload and returns the restored entry count', async () => {
+    callableMock.mockResolvedValue({
+      success: true,
+      message: 'Imported',
+      payload: JSON.stringify({
+        format: 'proton-pulse-local-backup',
+        version: 1,
+        exportedAt: '2026-04-10T00:00:00.000Z',
+        entries: {
+          language: '"ja"',
+          'custom-toggles': '[{"id":"x"}]',
+        },
+      }),
+    });
+
+    await expect(importLocalDataBackup('/tmp/backup.zip')).resolves.toEqual({
+      success: true,
+      message: 'Imported',
+      restoredCount: 2,
+    });
+    expect(localStorageMock.getItem('proton-pulse:language')).toBe('"ja"');
+  });
+
+  it('returns the backend error when import fails before payload restore', async () => {
+    callableMock.mockResolvedValue({
+      success: false,
+      message: 'Missing archive',
+    });
+
+    await expect(importLocalDataBackup('/tmp/missing.zip')).resolves.toEqual({
+      success: false,
+      message: 'Missing archive',
+    });
+  });
+
+  it('rejects invalid backup payloads', () => {
+    expect(() => applyLocalDataBackupPayload({
+      format: 'proton-pulse-local-backup',
+      version: 2,
+      exportedAt: '2026-04-10T00:00:00.000Z',
+      entries: {},
+    })).toThrow('Backup file is not a valid Proton Pulse local data export.');
   });
 });

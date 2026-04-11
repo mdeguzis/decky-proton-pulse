@@ -5,6 +5,7 @@ const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const TS_SUMMARY_PATH = path.join(ROOT, 'coverage', 'ts', 'coverage-summary.json');
 const PY_SUMMARY_PATH = path.join(ROOT, 'coverage', 'python', 'coverage.json');
 const OUTPUT_DIR = path.join(ROOT, 'coverage', 'site', 'badges');
+const MIN_COVERAGE = 80;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -77,6 +78,7 @@ function writeIndexHtml(tsPercent, pyPercent) {
     <div class="panel">
       <h1>Decky Proton Pulse Coverage</h1>
       <p>Published coverage badge endpoints for the latest default-branch run.</p>
+      <p>Enforced minimum: <strong>${MIN_COVERAGE.toFixed(1)}%</strong> for Python and TypeScript coverage.</p>
       <ul>
         <li>Python coverage: <strong>${pyPercent.toFixed(1)}%</strong> at <code>badges/python-coverage.json</code></li>
         <li>TypeScript coverage: <strong>${tsPercent.toFixed(1)}%</strong> at <code>badges/ts-coverage.json</code></li>
@@ -102,6 +104,7 @@ function main() {
   writeIndexHtml(tsPercent, pyPercent);
 
   console.log(`Wrote coverage badge data to ${OUTPUT_DIR}`);
+  console.log(`Coverage minimum: ${MIN_COVERAGE.toFixed(1)}%`);
   console.log(`TypeScript coverage: ${tsPercent.toFixed(1)}%`);
   console.log(`Python coverage: ${pyPercent.toFixed(1)}%`);
 }

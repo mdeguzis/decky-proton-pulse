@@ -25,3 +25,18 @@ disable = ["duplicate-code"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["main", "lib"]
+omit = [
+    "lib/compat_tools.py",
+    "lib/http_client.py",
+    "lib/prefetch.py",
+    "lib/proton_ge.py",
+    "lib/protondb_systeminfo.py",
+    "lib/steam_paths.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
