@@ -95,4 +95,29 @@ describe('logger', () => {
     await expect(logFrontendEvent('WARNING', 'Keep going')).resolves.toBeUndefined();
     expect(getLogCount()).toBe(1);
   });
+
+  it('keeps log order when the ring buffer wraps and ignores bad listeners', async () => {
+    vi.useFakeTimers();
+    const { getLogEntries, getLogText, logFrontendEvent, subscribeToLogs } = await import('./logger');
+    const unsubscribeBad = subscribeToLogs(() => {
+      throw new Error('listener broke');
+    });
+    const callback = vi.fn();
+    const unsubscribeGood = subscribeToLogs(callback);
+
+    for (let i = 0; i < 505; i++) {
+      await logFrontendEvent('INFO', `entry-${i}`);
+    }
+    await vi.runAllTimersAsync();
+
+    const entries = getLogEntries();
+    expect(entries).toHaveLength(500);
+    expect(entries[0]?.message).toBe('entry-5');
+    expect(entries.at(-1)?.message).toBe('entry-504');
+    expect(getLogText()).toContain('INFO entry-504');
+    expect(callback).toHaveBeenCalledTimes(1);
+
+    unsubscribeBad();
+    unsubscribeGood();
+  });
 });

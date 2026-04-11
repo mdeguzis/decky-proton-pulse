@@ -48,3 +48,12 @@ def test_is_fresh_uses_fetched_at_timestamp(tmp_path: Path) -> None:
             assert cdn_cache.is_fresh(url, ttl=60) is True
         with patch("lib.cdn_cache.time.time", return_value=200):
             assert cdn_cache.is_fresh(url, ttl=60) is False
+
+
+def test_read_cached_missing_file_and_meta_helpers_without_metadata(tmp_path: Path) -> None:
+    url = "https://example.test/data/730/index.json"
+    with patch.object(decky, "DECKY_PLUGIN_RUNTIME_DIR", str(tmp_path)):
+        assert cdn_cache.read_cached("730", "missing.json") is None
+        assert cdn_cache.get_meta(url) == {}
+        assert cdn_cache.is_fresh(url, ttl=60) is False
+        assert cdn_cache.conditional_headers(url) == []

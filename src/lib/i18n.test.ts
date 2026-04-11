@@ -19,6 +19,15 @@ import {
   t,
 } from './i18n';
 import { de as deTranslation } from './translations/de';
+import { de } from './translations/de';
+import { es } from './translations/es';
+import { fr } from './translations/fr';
+import { ja } from './translations/ja';
+import { ko } from './translations/ko';
+import { ptBR } from './translations/pt-BR';
+import { ru } from './translations/ru';
+import { tr } from './translations/tr';
+import { zhCN } from './translations/zh-CN';
 import './translations/index';
 
 // ---------------------------------------------------------------------------
@@ -44,6 +53,19 @@ beforeEach(() => {
   vi.stubGlobal('SteamClient', undefined);
   vi.stubGlobal('navigator', undefined);
 });
+
+function invokeAllTranslationFunctions(tree: unknown): void {
+  if (!tree || typeof tree !== 'object') return;
+  for (const value of Object.values(tree as Record<string, unknown>)) {
+    if (typeof value === 'function') {
+      for (const sample of [0, 1, 2, 5, 21]) {
+        expect(typeof value(sample)).toBe('string');
+      }
+      continue;
+    }
+    invokeAllTranslationFunctions(value);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -180,6 +202,43 @@ describe('fallback proxy', () => {
     }
     setLanguage('auto');
   });
+
+  it('warns and prefixes fallback values for missing function keys in dev', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    registerTranslation('de', {
+      ...deTranslation,
+      reports: {
+        ...deTranslation.reports,
+        found: undefined as unknown as typeof deTranslation.reports.found,
+      },
+    });
+    setLanguage('de');
+
+    expect(t().reports.found(3)).toBe('[!]3 reports found');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+    setLanguage('auto');
+  });
+
+  it('warns and prefixes fallback values for missing string keys and whole sections', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    registerTranslation('de', {
+      ...deTranslation,
+      common: {
+        ...deTranslation.common,
+        save: undefined as unknown as typeof deTranslation.common.save,
+      },
+      ratings: undefined as unknown as typeof deTranslation.ratings,
+    });
+    setLanguage('de');
+
+    expect(t().common.save).toBe('[!]Save');
+    expect(t().ratings.platinum).toBe('Platinum');
+    expect(warn).toHaveBeenCalled();
+
+    warn.mockRestore();
+    setLanguage('auto');
+  });
 });
 
 describe('pluralization', () => {
@@ -198,5 +257,13 @@ describe('pluralization', () => {
     expect(tree.reports.found(1)).toContain('1');
     expect(tree.reports.found(5)).toContain('5');
     setLanguage('auto');
+  });
+});
+
+describe('translation function coverage', () => {
+  it('invokes every translation helper function across all locales', () => {
+    for (const tree of [de, es, fr, ja, ko, ptBR, ru, tr, zhCN]) {
+      invokeAllTranslationFunctions(tree);
+    }
   });
 });

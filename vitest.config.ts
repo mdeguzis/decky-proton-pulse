@@ -8,7 +8,7 @@ export default defineConfig({
     reporter: 'verbose',
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json-summary'],
+      reporter: ['text', 'json-summary', 'cobertura'],
       reportsDirectory: 'coverage/ts',
       include: ['src/lib/**/*.{ts,tsx}'],
       exclude: [
@@ -19,8 +19,8 @@ export default defineConfig({
         'src/lib/screenshotAutomation.ts',
       ],
       thresholds: {
-        lines: 80,
-        statements: 80,
+        lines: 90,
+        statements: 90,
       },
     },
   },

@@ -4,7 +4,7 @@ import path from 'node:path';
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const TS_SUMMARY_PATH = path.join(ROOT, 'coverage', 'ts', 'coverage-summary.json');
 const PY_SUMMARY_PATH = path.join(ROOT, 'coverage', 'python', 'coverage.json');
-const MIN_COVERAGE = 80;
+const MIN_COVERAGE = 90;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));

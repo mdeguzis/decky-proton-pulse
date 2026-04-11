@@ -119,6 +119,23 @@ describe('steamApps helpers', () => {
     vi.useRealTimers();
   });
 
+  it('logs and returns null details when registration throws', async () => {
+    (globalThis as any).SteamClient = {
+      Apps: {
+        RegisterForAppDetails: () => {
+          throw new Error('broken bridge');
+        },
+      },
+    };
+
+    await expect(getSteamAppDetails(620)).resolves.toEqual({ details: null });
+    expect(logFrontendEventMock).toHaveBeenCalledWith(
+      'ERROR',
+      'Steam app details lookup failed',
+      { appId: 620, error: 'broken bridge' },
+    );
+  });
+
   it('returns launch options only when present on the details payload', () => {
     expect(getLaunchOptionsFromDetails({ strLaunchOptions: 'DXVK=1 %command%' })).toBe('DXVK=1 %command%');
     expect(getLaunchOptionsFromDetails({})).toBe('');

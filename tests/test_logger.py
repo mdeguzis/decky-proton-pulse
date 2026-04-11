@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error,wrong-import-position
 from lib.plugin_logging import (
+    log_frontend_event,
     sync_set_log_level,
 )  # pylint: disable=wrong-import-position
 from main import Plugin  # pylint: disable=wrong-import-position
@@ -54,6 +55,28 @@ def test_set_log_level_invalid(plugin: Any) -> None:
         "INVALID", plugin._debug_handler_ref  # pylint: disable=protected-access
     )
     assert result is False
+
+
+def test_plugin_set_log_level_wrapper(plugin: Any) -> None:
+    result = asyncio.run(plugin.set_log_level("ERROR"))
+    assert result is True
+    assert decky.logger.level == logging.ERROR
+
+
+def test_log_frontend_event_rejects_invalid_level() -> None:
+    assert log_frontend_event("TRACE", "ignored") is False
+
+
+def test_log_frontend_event_stringifies_unserializable_context() -> None:
+    class _Unserializable:
+        def __repr__(self) -> str:
+            return "<ctx>"
+
+    with patch.object(decky.logger, "log") as log_mock:
+        assert log_frontend_event("INFO", "hello", {"bad": _Unserializable()}) is True
+
+    logged_message = log_mock.call_args.args[1]
+    assert "[frontend] hello | context={'bad': <ctx>}" == logged_message
 
 
 def test_is_game_running_true_when_pgrep_finds_process(plugin: Any) -> None:

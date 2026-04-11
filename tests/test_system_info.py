@@ -9,6 +9,7 @@ from lib.system_info import (
     collect_system_info,
     read_ram_gb,
     detect_gpu_vendor,
+    read_driver_version,
 )
 
 
@@ -52,6 +53,28 @@ def test_read_ram_gb() -> None:
     with patch("builtins.open", mock_open(read_data=meminfo)):
         result = read_ram_gb()
     assert result == 64
+
+
+def test_read_ram_gb_returns_none_when_memtotal_missing() -> None:
+    with patch("builtins.open", mock_open(read_data="MemFree: 1000 kB\n")):
+        assert read_ram_gb() is None
+
+
+def test_read_driver_version_logs_drm_errors() -> None:
+    with (
+        patch("lib.system_info.subprocess.run", side_effect=FileNotFoundError("missing")),
+        patch("lib.system_info.glob.glob", return_value=["/sys/class/drm/card0/device/driver/module/version"]),
+        patch("builtins.open", side_effect=OSError("no access")),
+    ):
+        assert read_driver_version() is None
+
+
+def test_collect_system_info_handles_gpu_detection_errors() -> None:
+    with patch("lib.system_info.read_gpu", side_effect=OSError("gpu broke")):
+        info = collect_system_info()
+
+    assert info["gpu"] is None
+    assert info["gpu_vendor"] is None
 
 
 def test_detect_gpu_vendor_nvidia() -> None:

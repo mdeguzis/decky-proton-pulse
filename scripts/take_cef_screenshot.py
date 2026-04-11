@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -415,7 +416,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Capture the Steam Big Picture CEF page and sync it into a local folder."
     )
-    parser.add_argument("--deck-ip", required=True, help="Steam Deck IP address")
+    parser.add_argument(
+        "--deck-ip",
+        default="",
+        help="Steam Deck IP address; omit to capture from the local machine",
+    )
     parser.add_argument(
         "--deck-user", default="deck", help="SSH user for the Steam Deck"
     )
@@ -478,7 +483,8 @@ def main() -> int:
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    ssh_target = f"{args.deck_user}@{args.deck_ip}"
+    capture_locally = not args.deck_ip.strip()
+    ssh_target = f"{args.deck_user}@{args.deck_ip}" if args.deck_ip else ""
 
     debug_enabled = args.debug or os.environ.get("DEBUG", "").strip().lower() in {
         "1",
@@ -498,11 +504,18 @@ def main() -> int:
             "__DEBUG_ENABLED__",
             "True" if debug_enabled else "False",
         )
-        remote = run(
-            ["ssh", ssh_target, "python3", "-"],
-            capture=True,
-            input_text=remote_python,
-        )
+        if capture_locally:
+            remote = run(
+                [sys.executable, "-"],
+                capture=True,
+                input_text=remote_python,
+            )
+        else:
+            remote = run(
+                ["ssh", ssh_target, "python3", "-"],
+                capture=True,
+                input_text=remote_python,
+            )
     except subprocess.CalledProcessError as exc:
         if exc.stderr:
             print(exc.stderr.strip(), file=sys.stderr)
@@ -524,10 +537,12 @@ def main() -> int:
         suffix = remote_name.removeprefix("proton-pulse-screenshot-")
         local_name = f"{args.filename_base}-{suffix}"
 
-    run(["rsync", "-av", f"{ssh_target}:{remote_path}", str(output_dir / local_name)])
-    run(["ssh", ssh_target, "rm", "-f", remote_path])
-
     local_path = output_dir / local_name
+    if capture_locally:
+        shutil.move(remote_path, local_path)
+    else:
+        run(["rsync", "-av", f"{ssh_target}:{remote_path}", str(local_path)])
+        run(["ssh", ssh_target, "rm", "-f", remote_path])
     if args.group and args.shot_key:
         entry = register_screenshot(
             output_dir,
