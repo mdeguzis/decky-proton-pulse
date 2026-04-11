@@ -1,8 +1,14 @@
 # Decky Proton Pulse
 
-[![Autobuild](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml)
-[![Python Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/python-coverage.json)](https://mdeguzis.github.io/decky-proton-pulse/)
-[![TypeScript Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/ts-coverage.json)](https://mdeguzis.github.io/decky-proton-pulse/)
+| Autobuild | Status |
+|---|---|
+| Ubuntu | [![Ubuntu Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml) |
+| Debian | [![Debian Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml) |
+| Arch Linux | [![Arch Linux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml) |
+| Bazzite | [![Bazzite Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-bazzite.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-bazzite.yml) |
+
+[![Python Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/python-coverage.json&cacheSeconds=300)](https://mdeguzis.github.io/decky-proton-pulse/)
+[![TypeScript Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/ts-coverage.json&cacheSeconds=300)](https://mdeguzis.github.io/decky-proton-pulse/)
 
 A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for Steam Deck that pulls [ProtonDB](https://www.protondb.com) reports for the game in front of you, scores them against your hardware, and lets you apply useful launch options without typing them by hand.
 
