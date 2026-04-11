@@ -117,6 +117,7 @@ install: build
 	@REAL_HOME="$$(cd ~ && pwd -P)"; \
 	LOCAL_DIR="$${LOCAL_DECKY_PLUGIN_DIR:-$$REAL_HOME/homebrew/plugins}"; \
 	TARGET_DIR="$${LOCAL_DIR}/decky-proton-pulse"; \
+	USE_SUDO=""; \
 	if [ ! -d "$$LOCAL_DIR" ]; then \
 		echo "Decky Loader plugin directory not found: $$LOCAL_DIR"; \
 		echo "Install Decky Loader first, or set LOCAL_DECKY_PLUGIN_DIR to your plugin path."; \
@@ -128,11 +129,21 @@ install: build
 		echo "  curl -L https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_prerelease.sh | sh"; \
 		exit 1; \
 	fi; \
+	if { [ ! -w "$$LOCAL_DIR" ] && [ ! -d "$$TARGET_DIR" ]; } || { [ -d "$$TARGET_DIR" ] && [ ! -w "$$TARGET_DIR" ]; }; then \
+		if ! command -v sudo >/dev/null 2>&1; then \
+			echo "Decky Loader plugin directory needs elevated permissions, but sudo is not available."; \
+			echo "Plugin root: $$LOCAL_DIR"; \
+			echo "Target dir:  $$TARGET_DIR"; \
+			exit 1; \
+		fi; \
+		USE_SUDO="sudo"; \
+		echo "Installing into root-owned Decky plugin directory with sudo: $$TARGET_DIR"; \
+	fi; \
 	echo "Installing plugin into $$TARGET_DIR"; \
-	mkdir -p "$$TARGET_DIR/dist"; \
-	cp dist/index.js "$$TARGET_DIR/dist/"; \
-	cp main.py plugin.json package.json LICENSE "$$TARGET_DIR/"; \
-	rsync -a --delete --exclude='__pycache__' lib/ "$$TARGET_DIR/lib/"
+	$$USE_SUDO mkdir -p "$$TARGET_DIR/dist"; \
+	$$USE_SUDO cp dist/index.js "$$TARGET_DIR/dist/"; \
+	$$USE_SUDO cp main.py plugin.json package.json LICENSE "$$TARGET_DIR/"; \
+	$$USE_SUDO rsync -a --delete --exclude='__pycache__' lib/ "$$TARGET_DIR/lib/"
 	@echo "Installed. Restart Decky/plugin_loader if needed."
 
 watch:
