@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import ts from 'typescript';
 import { fileURLToPath } from 'url';
@@ -268,6 +268,15 @@ function renderMetricsMarkdown(metrics) {
   return `${lines.join('\n')}\n`;
 }
 
+function writeIfChanged(filePath, content) {
+  const existing = existsSync(filePath) ? readFileSync(filePath, 'utf-8') : null;
+  if (existing === content) {
+    return false;
+  }
+  writeFileSync(filePath, content);
+  return true;
+}
+
 function updateReadme(markdownBody) {
   const readme = readFileSync(README, 'utf-8');
   const start = readme.indexOf(README_START);
@@ -278,7 +287,7 @@ function updateReadme(markdownBody) {
   }
 
   const updated = `${readme.slice(0, start + README_START.length)}\n${markdownBody}${readme.slice(end)}`;
-  writeFileSync(README, updated);
+  return writeIfChanged(README, updated);
 }
 
 function printConsoleReport(metrics) {
@@ -356,20 +365,20 @@ function main() {
   const metrics = LANGUAGES.map(language => compareAgainstEnglish(language, englishEntries));
   const markdown = renderMetricsMarkdown(metrics);
   const failed = metrics.some(metric => !metric.canonical && metric.coveragePercent < MIN_COVERAGE);
-
-  mkdirSync(METRICS_DIR, { recursive: true });
-  writeFileSync(METRICS_JSON, JSON.stringify({
-    generatedAt: new Date().toISOString(),
+  const metricsJson = `${JSON.stringify({
     minimumCoveragePercent: MIN_COVERAGE,
     totalKeys: englishEntries.size,
     languages: metrics,
-  }, null, 2));
-  writeFileSync(METRICS_MD, markdown);
-  updateReadme(markdown);
+  }, null, 2)}\n`;
 
-  console.log(`\nWrote ${METRICS_JSON}`);
-  console.log(`Wrote ${METRICS_MD}`);
-  console.log('README translation coverage section refreshed.');
+  mkdirSync(METRICS_DIR, { recursive: true });
+  const wroteJson = writeIfChanged(METRICS_JSON, metricsJson);
+  const wroteMarkdown = writeIfChanged(METRICS_MD, markdown);
+  const wroteReadme = updateReadme(markdown);
+
+  console.log(`\n${wroteJson ? 'Wrote' : 'Unchanged'} ${METRICS_JSON}`);
+  console.log(`${wroteMarkdown ? 'Wrote' : 'Unchanged'} ${METRICS_MD}`);
+  console.log(`README translation coverage section ${wroteReadme ? 'refreshed.' : 'unchanged.'}`);
   printConsoleReport(metrics);
 
   if (failed && SHOULD_FAIL_ON_LOW_COVERAGE) {

@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join, relative } from 'path';
 import ts from 'typescript';
 import { fileURLToPath } from 'url';
@@ -122,23 +122,33 @@ function renderMarkdown(findings) {
   return `${lines.join('\n')}\n`;
 }
 
+function writeIfChanged(filePath, content) {
+  const existing = existsSync(filePath) ? readFileSync(filePath, 'utf8') : null;
+  if (existing === content) {
+    return false;
+  }
+  writeFileSync(filePath, content);
+  return true;
+}
+
 function main() {
   const files = collectFiles(SRC);
   const findings = files.flatMap(scanFile);
-  mkdirSync(METRICS_DIR, { recursive: true });
-  writeFileSync(METRICS_JSON, JSON.stringify({
-    generatedAt: new Date().toISOString(),
+  const jsonContent = `${JSON.stringify({
     scannedFiles: files.map((file) => relative(ROOT, file)),
     findings,
-  }, null, 2));
-  writeFileSync(METRICS_MD, renderMarkdown(findings));
+  }, null, 2)}\n`;
+  const markdownContent = renderMarkdown(findings);
+  mkdirSync(METRICS_DIR, { recursive: true });
+  const wroteJson = writeIfChanged(METRICS_JSON, jsonContent);
+  const wroteMarkdown = writeIfChanged(METRICS_MD, markdownContent);
 
   console.log('\nUI String Scan');
   console.log('='.repeat(78));
   console.log(`Scanned files: ${files.length}`);
   console.log(`Potential hardcoded UI strings: ${findings.length}`);
-  console.log(`Wrote ${METRICS_JSON}`);
-  console.log(`Wrote ${METRICS_MD}`);
+  console.log(`${wroteJson ? 'Wrote' : 'Unchanged'} ${METRICS_JSON}`);
+  console.log(`${wroteMarkdown ? 'Wrote' : 'Unchanged'} ${METRICS_MD}`);
 
   if (findings.length) {
     console.log('\nTop findings:');
