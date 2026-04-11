@@ -1,0 +1,15 @@
+name: Build Bazzite
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-reusable.yml
+    with:
+      workflow_name: Bazzite Build
+      container_image: ghcr.io/ublue-os/bazzite:latest
+      install_cmd: |
+        dnf install -y bash ca-certificates curl git make rsync unzip xz

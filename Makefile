@@ -29,11 +29,13 @@ SCREENSHOT_MATCH ?=
 SCREENSHOT_MANIFEST ?= config/ui_screenshot_manifest.json
 PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 
-.PHONY: help build watch test coverage test-ts test-py typecheck check-translations check-ui-strings translate setup deploy deploy-reload build-and-deploy clean \
+.PHONY: default help build install watch test coverage test-ts test-py typecheck check-translations check-ui-strings translate setup ensure-mise deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release pre-release github-release github-pre-release \
         capture-project-screenshots \
         fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
+
+default: build
 
 help:
 	@echo "================ usage ================ "
@@ -47,6 +49,7 @@ help:
 	@echo ""
 	@echo "============= main targets ============= "
 	@printf "  %-27s %s\n" "build" "Clean, test, then build frontend"
+	@printf "  %-27s %s\n" "install" "Install plugin files into a local Decky plugin directory"
 	@printf "  %-27s %s\n" "watch" "Watch frontend for changes (pnpm watch)"
 	@printf "  %-27s %s\n" "test" "Run all tests, print a per-language coverage table, and enforce minimums"
 	@printf "  %-27s %s\n" "coverage" "Run both coverage suites and fail below the enforced minimums"
@@ -56,7 +59,7 @@ help:
 	@printf "  %-27s %s\n" "typecheck" "Run strict pyright type checking on all Python code"
 	@printf "  %-27s %s\n" "test-ts" "Run TypeScript tests only (vitest)"
 	@printf "  %-27s %s\n" "test-py" "Run Python tests only (pytest via uv)"
-	@printf "  %-27s %s\n" "setup" "Install all dependencies (pnpm + uv)"
+	@printf "  %-27s %s\n" "setup" "Install mise (if missing), runtime toolchains, and dependencies"
 	@printf "  %-27s %s\n" "deploy" "Build and deploy to Steam Deck (requires DECK_IP)"
 	@printf "  %-27s %s\n" "deploy-reload" "Build, deploy, then restart plugin_loader (requires DECK_IP)"
 	@printf "  %-27s %s\n" "build-and-deploy" "Clean, test, build, and deploy (requires DECK_IP)"
@@ -104,6 +107,20 @@ help:
 
 build: clean test
 	$(PNPM) build
+	@echo ""
+	@echo "Build complete."
+	@echo "Next steps:"
+	@echo "  Local install: make install"
+	@echo "  Deck deploy:   DECK_IP=192.168.1.x make deploy"
+
+install: build
+	@LOCAL_DIR="$${LOCAL_DECKY_PLUGIN_DIR:-$$HOME/homebrew/plugins}"; \
+	echo "Installing plugin into $${LOCAL_DIR}/decky-proton-pulse"; \
+	mkdir -p "$${LOCAL_DIR}/decky-proton-pulse/dist"; \
+	cp dist/index.js "$${LOCAL_DIR}/decky-proton-pulse/dist/"; \
+	cp main.py plugin.json package.json LICENSE "$${LOCAL_DIR}/decky-proton-pulse/"; \
+	rsync -a --delete --exclude='__pycache__' lib/ "$${LOCAL_DIR}/decky-proton-pulse/lib/"
+	@echo "Installed. Restart Decky/plugin_loader if needed."
 
 watch:
 	$(PNPM) watch
@@ -140,7 +157,24 @@ test-py:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m pylint main.py lib/
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m pytest tests/ -v
 
-setup:
+ensure-mise:
+	@if command -v mise >/dev/null 2>&1; then \
+		echo "mise already installed: $$(command -v mise)"; \
+	else \
+		echo "Installing mise via https://mise.run ..."; \
+		curl https://mise.run | sh; \
+	fi
+	@MISE_BIN="$$(command -v mise 2>/dev/null || echo "$$HOME/.local/bin/mise")"; \
+	"$$MISE_BIN" --version
+
+setup: ensure-mise
+	@if [ -f mise.toml ]; then \
+		MISE_BIN="$$(command -v mise 2>/dev/null || echo "$$HOME/.local/bin/mise")"; \
+		"$$MISE_BIN" trust --yes mise.toml >/dev/null 2>&1 || "$$MISE_BIN" trust mise.toml; \
+		"$$MISE_BIN" install || echo "Warning: mise install failed (likely offline). Continuing with currently installed toolchain."; \
+	else \
+		echo "No mise.toml found; skipping mise toolchain install."; \
+	fi
 	$(PNPM) i
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv sync --group dev
 

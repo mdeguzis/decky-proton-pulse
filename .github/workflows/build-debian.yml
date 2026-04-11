@@ -1,0 +1,16 @@
+name: Build Debian
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-reusable.yml
+    with:
+      workflow_name: Debian Build
+      container_image: debian:12
+      install_cmd: |
+        apt-get update
+        apt-get install -y bash ca-certificates curl git make rsync unzip xz-utils
