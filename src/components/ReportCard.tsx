@@ -27,10 +27,6 @@ function confidenceColor(score: number): string {
   return '#f44336';
 }
 
-function truncate(str: string, maxLen: number): string {
-  return str.length > maxLen ? `${str.slice(0, maxLen)}...` : str;
-}
-
 export function ReportCard({ report, selected, focused = false, onSelect, onFocus, onUpvote }: Props) {
   const strings = t();
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
@@ -108,7 +104,7 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
           </div>
           {report.notes && (
             <div style={{ fontSize: 11, color: '#cad7e4', lineHeight: 1.45 }}>
-              {truncate(report.notes, 150)}
+              {strings.reports.originalNotesInDetail}
             </div>
           )}
         </div>

@@ -37,6 +37,7 @@ export interface TranslationTree {
   common: {
     save: string;
     cancel: string;
+    remove: string;
     loading: string;
     error: string;
     apply: string;
@@ -91,6 +92,7 @@ export interface TranslationTree {
     navigateToGame: string;
     hardwareUnavailable: string;
     editedBadge: string;
+    originalNotesInDetail: string;
   };
   detail: {
     apply: string;
@@ -249,6 +251,29 @@ export interface TranslationTree {
     livePreview: string;
     customVariables: string;
     addCustomVar: string;
+    customToggleButton: string;
+    customToggleBadge: string;
+    customToggleManager: string;
+    customToggleHint: string;
+    customToggleTitle: string;
+    customToggleKey: string;
+    customToggleScope: string;
+    customToggleScopeGame: string;
+    customToggleScopeGlobal: string;
+    customToggleType: string;
+    customToggleTypeString: string;
+    customToggleTypeBool: string;
+    customToggleTypeInt: string;
+    customToggleTypeFloat: string;
+    customToggleValue: string;
+    customToggleAdd: string;
+    customToggleSaveButton: string;
+    customToggleSavedSection: string;
+    customToggleEmpty: string;
+    customToggleValidation: string;
+    customToggleSaved: string;
+    customToggleEditing: string;
+    customToggleDisabledHint: string;
     previewHint: string;
     profileName: string;
     profileNameHint: string;
@@ -323,6 +348,17 @@ export interface TranslationTree {
     cacheAgeDaysAgo: (days: number) => string;
     advancedSettings: () => string;
     advancedSettingsDescription: () => string;
+    localDataSection: () => string;
+    localDataSectionDescription: () => string;
+    backupLocalData: () => string;
+    backupLocalDataDescription: () => string;
+    importLocalData: () => string;
+    importLocalDataDescription: () => string;
+    importLocalDataConfirmTitle: () => string;
+    importLocalDataConfirmDescription: (path: string) => string;
+    backupExported: (path: string) => string;
+    backupImported: (count: number) => string;
+    backupPickerFailed: () => string;
     cacheSection: () => string;
     cacheTtlHours: () => string;
     cacheTtlDescription: (hours: number) => string;
@@ -397,6 +433,7 @@ export const en: TranslationTree = {
   common: {
     save: 'Save',
     cancel: 'Cancel',
+    remove: 'Remove',
     loading: 'Loading...',
     error: 'Error',
     apply: 'Apply',
@@ -451,6 +488,7 @@ export const en: TranslationTree = {
     navigateToGame: 'Navigate to a game first.',
     hardwareUnavailable: 'Hardware details are unavailable',
     editedBadge: 'Edited*',
+    originalNotesInDetail: 'Open the full report to read the original note.',
   },
   detail: {
     apply: 'Apply',
@@ -561,7 +599,7 @@ export const en: TranslationTree = {
   },
   manage: {
     instructions: 'Right-click any game in your library, or use the settings gear, and select',
-    protondbConfig: 'ProtonDB Config',
+    protondbConfig: 'Proton Pulse',
     currentLaunchOptions: 'Current launch options from Steam:',
     loadingLaunchOptions: 'Loading launch options...',
     noLaunchOptions: 'No launch options set.',
@@ -609,7 +647,30 @@ export const en: TranslationTree = {
     livePreview: 'Live Preview',
     customVariables: 'Custom Variables',
     addCustomVar: 'Add custom variable',
-    previewHint: 'Toggle options below to build your launch command. The sections are already filtered to fit your hardware.',
+    customToggleButton: 'Custom Toggle',
+    customToggleBadge: 'Custom',
+    customToggleManager: 'Custom Toggles',
+    customToggleHint: 'Save reusable launch variables for this game or every game.',
+    customToggleTitle: 'Title',
+    customToggleKey: 'Environment Variable',
+    customToggleScope: 'Apply Scope',
+    customToggleScopeGame: 'Apply to this game',
+    customToggleScopeGlobal: 'Apply globally',
+    customToggleType: 'Type',
+    customToggleTypeString: 'String',
+    customToggleTypeBool: 'Boolean',
+    customToggleTypeInt: 'Integer',
+    customToggleTypeFloat: 'Float',
+    customToggleValue: 'Value',
+    customToggleAdd: 'Add Custom Toggle',
+    customToggleSaveButton: 'Save Custom Toggle',
+    customToggleSavedSection: 'Saved custom toggles',
+    customToggleEmpty: 'No custom toggles saved yet.',
+    customToggleValidation: 'Fill in a title, environment variable, and value before saving.',
+    customToggleSaved: 'Custom toggles updated.',
+    customToggleEditing: 'Editing custom toggle',
+    customToggleDisabledHint: 'Saved custom toggles start off. Turn them on from the Custom section when you want to use them.',
+    previewHint: 'Toggle options below to build your launch command. The sections are already filtered to fit your hardware. Expand any section to apply toggles.',
     profileName: 'Profile Name',
     profileNameHint: 'Pick a short label for this configuration, like "High Performance" or "Compatible".',
     gpuFilter: 'GPU',
@@ -692,6 +753,17 @@ export const en: TranslationTree = {
     cacheAgeDaysAgo: (days) => `${days}d ago`,
     advancedSettings: () => 'Advanced Settings',
     advancedSettingsDescription: () => 'Show cache controls and developer tools',
+    localDataSection: () => 'Backup & Restore',
+    localDataSectionDescription: () => 'Export or import your local Proton Pulse settings, configs, and custom toggles.',
+    backupLocalData: () => 'Backup Local Data',
+    backupLocalDataDescription: () => 'Create a zip backup in Downloads so you can move to a new Deck or reinstall SteamOS.',
+    importLocalData: () => 'Import Local Data',
+    importLocalDataDescription: () => 'Restore settings, saved configs, and custom toggles from a previous backup zip.',
+    importLocalDataConfirmTitle: () => 'Import Local Data',
+    importLocalDataConfirmDescription: (path) => `Import local Proton Pulse data from ${path}? This will replace your current saved settings, configs, and custom toggles.`,
+    backupExported: (path) => `Local backup exported to ${path}`,
+    backupImported: (count) => `Imported ${count} local data entries. Proton Pulse will refresh to apply them.`,
+    backupPickerFailed: () => 'Could not open the file picker. You can still choose a backup zip later.',
     cacheSection: () => 'Cache',
     cacheTtlHours: () => 'Cache TTL (hours)',
     cacheTtlDescription: (hours) => `Data re-fetched after ${hours}h`,

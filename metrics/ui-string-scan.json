@@ -1,0 +1,96 @@
+{
+  "generatedAt": "2026-04-11T01:33:38.137Z",
+  "scannedFiles": [
+    "src/components/BrandGlyph.tsx",
+    "src/components/BrandLogo.tsx",
+    "src/components/CacheManagerModal.tsx",
+    "src/components/ConfigEditorModal.tsx",
+    "src/components/EditReportModal.tsx",
+    "src/components/LogViewer.tsx",
+    "src/components/LogViewerModal.tsx",
+    "src/components/Modal.tsx",
+    "src/components/ProtonDBSubmitModal.tsx",
+    "src/components/ReportCard.tsx",
+    "src/components/ReportDetailModal.tsx",
+    "src/components/tabs/AboutTab.tsx",
+    "src/components/tabs/CompatibilityToolsTab.tsx",
+    "src/components/tabs/ConfigureTab.tsx",
+    "src/components/tabs/GeneralSettingsTab.tsx",
+    "src/components/tabs/LogsTab.tsx",
+    "src/components/tabs/ManageTab.tsx",
+    "src/components/tabs/SettingsTab.tsx",
+    "src/patches/gameContextMenu.tsx"
+  ],
+  "findings": [
+    {
+      "file": "src/components/LogViewer.tsx",
+      "line": 36,
+      "column": 9,
+      "kind": "jsx",
+      "text": "No logs yet."
+    },
+    {
+      "file": "src/components/ReportCard.tsx",
+      "line": 156,
+      "column": 21,
+      "kind": "string",
+      "text": "Upvote"
+    },
+    {
+      "file": "src/components/tabs/ConfigureTab.tsx",
+      "line": 316,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Manage This Game hit a render error in the current Steam UI environment."
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 162,
+      "column": 82,
+      "kind": "jsx",
+      "text": "ms (p95:"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 162,
+      "column": 105,
+      "kind": "jsx",
+      "text": "ms, max:"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 162,
+      "column": 128,
+      "kind": "jsx",
+      "text": "ms)"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 165,
+      "column": 87,
+      "kind": "jsx",
+      "text": "ms (p95:"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 165,
+      "column": 115,
+      "kind": "jsx",
+      "text": "ms)"
+    },
+    {
+      "file": "src/components/tabs/SettingsTab.tsx",
+      "line": 327,
+      "column": 86,
+      "kind": "jsx",
+      "text": "Proton-GE"
+    },
+    {
+      "file": "src/components/tabs/SettingsTab.tsx",
+      "line": 437,
+      "column": 15,
+      "kind": "string",
+      "text": "Could not open the file picker. You can still enter a path manually."
+    }
+  ]
+}

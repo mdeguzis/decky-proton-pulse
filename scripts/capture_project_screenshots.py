@@ -202,10 +202,11 @@ def main() -> int:
     total = len(manifest_entries)
     quit_requested = False
     try:
-        for language in languages:
+        language_total = len(languages)
+        for language_index, language in enumerate(languages, start=1):
             print("")
             print("#" * 80)
-            print(f"Capturing language: {language}")
+            print(f"Capturing language [{language_index}/{language_total}]: {language}")
             print("#" * 80)
             language_started = False
             try:
@@ -214,7 +215,8 @@ def main() -> int:
                     print("=" * 80)
                     if args.auto:
                         print(
-                            f"[{language}] [{index}/{total}] "
+                            f"[{language} {language_index}/{language_total}] "
+                            f"[{index}/{total}] "
                             f"{entry.group}/{entry.key} - {entry.title}"
                         )
                         if not wait_for_readiness(
