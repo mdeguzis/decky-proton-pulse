@@ -1,10 +1,12 @@
 // src/components/LogViewer.tsx
 import { useEffect, useRef, useState } from 'react';
 import { callable } from '@decky/api';
+import { t } from '../lib/i18n';
 
 const getLogContents = callable<[], string>('get_log_contents');
 
 export function LogViewer() {
+  const strings = t();
   const [logs, setLogs] = useState<string>('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +35,7 @@ export function LogViewer() {
   if (!logs) {
     return (
       <div style={{ color: '#666', fontSize: 11, padding: 8 }}>
-        No logs yet.
+        {strings.logs.noLogs}
       </div>
     );
   }

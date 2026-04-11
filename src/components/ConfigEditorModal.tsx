@@ -1,9 +1,10 @@
 // src/components/ConfigEditorModal.tsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   ModalRoot,
   Focusable,
   DialogButton,
+  GamepadButton,
   ToggleField,
   DropdownItem,
   Dropdown,
@@ -72,34 +73,28 @@ function isCategoryHidden(cat: Category, gpuFilter: GpuFilter): boolean {
   return cat !== gpuFilter;
 }
 
-function customToggleScopeLabel(scope: CustomToggleScope): string {
+function customToggleStorageTypeLabel(scope: CustomToggleScope): string {
   return scope === 'global'
-    ? t().configManager.customToggleScopeGlobal
-    : t().configManager.customToggleScopeGame;
-}
-
-function customToggleTypeLabel(valueType: CustomToggleValueType): string {
-  switch (valueType) {
-    case 'bool': return t().configManager.customToggleTypeBool;
-    case 'int': return t().configManager.customToggleTypeInt;
-    case 'float': return t().configManager.customToggleTypeFloat;
-    case 'string':
-    default:
-      return t().configManager.customToggleTypeString;
-  }
+    ? t().configManager.customToggleScopeGlobalShort
+    : t().configManager.customToggleScopeLocalShort;
 }
 
 interface CustomToggleManagerModalProps {
   appId: number | null;
   toggles: StoredCustomToggle[];
-  onSave: (toggles: StoredCustomToggle[]) => void;
+  onSave: (toggles: StoredCustomToggle[], newlyAddedIds: string[]) => void;
   closeModal?: () => void;
 }
 
 function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: CustomToggleManagerModalProps) {
   const supportsGameScope = appId !== null;
   const defaultScope: CustomToggleScope = supportsGameScope ? 'game' : 'global';
+  const editButtonRefs = useRef<Record<string, HTMLElement | null>>({});
+  const removeButtonRefs = useRef<Record<string, HTMLElement | null>>({});
+  const footerCancelRef = useRef<HTMLElement | null>(null);
+  const footerSaveRef = useRef<HTMLElement | null>(null);
   const [items, setItems] = useState(toggles);
+  const [newlyAddedIds, setNewlyAddedIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [key, setKey] = useState('');
@@ -136,6 +131,12 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
       valueType,
       value: normalizedValue,
     };
+    const duplicateItem = items.find((item) =>
+      item.id !== editingId
+      && item.key === trimmedKey
+      && item.scope === scope
+      && item.appId === nextItem.appId,
+    );
     setItems((prev) => [
       ...prev.filter((item) =>
         item.id !== editingId
@@ -143,11 +144,15 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
       ),
       nextItem,
     ]);
+    if (!editingId && !duplicateItem) {
+      setNewlyAddedIds((prev) => new Set([...prev, nextItem.id]));
+    }
     resetDraft();
   };
 
   const removeToggle = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
+    setNewlyAddedIds((prev) => new Set([...prev].filter((itemId) => itemId !== id)));
     if (editingId === id) resetDraft();
   };
 
@@ -161,7 +166,7 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
   };
 
   const handleSave = () => {
-    onSave(items);
+    onSave(items, [...newlyAddedIds]);
     toaster.toast({
       title: 'Proton Pulse',
       body: t().configManager.customToggleSaved,
@@ -274,12 +279,21 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
                     {item.key} = {item.value}
                   </div>
                   <div style={{ fontSize: 10, color: '#7a9bb5' }}>
-                    {customToggleScopeLabel(item.scope)} · {customToggleTypeLabel(item.valueType)}
+                    {t().configManager.customToggleType}: {customToggleStorageTypeLabel(item.scope)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
                   <DialogButton
+                    ref={(node) => {
+                      editButtonRefs.current[item.id] = node;
+                    }}
                     onClick={() => editToggle(item)}
+                    onGamepadDirection={(evt) => {
+                      if (evt.detail.button === GamepadButton.DIR_RIGHT) {
+                        evt.preventDefault();
+                        removeButtonRefs.current[item.id]?.focus();
+                      }
+                    }}
                     style={{
                       minWidth: 68,
                       padding: '6px 10px',
@@ -289,7 +303,16 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
                     {t().common.edit}
                   </DialogButton>
                   <DialogButton
+                    ref={(node) => {
+                      removeButtonRefs.current[item.id] = node;
+                    }}
                     onClick={() => removeToggle(item.id)}
+                    onGamepadDirection={(evt) => {
+                      if (evt.detail.button === GamepadButton.DIR_LEFT) {
+                        evt.preventDefault();
+                        editButtonRefs.current[item.id]?.focus();
+                      }
+                    }}
                     style={{
                       minWidth: 44,
                       padding: '6px 8px',
@@ -306,10 +329,33 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8, paddingBottom: 8 }}>
-          <DialogButton onClick={() => closeModal?.()} style={{ background: '#555' }}>
+          <DialogButton
+            ref={(node) => {
+              footerCancelRef.current = node;
+            }}
+            onClick={() => closeModal?.()}
+            onGamepadDirection={(evt) => {
+              if (evt.detail.button === GamepadButton.DIR_RIGHT) {
+                evt.preventDefault();
+                footerSaveRef.current?.focus();
+              }
+            }}
+            style={{ background: '#555' }}
+          >
             {t().common.cancel}
           </DialogButton>
-          <DialogButton onClick={handleSave}>
+          <DialogButton
+            ref={(node) => {
+              footerSaveRef.current = node;
+            }}
+            onClick={handleSave}
+            onGamepadDirection={(evt) => {
+              if (evt.detail.button === GamepadButton.DIR_LEFT) {
+                evt.preventDefault();
+                footerCancelRef.current?.focus();
+              }
+            }}
+          >
             {t().common.save}
           </DialogButton>
         </div>
@@ -321,15 +367,19 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
 export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, onSave, closeModal }: Props) {
   const extras = t().extras!;
   const isShortcut = appId ? isSteamShortcutApp(appId) : false;
+  const catalogKeys = new Set(LAUNCH_VAR_CATALOG.map((d) => d.key));
   const parsed = existingConfig
     ? parseLaunchOptions(existingConfig.launchOptions)
     : { protonVersion: null, vars: {} as Record<string, string> };
 
   const [profileName, setProfileName] = useState(existingConfig?.profileName ?? '');
   const [protonVersion, setProtonVersion] = useState(parsed.protonVersion ?? '');
-  const [enabledVars, setEnabledVars] = useState<Record<string, string>>(parsed.vars);
+  const [enabledVars, setEnabledVars] = useState<Record<string, string>>(
+    Object.fromEntries(
+      Object.entries(parsed.vars).filter(([key]) => catalogKeys.has(key)),
+    ),
+  );
   const [customToggles, setCustomToggles] = useState<StoredCustomToggle[]>(() => {
-    const catalogKeys = new Set(LAUNCH_VAR_CATALOG.map((d) => d.key));
     const stored = getScopedCustomToggles(appId);
     const storedKeys = new Set(stored.map((toggle) => `${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}`));
     const parsedCustoms = Object.entries(parsed.vars)
@@ -351,10 +401,9 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   });
   const [enabledCustomToggleIds, setEnabledCustomToggleIds] = useState<Set<string>>(() => {
     const parsedKeys = new Set(
-      Object.keys(parsed.vars).filter((key) => !LAUNCH_VAR_CATALOG.some((item) => item.key === key)),
+      Object.keys(parsed.vars).filter((key) => !catalogKeys.has(key)),
     );
     const initialToggles = (() => {
-      const catalogKeys = new Set(LAUNCH_VAR_CATALOG.map((d) => d.key));
       const stored = getScopedCustomToggles(appId);
       const storedKeys = new Set(stored.map((toggle) => `${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}`));
       const parsedCustoms = Object.entries(parsed.vars)
@@ -550,9 +599,13 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       <CustomToggleManagerModal
         appId={appId}
         toggles={customToggles}
-        onSave={(toggles) => {
+        onSave={(toggles, newlyAddedIds) => {
           setCustomToggles(toggles);
-          setEnabledCustomToggleIds((prev) => new Set([...prev].filter((id) => toggles.some((toggle) => toggle.id === id))));
+          setEnabledCustomToggleIds((prev) => new Set(
+            [...prev].filter((id) =>
+              toggles.some((toggle) => toggle.id === id) && !newlyAddedIds.includes(id),
+            ),
+          ));
           syncScopedCustomToggles(appId, toggles);
           modal?.Close();
         }}
@@ -707,42 +760,6 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
 
         {/* ── Scrollable content ── */}
         <Focusable style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
-          {customToggles.length > 0 && (
-            <div style={{ marginBottom: 6 }}>
-              <Focusable
-                onClick={() => toggleCategory('custom')}
-                onOKButton={() => toggleCategory('custom')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  cursor: 'pointer',
-                  padding: '6px 0',
-                  borderBottom: '1px solid #2a3a4a',
-                  marginBottom: 4,
-                }}
-              >
-                <span style={{ fontSize: 10, color: '#7a9bb5' }}>{collapsedCategories.has('custom') ? '▸' : '▾'}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#cfe2f4' }}>
-                  {t().configManager.customToggleBadge}
-                </span>
-                <span style={{ fontSize: 10, color: '#7a9bb5' }}>
-                  ({enabledCustomToggleIds.size}/{customToggles.length})
-                </span>
-              </Focusable>
-              {!collapsedCategories.has('custom') && customToggles.map((toggle) => (
-                <div key={toggle.id} style={{ marginBottom: 2 }}>
-                  <ToggleField
-                    label={toggle.title}
-                    description={`${toggle.key} = ${toggle.value} · ${customToggleScopeLabel(toggle.scope)} · ${customToggleTypeLabel(toggle.valueType)} · ${t().configManager.customToggleDisabledHint}`}
-                    checked={enabledCustomToggleIds.has(toggle.id)}
-                    onChange={() => toggleCustomToggle(toggle.id)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Profile Name */}
           <div style={{ marginBottom: 10 }}>
             <TextField
@@ -770,6 +787,42 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               />
             )}
           </div>
+
+          {customToggles.length > 0 && (
+            <div style={{ marginBottom: 6 }}>
+              <Focusable
+                onClick={() => toggleCategory('custom')}
+                onOKButton={() => toggleCategory('custom')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  cursor: 'pointer',
+                  padding: '6px 0',
+                  borderBottom: '1px solid #2a3a4a',
+                  marginBottom: 4,
+                }}
+              >
+                <span style={{ fontSize: 10, color: '#7a9bb5' }}>{collapsedCategories.has('custom') ? '▸' : '▾'}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#cfe2f4' }}>
+                  {t().configManager.customToggleBadge}
+                </span>
+                <span style={{ fontSize: 10, color: '#7a9bb5' }}>
+                  ({enabledCustomToggleIds.size}/{customToggles.length})
+                </span>
+              </Focusable>
+              {!collapsedCategories.has('custom') && customToggles.map((toggle) => (
+                <div key={toggle.id} style={{ marginBottom: 2 }}>
+                  <ToggleField
+                    label={toggle.title}
+                    description={`${toggle.key} = ${toggle.value}`}
+                    checked={enabledCustomToggleIds.has(toggle.id)}
+                    onChange={() => toggleCustomToggle(toggle.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Toggle sections by category */}
           {CATEGORY_ORDER.map((cat) => {

@@ -434,7 +434,7 @@ function InstallArchiveModal({
       });
       toaster.toast({
         title: 'Proton Pulse',
-        body: 'Could not open the file picker. You can still enter a path manually.',
+        body: t().compatTools.archivePickerFailed,
       });
     } finally {
       setPickingArchive(false);

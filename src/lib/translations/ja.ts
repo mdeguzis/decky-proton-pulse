@@ -135,6 +135,7 @@ export const ja: TranslationTree = {
     unknownDate: '不明な日付',
     estimating: '推定中...',
     timeLeft: (time) => `残り ${time}`,
+    archivePickerFailed: 'ファイルピッカーを開けませんでした。パスは手動で入力できます。',
   },
   configure: {
     quitGameFirst: '先にゲームを終了してください',
@@ -160,6 +161,7 @@ export const ja: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `${failedV} のインストールに失敗しました。代わりに ${fallbackV} を使用します。`,
     installFailedNoFallback: (v) => `${v} のインストールに失敗しました。要求されたバージョンでそのまま適用します。`,
     appliedFor: (name) => `${name} に適用しました`,
+    renderErrorIntro: '現在の Steam UI 環境で「このゲームを管理」に描画エラーが発生しました。',
   },
   toast: {
     installed: (v) => `${v} をインストールしました。`,
@@ -228,6 +230,8 @@ export const ja: TranslationTree = {
     customToggleScope: '適用範囲',
     customToggleScopeGame: 'このゲームに適用',
     customToggleScopeGlobal: '全体に適用',
+    customToggleScopeLocalShort: 'ローカル',
+    customToggleScopeGlobalShort: 'グローバル',
     customToggleType: '型',
     customToggleTypeString: '文字列',
     customToggleTypeBool: '真偽値',

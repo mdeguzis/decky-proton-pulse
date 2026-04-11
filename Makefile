@@ -187,7 +187,7 @@ take-screenshot:
 	$(call require_deck_ip)
 	@echo "Capturing the current Steam UI via CEF remote debugging..."
 	@echo "This may include private on-screen content visible on the Steam Deck."
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots --language $(if $(SCREENSHOT_LANGUAGE),$(SCREENSHOT_LANGUAGE),$(if $(LANG),$(LANG),en)) $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),) $(if $(SCREENSHOT_GROUP),--group $(SCREENSHOT_GROUP),) $(if $(SCREENSHOT_KEY),--shot-key $(SCREENSHOT_KEY),) $(if $(SCREENSHOT_TITLE),--title "$(SCREENSHOT_TITLE)",) $(if $(SCREENSHOT_CAPTION),--caption "$(SCREENSHOT_CAPTION)",)
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots $(if $(SCREENSHOT_LANGUAGE),--language $(SCREENSHOT_LANGUAGE),) $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),) $(if $(SCREENSHOT_GROUP),--group $(SCREENSHOT_GROUP),) $(if $(SCREENSHOT_KEY),--shot-key $(SCREENSHOT_KEY),) $(if $(SCREENSHOT_TITLE),--title "$(SCREENSHOT_TITLE)",) $(if $(SCREENSHOT_CAPTION),--caption "$(SCREENSHOT_CAPTION)",)
 
 take-screenshot-wiki:
 	$(call require_deck_ip)

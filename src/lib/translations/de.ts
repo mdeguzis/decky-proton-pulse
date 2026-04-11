@@ -135,6 +135,7 @@ export const de: TranslationTree = {
     unknownDate: 'Unbekanntes Datum',
     estimating: 'Schätzung...',
     timeLeft: (time) => `Noch ${time}`,
+    archivePickerFailed: 'Die Dateiauswahl konnte nicht geöffnet werden. Sie können den Pfad weiterhin manuell eingeben.',
   },
   configure: {
     quitGameFirst: 'Bitte beenden Sie zuerst das Spiel',
@@ -160,6 +161,7 @@ export const de: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `Installation von ${failedV} fehlgeschlagen. Stattdessen wird ${fallbackV} verwendet.`,
     installFailedNoFallback: (v) => `Installation von ${v} fehlgeschlagen. Anwenden mit der angeforderten Version trotzdem.`,
     appliedFor: (name) => `Angewendet für ${name}`,
+    renderErrorIntro: 'Dieses Spiel verwalten ist in der aktuellen Steam-UI-Umgebung auf einen Darstellungsfehler gestoßen.',
   },
   toast: {
     installed: (v) => `${v} installiert.`,
@@ -228,6 +230,8 @@ export const de: TranslationTree = {
     customToggleScope: 'Anwendungsbereich',
     customToggleScopeGame: 'Für dieses Spiel anwenden',
     customToggleScopeGlobal: 'Global anwenden',
+    customToggleScopeLocalShort: 'Lokal',
+    customToggleScopeGlobalShort: 'Systemweit',
     customToggleType: 'Typ',
     customToggleTypeString: 'Text',
     customToggleTypeBool: 'Bool',

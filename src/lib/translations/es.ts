@@ -135,6 +135,7 @@ export const es: TranslationTree = {
     unknownDate: 'Fecha desconocida',
     estimating: 'estimando...',
     timeLeft: (time) => `${time} restante`,
+    archivePickerFailed: 'No se pudo abrir el selector de archivos. Aun así puedes escribir una ruta manualmente.',
   },
   configure: {
     quitGameFirst: 'Por favor, cierra el juego primero',
@@ -160,6 +161,7 @@ export const es: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `La instalación de ${failedV} falló. Usando ${fallbackV} en su lugar.`,
     installFailedNoFallback: (v) => `La instalación de ${v} falló. Aplicando con la versión solicitada de todas formas.`,
     appliedFor: (name) => `Aplicado para ${name}`,
+    renderErrorIntro: 'Administrar este juego encontró un error de renderizado en el entorno actual de la interfaz de Steam.',
   },
   toast: {
     installed: (v) => `${v} instalado.`,
@@ -228,6 +230,8 @@ export const es: TranslationTree = {
     customToggleScope: 'Aplicar a',
     customToggleScopeGame: 'Aplicar a este juego',
     customToggleScopeGlobal: 'Aplicar globalmente',
+    customToggleScopeLocalShort: 'Por juego',
+    customToggleScopeGlobalShort: 'General',
     customToggleType: 'Tipo',
     customToggleTypeString: 'Texto',
     customToggleTypeBool: 'Booleano',

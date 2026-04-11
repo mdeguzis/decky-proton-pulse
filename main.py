@@ -209,7 +209,13 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
                 try:
                     raw_payload = archive.read("proton-pulse-local-backup.json").decode("utf-8")
                 except KeyError:
-                    return {"success": False, "message": "Backup archive is missing proton-pulse-local-backup.json."}
+                    return {
+                        "success": False,
+                        "message": (
+                            "Backup archive is missing "
+                            "proton-pulse-local-backup.json."
+                        ),
+                    }
         except (OSError, zipfile.BadZipFile) as exc:
             decky.logger.error(f"Failed to read Proton Pulse local backup {archive_path}: {exc}")
             return {"success": False, "message": f"Could not read backup archive: {exc}"}

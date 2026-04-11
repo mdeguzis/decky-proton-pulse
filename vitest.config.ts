@@ -6,5 +6,12 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     reporter: 'verbose',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary'],
+      reportsDirectory: 'coverage/ts',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.ts', 'src/index.tsx'],
+    },
   },
 });

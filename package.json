@@ -8,8 +8,10 @@
     "build": "node scripts/sync-version.mjs && node scripts/check-translations.mjs --no-fail && node scripts/check-ui-strings.mjs --no-fail && rollup -c",
     "watch": "rollup -c -w",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "check-translations": "node scripts/check-translations.mjs",
-    "check-ui-strings": "node scripts/check-ui-strings.mjs"
+    "check-ui-strings": "node scripts/check-ui-strings.mjs",
+    "coverage:badges": "node scripts/generate-coverage-badges.mjs"
   },
   "keywords": [
     "decky",
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@decky/rollup": "^1.0.2",
     "@decky/ui": "^4.11.0",
+    "@vitest/coverage-v8": "^2.1.0",
     "@rollup/rollup-linux-x64-musl": "^4.53.3",
     "@types/react": "19.1.1",
     "@types/react-dom": "19.1.1",

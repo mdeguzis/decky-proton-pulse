@@ -135,6 +135,7 @@ export const zhCN: TranslationTree = {
     unknownDate: '未知日期',
     estimating: '估算中...',
     timeLeft: (time) => `剩余 ${time}`,
+    archivePickerFailed: '无法打开文件选择器。你仍然可以手动输入路径。',
   },
   configure: {
     quitGameFirst: '请先退出游戏',
@@ -160,6 +161,7 @@ export const zhCN: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `${failedV} 安装失败，改用 ${fallbackV}。`,
     installFailedNoFallback: (v) => `${v} 安装失败，仍使用所需版本继续应用。`,
     appliedFor: (name) => `已应用至 ${name}`,
+    renderErrorIntro: '在当前 Steam 界面环境中，“管理此游戏”界面发生了渲染错误。',
   },
   toast: {
     installed: (v) => `已安装 ${v}。`,
@@ -228,6 +230,8 @@ export const zhCN: TranslationTree = {
     customToggleScope: '应用范围',
     customToggleScopeGame: '应用到此游戏',
     customToggleScopeGlobal: '全局应用',
+    customToggleScopeLocalShort: '本地',
+    customToggleScopeGlobalShort: '全局',
     customToggleType: '类型',
     customToggleTypeString: '字符串',
     customToggleTypeBool: '布尔',
