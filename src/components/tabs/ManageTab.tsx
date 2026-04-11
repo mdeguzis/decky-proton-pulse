@@ -6,6 +6,7 @@ import { toaster } from '../../lib/notify';
 import { getTrackedConfigs, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
+import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } from '../../lib/screenshotAutomation';
 import { ConfigEditorModal } from '../ConfigEditorModal';
 import { ProtonDBSubmitModal } from '../ProtonDBSubmitModal';
 import { getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
@@ -39,6 +40,29 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
   const refresh = () => setConfigs(getTrackedConfigs());
 
   useEffect(() => { refresh(); }, []);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-configurations/config-editor', async (action: ScreenshotAutomationAction) => {
+    showModal(
+      <ConfigEditorModal
+        appId={action.appId ?? appId}
+        appName={action.appName || appName}
+        existingConfig={null}
+        gpuVendor={gpuVendor}
+        onSave={() => refresh()}
+      />,
+    );
+  }), [appId, appName, gpuVendor]);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-configurations/protondb-submit', async (action: ScreenshotAutomationAction) => {
+    const targetAppId = action.appId ?? appId;
+    if (!targetAppId) return;
+    showModal(
+      <ProtonDBSubmitModal
+        appId={targetAppId}
+        appName={action.appName || appName}
+      />,
+    );
+  }), [appId, appName]);
 
   // Resolve missing app names from Steam
   useEffect(() => {

@@ -28,6 +28,10 @@ export function LogsTab() {
     openViewer();
   }), [logs, entryCount]);
 
+  useEffect(() => registerScreenshotAutomationHandler('logs/default', async () => {
+    // Base tab capture only; no extra modal work needed.
+  }), []);
+
   const lines = logs.split('\n').filter(Boolean);
   const latestLines = lines.slice(-5).join('\n');
   const strings = t().logs;
