@@ -101,7 +101,7 @@ help:
 	@printf "  %-27s %s\n" "check-protondb-data" "Run the proton-pulse-data splitter against the local upstream repo into /tmp"
 	@printf "  %-27s %s\n" "" "Optional: APP_ID=1145350 make check-protondb-data"
 	@printf "  %-27s %s\n" "logs-loader" "Follow plugin_loader journal in real time"
-	@printf "  %-27s %s\n" "reload" "Restart plugin_loader on the Deck (equivalent to Decky UI reload)"
+	@printf "  %-27s %s\n" "reload" "Restart plugin_loader locally, or on the Deck when DECK_IP is set"
 	@printf "  %-27s %s\n" "cef-debug-enable" "Enable remote CEF debugging (React DevTools on port 8081)"
 	@printf "  %-27s %s\n" "live-reload-enable" "Configure LIVE_RELOAD=1 on plugin_loader service"
 
@@ -286,10 +286,32 @@ check-protondb-data: fetch-protondb
 	bash scripts/check-protondb-data.sh "$(PROTONDB_REPO_DIR)" "$(PROTONDB_LOCAL_OUTPUT)" "$(UV_CACHE_DIR)" "$(APP_ID)"
 
 reload:
-	@echo "⏱ Reloading Steam Deck decky plugin service..."
+	@echo "⏱ Reloading Decky plugin service..."
 	@sleep 2
-	$(call require_deck_ip)
-	@ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart plugin_loader"
+	@if [ -n "$(DECK_IP)" ]; then \
+		echo "Reloading remote plugin_loader on $(DECK_USER)@$(DECK_IP)"; \
+		ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart plugin_loader"; \
+	elif systemctl list-unit-files plugin_loader.service >/dev/null 2>&1; then \
+		echo "Reloading local plugin_loader service"; \
+		if systemctl is-active --quiet plugin_loader.service 2>/dev/null || systemctl status plugin_loader.service >/dev/null 2>&1; then \
+			if systemctl restart plugin_loader.service >/dev/null 2>&1; then \
+				echo "Local plugin_loader restarted."; \
+			elif command -v sudo >/dev/null 2>&1; then \
+				sudo systemctl restart plugin_loader.service; \
+				echo "Local plugin_loader restarted with sudo."; \
+			else \
+				echo "plugin_loader.service exists locally but requires elevated permissions to restart."; \
+				exit 1; \
+			fi; \
+		else \
+			echo "plugin_loader.service exists locally but does not appear to be available to restart."; \
+			exit 1; \
+		fi; \
+	else \
+		echo "No local plugin_loader.service found and DECK_IP is not set."; \
+		echo "Use make reload DECK_IP=192.168.1.x for a remote Deck reload."; \
+		exit 1; \
+	fi
 
 logs-loader:
 	$(call require_deck_ip)
