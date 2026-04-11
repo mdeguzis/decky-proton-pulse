@@ -161,6 +161,13 @@ export const es: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `La instalación de ${failedV} falló. Usando ${fallbackV} en su lugar.`,
     installFailedNoFallback: (v) => `La instalación de ${v} falló. Aplicando con la versión solicitada de todas formas.`,
     appliedFor: (name) => `Aplicado para ${name}`,
+    launchOptionConflictTitle: 'Se detectaron opciones de inicio existentes',
+    launchOptionConflictDescription: (name) => `${name} ya tiene opciones de inicio configuradas en Steam.`,
+    launchOptionConflictWarning: 'Proton Pulse puede añadir sus opciones a la cadena existente o reemplazarla por completo. Al añadir, se conservan primero las opciones actuales y Proton Pulse se agrega después.',
+    launchOptionConflictCurrent: 'Opciones de inicio actuales de Steam',
+    launchOptionConflictIncoming: 'Opciones de inicio de Proton Pulse',
+    launchOptionConflictAppend: 'Añadir',
+    launchOptionConflictReplace: 'Reemplazar',
     renderErrorIntro: 'Administrar este juego encontró un error de renderizado en el entorno actual de la interfaz de Steam.',
   },
   toast: {

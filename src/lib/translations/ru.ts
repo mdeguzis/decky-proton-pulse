@@ -185,6 +185,13 @@ export const ru: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `Не удалось установить ${failedV}. Вместо этого используется ${fallbackV}.`,
     installFailedNoFallback: (v) => `Не удалось установить ${v}. Применение выполняется с запрошенной версией.`,
     appliedFor: (name) => `Применено для ${name}`,
+    launchOptionConflictTitle: 'Обнаружены существующие параметры запуска',
+    launchOptionConflictDescription: (name) => `Для ${name} в Steam уже заданы параметры запуска.`,
+    launchOptionConflictWarning: 'Proton Pulse может добавить свои параметры к текущей строке или полностью её заменить. При добавлении текущие параметры сохраняются первыми, а затем добавляется Proton Pulse.',
+    launchOptionConflictCurrent: 'Текущие параметры запуска Steam',
+    launchOptionConflictIncoming: 'Параметры запуска Proton Pulse',
+    launchOptionConflictAppend: 'Добавить',
+    launchOptionConflictReplace: 'Заменить',
     renderErrorIntro: 'На экране «Управление этой игрой» произошла ошибка отрисовки в текущей среде интерфейса Steam.',
   },
   toast: {

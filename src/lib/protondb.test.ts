@@ -332,6 +332,22 @@ describe('getProtonDBReports', () => {
     expect(result).toHaveLength(2);
   });
 
+  it('keeps going when a year file fetch throws and later years still succeed', async () => {
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(200, ['2022', '2023']))
+      .mockRejectedValueOnce(new Error('year timeout'))
+      .mockResolvedValueOnce(makeResponse(200, fakeCdnRaw));
+
+    const result = await getProtonDBReportsWithDiagnostics('730');
+
+    expect(result.reports).toHaveLength(2);
+    expect(result.diagnostics.source).toBe('cdn');
+    expect(result.diagnostics.yearStatuses).toEqual({
+      '2022': null,
+      '2023': 200,
+    });
+  });
+
   it('returns empty reports when live counts payload is unusable', async () => {
     mockFetch
       .mockResolvedValueOnce(makeResponse(404, null))
@@ -420,6 +436,20 @@ describe('getProtonDBReports', () => {
       notes: 'Needs tweaks',
       protonVersion: 'GE-Proton10-1',
     });
+  });
+
+  it('skips live detailed payloads that do not contain a reports array', async () => {
+    mockFetch
+      .mockResolvedValueOnce(makeResponse(404, null))
+      .mockResolvedValueOnce(makeResponse(200, { reports: 2, timestamp: 1775704890 }))
+      .mockResolvedValueOnce(makeResponse(200, { title: 'Malformed payload' }))
+      .mockResolvedValueOnce(makeResponse(200, fakeLiveDetailedPayload));
+
+    const result = await getProtonDBReportsWithDiagnostics('2358720');
+
+    expect(result.diagnostics.source).toBe('live-detailed');
+    expect(result.reports).toHaveLength(1);
+    expect(result.reports[0].notes).toBe('Runs great on Deck');
   });
 
   it('returns empty reports when live counts return non-200 and summary fallback also misses', async () => {

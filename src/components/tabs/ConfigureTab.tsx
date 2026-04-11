@@ -21,6 +21,7 @@ import {
 } from '../../lib/screenshotAutomation';
 import { ReportCard, type DisplayReportCard } from '../ReportCard';
 import { ReportDetailModal } from '../ReportDetailModal';
+import { resolveLaunchOptionsWithPrompt, showLaunchOptionConflictPreview } from '../LaunchOptionConflictModal';
 import { t } from '../../lib/i18n';
 import { isSteamShortcutApp } from '../../lib/steamApps';
 import { addTrackedConfig } from '../../lib/trackedConfigs';
@@ -687,9 +688,19 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         });
       }
 
-      await SteamClient.Apps.SetAppLaunchOptions(
-        appId, `PROTON_VERSION="${launchProtonVersion}" %command%`
+      const nextLaunchOptions = `PROTON_VERSION="${launchProtonVersion}" %command%`;
+      const currentDetails = await getSteamAppDetails(appId);
+      const resolvedLaunchOptions = await resolveLaunchOptionsWithPrompt(
+        appName,
+        getLaunchOptionsFromDetails(currentDetails.details),
+        nextLaunchOptions,
       );
+      if (!resolvedLaunchOptions) {
+        toaster.toast({ title: 'Proton Pulse', body: t().configure.applyCancelled });
+        return;
+      }
+
+      await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
       const detailsResult = await getSteamAppDetails(appId);
       const appliedLaunchOptions = getLaunchOptionsFromDetails(detailsResult.details);
       setCurrentLaunchOptions(appliedLaunchOptions);
@@ -814,6 +825,17 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     openReportDetail(firstReport);
     await runRegisteredScreenshotAutomationHandler('manage-game/report-detail/edit-modal');
   }), [sortedReports, appId, appName, sysInfo, currentLaunchOptions]);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/launch-option-conflict', async (action) => {
+    if (!appName) {
+      throw new Error('No game is available for the launch option conflict screenshot.');
+    }
+    showLaunchOptionConflictPreview(
+      action.appName || appName,
+      action.currentLaunchOptions || 'PROTON_LOG=1 DXVK_HUD=devinfo %command%',
+      action.incomingLaunchOptions || 'MANGOHUD=1 PROTON_VERSION="GE-Proton10-1" %command%',
+    );
+  }), [appName]);
 
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {

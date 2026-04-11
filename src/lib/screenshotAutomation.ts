@@ -7,7 +7,11 @@ import { getActiveLanguage, normalizeLanguagePreference, setLanguage } from './i
 export interface ScreenshotAutomationAction {
   appId?: number | null;
   appName?: string;
+  currentLaunchOptions?: string;
+  incomingLaunchOptions?: string;
   language?: string;
+  profileName?: string;
+  protonVersion?: string;
   tab?: PageId;
   target?: string;
   useFocusedApp?: boolean;

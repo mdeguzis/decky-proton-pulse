@@ -5,6 +5,7 @@
     "src/components/CacheManagerModal.tsx",
     "src/components/ConfigEditorModal.tsx",
     "src/components/EditReportModal.tsx",
+    "src/components/LaunchOptionConflictModal.tsx",
     "src/components/LogViewer.tsx",
     "src/components/LogViewerModal.tsx",
     "src/components/Modal.tsx",
@@ -18,6 +19,7 @@
     "src/components/tabs/LogsTab.tsx",
     "src/components/tabs/ManageTab.tsx",
     "src/components/tabs/SettingsTab.tsx",
+    "src/components/tabs/settingsTabProgress.ts",
     "src/patches/gameContextMenu.tsx"
   ],
   "findings": []

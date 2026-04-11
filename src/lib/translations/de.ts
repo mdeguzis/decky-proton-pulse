@@ -161,6 +161,13 @@ export const de: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `Installation von ${failedV} fehlgeschlagen. Stattdessen wird ${fallbackV} verwendet.`,
     installFailedNoFallback: (v) => `Installation von ${v} fehlgeschlagen. Anwenden mit der angeforderten Version trotzdem.`,
     appliedFor: (name) => `Angewendet für ${name}`,
+    launchOptionConflictTitle: 'Vorhandene Startoptionen erkannt',
+    launchOptionConflictDescription: (name) => `${name} hat in Steam bereits Startoptionen gesetzt.`,
+    launchOptionConflictWarning: 'Proton Pulse kann seine Optionen an die bestehende Zeichenfolge anhängen oder sie vollständig ersetzen. Beim Anhängen bleiben die aktuellen Optionen zuerst erhalten und Proton Pulse wird danach hinzugefügt.',
+    launchOptionConflictCurrent: 'Aktuelle Steam-Startoptionen',
+    launchOptionConflictIncoming: 'Proton Pulse-Startoptionen',
+    launchOptionConflictAppend: 'Anhängen',
+    launchOptionConflictReplace: 'Ersetzen',
     renderErrorIntro: 'Dieses Spiel verwalten ist in der aktuellen Steam-UI-Umgebung auf einen Darstellungsfehler gestoßen.',
   },
   toast: {

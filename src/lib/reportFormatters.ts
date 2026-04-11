@@ -23,6 +23,28 @@ export function buildLaunchOptionPreview(protonVersion: string): string {
   return `PROTON_VERSION="${protonVersion}" %command%`;
 }
 
+export function buildNotesPreview(notes: string, maxLength = 120): string {
+  const firstLine = notes
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (!firstLine) {
+    return '';
+  }
+
+  const hasMoreContent = notes
+    .split(/\r?\n/)
+    .slice(1)
+    .some((line) => line.trim().length > 0);
+
+  if (firstLine.length <= maxLength) {
+    return hasMoreContent ? `${firstLine} [...]` : firstLine;
+  }
+
+  return `${firstLine.slice(0, Math.max(0, maxLength)).trimEnd()} [...]`;
+}
+
 export function matchLabel(gpuTier: string, gpuVendor: string | null | undefined): string {
   if (!gpuVendor || gpuTier === 'unknown') return 'Unknown GPU match';
   return gpuTier === gpuVendor ? 'Matches your GPU vendor' : 'Different GPU vendor';

@@ -57,3 +57,42 @@ def test_extract_archive_safely_blocks_path_escape(tmp_path: Path) -> None:
 
     with pytest.raises(RuntimeError, match="escape extraction root"):
         extract_archive_safely(zip_path, tmp_path / "out")
+
+
+def test_extract_archive_safely_falls_back_when_tar_filter_is_unsupported(
+    tmp_path: Path,
+) -> None:
+    tar_path = tmp_path / "archive.tar"
+    tar_path.write_text("placeholder")
+    extract_dir = tmp_path / "out"
+
+    class FakeTarArchive:
+        def __init__(self) -> None:
+            self.calls: list[tuple[Path, str | None]] = []
+
+        def __enter__(self) -> "FakeTarArchive":
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> bool:
+            return False
+
+        def getmembers(self) -> list[object]:
+            return [type("TarMember", (), {"name": "payload/file.txt"})()]
+
+        def extractall(self, path: Path, filter: str | None = None) -> None:
+            self.calls.append((path, filter))
+            if filter == "data":
+                raise TypeError("filter unsupported")
+
+    fake_archive = FakeTarArchive()
+
+    with (
+        patch("lib.plugin_utils.zipfile.is_zipfile", return_value=False),
+        patch("lib.plugin_utils.tarfile.open", return_value=fake_archive),
+    ):
+        extract_archive_safely(tar_path, extract_dir)
+
+    assert fake_archive.calls == [
+        (extract_dir, "data"),
+        (extract_dir, None),
+    ]

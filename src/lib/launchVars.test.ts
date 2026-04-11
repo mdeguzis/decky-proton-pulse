@@ -2,7 +2,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   LAUNCH_VAR_CATALOG,
+  appendLaunchOptions,
   buildLaunchOptions,
+  normalizeLaunchOptionsForComparison,
   parseLaunchOptions,
 } from './launchVars';
 
@@ -95,5 +97,21 @@ describe('parseLaunchOptions', () => {
     const parsed = parseLaunchOptions(built);
     expect(parsed.protonVersion).toBe(version);
     expect(parsed.vars).toEqual(vars);
+  });
+});
+
+describe('launch option conflict helpers', () => {
+  it('normalizes launch options for safe comparison', () => {
+    expect(normalizeLaunchOptionsForComparison(' PROTON_LOG=1   %command% ')).toBe('PROTON_LOG=1');
+    expect(normalizeLaunchOptionsForComparison('DXVK_ASYNC=1   MANGOHUD=1')).toBe('DXVK_ASYNC=1 MANGOHUD=1');
+  });
+
+  it('appends launch options while keeping a single %command% token', () => {
+    expect(appendLaunchOptions('PROTON_LOG=1 %command%', 'MANGOHUD=1 %command%')).toBe(
+      'PROTON_LOG=1 MANGOHUD=1 %command%',
+    );
+    expect(appendLaunchOptions('', 'PROTON_VERSION="GE-Proton10-1" %command%')).toBe(
+      'PROTON_VERSION="GE-Proton10-1" %command%',
+    );
   });
 });

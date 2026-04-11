@@ -1,7 +1,7 @@
 // src/components/ReportCard.tsx
 import { Focusable } from '@decky/ui';
 import type { ScoredReport } from '../types';
-import { RATING_COLORS, formatProtonLabel } from '../lib/reportFormatters';
+import { RATING_COLORS, buildNotesPreview, formatProtonLabel } from '../lib/reportFormatters';
 import { t } from '../lib/i18n';
 
 export interface DisplayReportCard extends ScoredReport {
@@ -34,6 +34,7 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
   const confScore = (cappedScore / 10).toFixed(1);
   const confColor = confidenceColor(cappedScore);
   const highlighted = selected || focused;
+  const notesPreview = buildNotesPreview(report.notes);
 
   return (
     <Focusable
@@ -102,9 +103,9 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
           <div style={{ fontSize: 10, color: '#9cb3c7', marginBottom: 8 }}>
             {strings.common.daysAgo(report.recencyDays)}
           </div>
-          {report.notes && (
+          {notesPreview && (
             <div style={{ fontSize: 11, color: '#cad7e4', lineHeight: 1.45 }}>
-              {strings.reports.originalNotesInDetail}
+              {notesPreview}
             </div>
           )}
         </div>

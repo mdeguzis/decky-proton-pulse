@@ -161,6 +161,13 @@ export const ja: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `${failedV} のインストールに失敗しました。代わりに ${fallbackV} を使用します。`,
     installFailedNoFallback: (v) => `${v} のインストールに失敗しました。要求されたバージョンでそのまま適用します。`,
     appliedFor: (name) => `${name} に適用しました`,
+    launchOptionConflictTitle: '既存の起動オプションを検出しました',
+    launchOptionConflictDescription: (name) => `${name} にはすでに Steam の起動オプションが設定されています。`,
+    launchOptionConflictWarning: 'Proton Pulse のオプションを既存の文字列に追加するか、完全に置き換えるかを選べます。追加を選ぶと、現在のオプションを先に残し、その後ろに Proton Pulse を追加します。',
+    launchOptionConflictCurrent: '現在の Steam 起動オプション',
+    launchOptionConflictIncoming: 'Proton Pulse の起動オプション',
+    launchOptionConflictAppend: '追加',
+    launchOptionConflictReplace: '置き換え',
     renderErrorIntro: '現在の Steam UI 環境で「このゲームを管理」に描画エラーが発生しました。',
   },
   toast: {

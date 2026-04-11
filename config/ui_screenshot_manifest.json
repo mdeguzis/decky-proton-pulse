@@ -49,6 +49,14 @@
   },
   {
     "group": "manage-configurations",
+    "key": "config-editor-existing",
+    "title": "Manage Configurations Existing Config Editor",
+    "caption": "Config editor modal opened on an existing saved profile with launch options and toggles already populated.",
+    "instructions": "Open Manage Configurations and open the config editor on a saved profile.",
+    "automation": { "tab": "manage", "target": "manage-configurations/config-editor-existing", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "profileName": "Steam Deck Tweaks", "protonVersion": "GE-Proton10-1", "waitMs": 800 }
+  },
+  {
+    "group": "manage-configurations",
     "key": "protondb-submit",
     "title": "Manage Configurations ProtonDB Submit",
     "caption": "Submit-to-ProtonDB modal with generated system information ready to copy.",
@@ -78,6 +86,22 @@
     "caption": "Archive installer modal for importing a custom compatibility tool from a local file.",
     "instructions": "Open Compatibility Tools and open the Install from ZIP modal.",
     "automation": { "tab": "compatibility-tools", "target": "compatibility-tools/install-from-zip", "waitMs": 900 }
+  },
+  {
+    "group": "compatibility-tools",
+    "key": "active-install",
+    "title": "Compatibility Tools Active Install",
+    "caption": "Compatibility tools screen while a Proton-GE install is in progress with live progress stats visible.",
+    "instructions": "Open Compatibility Tools and capture the active install progress state.",
+    "automation": { "tab": "compatibility-tools", "target": "compatibility-tools/active-install", "waitMs": 900 }
+  },
+  {
+    "group": "manage-game",
+    "key": "launch-option-conflict",
+    "title": "Manage Game Launch Option Conflict",
+    "caption": "Conflict prompt shown when Steam already has launch options and Proton Pulse is about to apply a different configuration.",
+    "instructions": "Open the launch option conflict prompt from Manage Game before applying a new configuration.",
+    "automation": { "tab": "manage-game", "target": "manage-game/launch-option-conflict", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "currentLaunchOptions": "PROTON_LOG=1 DXVK_HUD=devinfo %command%", "incomingLaunchOptions": "MANGOHUD=1 PROTON_VERSION=\"GE-Proton10-1\" %command%", "waitMs": 900 }
   },
   {
     "group": "logs",

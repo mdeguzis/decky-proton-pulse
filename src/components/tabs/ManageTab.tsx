@@ -53,6 +53,33 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
     );
   }), [appId, appName, gpuVendor]);
 
+  useEffect(() => registerScreenshotAutomationHandler('manage-configurations/config-editor-existing', async (action: ScreenshotAutomationAction) => {
+    const targetAppId = action.appId ?? appId ?? 2561580;
+    const targetAppName = action.appName || appName || 'Horizon Zero Dawn Remastered';
+    showModal(
+      <ConfigEditorModal
+        appId={targetAppId}
+        appName={targetAppName}
+        existingConfig={{
+          appId: targetAppId,
+          appName: targetAppName,
+          profileName: action.profileName ?? 'Steam Deck Tweaks',
+          protonVersion: action.protonVersion ?? 'GE-Proton10-1',
+          launchOptions: 'MANGOHUD=1 DXVK_ASYNC=1 PROTON_VERSION="GE-Proton10-1" %command%',
+          enabledVars: {
+            MANGOHUD: '1',
+            DXVK_ASYNC: '1',
+          },
+          appliedAt: Date.now() - 1000 * 60 * 42,
+          isEdited: true,
+          source: 'user',
+        }}
+        gpuVendor={gpuVendor}
+        onSave={() => refresh()}
+      />,
+    );
+  }), [appId, appName, gpuVendor]);
+
   useEffect(() => registerScreenshotAutomationHandler('manage-configurations/protondb-submit', async (action: ScreenshotAutomationAction) => {
     const targetAppId = action.appId ?? appId;
     if (!targetAppId) return;

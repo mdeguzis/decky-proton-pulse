@@ -17,6 +17,7 @@ import {
   normalizeLanguagePreference,
   registerTranslation,
   t,
+  useLanguage,
 } from './i18n';
 import { de as deTranslation } from './translations/de';
 import { de } from './translations/de';
@@ -239,6 +240,12 @@ describe('fallback proxy', () => {
     warn.mockRestore();
     setLanguage('auto');
   });
+
+  it('returns undefined for truly unknown leaf keys without fabricating a fallback', () => {
+    setLanguage('de');
+    expect((t().common as Record<string, unknown>).totallyMissingKey).toBeUndefined();
+    setLanguage('auto');
+  });
 });
 
 describe('pluralization', () => {
@@ -265,5 +272,13 @@ describe('translation function coverage', () => {
     for (const tree of [de, es, fr, ja, ko, ptBR, ru, tr, zhCN]) {
       invokeAllTranslationFunctions(tree);
     }
+  });
+});
+
+describe('useLanguage', () => {
+  it('returns the same active language snapshot used by the store', () => {
+    setLanguage('fr');
+    expect(useLanguage()).toBe('fr');
+    setLanguage('auto');
   });
 });

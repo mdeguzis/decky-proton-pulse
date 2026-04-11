@@ -92,3 +92,17 @@ export function parseLaunchOptions(
 
   return { protonVersion, vars };
 }
+
+export function normalizeLaunchOptionsForComparison(launchOptions: string): string {
+  return launchOptions
+    .replace(/%command%/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function appendLaunchOptions(existing: string, incoming: string): string {
+  const existingNormalized = normalizeLaunchOptionsForComparison(existing);
+  const incomingNormalized = normalizeLaunchOptionsForComparison(incoming);
+  const merged = [existingNormalized, incomingNormalized].filter(Boolean).join(' ').trim();
+  return merged ? `${merged} %command%` : '%command%';
+}

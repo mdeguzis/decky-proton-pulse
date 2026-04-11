@@ -161,6 +161,13 @@ export const ko: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `${failedV} 설치에 실패했습니다. 대신 ${fallbackV}을(를) 사용합니다.`,
     installFailedNoFallback: (v) => `${v} 설치에 실패했습니다. 요청한 버전으로 그대로 적용합니다.`,
     appliedFor: (name) => `${name}에 적용됨`,
+    launchOptionConflictTitle: '기존 실행 옵션이 감지되었습니다',
+    launchOptionConflictDescription: (name) => `${name}에는 이미 Steam 실행 옵션이 설정되어 있습니다.`,
+    launchOptionConflictWarning: 'Proton Pulse 옵션을 기존 문자열에 덧붙이거나 완전히 교체할 수 있습니다. 덧붙이기를 선택하면 현재 옵션을 먼저 유지하고 그 뒤에 Proton Pulse를 추가합니다.',
+    launchOptionConflictCurrent: '현재 Steam 실행 옵션',
+    launchOptionConflictIncoming: 'Proton Pulse 실행 옵션',
+    launchOptionConflictAppend: '덧붙이기',
+    launchOptionConflictReplace: '교체',
     renderErrorIntro: '현재 Steam UI 환경에서 이 게임 관리 화면에 렌더링 오류가 발생했습니다.',
   },
   toast: {

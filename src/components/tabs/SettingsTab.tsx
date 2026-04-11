@@ -1,5 +1,5 @@
 // src/components/tabs/SettingsTab.tsx
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ToggleField, Focusable, GamepadButton, DialogButton, ConfirmModal, showModal, Menu, MenuItem, showContextMenu } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { openFilePicker, FileSelectionType } from '@decky/api';
@@ -10,6 +10,7 @@ import { cancelProtonGeInstall, getProtonGeManagerState, installCompatibilityToo
 import type { CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { t } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
+import { shouldPollInstallStatus, shouldShowInstallStatusToast } from './settingsTabProgress';
 
 const AUTO_UPDATE_KEY = 'compat-auto-update-proton-ge';
 const RESTART_HINT = ' Steam may need a restart before the new compatibility tool appears everywhere.';
@@ -562,7 +563,6 @@ export function SettingsTab() {
   const [removingTool, setRemovingTool] = useState<string | null>(null);
   const [autoUpdateTriggered, setAutoUpdateTriggered] = useState(false);
   const [focusedMenuKey, setFocusedMenuKey] = useState<string | null>(null);
-  const lastInstallStatusStamp = useRef<string | null>(null);
 
   const installedReleaseTags = useMemo(() => {
     const tags = new Set<string>();
@@ -785,28 +785,23 @@ export function SettingsTab() {
   }, [installingTag, installedReleaseTags, managerState]);
 
   useEffect(() => {
-    if (managerState?.install_status.state !== 'running') {
+    if (!shouldPollInstallStatus(managerState, installingTag)) {
       return;
     }
     const interval = window.setInterval(() => {
       void refreshManager(false);
     }, 3000);
     return () => window.clearInterval(interval);
-  }, [managerState?.install_status.state]);
+  }, [installingTag, managerState]);
 
   useEffect(() => {
     if (!managerState) {
       return;
     }
     const { install_status: installStatus } = managerState;
-    if (installStatus.state === 'idle' || installStatus.state === 'running' || !installStatus.finished_at) {
+    if (!shouldShowInstallStatusToast(installStatus)) {
       return;
     }
-    const stamp = `${installStatus.state}:${installStatus.tag_name ?? 'unknown'}:${installStatus.finished_at}`;
-    if (lastInstallStatusStamp.current === stamp) {
-      return;
-    }
-    lastInstallStatusStamp.current = stamp;
     setInstallingTag(null);
     toaster.toast({
       title: 'Proton Pulse',
@@ -850,6 +845,9 @@ export function SettingsTab() {
 
     setInstallingTag(nextTag);
     const result = await installProtonGe(nextTag, installAsLatest, forceReinstall);
+    if (result.success) {
+      await refreshManager(false);
+    }
     toaster.toast({
       title: 'Proton Pulse',
       body: result.success ? withRestartHint(result.message) : `Install failed: ${result.message}`,
@@ -934,6 +932,32 @@ export function SettingsTab() {
 
   useEffect(() => registerScreenshotAutomationHandler('compatibility-tools/install-from-zip', async () => {
     handleOpenArchiveInstaller();
+  }), [managerState]);
+
+  useEffect(() => registerScreenshotAutomationHandler('compatibility-tools/active-install', async () => {
+    const release = managerState?.current_release ?? managerState?.releases[0];
+    if (!managerState || !release) {
+      throw new Error('Compatibility tools release data is not loaded for the active install screenshot.');
+    }
+
+    const totalBytes = release.asset_size ?? 1024 * 1024 * 1024;
+    const downloadedBytes = Math.round(totalBytes * 0.64);
+    setInstallingTag(release.tag_name);
+    setManagerState({
+      ...managerState,
+      install_status: {
+        state: 'running',
+        tag_name: release.tag_name,
+        message: `Installing ${release.tag_name}...`,
+        stage: 'downloading',
+        downloaded_bytes: downloadedBytes,
+        total_bytes: totalBytes,
+        progress_fraction: downloadedBytes / totalBytes,
+        started_at: Math.round(Date.now() / 1000) - 90,
+        finished_at: null,
+        install_as_latest: release.tag_name === managerState.current_release?.tag_name,
+      },
+    });
   }), [managerState]);
 
   return (

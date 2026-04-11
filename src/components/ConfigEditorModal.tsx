@@ -27,9 +27,10 @@ import {
 } from '../lib/customToggles';
 import { logFrontendEvent } from '../lib/logger';
 import { t } from '../lib/i18n';
-import { isSteamShortcutApp } from '../lib/steamApps';
+import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
 import type { GpuVendor } from '../types';
 import { buildVersionOptions, VersionOptionLabel, type VersionOption } from './EditReportModal';
+import { resolveLaunchOptionsWithPrompt } from './LaunchOptionConflictModal';
 
 interface Props {
   appId: number | null;
@@ -570,19 +571,30 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     const finalLaunchOptions = preview;
     try {
       syncScopedCustomToggles(appId, customToggles);
-      await SteamClient.Apps.SetAppLaunchOptions(appId, finalLaunchOptions);
+      const currentDetails = await getSteamAppDetails(appId);
+      const resolvedLaunchOptions = await resolveLaunchOptionsWithPrompt(
+        appName,
+        getLaunchOptionsFromDetails(currentDetails.details),
+        finalLaunchOptions,
+      );
+      if (!resolvedLaunchOptions) {
+        toaster.toast({ title: 'Proton Pulse', body: t().configure.applyCancelled });
+        return;
+      }
+
+      await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
       addTrackedConfig({
         appId,
         appName,
         profileName: profileName.trim(),
         protonVersion: protonVersion || '',
-        launchOptions: finalLaunchOptions,
+        launchOptions: resolvedLaunchOptions,
         enabledVars: allVars,
         appliedAt: Date.now(),
         isEdited: !!existingConfig,
       });
-      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: finalLaunchOptions });
-      toaster.toast({ title: 'Proton Pulse', body: finalLaunchOptions });
+      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions });
+      toaster.toast({ title: 'Proton Pulse', body: resolvedLaunchOptions });
       onSave();
       closeModal?.();
     } catch (e) {

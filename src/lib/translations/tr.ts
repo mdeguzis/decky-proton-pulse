@@ -161,6 +161,13 @@ export const tr: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `${failedV} yüklemesi başarısız oldu. Bunun yerine ${fallbackV} kullanılıyor.`,
     installFailedNoFallback: (v) => `${v} yüklemesi başarısız oldu. İstenen sürümle yine de uygulanıyor.`,
     appliedFor: (name) => `${name} için uygulandı`,
+    launchOptionConflictTitle: 'Mevcut başlatma seçenekleri algılandı',
+    launchOptionConflictDescription: (name) => `${name} için Steam içinde zaten başlatma seçenekleri ayarlı.`,
+    launchOptionConflictWarning: 'Proton Pulse kendi seçeneklerini mevcut dizgeye ekleyebilir veya tamamen değiştirebilir. Ekle seçeneği, mevcut seçenekleri önce korur ve Proton Pulse öğelerini sona ekler.',
+    launchOptionConflictCurrent: 'Geçerli Steam başlatma seçenekleri',
+    launchOptionConflictIncoming: 'Proton Pulse başlatma seçenekleri',
+    launchOptionConflictAppend: 'Ekle',
+    launchOptionConflictReplace: 'Değiştir',
     renderErrorIntro: 'Bu Oyunu Yönet ekranı mevcut Steam arayüzü ortamında bir render hatasıyla karşılaştı.',
   },
   toast: {

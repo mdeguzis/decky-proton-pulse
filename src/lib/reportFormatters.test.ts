@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   RATING_COLORS,
+  buildNotesPreview,
   buildLaunchOptionPreview,
   formatProtonLabel,
   formatTimestamp,
@@ -22,6 +23,14 @@ describe('reportFormatters', () => {
   it('formats timestamps and launch option previews', () => {
     expect(formatTimestamp(1712707200)).toBe('2024-04-10');
     expect(buildLaunchOptionPreview('GE-Proton10-1')).toBe('PROTON_VERSION="GE-Proton10-1" %command%');
+  });
+
+  it('builds note previews from the first non-empty line and truncates with brackets', () => {
+    expect(buildNotesPreview('Runs great on Deck\nSecond line with details')).toBe('Runs great on Deck [...]');
+    expect(buildNotesPreview('\n\nFirst useful line\n\nAnother line')).toBe('First useful line [...]');
+    expect(buildNotesPreview('A'.repeat(140), 20)).toBe('AAAAAAAAAAAAAAAAAAAA [...]');
+    expect(buildNotesPreview('Short one-liner')).toBe('Short one-liner');
+    expect(buildNotesPreview('   \n\t  ')).toBe('');
   });
 
   it('describes GPU vendor matches clearly', () => {

@@ -193,6 +193,13 @@ export interface TranslationTree {
     installFailedFallback: (failedVersion: string, fallbackVersion: string) => string;
     installFailedNoFallback: (version: string) => string;
     appliedFor: (appName: string) => string;
+    launchOptionConflictTitle: string;
+    launchOptionConflictDescription: (appName: string) => string;
+    launchOptionConflictWarning: string;
+    launchOptionConflictCurrent: string;
+    launchOptionConflictIncoming: string;
+    launchOptionConflictAppend: string;
+    launchOptionConflictReplace: string;
     renderErrorIntro: string;
   };
   toast: {
@@ -593,6 +600,13 @@ export const en: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `Could not install ${failedV}. Using ${fallbackV} instead.`,
     installFailedNoFallback: (v) => `Could not install ${v}. Applying the profile anyway with the requested version.`,
     appliedFor: (name) => `Applied to ${name}`,
+    launchOptionConflictTitle: 'Existing launch options detected',
+    launchOptionConflictDescription: (name) => `${name} already has launch options set in Steam.`,
+    launchOptionConflictWarning: 'Proton Pulse can append its options to the existing string or replace it entirely. Appending keeps the current options first and adds Proton Pulse after them.',
+    launchOptionConflictCurrent: 'Current Steam launch options',
+    launchOptionConflictIncoming: 'Proton Pulse launch options',
+    launchOptionConflictAppend: 'Append',
+    launchOptionConflictReplace: 'Replace',
     renderErrorIntro: 'Manage This Game hit a render error in the current Steam UI environment.',
   },
   toast: {

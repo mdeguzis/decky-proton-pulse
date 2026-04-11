@@ -161,6 +161,13 @@ export const zhCN: TranslationTree = {
     installFailedFallback: (failedV, fallbackV) => `${failedV} 安装失败，改用 ${fallbackV}。`,
     installFailedNoFallback: (v) => `${v} 安装失败，仍使用所需版本继续应用。`,
     appliedFor: (name) => `已应用至 ${name}`,
+    launchOptionConflictTitle: '检测到现有启动选项',
+    launchOptionConflictDescription: (name) => `${name} 已经在 Steam 中设置了启动选项。`,
+    launchOptionConflictWarning: 'Proton Pulse 可以把自己的选项追加到现有字符串后面，或完全替换它。选择追加时，会先保留当前选项，再把 Proton Pulse 添加到后面。',
+    launchOptionConflictCurrent: '当前 Steam 启动选项',
+    launchOptionConflictIncoming: 'Proton Pulse 启动选项',
+    launchOptionConflictAppend: '追加',
+    launchOptionConflictReplace: '替换',
     renderErrorIntro: '在当前 Steam 界面环境中，“管理此游戏”界面发生了渲染错误。',
   },
   toast: {

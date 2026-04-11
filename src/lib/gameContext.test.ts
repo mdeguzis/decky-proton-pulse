@@ -50,4 +50,36 @@ describe("selectMenuAppContext", () => {
       appName: "Black Myth: Wukong",
     });
   });
+
+  it("returns an empty context when there is no app id anywhere", () => {
+    expect(
+      selectMenuAppContext({
+        focusedAppId: 0,
+        focusedAppName: "",
+        initialAppId: 0,
+        lookedUpAppName: "",
+        routeAppId: 0,
+        treeAppId: 0,
+      })
+    ).toEqual({
+      appId: 0,
+      appName: "",
+    });
+  });
+
+  it("prefers the looked up name when the chosen app is not the focused app", () => {
+    expect(
+      selectMenuAppContext({
+        focusedAppId: 1910310,
+        focusedAppName: "Old Focus",
+        initialAppId: 0,
+        lookedUpAppName: "Selected Game",
+        routeAppId: 730,
+        treeAppId: 0,
+      })
+    ).toEqual({
+      appId: 730,
+      appName: "Selected Game",
+    });
+  });
 });
