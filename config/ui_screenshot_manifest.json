@@ -40,6 +40,22 @@
     "automation": { "tab": "manage", "waitMs": 800 }
   },
   {
+    "group": "manage-configurations",
+    "key": "config-editor",
+    "title": "Manage Configurations Config Editor",
+    "caption": "Config editor modal for building a reusable launch profile with filtered toggle sections.",
+    "instructions": "Open Manage Configurations and open the new config editor modal.",
+    "automation": { "tab": "manage", "target": "manage-configurations/config-editor", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 800 }
+  },
+  {
+    "group": "manage-configurations",
+    "key": "protondb-submit",
+    "title": "Manage Configurations ProtonDB Submit",
+    "caption": "Submit-to-ProtonDB modal with generated system information ready to copy.",
+    "instructions": "Open Manage Configurations and open the ProtonDB submit modal for the current game.",
+    "automation": { "tab": "manage", "target": "manage-configurations/protondb-submit", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 900 }
+  },
+  {
     "group": "compatibility-tools",
     "key": "tab",
     "title": "Compatibility Tools Tab",
@@ -56,6 +72,22 @@
     "automation": { "tab": "compatibility-tools", "target": "compatibility-tools/release-picker", "waitMs": 1000 }
   },
   {
+    "group": "compatibility-tools",
+    "key": "install-from-zip",
+    "title": "Compatibility Tools Install From ZIP",
+    "caption": "Archive installer modal for importing a custom compatibility tool from a local file.",
+    "instructions": "Open Compatibility Tools and open the Install from ZIP modal.",
+    "automation": { "tab": "compatibility-tools", "target": "compatibility-tools/install-from-zip", "waitMs": 900 }
+  },
+  {
+    "group": "logs",
+    "key": "default",
+    "title": "Logs Tab",
+    "caption": "Logs tab overview with recent entries and the entry count before opening the full viewer.",
+    "instructions": "Open the Logs tab and leave the base tab view visible.",
+    "automation": { "tab": "logs", "target": "logs/default", "waitMs": 700 }
+  },
+  {
     "group": "logs",
     "key": "tab",
     "title": "Logs Viewer",
@@ -70,6 +102,14 @@
     "caption": "Main settings page showing the general configuration controls.",
     "instructions": "Open the Settings tab and keep the default general settings section visible.",
     "automation": { "tab": "settings", "waitMs": 800 }
+  },
+  {
+    "group": "settings",
+    "key": "local-data",
+    "title": "Settings Local Data Backup",
+    "caption": "Advanced settings section for exporting and restoring local Proton Pulse data.",
+    "instructions": "Open Settings, enable advanced settings if needed, and scroll to the local data backup section.",
+    "automation": { "tab": "settings", "target": "settings/local-data", "waitMs": 900 }
   },
   {
     "group": "settings",

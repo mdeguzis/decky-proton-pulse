@@ -932,6 +932,10 @@ export function SettingsTab() {
     handleOpenVersionBrowser();
   }), [installedReleaseTags, installingTag, managerState]);
 
+  useEffect(() => registerScreenshotAutomationHandler('compatibility-tools/install-from-zip', async () => {
+    handleOpenArchiveInstaller();
+  }), [managerState]);
+
   return (
     <Focusable onGamepadDirection={handleRootDirection}>
       <style>{`

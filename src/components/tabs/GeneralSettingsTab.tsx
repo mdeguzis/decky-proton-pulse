@@ -180,6 +180,7 @@ export function GeneralSettingsTab() {
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const languageRowRef = useRef<HTMLDivElement>(null);
+  const localDataSectionRef = useRef<HTMLDivElement>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupStatusMessage, setBackupStatusMessage] = useState('');
   const [backupStatusTone, setBackupStatusTone] = useState<'neutral' | 'success' | 'error'>('neutral');
@@ -229,6 +230,15 @@ export function GeneralSettingsTab() {
     const button = row?.querySelector<HTMLElement>('button,[role="button"]');
     button?.click();
   }), []);
+
+  useEffect(() => registerScreenshotAutomationHandler('settings/local-data', async () => {
+    if (!advancedEnabled) {
+      setAdvancedEnabled(true);
+      setSetting(ADVANCED_SETTINGS_KEY, true);
+      await new Promise((resolve) => window.setTimeout(resolve, 150));
+    }
+    localDataSectionRef.current?.scrollIntoView({ block: 'center' });
+  }), [advancedEnabled]);
 
   const handleExportLocalData = async () => {
     setBackupBusy(true);
@@ -395,7 +405,7 @@ export function GeneralSettingsTab() {
       )}
 
       {advancedEnabled && (
-        <div style={sectionStyle()}>
+        <div ref={localDataSectionRef} style={sectionStyle()}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 4, marginRight: 8 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff' }}>
               {extras.localDataSection()}

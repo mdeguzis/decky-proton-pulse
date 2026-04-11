@@ -2,6 +2,19 @@
 
 All notable changes to Proton Pulse should be recorded here.
 ## v0.3.0
+## v0.4.0
+
+- Add coverage badges and refine custom toggle workflow
+- Improve config editing, backups, and contributor docs
+- translation updates
+- Create CODE_OF_CONDUCT.md
+- Align makefile help
+- fix: Fix Wukong report fallback, complete translations, and preserve modal screenshots
+- simplify makefile
+- Update README.md
+- Add tool disclaimer to readme
+- fix: screenshot flow, compat tools reinstall, and nav regressions
+
 
 - fix: Fix Wukong report fallback, complete translations, and preserve modal screenshots
 - simplify makefile
