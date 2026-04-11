@@ -24,7 +24,9 @@ vi.mock('./metrics', () => ({
 
 import {
   getCached,
+  getCacheTtlMs,
   setCache,
+  setCacheTtlHours,
   invalidate,
   invalidateAll,
   getCacheStats,
@@ -74,6 +76,12 @@ beforeEach(() => {
 });
 
 describe('cache', () => {
+  it('uses a configurable TTL in hours', () => {
+    expect(getCacheTtlMs()).toBe(24 * 60 * 60 * 1000);
+    setCacheTtlHours(12);
+    expect(getCacheTtlMs()).toBe(12 * 60 * 60 * 1000);
+  });
+
   it('returns null on cache miss', () => {
     expect(getCached('999')).toBeNull();
   });
@@ -145,5 +153,70 @@ describe('cache', () => {
     updateCachedVotes('999', { 'rk1': { upvotes: 3, downvotes: 1 } });
     const c = getCached('999');
     expect(c?.votes).toEqual({ 'rk1': { upvotes: 3, downvotes: 1 } });
+  });
+
+  it('expires stale entries on read', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-10T00:00:00Z'));
+    setCacheTtlHours(1);
+    setCache('730', [fakeReport], null, {});
+
+    vi.setSystemTime(new Date('2026-04-10T02:30:00Z'));
+    expect(getCached('730')).toBeNull();
+    expect(getCacheStats().size).toBe(0);
+    vi.useRealTimers();
+  });
+
+  it('loads only fresh entries from storage during initialization', async () => {
+    vi.resetModules();
+    localStorage.clear();
+    const now = new Date('2026-04-10T12:00:00Z').getTime();
+    localStorage.setItem('proton-pulse:data-cache', JSON.stringify([
+      {
+        appId: '730',
+        reports: [fakeReport],
+        summary: fakeSummary,
+        votes: {},
+        cachedAt: now - (30 * 60 * 1000),
+        lastAccessedAt: now - (30 * 60 * 1000),
+        source: 'cdn',
+      },
+      {
+        appId: '440',
+        reports: [fakeReport],
+        summary: null,
+        votes: {},
+        cachedAt: now - (48 * 60 * 60 * 1000),
+        lastAccessedAt: now - (48 * 60 * 60 * 1000),
+        source: 'cdn',
+      },
+    ]));
+
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const freshCache = await import('./cache');
+    const loaded = freshCache.getCached('730');
+    const expired = freshCache.getCached('440');
+
+    expect(loaded?.appId).toBe('730');
+    expect(expired).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('returns null network stats when no fetch timings are present', async () => {
+    vi.resetModules();
+    vi.doMock('./metrics', () => ({
+      startSpan: vi.fn(() => vi.fn()),
+      countCacheHit: vi.fn(),
+      countCacheMiss: vi.fn(),
+      countCacheEviction: vi.fn(),
+      getCombinedCategoryStats: vi.fn(() => null),
+    }));
+
+    const freshCache = await import('./cache');
+    const stats = freshCache.getCacheStats();
+    expect(stats.networkFetchAvgMs).toBeNull();
+    expect(stats.networkFetchP95Ms).toBeNull();
+    expect(stats.networkFetchMaxMs).toBeNull();
   });
 });

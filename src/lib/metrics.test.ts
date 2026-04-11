@@ -1,8 +1,17 @@
 // src/lib/metrics.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const { exportMetricsCallableMock, logFrontendEventMock } = vi.hoisted(() => ({
+  exportMetricsCallableMock: vi.fn().mockResolvedValue(true),
+  logFrontendEventMock: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@decky/api', () => ({
-  callable: vi.fn(() => vi.fn().mockResolvedValue(true)),
+  callable: vi.fn(() => exportMetricsCallableMock),
+}));
+
+vi.mock('./logger', () => ({
+  logFrontendEvent: logFrontendEventMock,
 }));
 
 import {
@@ -22,10 +31,16 @@ import {
   getSummaryText,
   getRawEntries,
   resetMetrics,
+  flushMetricsToDisk,
+  startAutoFlush,
+  stopAutoFlush,
 } from './metrics';
 
 beforeEach(() => {
   resetMetrics();
+  exportMetricsCallableMock.mockReset().mockResolvedValue(true);
+  logFrontendEventMock.mockReset().mockResolvedValue(undefined);
+  vi.useRealTimers();
 });
 
 describe('metrics counters', () => {
@@ -120,6 +135,10 @@ describe('getCombinedCategoryStats', () => {
     expect(combined!.count).toBe(2);
     expect(combined!.avgMs).toBeGreaterThanOrEqual(0);
   });
+
+  it('returns null when no matching categories were recorded', () => {
+    expect(getCombinedCategoryStats(['fetch-live-summary'])).toBeNull();
+  });
 });
 
 describe('getPrefetchFailureSummary', () => {
@@ -134,6 +153,15 @@ describe('getPrefetchFailureSummary', () => {
     expect(summary.byReason['index-miss']).toBe(2);
     expect(summary.byReason['index-empty']).toBe(1);
   });
+
+  it('falls back to status and unknown reasons when metadata is sparse', () => {
+    startDetailedSpan('prefetch-game', '730').end(false, { status: 503 });
+    startDetailedSpan('prefetch-game', '440').end(false);
+
+    const summary = getPrefetchFailureSummary();
+    expect(summary.byReason['status-503']).toBe(1);
+    expect(summary.byReason.unknown).toBe(1);
+  });
 });
 
 describe('getSummaryText', () => {
@@ -146,5 +174,49 @@ describe('getSummaryText', () => {
     expect(text).toContain('Cache misses:     1');
     expect(text).toContain('Cache hit rate:   66.7%');
     expect(text).toContain('Non-Steam local:  0');
+  });
+});
+
+describe('flush and timers', () => {
+  it('flushes metrics to disk through the backend callable', async () => {
+    countCacheHit();
+    await expect(flushMetricsToDisk()).resolves.toBe(true);
+    expect(logFrontendEventMock).toHaveBeenCalledWith(
+      'DEBUG',
+      'Metrics flushed to disk',
+      expect.objectContaining({ success: true }),
+    );
+  });
+
+  it('returns false when flushing metrics fails', async () => {
+    vi.resetModules();
+    const exportMetricsCallable = vi.fn().mockRejectedValue(new Error('disk full'));
+    vi.doMock('@decky/api', () => ({
+      callable: vi.fn(() => exportMetricsCallable),
+    }));
+    vi.doMock('./logger', () => ({
+      logFrontendEvent: logFrontendEventMock,
+    }));
+    const freshMetrics = await import('./metrics');
+
+    await expect(freshMetrics.flushMetricsToDisk()).resolves.toBe(false);
+    expect(logFrontendEventMock).toHaveBeenCalledWith(
+      'ERROR',
+      'Failed to flush metrics to disk',
+      expect.objectContaining({ error: 'disk full' }),
+    );
+  });
+
+  it('starts only one auto-flush timer and can stop it cleanly', async () => {
+    vi.useFakeTimers();
+
+    startAutoFlush();
+    startAutoFlush();
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    expect(exportMetricsCallableMock).toHaveBeenCalledTimes(1);
+
+    stopAutoFlush();
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    expect(exportMetricsCallableMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -41,5 +41,8 @@ jobs:
       - name: Sync Python dependencies
         run: uv sync --group dev
 
+      - name: Enforce coverage minimums
+        run: make coverage
+
       - name: Build
         run: make build

@@ -29,7 +29,7 @@ SCREENSHOT_MATCH ?=
 SCREENSHOT_MANIFEST ?= config/ui_screenshot_manifest.json
 PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 
-.PHONY: help build watch test test-ts test-py typecheck check-translations check-ui-strings translate setup deploy deploy-reload build-and-deploy clean \
+.PHONY: help build watch test coverage test-ts test-py typecheck check-translations check-ui-strings translate setup deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release pre-release github-release github-pre-release \
         capture-project-screenshots \
@@ -48,7 +48,8 @@ help:
 	@echo "============= main targets ============= "
 	@printf "  %-27s %s\n" "build" "Clean, test, then build frontend"
 	@printf "  %-27s %s\n" "watch" "Watch frontend for changes (pnpm watch)"
-	@printf "  %-27s %s\n" "test" "Run all tests (Python + TypeScript)"
+	@printf "  %-27s %s\n" "test" "Run all tests, print a per-language coverage table, and enforce minimums"
+	@printf "  %-27s %s\n" "coverage" "Run both coverage suites and fail below the enforced minimums"
 	@printf "  %-27s %s\n" "check-translations" "Enforce translation coverage and refresh coverage metrics"
 	@printf "  %-27s %s\n" "check-ui-strings" "Scan UI sources for likely hardcoded English strings"
 	@printf "  %-27s %s\n" "translate" "Alias for check-translations"
@@ -107,7 +108,12 @@ build: clean test
 watch:
 	$(PNPM) watch
 
-test: test-py test-ts
+test: coverage
+
+coverage: node_modules
+	$(PNPM) run coverage:check
+	$(PNPM) run coverage:summary
+	$(PNPM) run coverage:badges
 
 check-translations: node_modules
 	$(PNPM) run sync-version

@@ -65,4 +65,7 @@ def extract_archive_safely(archive_path: Path, extract_dir: Path) -> None:
     with tarfile.open(archive_path, "r:*") as tar_archive:
         for tar_member in tar_archive.getmembers():
             _ensure_within_root(extract_dir / tar_member.name)
-        tar_archive.extractall(extract_dir)
+        try:
+            tar_archive.extractall(extract_dir, filter="data")
+        except TypeError:
+            tar_archive.extractall(extract_dir)

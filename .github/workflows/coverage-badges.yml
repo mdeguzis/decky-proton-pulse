@@ -48,14 +48,8 @@ jobs:
       - name: Sync Python dependencies
         run: uv sync --group dev
 
-      - name: Collect TypeScript coverage
-        run: pnpm test:coverage
-
-      - name: Collect Python coverage
-        run: uv run --group dev python -m pytest --cov=main --cov=lib --cov-report=json:coverage/python/coverage.json
-
-      - name: Generate badge JSON
-        run: pnpm coverage:badges
+      - name: Collect and enforce coverage
+        run: make coverage
 
       - name: Set up Pages
         uses: actions/configure-pages@v5

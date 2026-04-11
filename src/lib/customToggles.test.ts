@@ -25,6 +25,18 @@ beforeEach(() => {
 });
 
 describe('custom toggle storage', () => {
+  it('trims stored values and filters invalid toggles', () => {
+    setCustomToggles([
+      { id: 'a', title: '  MangoHud  ', key: '  MANGOHUD  ', scope: 'global', valueType: 'string', value: '  1  ' },
+      { id: 'b', title: '   ', key: 'BROKEN', scope: 'global', valueType: 'string', value: 'x' },
+      { id: 'c', title: 'Missing key', key: '   ', scope: 'global', valueType: 'string', value: 'x' },
+    ]);
+
+    expect(getCustomToggles()).toEqual([
+      { id: 'a', title: 'MangoHud', key: 'MANGOHUD', scope: 'global', valueType: 'string', value: '1' },
+    ]);
+  });
+
   it('returns only scoped toggles for the requested app', () => {
     const toggles: StoredCustomToggle[] = [
       { id: 'g', title: 'Global', key: 'DXVK_ASYNC', scope: 'global', valueType: 'bool', value: '1' },
@@ -61,6 +73,7 @@ describe('custom toggle values', () => {
   it('normalizes booleans to proton-friendly values', () => {
     expect(normalizeCustomToggleValue('bool', 'true')).toBe('1');
     expect(normalizeCustomToggleValue('bool', 'off')).toBe('0');
+    expect(normalizeCustomToggleValue('bool', '')).toBe('0');
   });
 
   it('infers value types from raw values', () => {
@@ -68,5 +81,12 @@ describe('custom toggle values', () => {
     expect(inferCustomToggleValueType('42')).toBe('int');
     expect(inferCustomToggleValueType('3.5')).toBe('float');
     expect(inferCustomToggleValueType('mangohud')).toBe('string');
+  });
+
+  it('normalizes integer and float values when they parse cleanly', () => {
+    expect(normalizeCustomToggleValue('int', ' 42.9 ')).toBe('42');
+    expect(normalizeCustomToggleValue('int', 'abc')).toBe('abc');
+    expect(normalizeCustomToggleValue('float', ' 3.50 ')).toBe('3.5');
+    expect(normalizeCustomToggleValue('float', 'abc')).toBe('abc');
   });
 });

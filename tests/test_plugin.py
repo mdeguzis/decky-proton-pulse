@@ -7,6 +7,7 @@ import logging
 import os
 import pathlib
 import sys
+import zipfile
 from typing import Any, Generator, Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -327,3 +328,279 @@ def test_list_installed_compatibility_tools_filters_non_proton_custom_tools(
     assert "GE-Proton10-1" in names
     assert "Luxtorpeda" not in names
     assert "Steam Linux Runtime 3.0" not in names
+
+
+def test_export_local_data_backup_rejects_invalid_json(plugin: Plugin) -> None:
+    result = asyncio.run(plugin.export_local_data_backup("{"))
+    assert result["success"] is False
+    assert "invalid JSON" in result["message"]
+
+
+def test_export_local_data_backup_writes_zip_archive(
+    plugin: Plugin, tmp_path: pathlib.Path
+) -> None:
+    downloads_dir = tmp_path / "Downloads"
+    with (
+        patch.object(decky, "DECKY_USER_HOME", str(tmp_path)),
+        patch("main.time.strftime", return_value="2026-04-10_23-00-00"),
+    ):
+        result = asyncio.run(
+            plugin.export_local_data_backup(
+                '{"format":"proton-pulse-local-backup","version":1,"entries":{"language":"\\"de\\""}}'
+            )
+        )
+
+    archive_path = downloads_dir / "proton-pulse-local-backup-2026-04-10_23-00-00.zip"
+    assert result == {
+        "success": True,
+        "message": f"Local backup exported to {archive_path}",
+        "path": str(archive_path),
+    }
+    with zipfile.ZipFile(archive_path, "r") as archive:
+        payload = archive.read("proton-pulse-local-backup.json").decode("utf-8")
+    assert '"format": "proton-pulse-local-backup"' in payload
+
+
+def test_import_local_data_backup_round_trips_payload(
+    plugin: Plugin, tmp_path: pathlib.Path
+) -> None:
+    archive_path = tmp_path / "backup.zip"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr(
+            "proton-pulse-local-backup.json",
+            '{"format":"proton-pulse-local-backup","version":1,"entries":{"language":"\\"fr\\""}}',
+        )
+
+    result = asyncio.run(plugin.import_local_data_backup(str(archive_path)))
+
+    assert result["success"] is True
+    assert result["message"] == "Imported local backup from backup.zip"
+    assert '"language":"\\"fr\\""' in result["payload"]
+
+
+def test_import_local_data_backup_rejects_missing_payload_file(
+    plugin: Plugin, tmp_path: pathlib.Path
+) -> None:
+    archive_path = tmp_path / "backup.zip"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr("other.json", "{}")
+
+    result = asyncio.run(plugin.import_local_data_backup(str(archive_path)))
+
+    assert result["success"] is False
+    assert "missing proton-pulse-local-backup.json" in result["message"]
+
+
+def test_is_game_running_handles_success_and_errors(plugin: Plugin) -> None:
+    with patch("main.subprocess.run", return_value=MagicMock(returncode=0)):
+        assert asyncio.run(plugin.is_game_running()) is True
+
+    with patch("main.subprocess.run", side_effect=OSError("pgrep missing")):
+        assert asyncio.run(plugin.is_game_running()) is False
+
+
+def test_get_cached_cdn_reports_hit_and_miss(plugin: Plugin) -> None:
+    with (
+        patch("main.is_fresh", return_value=True),
+        patch("main.read_cached", return_value={"reports": 3}),
+    ):
+        assert asyncio.run(plugin.get_cached_cdn("730", "index.json")) == {
+            "data": {"reports": 3},
+            "fresh": True,
+        }
+
+    with patch("main.is_fresh", return_value=False):
+        assert asyncio.run(plugin.get_cached_cdn("730", "index.json")) == {
+            "data": None,
+            "fresh": False,
+        }
+
+
+def test_put_cached_cdn_updates_cache_metadata(plugin: Plugin) -> None:
+    set_meta_mock = MagicMock()
+
+    with (
+        patch("main.write_cached"),
+        patch("lib.cdn_cache.set_meta", set_meta_mock),
+    ):
+        assert asyncio.run(plugin.put_cached_cdn("730", "index.json", {"reports": 3})) is True
+
+    set_meta_mock.assert_called_once_with(
+        "https://mdeguzis.github.io/proton-pulse-data/data/730/index.json"
+    )
+
+
+def test_check_proton_version_availability_covers_unmanaged_installed_and_missing(
+    plugin: Plugin,
+) -> None:
+    with (
+        patch("main.normalize_proton_ge_tag", return_value=None),
+        patch("main.read_latest_metadata", return_value=None),
+        patch("main.list_installed_compatibility_tools", return_value=[]),
+    ):
+        unmanaged = asyncio.run(plugin.check_proton_version_availability("Experimental"))
+    assert unmanaged["managed"] is False
+    assert unmanaged["installed"] is True
+
+    installed_tools = [
+        {"display_name": "GE-Proton10-1", "directory_name": "GE-Proton10-1"},
+    ]
+    releases = [{"tag_name": "GE-Proton10-1"}, {"tag_name": "GE-Proton10-2"}]
+    with (
+        patch("main.normalize_proton_ge_tag", return_value="GE-Proton10-1"),
+        patch("main.read_latest_metadata", return_value=None),
+        patch("main.list_installed_compatibility_tools", return_value=installed_tools),
+        patch("main.installed_tool_matches_version", side_effect=lambda tool, version: tool["display_name"] == version),
+        patch.object(plugin, "get_proton_ge_releases", return_value=releases),
+    ):
+        installed = asyncio.run(plugin.check_proton_version_availability("GE-Proton10-1"))
+    assert installed["installed"] is True
+    assert installed["matched_tool_name"] == "GE-Proton10-1"
+    assert installed["message"] == "GE-Proton10-1 is already installed."
+
+    with (
+        patch("main.normalize_proton_ge_tag", return_value="GE-Proton10-9"),
+        patch("main.read_latest_metadata", return_value=None),
+        patch("main.list_installed_compatibility_tools", return_value=installed_tools),
+        patch("main.installed_tool_matches_version", return_value=False),
+        patch("main.find_closest_installed_tool", return_value={"display_name": "GE-Proton10-1"}),
+        patch.object(plugin, "get_proton_ge_releases", return_value=releases),
+    ):
+        missing = asyncio.run(plugin.check_proton_version_availability("GE-Proton10-9"))
+    assert missing["installed"] is False
+    assert missing["closest_tool_name"] == "GE-Proton10-1"
+    assert "was not found in the Proton-GE release feed" in missing["message"]
+
+
+class _FakeThread:
+    def __init__(self, alive: bool = False) -> None:
+        self._alive = alive
+        self.started = False
+        self.join_called_with: float | None = None
+
+    def is_alive(self) -> bool:
+        return self._alive
+
+    def start(self) -> None:
+        self.started = True
+
+    def join(self, timeout: float | None = None) -> None:
+        self.join_called_with = timeout
+
+
+def test_install_proton_ge_rejects_missing_release(plugin: Plugin) -> None:
+    with (
+        patch("main.get_releases_sync", return_value=[{"tag_name": "GE-Proton10-1"}]),
+        patch("main.normalize_proton_ge_tag", return_value="GE-Proton10-9"),
+    ):
+        result = asyncio.run(plugin.install_proton_ge("GE-Proton10-9"))
+
+    assert result["success"] is False
+    assert "Could not find release" in result["message"]
+
+
+def test_install_proton_ge_starts_background_thread(plugin: Plugin) -> None:
+    fake_thread = _FakeThread()
+    release = {"tag_name": "GE-Proton10-1", "asset_size": 1234}
+
+    with (
+        patch("main.get_releases_sync", return_value=[release]),
+        patch("main.threading.Thread", return_value=fake_thread),
+    ):
+        result = asyncio.run(plugin.install_proton_ge())
+
+    assert result == {
+        "success": True,
+        "message": "Started installing GE-Proton10-1.",
+        "release": release,
+    }
+    assert fake_thread.started is True
+    assert plugin._proton_ge_install_status["state"] == "running"
+    assert plugin._proton_ge_install_status["tag_name"] == "GE-Proton10-1"
+
+
+def test_cancel_proton_ge_install_updates_status(plugin: Plugin) -> None:
+    plugin._proton_ge_install_thread = _FakeThread(alive=True)
+    plugin._proton_ge_install_status["tag_name"] = "GE-Proton10-1"
+    proc = MagicMock()
+    proc.poll.return_value = None
+    plugin._proton_ge_install_process_ref[0] = proc
+
+    result = asyncio.run(plugin.cancel_proton_ge_install())
+
+    assert result == {
+        "success": True,
+        "message": "Cancelling GE-Proton10-1...",
+    }
+    assert plugin._proton_ge_install_status["stage"] == "cancelling"
+    proc.terminate.assert_called_once()
+
+
+def test_install_compatibility_tool_archive_validates_inputs(
+    plugin: Plugin, tmp_path: pathlib.Path
+) -> None:
+    assert asyncio.run(plugin.install_compatibility_tool_archive("")) == {
+        "success": False,
+        "message": "No archive path was provided.",
+    }
+
+    missing = asyncio.run(plugin.install_compatibility_tool_archive(str(tmp_path / "missing.zip")))
+    assert missing["success"] is False
+    assert "Archive was not found" in missing["message"]
+
+    bad_file = tmp_path / "notes.txt"
+    bad_file.write_text("hello")
+    invalid = asyncio.run(plugin.install_compatibility_tool_archive(str(bad_file)))
+    assert invalid == {
+        "success": False,
+        "message": "Archive must be a .zip or tar-based file.",
+    }
+
+
+def test_install_compatibility_tool_archive_extracts_and_finalizes(
+    plugin: Plugin, tmp_path: pathlib.Path
+) -> None:
+    archive_path = tmp_path / "GE-Proton10-1.zip"
+    archive_path.write_text("placeholder")
+    result_payload = {"success": True, "message": "Installed"}
+
+    with (
+        patch("main.compat_tools_dir", return_value=tmp_path / "compatibilitytools.d"),
+        patch("main.shutil.copy2"),
+        patch("main.extract_archive_safely"),
+        patch("main.finalize_extracted_compat_tool", return_value=result_payload) as finalize_mock,
+    ):
+        result = asyncio.run(plugin.install_compatibility_tool_archive(str(archive_path)))
+
+    assert result is result_payload
+    finalize_mock.assert_called_once()
+
+
+def test_uninstall_compatibility_tool_removes_managed_directory(
+    plugin: Plugin, tmp_path: pathlib.Path
+) -> None:
+    compat_root = tmp_path / "compatibilitytools.d"
+    compat_root.mkdir()
+    tool_dir = compat_root / "GE-Proton10-1"
+    tool_dir.mkdir()
+
+    with (
+        patch("main.read_latest_metadata", return_value=None),
+        patch(
+            "main.list_installed_compatibility_tools",
+            return_value=[
+                {
+                    "directory_name": "GE-Proton10-1",
+                    "path": str(tool_dir),
+                    "source": "custom",
+                }
+            ],
+        ),
+        patch("main.compat_tools_dirs", return_value=[compat_root]),
+        patch("main.clear_latest_metadata") as clear_mock,
+    ):
+        result = asyncio.run(plugin.uninstall_compatibility_tool("GE-Proton10-1"))
+
+    assert result == {"success": True, "message": "Removed GE-Proton10-1."}
+    clear_mock.assert_called_once_with("GE-Proton10-1")
+    assert not tool_dir.exists()
