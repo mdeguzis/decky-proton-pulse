@@ -114,6 +114,21 @@ classify_plugin_worktree() {
   fi
 }
 
+print_release_derived_diff() {
+  local diff_output
+  diff_output="$(git diff --no-ext-diff --unified=3 -- CHANGELOG.md metrics/translation-coverage.json metrics/translation-coverage.md package.json pyproject.toml uv.lock || true)"
+  if [[ -z "$diff_output" ]]; then
+    echo "  No diff available for release-derived files."
+    return
+  fi
+
+  echo "  Unified diff (release-derived files only, capped):"
+  printf '%s\n' "$diff_output" | sed -n '1,120p' | sed 's/^/    /'
+  if [[ "$(printf '%s\n' "$diff_output" | wc -l | tr -d ' ')" -gt 120 ]]; then
+    echo "    ... diff truncated after 120 lines ..."
+  fi
+}
+
 auto_commit_release_derived_changes() {
   classify_plugin_worktree
   if [[ "$PLUGIN_DIRTY_STATE" != "generated-only" ]]; then
@@ -252,6 +267,7 @@ confirm_release_actions() {
     echo ""
     echo "Generated/release-derived changes"
     printf '%s' "$PLUGIN_GENERATED_STATUS" | sed 's/^/    /'
+    print_release_derived_diff
     if is_truthy "$DRY_RUN"; then
       echo "  These files are release-derived drift and may be safe to regenerate or commit separately."
     else
