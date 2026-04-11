@@ -114,12 +114,25 @@ build: clean test
 	@echo "  Deck deploy:   DECK_IP=192.168.1.x make deploy"
 
 install: build
-	@LOCAL_DIR="$${LOCAL_DECKY_PLUGIN_DIR:-$$HOME/homebrew/plugins}"; \
-	echo "Installing plugin into $${LOCAL_DIR}/decky-proton-pulse"; \
-	mkdir -p "$${LOCAL_DIR}/decky-proton-pulse/dist"; \
-	cp dist/index.js "$${LOCAL_DIR}/decky-proton-pulse/dist/"; \
-	cp main.py plugin.json package.json LICENSE "$${LOCAL_DIR}/decky-proton-pulse/"; \
-	rsync -a --delete --exclude='__pycache__' lib/ "$${LOCAL_DIR}/decky-proton-pulse/lib/"
+	@REAL_HOME="$$(cd ~ && pwd -P)"; \
+	LOCAL_DIR="$${LOCAL_DECKY_PLUGIN_DIR:-$$REAL_HOME/homebrew/plugins}"; \
+	TARGET_DIR="$${LOCAL_DIR}/decky-proton-pulse"; \
+	if [ ! -d "$$LOCAL_DIR" ]; then \
+		echo "Decky Loader plugin directory not found: $$LOCAL_DIR"; \
+		echo "Install Decky Loader first, or set LOCAL_DECKY_PLUGIN_DIR to your plugin path."; \
+		echo ""; \
+		echo "Stable install command:"; \
+		echo "  curl -L https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_release.sh | sh"; \
+		echo ""; \
+		echo "Pre-release install command:"; \
+		echo "  curl -L https://github.com/SteamDeckHomebrew/decky-installer/releases/latest/download/install_prerelease.sh | sh"; \
+		exit 1; \
+	fi; \
+	echo "Installing plugin into $$TARGET_DIR"; \
+	mkdir -p "$$TARGET_DIR/dist"; \
+	cp dist/index.js "$$TARGET_DIR/dist/"; \
+	cp main.py plugin.json package.json LICENSE "$$TARGET_DIR/"; \
+	rsync -a --delete --exclude='__pycache__' lib/ "$$TARGET_DIR/lib/"
 	@echo "Installed. Restart Decky/plugin_loader if needed."
 
 watch:
