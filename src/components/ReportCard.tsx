@@ -41,6 +41,8 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
       onClick={() => onSelect(report)}
       onOKButton={() => onSelect(report)}
       onGamepadFocus={() => onFocus?.(report)}
+      onSecondaryButton={onUpvote ? () => onUpvote(report) : undefined}
+      onSecondaryActionDescription={onUpvote ? strings.detail.upvote : undefined}
       style={{ width: '100%' }}
     >
       <div

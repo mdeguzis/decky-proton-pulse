@@ -246,19 +246,25 @@ define require_deck_ip
 endef
 
 logs:
-	$(call require_deck_ip)
-	ssh $(DECK_USER)@$(DECK_IP) "tail -f ~/homebrew/logs/decky-proton-pulse/plugin.log"
+	@if [ -n "$(DECK_IP)" ]; then \
+		ssh $(DECK_USER)@$(DECK_IP) "tail -f ~/homebrew/logs/decky-proton-pulse/plugin.log"; \
+	else \
+		tail -f $$HOME/homebrew/logs/decky-proton-pulse/plugin.log; \
+	fi
 
 get-logs:
 	@mkdir -p ../logs
-	rsync -rav $(DECK_USER)@$(DECK_HOST):~/homebrew/logs/decky-proton-pulse/ ../logs/
+	@if [ -n "$(DECK_IP)" ]; then \
+		rsync -rav $(DECK_USER)@$(DECK_HOST):~/homebrew/logs/decky-proton-pulse/ ../logs/; \
+	else \
+		rsync -rav $$HOME/homebrew/logs/decky-proton-pulse/ ../logs/; \
+	fi
 	@cd ../logs && ls -1t *.log 2>/dev/null | grep -v '^plugin-debug\.log$$' | tail -n +20 | xargs -r rm -f
 
 take-screenshot:
-	$(call require_deck_ip)
 	@echo "Capturing the current Steam UI via CEF remote debugging..."
-	@echo "This may include private on-screen content visible on the Steam Deck."
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../screenshots $(if $(SCREENSHOT_LANGUAGE),--language $(SCREENSHOT_LANGUAGE),) $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),) $(if $(SCREENSHOT_GROUP),--group $(SCREENSHOT_GROUP),) $(if $(SCREENSHOT_KEY),--shot-key $(SCREENSHOT_KEY),) $(if $(SCREENSHOT_TITLE),--title "$(SCREENSHOT_TITLE)",) $(if $(SCREENSHOT_CAPTION),--caption "$(SCREENSHOT_CAPTION)",)
+	@echo "This may include private on-screen content visible on the Steam UI."
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py $(if $(DECK_IP),--deck-ip $(DECK_IP) --deck-user $(DECK_USER),) --output-dir ../screenshots $(if $(SCREENSHOT_LANGUAGE),--language $(SCREENSHOT_LANGUAGE),) $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),) $(if $(SCREENSHOT_GROUP),--group $(SCREENSHOT_GROUP),) $(if $(SCREENSHOT_KEY),--shot-key $(SCREENSHOT_KEY),) $(if $(SCREENSHOT_TITLE),--title "$(SCREENSHOT_TITLE)",) $(if $(SCREENSHOT_CAPTION),--caption "$(SCREENSHOT_CAPTION)",)
 
 take-screenshot-wiki:
 	$(call require_deck_ip)
@@ -283,12 +289,11 @@ publish-screenshots-wiki:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/publish_screenshots_to_wiki.py --screenshots-dir ../screenshots --wiki-dir ../decky-proton-pulse.wiki
 
 take-video:
-	$(call require_deck_ip)
 	@echo "Recording the current Steam UI via the Deck's native gamescope video source..."
-	@echo "This may include private on-screen content visible on the Steam Deck."
+	@echo "This may include private on-screen content visible on the Steam UI."
 	@echo "Press Enter in this terminal to stop and process the video cleanly."
 	@echo "Ctrl+C may interrupt make before the video finalizes."
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --with aiohttp python scripts/take_cef_video.py --deck-ip $(DECK_IP) --deck-user $(DECK_USER) --output-dir ../videos $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),)
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --with aiohttp python scripts/take_cef_video.py $(if $(DECK_IP),--deck-ip $(DECK_IP) --deck-user $(DECK_USER),) --output-dir ../videos $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),)
 
 fetch-protondb:
 	bash scripts/fetch-protondb.sh "$(PROTONDB_REPO_URL)" "$(PROTONDB_REPO_DIR)"
@@ -325,26 +330,51 @@ reload:
 	fi
 
 logs-loader:
-	$(call require_deck_ip)
-	ssh $(DECK_USER)@$(DECK_IP) "journalctl -u plugin_loader -f"
+	@if [ -n "$(DECK_IP)" ]; then \
+		ssh $(DECK_USER)@$(DECK_IP) "journalctl -u plugin_loader -f"; \
+	else \
+		journalctl -u plugin_loader -f; \
+	fi
 
 # Enable remote CEF debugging so React DevTools can connect.
 # After running: open http://$(DECK_IP):8081 in a Chromium browser on your dev machine,
 # or use chrome://inspect → Configure → add $(DECK_IP):8081
 cef-debug-enable:
-	$(call require_deck_ip)
-	ssh $(DECK_USER)@$(DECK_IP) "touch ~/.steam/steam/.cef-enable-remote-debugging"
-	ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart steam"
-	@echo "CEF debugging enabled. Connect at http://$(DECK_IP):8081 in a Chromium browser."
+	@if [ -n "$(DECK_IP)" ]; then \
+		ssh $(DECK_USER)@$(DECK_IP) "touch ~/.steam/steam/.cef-enable-remote-debugging"; \
+		ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart steam"; \
+		echo "CEF debugging enabled. Connect at http://$(DECK_IP):8081 in a Chromium browser."; \
+	else \
+		touch $$HOME/.steam/steam/.cef-enable-remote-debugging; \
+		if systemctl restart steam >/dev/null 2>&1; then \
+			echo "CEF debugging enabled locally. Connect at http://localhost:8081 in a Chromium browser."; \
+		else \
+			sudo systemctl restart steam; \
+			echo "CEF debugging enabled locally. Connect at http://localhost:8081 in a Chromium browser."; \
+		fi; \
+	fi
 
 # Enable LIVE_RELOAD=1 on the plugin_loader service so redeploying dist/index.js
 # triggers an automatic frontend reload (close the plugin panel first, then deploy).
 live-reload-enable:
-	$(call require_deck_ip)
-	ssh -tt $(DECK_USER)@$(DECK_IP) \
-	  "sudo mkdir -p /etc/systemd/system/plugin_loader.service.d && \
-	   echo -e '[Service]\nEnvironment=LIVE_RELOAD=1' | \
-	   sudo tee /etc/systemd/system/plugin_loader.service.d/live-reload.conf > /dev/null && \
-	   sudo systemctl daemon-reload && \
-	   sudo systemctl restart plugin_loader"
+	@if [ -n "$(DECK_IP)" ]; then \
+		ssh -tt $(DECK_USER)@$(DECK_IP) \
+		  "sudo mkdir -p /etc/systemd/system/plugin_loader.service.d && \
+		   echo -e '[Service]\nEnvironment=LIVE_RELOAD=1' | \
+		   sudo tee /etc/systemd/system/plugin_loader.service.d/live-reload.conf > /dev/null && \
+		   sudo systemctl daemon-reload && \
+		   sudo systemctl restart plugin_loader"; \
+	else \
+		if systemctl daemon-reload >/dev/null 2>&1; then \
+			sudo mkdir -p /etc/systemd/system/plugin_loader.service.d; \
+			printf '[Service]\nEnvironment=LIVE_RELOAD=1\n' | sudo tee /etc/systemd/system/plugin_loader.service.d/live-reload.conf >/dev/null; \
+			sudo systemctl daemon-reload; \
+			sudo systemctl restart plugin_loader; \
+		else \
+			sudo mkdir -p /etc/systemd/system/plugin_loader.service.d; \
+			printf '[Service]\nEnvironment=LIVE_RELOAD=1\n' | sudo tee /etc/systemd/system/plugin_loader.service.d/live-reload.conf >/dev/null; \
+			sudo systemctl daemon-reload; \
+			sudo systemctl restart plugin_loader; \
+		fi; \
+	fi
 	@echo "Live reload enabled. Close the plugin panel, then: make deploy && (plugin auto-reloads)"

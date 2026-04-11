@@ -102,6 +102,41 @@ def start_remote_recording(
     return proc, log_path
 
 
+def start_local_recording(
+    output_path: Path,
+    fps: int,
+) -> subprocess.Popen[bytes]:
+    return subprocess.Popen(
+        [
+            "gst-launch-1.0",
+            "-e",
+            "pipewiresrc",
+            "target-object=gamescope",
+            "do-timestamp=true",
+            "!",
+            "videoconvert",
+            "!",
+            "videorate",
+            "!",
+            f"video/x-raw,framerate={fps}/1",
+            "!",
+            "vp8enc",
+            "deadline=1",
+            "cpu-used=8",
+            "threads=4",
+            "!",
+            "webmmux",
+            "streamable=true",
+            "!",
+            "filesink",
+            f"location={str(output_path)}",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+
+
 def stop_remote_recording(proc: subprocess.Popen[bytes], *, manual_stop: bool) -> str:
     try:
         output = proc.communicate(input=b"\n" if manual_stop else None, timeout=30)[0]
@@ -112,6 +147,16 @@ def stop_remote_recording(proc: subprocess.Popen[bytes], *, manual_stop: bool) -
         except subprocess.TimeoutExpired:
             proc.kill()
             output = proc.communicate(timeout=10)[0]
+    return output.decode(errors="replace").strip()
+
+
+def stop_local_recording(proc: subprocess.Popen[bytes]) -> str:
+    proc.terminate()
+    try:
+        output = proc.communicate(timeout=30)[0]
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        output = proc.communicate(timeout=10)[0]
     return output.decode(errors="replace").strip()
 
 
@@ -130,6 +175,13 @@ def poll_remote_size(ssh_target: str, remote_path: str) -> int:
 def rsync_remote_video(ssh_target: str, remote_path: str, local_path: Path) -> None:
     run(["rsync", "-av", f"{ssh_target}:{remote_path}", str(local_path)])
     run(["ssh", ssh_target, "rm", "-f", remote_path])
+
+
+def poll_local_size(path: Path) -> int:
+    try:
+        return path.stat().st_size
+    except OSError:
+        return 0
 
 
 def convert_webm_to_mp4(source_path: Path, output_path: Path) -> None:
@@ -164,7 +216,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Record the Deck's gamescope PipeWire video source into a local MP4 file."
     )
-    parser.add_argument("--deck-ip", required=True, help="Steam Deck IP address")
+    parser.add_argument("--deck-ip", default="", help="Steam Deck IP address; omit for local capture")
     parser.add_argument("--deck-user", default="deck", help="SSH user for the Steam Deck")
     parser.add_argument("--output-dir", default="../videos", help="Local directory for saved videos")
     parser.add_argument("--filename-base", default="", help="Optional filename base")
@@ -175,7 +227,8 @@ def main() -> int:
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     local_path, local_tmp_path, remote_path = build_paths(output_dir, args.filename_base)
-    ssh_target = f"{args.deck_user}@{args.deck_ip}"
+    capture_locally = not args.deck_ip.strip()
+    ssh_target = f"{args.deck_user}@{args.deck_ip}" if args.deck_ip else ""
 
     print(f"Recording Steam UI to: {local_path}")
     if args.duration is None:
@@ -184,7 +237,11 @@ def main() -> int:
     else:
         print(f"Recording for {args.duration:.1f}s before auto-stopping.")
 
-    proc, log_path = start_remote_recording(ssh_target, remote_path, args.fps, args.duration)
+    if capture_locally:
+        proc = start_local_recording(local_tmp_path, args.fps)
+        log_path = ""
+    else:
+        proc, log_path = start_remote_recording(ssh_target, remote_path, args.fps, args.duration)
     started_at = time.monotonic()
     last_status_at = started_at
     tty_input = open_tty_for_stop() if args.duration is None else None
@@ -198,7 +255,7 @@ def main() -> int:
 
             if args.duration is None and tty_input:
                 if time.monotonic() - last_status_at >= 2.0:
-                    size = poll_remote_size(ssh_target, remote_path)
+                    size = poll_local_size(local_tmp_path) if capture_locally else poll_remote_size(ssh_target, remote_path)
                     elapsed = time.monotonic() - started_at
                     if size > 0:
                         print(f"Recording... {elapsed:.1f}s, {size / 1024:.1f} KiB written")
@@ -219,18 +276,26 @@ def main() -> int:
         if tty_input:
             tty_input.close()
 
-    remote_output = stop_remote_recording(proc, manual_stop=args.duration is None)
+    remote_output = (
+        stop_local_recording(proc)
+        if capture_locally
+        else stop_remote_recording(proc, manual_stop=args.duration is None)
+    )
     if remote_output:
         print(remote_output)
 
-    size = poll_remote_size(ssh_target, remote_path)
+    size = poll_local_size(local_tmp_path) if capture_locally else poll_remote_size(ssh_target, remote_path)
     if size <= 0:
-        run(["ssh", ssh_target, "rm", "-f", remote_path, log_path], check=False)
+        if capture_locally:
+            local_tmp_path.unlink(missing_ok=True)
+        else:
+            run(["ssh", ssh_target, "rm", "-f", remote_path, log_path], check=False)
         print("No video data was written, so no file was saved.", file=sys.stderr)
         return 1
 
-    rsync_remote_video(ssh_target, remote_path, local_tmp_path)
-    run(["ssh", ssh_target, "rm", "-f", log_path], check=False)
+    if not capture_locally:
+        rsync_remote_video(ssh_target, remote_path, local_tmp_path)
+        run(["ssh", ssh_target, "rm", "-f", log_path], check=False)
     convert_webm_to_mp4(local_tmp_path, local_path)
     local_tmp_path.unlink(missing_ok=True)
     print(f"Saved video locally to: {local_path}")

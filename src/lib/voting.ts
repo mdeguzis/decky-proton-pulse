@@ -72,7 +72,7 @@ async function parseResponseBody(response: Response): Promise<unknown> {
   }
 }
 
-async function restRequest<T>(
+export async function restRequest<T>(
   path: string,
   init: RequestInit = {},
   query: Record<string, string> = {},

@@ -31,6 +31,7 @@ import { initCache } from './lib/cache';
 import { runStartupPrefetch } from './lib/prefetch';
 import { startAutoFlush, stopAutoFlush, flushMetricsToDisk } from './lib/metrics';
 import { getProtonGeManagerState, installProtonGe } from './lib/compatTools';
+import { startSessionTracking, stopSessionTracking } from './lib/playtime';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -195,9 +196,10 @@ export default definePlugin(() => {
   // init cache from localStorage and start prefetch in background
   initCache();
   startAutoFlush();
-  // delay prefetch a bit so Steam's UI is fully loaded and collectionStore is populated
+  // delay prefetch and playtime tracking so Steam's UI is fully loaded
   const prefetchTimer = setTimeout(() => {
     void runStartupPrefetch();
+    startSessionTracking();
   }, 5000);
 
   // Auto-install latest Proton-GE on load if the user has the setting enabled
@@ -285,6 +287,8 @@ export default definePlugin(() => {
     onDismount() {
       console.log('Proton Pulse unloading');
       void logFrontendEvent('INFO', 'Plugin frontend unloading');
+      // finalize any active playtime session before shutdown
+      stopSessionTracking();
       // flush metrics one last time before shutdown
       stopAutoFlush();
       clearTimeout(prefetchTimer);
