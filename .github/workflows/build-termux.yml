@@ -40,7 +40,9 @@ jobs:
               export UV_PYTHON_PREFERENCE=system
 
               mkdir -p \$UV_CACHE_DIR
-              echo "=== env/filesystem debug ===" ; id ; ls -la /usr/bin/env 2>&1 || echo "/usr/bin/env: NOT FOUND" ; ls -la /usr/bin/ 2>&1 | head -5 ; echo "========================="
+              mkdir -p /usr/bin
+              cp /data/data/com.termux/files/usr/bin/env /usr/bin/env
+              chmod 755 /usr/bin/env
               pkg update -y
               pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip uv xz-utils
               npm install -g pnpm
@@ -77,6 +79,9 @@ jobs:
               export PATH=/data/data/com.termux/files/usr/bin:\$PATH
               export UV_PYTHON_PREFERENCE=system
 
+              mkdir -p /usr/bin
+              cp /data/data/com.termux/files/usr/bin/env /usr/bin/env
+              chmod 755 /usr/bin/env
               pkg update -y
               pkg install -y nodejs-lts python uv
               npm install -g pnpm
