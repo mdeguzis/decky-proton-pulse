@@ -36,8 +36,9 @@ jobs:
             termux/termux-docker:x86_64 \
             bash -c '
               set -euo pipefail
+              export HOME="${HOME:-/data/data/com.termux/files/home}"
               export PATH=/data/data/com.termux/files/usr/bin:$PATH
-              export UV_CACHE_DIR=/data/data/com.termux/files/home/.cache/uv
+              export UV_CACHE_DIR="$HOME/.cache/uv"
               export UV_PYTHON_PREFERENCE=system
 
               # switch to the official Termux CDN -- the default mirror
@@ -55,10 +56,11 @@ jobs:
               # @esbuild/linux-x64 (glibc). The android binary cant run in
               # this Docker host, so the postinstall ENOENT errors out.
               NODE_VER=20.18.1
-              mkdir -p /opt/node
+              NODE_DIR="$HOME/.local/node"
+              mkdir -p "$NODE_DIR"
               curl -fsSL "https://nodejs.org/dist/v${NODE_VER}/node-v${NODE_VER}-linux-x64.tar.xz" \
-                | tar -xJ --strip-components=1 -C /opt/node/
-              export PATH="/opt/node/bin:$PATH"
+                | tar -xJ --strip-components=1 -C "$NODE_DIR"
+              export PATH="$NODE_DIR/bin:$PATH"
 
               # pin to pnpm v9 to match the v9.0 lockfile format
               npm install -g pnpm@9
