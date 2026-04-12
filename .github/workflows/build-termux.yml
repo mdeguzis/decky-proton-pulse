@@ -49,7 +49,9 @@ jobs:
               # git/curl/unzip/xz-utils are not needed: workspace is already
               # mounted from the host runner.
               pkg install -y make nodejs-lts python rsync uv
-              npm install -g pnpm
+              # Pin to pnpm v9 — the lockfile is v9.0 and pnpm v10 changed
+              # default behaviour (build scripts blocked) which breaks esbuild/vitest.
+              npm install -g pnpm@9
               printf '#!/data/data/com.termux/files/usr/bin/sh\nexec /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/lib/node_modules/pnpm/dist/pnpm.cjs \"\$@\"\n' > /data/data/com.termux/files/usr/bin/pnpm
               chmod +x /data/data/com.termux/files/usr/bin/pnpm
 
@@ -91,7 +93,7 @@ jobs:
                 > /data/data/com.termux/files/usr/etc/apt/sources.list
               pkg update -y
               pkg install -y nodejs-lts python uv
-              npm install -g pnpm
+              npm install -g pnpm@9
               printf '#!/data/data/com.termux/files/usr/bin/sh\nexec /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/lib/node_modules/pnpm/dist/pnpm.cjs \"\$@\"\n' > /data/data/com.termux/files/usr/bin/pnpm
               chmod +x /data/data/com.termux/files/usr/bin/pnpm
               pnpm install --frozen-lockfile
