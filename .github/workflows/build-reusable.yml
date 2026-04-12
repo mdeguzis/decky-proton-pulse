@@ -18,6 +18,10 @@ on:
         required: false
         type: string
         default: ""
+      uv_python_preference:
+        required: false
+        type: string
+        default: ""
       install_cmd:
         required: false
         type: string
@@ -133,6 +137,7 @@ jobs:
       - name: Build
         env:
           UV_CACHE_DIR: ${{ inputs.uv_cache_dir }}
+          UV_PYTHON_PREFERENCE: ${{ inputs.uv_python_preference }}
         run: make build
 
       - name: Fetch base branch for diff coverage
@@ -146,4 +151,5 @@ jobs:
         env:
           DIFF_COVERAGE_BASE: origin/${{ github.base_ref }}
           UV_CACHE_DIR: ${{ inputs.uv_cache_dir }}
+          UV_PYTHON_PREFERENCE: ${{ inputs.uv_python_preference }}
         run: pnpm run coverage:diff

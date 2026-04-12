@@ -12,20 +12,30 @@ jobs:
       workflow_name: Termux Build
       container_image: termux/termux-docker:x86_64
       uv_cache_dir: /github/home/.cache/uv
+      uv_python_preference: system
       install_cmd: |
         true
       bootstrap_cmd: |
         export HOME="${HOME:-/github/home}"
         export PATH="$HOME/.local/bin:$PATH"
         export UV_CACHE_DIR="$HOME/.cache/uv"
+        export UV_PYTHON_PREFERENCE="system"
+
+        # persist env for subsequent steps (export only lasts this step)
+        echo "HOME=$HOME" >> "$GITHUB_ENV"
+        echo "UV_CACHE_DIR=$UV_CACHE_DIR" >> "$GITHUB_ENV"
+        echo "UV_PYTHON_PREFERENCE=$UV_PYTHON_PREFERENCE" >> "$GITHUB_ENV"
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
         mkdir -p "$UV_CACHE_DIR"
         pkg update -y
         pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip xz-utils
-        curl https://mise.run | sh
-        mise --version
-        mise trust --yes mise.toml >/dev/null 2>&1 || mise trust mise.toml
-        mise install || echo "Warning: mise install failed in Termux CI; continuing with pkg-provided toolchain."
         command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
-        command -v uv >/dev/null 2>&1 || python -m pip install --user uv
+        pip install uv
+
+        # sanity check: make sure python and uv are reachable
+        python3 --version
+        uv --version
+
         pnpm install --frozen-lockfile
         uv sync --group dev
