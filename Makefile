@@ -32,10 +32,14 @@ DRY_RUN ?= true
 IS_TERMUX := $(if $(findstring com.termux,$(PREFIX)),1,)
 ifeq ($(IS_TERMUX),1)
 UV_CACHE_DIR ?= $(if $(TMPDIR),$(TMPDIR)/uv-cache,$(HOME)/.cache/uv)
+# Termux: uv cant download managed Python builds for Android/bionic,
+# so force it to find the pkg-installed python3 on PATH
+UV_PYTHON_PREFERENCE ?= system
 else
 UV_CACHE_DIR ?= /tmp/uv-cache
 endif
 export UV_CACHE_DIR
+export UV_PYTHON_PREFERENCE
 PROTONDB_REPO_URL ?= https://github.com/bdefore/protondb-data
 PROTONDB_PROJECT_REPO_DIR := $(abspath ../protondb-data)
 PROTONDB_REPO_DIR ?= $(if $(wildcard $(PROTONDB_PROJECT_REPO_DIR)/.git),$(PROTONDB_PROJECT_REPO_DIR),$(HOME)/src/protondb-data)
