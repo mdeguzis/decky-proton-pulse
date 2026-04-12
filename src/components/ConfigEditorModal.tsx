@@ -80,6 +80,19 @@ function customToggleStorageTypeLabel(scope: CustomToggleScope): string {
     : t().configManager.customToggleScopeLocalShort;
 }
 
+function customToggleValueTypeLabel(valueType: CustomToggleValueType): string {
+  if (valueType === 'bool') return t().configManager.customToggleTypeBool;
+  if (valueType === 'int') return t().configManager.customToggleTypeInt;
+  if (valueType === 'float') return t().configManager.customToggleTypeFloat;
+  if (valueType === 'toggle') return t().configManager.customToggleTypeToggle;
+  return t().configManager.customToggleTypeString;
+}
+
+function buildCustomToggleId(item: Pick<StoredCustomToggle, 'scope' | 'appId' | 'key' | 'value' | 'valueType'>): string {
+  const payload = item.key.trim() || item.value.trim();
+  return `${item.scope}:${item.appId ?? 'global'}:${item.valueType}:${payload}`;
+}
+
 interface CustomToggleManagerModalProps {
   appId: number | null;
   toggles: StoredCustomToggle[];
@@ -94,6 +107,7 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
   const removeButtonRefs = useRef<Record<string, HTMLElement | null>>({});
   const footerCancelRef = useRef<HTMLElement | null>(null);
   const footerSaveRef = useRef<HTMLElement | null>(null);
+  const draftSaveRef = useRef<HTMLElement | null>(null);
   const [items, setItems] = useState(toggles);
   const [newlyAddedIds, setNewlyAddedIds] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -125,7 +139,13 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
       return;
     }
     const nextItem: StoredCustomToggle = {
-      id: editingId ?? `${scope}:${appId ?? 'global'}:${trimmedKey}`,
+      id: editingId ?? buildCustomToggleId({
+        scope,
+        appId: scope === 'game' ? appId ?? undefined : undefined,
+        key: trimmedKey,
+        value: normalizedValue,
+        valueType,
+      }),
       title: trimmedTitle,
       key: trimmedKey,
       scope,
@@ -232,6 +252,7 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
               { data: 'bool', label: t().configManager.customToggleTypeBool },
               { data: 'int', label: t().configManager.customToggleTypeInt },
               { data: 'float', label: t().configManager.customToggleTypeFloat },
+              { data: 'toggle', label: t().configManager.customToggleTypeToggle },
             ]}
             selectedOption={valueType}
             onChange={(opt) => setValueType(opt.data as CustomToggleValueType)}
@@ -249,7 +270,23 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
                 {t().common.cancel}
               </DialogButton>
             ) : <div />}
-            <DialogButton onClick={saveToggleDraft} style={{ minWidth: 180 }}>
+            <DialogButton
+              ref={(node) => {
+                draftSaveRef.current = node;
+              }}
+              onClick={saveToggleDraft}
+              onGamepadDirection={(evt) => {
+                if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                  evt.preventDefault();
+                  if (items.length > 0) {
+                    editButtonRefs.current[items[0].id]?.focus();
+                  } else {
+                    footerCancelRef.current?.focus();
+                  }
+                }
+              }}
+              style={{ minWidth: 180 }}
+            >
               {editingId ? t().configManager.customToggleSaveButton : t().configManager.customToggleAdd}
             </DialogButton>
           </div>
@@ -262,7 +299,7 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
           <div style={{ fontSize: 12, color: '#7a9bb5' }}>{t().configManager.customToggleEmpty}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {items.map((item) => (
+            {items.map((item, index) => (
               <div
                 key={item.id}
                 style={{
@@ -281,7 +318,7 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
                     {item.key ? `${item.key} = ${item.value}` : item.value}
                   </div>
                   <div style={{ fontSize: 10, color: '#7a9bb5' }}>
-                    {t().configManager.customToggleType}: {customToggleStorageTypeLabel(item.scope)}
+                    {t().configManager.customToggleType}: {customToggleStorageTypeLabel(item.scope)} · {customToggleValueTypeLabel(item.valueType)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
@@ -294,6 +331,20 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
                       if (evt.detail.button === GamepadButton.DIR_RIGHT) {
                         evt.preventDefault();
                         removeButtonRefs.current[item.id]?.focus();
+                        return;
+                      }
+                      if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                        evt.preventDefault();
+                        const nextItem = items[index + 1];
+                        if (nextItem) editButtonRefs.current[nextItem.id]?.focus();
+                        else footerCancelRef.current?.focus();
+                        return;
+                      }
+                      if (evt.detail.button === GamepadButton.DIR_UP) {
+                        evt.preventDefault();
+                        const prevItem = items[index - 1];
+                        if (prevItem) editButtonRefs.current[prevItem.id]?.focus();
+                        else draftSaveRef.current?.focus();
                       }
                     }}
                     style={{
@@ -313,13 +364,28 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
                       if (evt.detail.button === GamepadButton.DIR_LEFT) {
                         evt.preventDefault();
                         editButtonRefs.current[item.id]?.focus();
+                        return;
+                      }
+                      if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                        evt.preventDefault();
+                        const nextItem = items[index + 1];
+                        if (nextItem) removeButtonRefs.current[nextItem.id]?.focus();
+                        else footerSaveRef.current?.focus();
+                        return;
+                      }
+                      if (evt.detail.button === GamepadButton.DIR_UP) {
+                        evt.preventDefault();
+                        const prevItem = items[index - 1];
+                        if (prevItem) removeButtonRefs.current[prevItem.id]?.focus();
+                        else draftSaveRef.current?.focus();
                       }
                     }}
                     style={{
                       minWidth: 44,
                       padding: '6px 8px',
                       fontSize: 12,
-                      background: '#555',
+                      background: '#8d2f3a',
+                      color: '#fff',
                     }}
                   >
                     ×
@@ -340,6 +406,13 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
               if (evt.detail.button === GamepadButton.DIR_RIGHT) {
                 evt.preventDefault();
                 footerSaveRef.current?.focus();
+                return;
+              }
+              if (evt.detail.button === GamepadButton.DIR_UP) {
+                evt.preventDefault();
+                const lastItem = items[items.length - 1];
+                if (lastItem) editButtonRefs.current[lastItem.id]?.focus();
+                else draftSaveRef.current?.focus();
               }
             }}
             style={{ background: '#555' }}
@@ -355,6 +428,13 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
               if (evt.detail.button === GamepadButton.DIR_LEFT) {
                 evt.preventDefault();
                 footerCancelRef.current?.focus();
+                return;
+              }
+              if (evt.detail.button === GamepadButton.DIR_UP) {
+                evt.preventDefault();
+                const lastItem = items[items.length - 1];
+                if (lastItem) removeButtonRefs.current[lastItem.id]?.focus();
+                else draftSaveRef.current?.focus();
               }
             }}
           >
@@ -372,10 +452,11 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   const catalogKeys = new Set(LAUNCH_VAR_CATALOG.map((d) => d.key));
   const parsed = existingConfig
     ? parseLaunchOptions(existingConfig.launchOptions)
-    : { protonVersion: null, vars: {} as Record<string, string> };
+    : { protonVersion: null, vars: {} as Record<string, string>, rawArgs: [] as string[], postCommandArgs: [] as string[] };
 
   const [profileName, setProfileName] = useState(existingConfig?.profileName ?? '');
   const [protonVersion, setProtonVersion] = useState(parsed.protonVersion ?? '');
+  const [protonVersionEnabled, setProtonVersionEnabled] = useState(Boolean(parsed.protonVersion));
   const [enabledVars, setEnabledVars] = useState<Record<string, string>>(
     Object.fromEntries(
       Object.entries(parsed.vars).filter(([key]) => catalogKeys.has(key)),
@@ -383,13 +464,19 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   );
   const [customToggles, setCustomToggles] = useState<StoredCustomToggle[]>(() => {
     const stored = getScopedCustomToggles(appId);
-    const storedKeys = new Set(stored.map((toggle) => `${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}`));
+    const storedKeys = new Set(stored.map((toggle) => `${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
     const parsedCustoms = Object.entries(parsed.vars)
       .filter(([key]) => !catalogKeys.has(key))
       .map(([key, value]) => {
         const inferredScope: CustomToggleScope = appId !== null ? 'game' : 'global';
         return {
-          id: `${inferredScope}:${appId ?? 'global'}:${key}`,
+          id: buildCustomToggleId({
+            scope: inferredScope,
+            appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+            key,
+            value,
+            valueType: inferCustomToggleValueType(value),
+          }),
           title: key,
           key,
           scope: inferredScope,
@@ -398,22 +485,49 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           value,
         } satisfies StoredCustomToggle;
       })
-      .filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}`));
-    return [...stored, ...parsedCustoms];
+      .filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
+    const parsedArgs = [...parsed.rawArgs, ...parsed.postCommandArgs].map((value) => {
+      const inferredScope: CustomToggleScope = appId !== null ? 'game' : 'global';
+      const valueType = parsed.postCommandArgs.includes(value) ? 'toggle' : inferCustomToggleValueType(value);
+      return {
+        id: buildCustomToggleId({
+          scope: inferredScope,
+          appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+          key: '',
+          value,
+          valueType,
+        }),
+        title: value,
+        key: '',
+        scope: inferredScope,
+        appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+        valueType,
+        value,
+      } satisfies StoredCustomToggle;
+    }).filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
+    return [...stored, ...parsedCustoms, ...parsedArgs];
   });
   const [enabledCustomToggleIds, setEnabledCustomToggleIds] = useState<Set<string>>(() => {
-    const parsedKeys = new Set(
-      Object.keys(parsed.vars).filter((key) => !catalogKeys.has(key)),
-    );
+    const parsedKeys = new Set([
+      ...Object.keys(parsed.vars).filter((key) => !catalogKeys.has(key)),
+      ...parsed.rawArgs,
+      ...parsed.postCommandArgs,
+    ]);
     const initialToggles = (() => {
       const stored = getScopedCustomToggles(appId);
-      const storedKeys = new Set(stored.map((toggle) => `${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}`));
+      const storedKeys = new Set(stored.map((toggle) => `${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
       const parsedCustoms = Object.entries(parsed.vars)
         .filter(([key]) => !catalogKeys.has(key))
         .map(([key, value]) => {
           const inferredScope: CustomToggleScope = appId !== null ? 'game' : 'global';
           return {
-            id: `${inferredScope}:${appId ?? 'global'}:${key}`,
+            id: buildCustomToggleId({
+              scope: inferredScope,
+              appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+              key,
+              value,
+              valueType: inferCustomToggleValueType(value),
+            }),
             title: key,
             key,
             scope: inferredScope,
@@ -422,10 +536,29 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
             value,
           } satisfies StoredCustomToggle;
         })
-        .filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}`));
-      return [...stored, ...parsedCustoms];
+        .filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
+      const parsedArgs = [...parsed.rawArgs, ...parsed.postCommandArgs].map((value) => {
+        const inferredScope: CustomToggleScope = appId !== null ? 'game' : 'global';
+        const valueType = parsed.postCommandArgs.includes(value) ? 'toggle' : inferCustomToggleValueType(value);
+        return {
+          id: buildCustomToggleId({
+            scope: inferredScope,
+            appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+            key: '',
+            value,
+            valueType,
+          }),
+          title: value,
+          key: '',
+          scope: inferredScope,
+          appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+          valueType,
+          value,
+        } satisfies StoredCustomToggle;
+      }).filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
+      return [...stored, ...parsedCustoms, ...parsedArgs];
     })();
-    return new Set(initialToggles.filter((toggle) => parsedKeys.has(toggle.key)).map((toggle) => toggle.id));
+    return new Set(initialToggles.filter((toggle) => parsedKeys.has(toggle.key || toggle.value)).map((toggle) => toggle.id));
   });
   const [versionOptions, setVersionOptions] = useState<VersionOption[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(true);
@@ -524,7 +657,17 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   const rawArgs = useMemo(() => {
     const args: string[] = [];
     for (const toggle of customToggles) {
-      if (enabledCustomToggleIds.has(toggle.id) && !toggle.key.trim() && toggle.value.trim()) {
+      if (enabledCustomToggleIds.has(toggle.id) && !toggle.key.trim() && toggle.value.trim() && toggle.valueType !== 'toggle') {
+        args.push(normalizeCustomToggleValue(toggle.valueType, toggle.value));
+      }
+    }
+    return args;
+  }, [customToggles, enabledCustomToggleIds]);
+
+  const postCommandArgs = useMemo(() => {
+    const args: string[] = [];
+    for (const toggle of customToggles) {
+      if (enabledCustomToggleIds.has(toggle.id) && !toggle.key.trim() && toggle.value.trim() && toggle.valueType === 'toggle') {
         args.push(normalizeCustomToggleValue(toggle.valueType, toggle.value));
       }
     }
@@ -532,8 +675,8 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   }, [customToggles, enabledCustomToggleIds]);
 
   const preview = useMemo(
-    () => buildLaunchOptions(protonVersion || null, allVars, rawArgs),
-    [protonVersion, allVars, rawArgs],
+    () => buildLaunchOptions(protonVersionEnabled ? (protonVersion || null) : null, allVars, rawArgs, postCommandArgs),
+    [protonVersion, protonVersionEnabled, allVars, rawArgs, postCommandArgs],
   );
 
   const toggleVar = (key: string, def: LaunchVarDef) => {
@@ -599,7 +742,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         appId,
         appName,
         profileName: profileName.trim(),
-        protonVersion: protonVersion || '',
+        protonVersion: protonVersionEnabled ? (protonVersion || '') : '',
         launchOptions: resolvedLaunchOptions,
         enabledVars: allVars,
         appliedAt: Date.now(),
@@ -725,9 +868,9 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
             </DialogButton>
             <DialogButton
               onClick={openCustomToggleModal}
-              style={{ minWidth: 96, padding: '6px 12px', fontSize: 12 }}
+              style={{ minWidth: 164, padding: '6px 18px', fontSize: 12 }}
             >
-              {customToggles.length > 0 ? t().configManager.customToggleBadge : t().configManager.customToggleButton}
+              {t().configManager.customToggleButton}
             </DialogButton>
             <DialogButton
               onClick={() => closeModal?.()}
@@ -802,13 +945,30 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
                 <span style={{ fontSize: 11, color: '#7a9bb5' }}>{t().common.loading}</span>
               </div>
             ) : (
-              <DropdownItem
-                label={installing ? t().detail.installing(installing) : t().detail.protonVersion}
-                rgOptions={versionDropdownOptions}
-                selectedOption={protonVersion}
-                onChange={(opt) => handleVersionChange(opt.data)}
-                disabled={!!installing}
-              />
+              <div style={{ display: 'grid', gap: 6 }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(210px, 0.9fr) minmax(260px, 1.1fr)',
+                    gap: 12,
+                    alignItems: 'center',
+                  }}
+                >
+                  <ToggleField
+                    label={t().detail.protonVersion}
+                    description={t().configManager.protonVersionToggleHint}
+                    checked={protonVersionEnabled}
+                    onChange={() => setProtonVersionEnabled((prev) => !prev)}
+                  />
+                  <DropdownItem
+                    label={installing ? t().detail.installing(installing) : t().detail.protonVersion}
+                    rgOptions={versionDropdownOptions}
+                    selectedOption={protonVersion}
+                    onChange={(opt) => handleVersionChange(opt.data)}
+                    disabled={!!installing || !protonVersionEnabled}
+                  />
+                </div>
+              </div>
             )}
           </div>
 
@@ -829,7 +989,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               >
                 <span style={{ fontSize: 10, color: '#7a9bb5' }}>{collapsedCategories.has('custom') ? '▸' : '▾'}</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#cfe2f4' }}>
-                  {t().configManager.customToggleBadge}
+                  {t().configManager.customToggleButton}
                 </span>
                 <span style={{ fontSize: 10, color: '#7a9bb5' }}>
                   ({enabledCustomToggleIds.size}/{customToggles.length})

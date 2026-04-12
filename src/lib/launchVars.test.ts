@@ -57,6 +57,11 @@ describe('buildLaunchOptions', () => {
     const result = buildLaunchOptions(null, { MANGOHUD_CONFIG: 'fps_only=1' });
     expect(result).toBe('MANGOHUD_CONFIG=fps_only=1 %command%');
   });
+
+  it('puts post-command toggle args after %command%', () => {
+    const result = buildLaunchOptions('GE-Proton9-27', { MANGOHUD: '1' }, ['gamemoderun'], ['-log', '--trace']);
+    expect(result).toBe('MANGOHUD=1 gamemoderun PROTON_VERSION="GE-Proton9-27" %command% -log --trace');
+  });
 });
 
 describe('parseLaunchOptions', () => {
@@ -64,39 +69,46 @@ describe('parseLaunchOptions', () => {
     const result = parseLaunchOptions('PROTON_VERSION="GE-Proton9-27" %command%');
     expect(result.protonVersion).toBe('GE-Proton9-27');
     expect(result.vars).toEqual({});
+    expect(result.postCommandArgs).toEqual([]);
   });
 
   it('parses env vars', () => {
     const result = parseLaunchOptions('MANGOHUD=1 DXVK_ASYNC=1 %command%');
     expect(result.protonVersion).toBeNull();
     expect(result.vars).toEqual({ MANGOHUD: '1', DXVK_ASYNC: '1' });
+    expect(result.postCommandArgs).toEqual([]);
   });
 
   it('parses both proton version and vars', () => {
     const result = parseLaunchOptions('MANGOHUD=1 PROTON_VERSION="GE-Proton9-27" %command%');
     expect(result.protonVersion).toBe('GE-Proton9-27');
     expect(result.vars).toEqual({ MANGOHUD: '1' });
+    expect(result.postCommandArgs).toEqual([]);
   });
 
   it('returns null protonVersion when not present', () => {
     const result = parseLaunchOptions('%command%');
     expect(result.protonVersion).toBeNull();
     expect(result.vars).toEqual({});
+    expect(result.postCommandArgs).toEqual([]);
   });
 
   it('handles empty string', () => {
     const result = parseLaunchOptions('');
     expect(result.protonVersion).toBeNull();
     expect(result.vars).toEqual({});
+    expect(result.postCommandArgs).toEqual([]);
   });
 
   it('round-trips with buildLaunchOptions', () => {
     const version = 'GE-Proton10-5';
     const vars = { MANGOHUD: '1', DXVK_ASYNC: '1' };
-    const built = buildLaunchOptions(version, vars);
+    const built = buildLaunchOptions(version, vars, ['gamemoderun'], ['-log']);
     const parsed = parseLaunchOptions(built);
     expect(parsed.protonVersion).toBe(version);
     expect(parsed.vars).toEqual(vars);
+    expect(parsed.rawArgs).toEqual(['gamemoderun']);
+    expect(parsed.postCommandArgs).toEqual(['-log']);
   });
 });
 
@@ -113,5 +125,6 @@ describe('launch option conflict helpers', () => {
     expect(appendLaunchOptions('', 'PROTON_VERSION="GE-Proton10-1" %command%')).toBe(
       'PROTON_VERSION="GE-Proton10-1" %command%',
     );
+    expect(appendLaunchOptions('', '')).toBe('%command%');
   });
 });

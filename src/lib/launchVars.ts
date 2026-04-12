@@ -48,6 +48,7 @@ export function buildLaunchOptions(
   protonVersion: string | null,
   enabledVars: Record<string, string>,
   rawArgs?: string[],
+  postCommandArgs?: string[],
 ): string {
   const parts: string[] = [];
   for (const [key, value] of Object.entries(enabledVars)) {
@@ -63,14 +64,20 @@ export function buildLaunchOptions(
     parts.push(`PROTON_VERSION="${protonVersion}"`);
   }
   parts.push('%command%');
+  if (postCommandArgs) {
+    for (const arg of postCommandArgs) {
+      if (arg.trim()) parts.push(arg.trim());
+    }
+  }
   return parts.join(' ');
 }
 
 export function parseLaunchOptions(
   launchOptions: string,
-): { protonVersion: string | null; vars: Record<string, string>; rawArgs: string[] } {
+): { protonVersion: string | null; vars: Record<string, string>; rawArgs: string[]; postCommandArgs: string[] } {
   const vars: Record<string, string> = {};
   const rawArgs: string[] = [];
+  const postCommandArgs: string[] = [];
   let protonVersion: string | null = null;
 
   // Match PROTON_VERSION="..." (quoted)
@@ -79,14 +86,17 @@ export function parseLaunchOptions(
     protonVersion = pvMatch[1];
   }
 
-  // Remove %command% and PROTON_VERSION="..." from the string, then parse remaining tokens
-  const cleaned = launchOptions
-    .replace(/PROTON_VERSION="[^"]*"/, '')
-    .replace(/%command%/g, '')
-    .trim();
+  const withoutVersion = launchOptions.replace(/PROTON_VERSION="[^"]*"/, '').trim();
+  const commandIndex = withoutVersion.indexOf('%command%');
+  const beforeCommand = (commandIndex >= 0
+    ? withoutVersion.slice(0, commandIndex)
+    : withoutVersion).trim();
+  const afterCommand = (commandIndex >= 0
+    ? withoutVersion.slice(commandIndex + '%command%'.length)
+    : '').trim();
 
-  if (cleaned) {
-    const tokens = cleaned.split(/\s+/);
+  if (beforeCommand) {
+    const tokens = beforeCommand.split(/\s+/);
     for (const token of tokens) {
       const eqIndex = token.indexOf('=');
       if (eqIndex > 0) {
@@ -100,7 +110,13 @@ export function parseLaunchOptions(
     }
   }
 
-  return { protonVersion, vars, rawArgs };
+  if (afterCommand) {
+    for (const token of afterCommand.split(/\s+/)) {
+      if (token.trim()) postCommandArgs.push(token.trim());
+    }
+  }
+
+  return { protonVersion, vars, rawArgs, postCommandArgs };
 }
 
 export function normalizeLaunchOptionsForComparison(launchOptions: string): string {

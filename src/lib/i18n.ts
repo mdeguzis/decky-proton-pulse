@@ -267,6 +267,7 @@ export interface TranslationTree {
     emptyState: string;
     deleteConfirm: (gameName: string) => string;
     deleteConfirmTitle: string;
+    deleteAction: string;
     applied: string;
     appliedAgo: (time: string) => string;
     noConfigs: string;
@@ -289,6 +290,7 @@ export interface TranslationTree {
     customToggleTypeBool: string;
     customToggleTypeInt: string;
     customToggleTypeFloat: string;
+    customToggleTypeToggle: string;
     customToggleValue: string;
     customToggleAdd: string;
     customToggleSaveButton: string;
@@ -301,6 +303,7 @@ export interface TranslationTree {
     previewHint: string;
     profileName: string;
     profileNameHint: string;
+    protonVersionToggleHint: string;
     gpuFilter: string;
     synced: string;
     notSynced: string;
@@ -705,6 +708,7 @@ export const en: TranslationTree = {
     emptyState: 'No saved configurations yet. Apply a report from Manage This Game to get started.',
     deleteConfirm: (name) => `Delete config for ${name}? This will clear the game's launch options.`,
     deleteConfirmTitle: 'Delete Configuration',
+    deleteAction: 'Delete',
     applied: 'Applied',
     appliedAgo: (time) => `Applied ${time}`,
     noConfigs: 'No saved configurations',
@@ -727,6 +731,7 @@ export const en: TranslationTree = {
     customToggleTypeBool: 'Boolean',
     customToggleTypeInt: 'Integer',
     customToggleTypeFloat: 'Float',
+    customToggleTypeToggle: 'Toggle Arg',
     customToggleValue: 'Value',
     customToggleAdd: 'Add Custom Toggle',
     customToggleSaveButton: 'Save Custom Toggle',
@@ -739,6 +744,7 @@ export const en: TranslationTree = {
     previewHint: 'Toggle options below to build your launch command. The sections are already filtered to fit your hardware. Expand any section to apply toggles.',
     profileName: 'Profile Name',
     profileNameHint: 'Pick a short label for this configuration, like "High Performance" or "Compatible".',
+    protonVersionToggleHint: 'Enable or disable a pinned Proton version for this configuration.',
     gpuFilter: 'GPU',
     synced: 'Synced',
     notSynced: 'Not synced',

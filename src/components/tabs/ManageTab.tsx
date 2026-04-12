@@ -147,7 +147,7 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
       <ConfirmModal
         strTitle={t().configManager.deleteConfirmTitle}
         strDescription={t().configManager.deleteConfirm(displayName(config))}
-        strOKButtonText={t().common.clear}
+        strOKButtonText={t().configManager.deleteAction}
         onOK={() => {
           void logFrontendEvent('INFO', 'Deleting tracked config', { appId: config.appId, appName: config.appName });
           SteamClient.Apps.SetAppLaunchOptions(config.appId, '');
@@ -285,7 +285,7 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
           </MenuItem>
         ) : null}
         <MenuItem onClick={() => handleDelete(config)}>
-          {t().common.clear}
+          {t().configManager.deleteAction}
         </MenuItem>
       </Menu>,
       e.currentTarget ?? window,

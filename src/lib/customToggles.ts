@@ -3,7 +3,7 @@ import { getSetting, setSetting } from './settings';
 const STORAGE_KEY = 'custom-toggles';
 
 export type CustomToggleScope = 'global' | 'game';
-export type CustomToggleValueType = 'string' | 'bool' | 'int' | 'float';
+export type CustomToggleValueType = 'string' | 'bool' | 'int' | 'float' | 'toggle';
 
 export interface StoredCustomToggle {
   id: string;
@@ -74,11 +74,15 @@ export function normalizeCustomToggleValue(valueType: CustomToggleValueType, raw
     const parsed = Number.parseFloat(trimmed);
     return Number.isNaN(parsed) ? trimmed : String(parsed);
   }
+  if (valueType === 'toggle') {
+    return trimmed;
+  }
   return rawValue;
 }
 
 export function inferCustomToggleValueType(value: string): CustomToggleValueType {
   const trimmed = value.trim().toLowerCase();
+  if (trimmed.startsWith('-')) return 'toggle';
   if (['1', '0', 'true', 'false', 'yes', 'no', 'on', 'off'].includes(trimmed)) return 'bool';
   if (/^-?\d+$/.test(trimmed)) return 'int';
   if (/^-?\d+\.\d+$/.test(trimmed)) return 'float';

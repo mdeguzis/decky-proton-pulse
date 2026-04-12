@@ -79,6 +79,7 @@ describe('custom toggle values', () => {
   });
 
   it('infers value types from raw values', () => {
+    expect(inferCustomToggleValueType('-log')).toBe('toggle');
     expect(inferCustomToggleValueType('1')).toBe('bool');
     expect(inferCustomToggleValueType('42')).toBe('int');
     expect(inferCustomToggleValueType('3.5')).toBe('float');
@@ -90,5 +91,7 @@ describe('custom toggle values', () => {
     expect(normalizeCustomToggleValue('int', 'abc')).toBe('abc');
     expect(normalizeCustomToggleValue('float', ' 3.50 ')).toBe('3.5');
     expect(normalizeCustomToggleValue('float', 'abc')).toBe('abc');
+    expect(normalizeCustomToggleValue('toggle', '  -log  ')).toBe('-log');
+    expect(normalizeCustomToggleValue('string', '  mangohud  ')).toBe('  mangohud  ');
   });
 });

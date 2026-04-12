@@ -82,4 +82,20 @@ describe("selectMenuAppContext", () => {
       appName: "Selected Game",
     });
   });
+
+  it("falls back to the focused name when the selected app has no looked up name", () => {
+    expect(
+      selectMenuAppContext({
+        focusedAppId: 1910310,
+        focusedAppName: "Fallback Focus",
+        initialAppId: 730,
+        lookedUpAppName: "",
+        routeAppId: 0,
+        treeAppId: 0,
+      })
+    ).toEqual({
+      appId: 730,
+      appName: "Fallback Focus",
+    });
+  });
 });

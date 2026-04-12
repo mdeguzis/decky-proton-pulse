@@ -174,6 +174,13 @@ describe('checkHasCloudBackup', () => {
     const { checkHasCloudBackup } = await import('./cloudSync');
     expect(await checkHasCloudBackup()).toBe(false);
   });
+
+  it('returns false when the existence check throws', async () => {
+    mockRestRequest.mockRejectedValueOnce(new Error('offline'));
+
+    const { checkHasCloudBackup } = await import('./cloudSync');
+    expect(await checkHasCloudBackup()).toBe(false);
+  });
 });
 
 describe('getCloudSyncStatus', () => {
@@ -237,6 +244,25 @@ describe('restoreCloudConfigs', () => {
 
     expect(result).toEqual({ restored: 0, skipped: 0, failed: 0 });
   });
+
+  it('counts failed restores when a local insert throws', async () => {
+    mockGetTrackedConfigs.mockReturnValue([]);
+    mockAddTrackedConfig.mockImplementationOnce(() => {
+      throw new Error('disk full');
+    });
+    mockRestRequest.mockResolvedValueOnce({
+      data: [
+        { voter_id: 'abc123voterId', app_id: 600, app_name: 'Cloud Game', config: makeConfig({ appId: 600 }), updated_at: '2026-04-11T00:00:00Z' },
+      ],
+      error: null,
+      status: 200,
+    });
+
+    const { restoreCloudConfigs } = await import('./cloudSync');
+    const result = await restoreCloudConfigs();
+
+    expect(result).toEqual({ restored: 0, skipped: 0, failed: 1 });
+  });
 });
 
 describe('cloud auto-sync lifecycle', () => {
@@ -261,6 +287,21 @@ describe('cloud auto-sync lifecycle', () => {
     callback(makeConfig({ appId: 77, appName: 'Auto Sync Game' }));
     await flushAsyncWork();
     expect(mockRestRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('counts failed pushes in pushAllConfigs', async () => {
+    mockGetTrackedConfigs.mockReturnValue([
+      makeConfig({ appId: 1, appName: 'A' }),
+      makeConfig({ appId: 2, appName: 'B' }),
+    ]);
+    mockRestRequest
+      .mockResolvedValueOnce({ data: null, error: null, status: 201 })
+      .mockResolvedValueOnce({ data: null, error: 'boom', status: 500 });
+
+    const { pushAllConfigs } = await import('./cloudSync');
+    const result = await pushAllConfigs();
+
+    expect(result).toEqual({ total: 2, succeeded: 1, failed: 1 });
   });
 
   it('does not push saved configs when auto-sync is disabled', async () => {
