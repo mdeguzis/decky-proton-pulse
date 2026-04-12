@@ -360,28 +360,29 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#e8f4ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {name}
+                  {!cloudLoading && (
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        fontSize: 9,
+                        fontWeight: 700,
+                        padding: '1px 6px',
+                        borderRadius: 999,
+                        marginLeft: 6,
+                        verticalAlign: 'middle',
+                        background: syncStatus === 'synced' ? 'rgba(76,175,80,0.18)' : 'rgba(245,158,11,0.18)',
+                        color: syncStatus === 'synced' ? '#4caf50' : '#f59e0b',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.3,
+                      }}
+                    >
+                      {syncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced}
+                    </span>
+                  )}
                 </div>
                 {config.profileName && (
                   <div style={{ fontSize: 10, fontWeight: 600, color: '#4c9eff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {config.profileName}
-                    {!cloudLoading && (
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          fontSize: 9,
-                          fontWeight: 700,
-                          padding: '1px 6px',
-                          borderRadius: 999,
-                          marginLeft: 6,
-                          background: syncStatus === 'synced' ? 'rgba(76,175,80,0.18)' : 'rgba(245,158,11,0.18)',
-                          color: syncStatus === 'synced' ? '#4caf50' : '#f59e0b',
-                          textTransform: 'uppercase',
-                          letterSpacing: 0.3,
-                        }}
-                      >
-                        {syncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced}
-                      </span>
-                    )}
                   </div>
                 )}
                 <div style={{ fontSize: 10, color: '#7a9bb5' }}>

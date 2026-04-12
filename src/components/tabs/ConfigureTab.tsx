@@ -744,12 +744,16 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     void logFrontendEvent('INFO', 'Upvote requested', { appId, appName, reportKey: key });
 
     const previousVote = await getUserVote(String(appId), key);
+    if (previousVote === 1) {
+      toaster.toast({ title: 'Proton Pulse', body: t().extras!.alreadyUpvoted() });
+      return false;
+    }
     const ok = await submitVote(String(appId), key, 1);
     if (ok) {
       setVotes(prev => ({
         ...prev,
         [key]: {
-          upvotes: (prev[key]?.upvotes ?? 0) + (previousVote === 1 ? 0 : 1),
+          upvotes: (prev[key]?.upvotes ?? 0) + 1,
           downvotes: Math.max(0, (prev[key]?.downvotes ?? 0) - (previousVote === -1 ? 1 : 0)),
         },
       }));
@@ -766,13 +770,17 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     void logFrontendEvent('INFO', 'Downvote requested', { appId, appName, reportKey: key });
 
     const previousVote = await getUserVote(String(appId), key);
+    if (previousVote === -1) {
+      toaster.toast({ title: 'Proton Pulse', body: t().extras!.alreadyDownvoted() });
+      return false;
+    }
     const ok = await submitVote(String(appId), key, -1);
     if (ok) {
       setVotes(prev => ({
         ...prev,
         [key]: {
           upvotes: Math.max(0, (prev[key]?.upvotes ?? 0) - (previousVote === 1 ? 1 : 0)),
-          downvotes: (prev[key]?.downvotes ?? 0) + (previousVote === -1 ? 0 : 1),
+          downvotes: (prev[key]?.downvotes ?? 0) + 1,
         },
       }));
       toaster.toast({ title: 'Proton Pulse', body: t().configure.voteSubmitted });
@@ -824,6 +832,33 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     }
     openReportDetail(firstReport);
     await runRegisteredScreenshotAutomationHandler('manage-game/report-detail/edit-modal');
+  }), [sortedReports, appId, appName, sysInfo, currentLaunchOptions]);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/matching-guide', async () => {
+    const firstReport = sortedReports[0];
+    if (!firstReport) {
+      throw new Error('No report is available for the Manage Game matching guide screenshot.');
+    }
+    openReportDetail(firstReport);
+    await runRegisteredScreenshotAutomationHandler('manage-game/report-detail/matching-guide');
+  }), [sortedReports, appId, appName, sysInfo, currentLaunchOptions]);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/system-requirements', async () => {
+    const firstReport = sortedReports[0];
+    if (!firstReport) {
+      throw new Error('No report is available for the Manage Game system requirements screenshot.');
+    }
+    openReportDetail(firstReport);
+    await runRegisteredScreenshotAutomationHandler('manage-game/report-detail/system-requirements');
+  }), [sortedReports, appId, appName, sysInfo, currentLaunchOptions]);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/upload-destination', async () => {
+    const firstReport = sortedReports[0];
+    if (!firstReport) {
+      throw new Error('No report is available for the Manage Game upload destination screenshot.');
+    }
+    openReportDetail(firstReport);
+    await runRegisteredScreenshotAutomationHandler('manage-game/report-detail/upload-destination');
   }), [sortedReports, appId, appName, sysInfo, currentLaunchOptions]);
 
   useEffect(() => registerScreenshotAutomationHandler('manage-game/launch-option-conflict', async (action) => {

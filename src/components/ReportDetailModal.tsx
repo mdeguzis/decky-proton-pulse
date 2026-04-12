@@ -333,43 +333,117 @@ function buildMatchingRules(): RuleSection[] {
   ];
 }
 
+const RULES_SCROLL_STEP = 80;
+
 function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
   const rules = buildMatchingRules();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    () => new Set(rules.slice(1).map((rule) => rule.field)),
+  );
+
+  const toggleSection = (field: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(field)) next.delete(field);
+      else next.add(field);
+      return next;
+    });
+  };
+
   return (
-    <ModalRoot onCancel={closeModal}>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: 'calc(100vh - 80px)',
-          minWidth: 380,
-          maxWidth: 540,
-        }}
-      >
+    <ModalRoot
+      onCancel={closeModal}
+      bAllowFullSize
+      className="proton-pulse-rules-modal"
+      modalClassName="proton-pulse-rules-modal"
+    >
+      <style>{`
+        .proton-pulse-rules-modal,
+        .proton-pulse-rules-modal > div,
+        .proton-pulse-rules-modal .DialogContent_InnerWidth {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100vw !important;
+          width: 100vw !important;
+          max-height: 100vh !important;
+        }
+        .proton-pulse-rules-modal .ModalPosition { inset: 0 !important; }
+      `}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
         {/* header */}
         <div
           style={{
-            padding: '14px 16px 10px',
+            flexShrink: 0,
+            padding: '12px 16px',
             borderBottom: '1px solid #2a3a4a',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            flexShrink: 0,
+            gap: 12,
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#e8f4ff' }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff' }}>
             {t().detail.matchingGuideTitle}
           </div>
-          <DialogButton
+          <button
+            type="button"
             onClick={closeModal}
-            style={{ height: 28, width: 28, minWidth: 28, padding: 0, fontSize: 14 }}
+            style={{
+              flex: '0 0 auto',
+              width: 'auto',
+              minWidth: 72,
+              maxWidth: 96,
+              fontSize: 10,
+              lineHeight: 1.2,
+              padding: '6px 10px',
+              minHeight: 0,
+              borderRadius: 6,
+              border: '1px solid #3a4d63',
+              background: '#1a2736',
+              color: '#e8f4ff',
+              fontWeight: 700,
+              cursor: 'pointer',
+              alignSelf: 'flex-start',
+            }}
           >
-            X
-          </DialogButton>
+            {t().common.close}
+          </button>
         </div>
-
+        <Focusable
+          onGamepadDirection={(evt: GamepadEvent) => {
+            const el = scrollRef.current;
+            if (!el) return;
+            if (evt.detail.button === GamepadButton.DIR_UP) {
+              evt.preventDefault();
+              el.scrollBy({
+                top: el.scrollTop <= RULES_SCROLL_STEP ? -el.scrollTop : -RULES_SCROLL_STEP,
+                behavior: 'auto',
+              });
+            } else if (evt.detail.button === GamepadButton.DIR_DOWN) {
+              evt.preventDefault();
+              el.scrollBy({ top: RULES_SCROLL_STEP, behavior: 'auto' });
+            }
+          }}
+          style={{ display: 'contents' }}
+        >
         {/* scrollable body */}
-        <div style={{ overflowY: 'auto', padding: '12px 16px', flex: 1 }}>
+        <div
+          ref={scrollRef}
+          style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 128px' }}
+          onKeyDown={(evt) => {
+            if (evt.key === 'ArrowUp') {
+              const el = scrollRef.current;
+              if (!el) return;
+              el.scrollBy({ top: el.scrollTop <= RULES_SCROLL_STEP ? -el.scrollTop : -RULES_SCROLL_STEP, behavior: 'auto' });
+            } else if (evt.key === 'ArrowDown') {
+              const el = scrollRef.current;
+              if (!el) return;
+              evt.preventDefault();
+              el.scrollBy({ top: RULES_SCROLL_STEP, behavior: 'auto' });
+            }
+          }}
+        >
           {/* colour legend */}
           <div
             style={{
@@ -384,12 +458,15 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
             }}
           >
             Per-field match colours:
-            {' '}<span style={{ color: '#4caf50', fontWeight: 700 }}>■ green ≥ 80%</span>
-            {' · '}<span style={{ color: '#f59e0b', fontWeight: 700 }}>■ amber ≥ 50%</span>
-            {' · '}<span style={{ color: '#ef4444', fontWeight: 700 }}>■ red &lt; 50%</span>
+            {' '}<span style={{ color: '#4caf50', fontWeight: 700 }}>{'■ green >= 80%'}</span>
+            {' / '}<span style={{ color: '#f59e0b', fontWeight: 700 }}>{'■ amber >= 50%'}</span>
+            {' / '}<span style={{ color: '#ef4444', fontWeight: 700 }}>■ red &lt; 50%</span>
           </div>
 
           {rules.map((rule, i) => (
+            (() => {
+              const collapsed = collapsedSections.has(rule.field);
+              return (
             <div
               key={rule.field}
               style={{
@@ -401,22 +478,35 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
               }}
             >
               {/* field title */}
-              <div
+              <button
+                type="button"
+                onClick={() => toggleSection(rule.field)}
                 style={{
+                  width: '100%',
                   padding: '7px 12px',
                   background: '#162333',
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 700,
                   color: '#e8f4ff',
-                  borderBottom: '1px solid #2a3a4a',
+                  border: 'none',
+                  borderBottom: collapsed ? 'none' : '1px solid #2a3a4a',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
                 }}
               >
-                {rule.field}
-              </div>
+                <span>{rule.field}</span>
+                <span style={{ fontSize: 11, color: '#7a9bb5', marginLeft: 12 }}>
+                  {collapsed ? '▸' : '▾'}
+                </span>
+              </button>
 
+              {!collapsed && (
               <div style={{ padding: '8px 12px' }}>
                 {/* description */}
-                <div style={{ fontSize: 11, color: '#9db0c4', lineHeight: 1.5, marginBottom: 8 }}>
+                <div style={{ fontSize: 12, color: '#9db0c4', lineHeight: 1.5, marginBottom: 8 }}>
                   {rule.description}
                 </div>
 
@@ -434,7 +524,7 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
                       style={{
                         display: 'flex',
                         gap: 0,
-                        fontSize: 11,
+                        fontSize: 12,
                         borderTop: ti > 0 ? '1px solid rgba(255,255,255,0.04)' : undefined,
                       }}
                     >
@@ -442,8 +532,8 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
                         style={{
                           color: '#7a9bb5',
                           whiteSpace: 'nowrap',
-                          minWidth: 120,
-                          padding: '4px 8px',
+                          minWidth: 130,
+                          padding: '5px 10px',
                           fontFamily: 'monospace',
                           background: 'rgba(255,255,255,0.03)',
                           borderRight: '1px solid rgba(255,255,255,0.04)',
@@ -452,16 +542,20 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
                       >
                         {tier.label}
                       </span>
-                      <span style={{ color: '#c0d4e8', padding: '4px 8px', lineHeight: 1.4 }}>
+                      <span style={{ color: '#c0d4e8', padding: '5px 10px', lineHeight: 1.4 }}>
                         {tier.note}
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
+              )}
             </div>
+              );
+            })()
           ))}
         </div>
+        </Focusable>
       </div>
     </ModalRoot>
   );
@@ -492,9 +586,20 @@ function HardwareCompareModal({
 
   const systemRam = sysInfo?.ram_gb ? `${sysInfo.ram_gb} GB` : '-';
   const systemGpuTier = sysInfo?.gpu_vendor ? sysInfo.gpu_vendor.toUpperCase() : '-';
-  const hardwareMatchPercent = getHardwareMatchPercent(report, sysInfo);
+  const hardwareMatchPercent = getHardwareMatchPercent(report, sysInfo, gameMinRamGb);
   const matchBadgeStyle = getHardwareMatchBadgeStyle(hardwareMatchPercent);
   const breakdown = getHardwareMatchBreakdown(report, sysInfo, gameMinRamGb);
+
+  const handleOpenMatchingGuide = () => {
+    showModal(<MatchingRulesModal />);
+  };
+
+  const handleOpenSystemRequirements = () => {
+    if (!reqFields || reqFields.length === 0) {
+      throw new Error('System requirements are not available for this report.');
+    }
+    showModal(<SystemRequirementsModal fields={reqFields} />);
+  };
 
   // confidence score for this report (same as the card shows)
   const cappedScore = Math.min(100, report.score);
@@ -507,6 +612,17 @@ function HardwareCompareModal({
     ? 50
     : reportTier === sysTier ? 100 : 0;
   const tierMatch: FieldMatchInfo = { percent: tierPercent, color: matchColor(tierPercent) };
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/report-detail/matching-guide', async () => {
+    handleOpenMatchingGuide();
+  }), [report]);
+
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/report-detail/system-requirements', async () => {
+    if (!reqFields || reqFields.length === 0) {
+      throw new Error('System requirements are not available for the screenshot.');
+    }
+    handleOpenSystemRequirements();
+  }), [report, reqFields]);
 
   return (
     <ModalRoot
@@ -527,38 +643,7 @@ function HardwareCompareModal({
         }
         .proton-pulse-hw-compare-modal .ModalPosition { inset: 0 !important; }
       `}</style>
-      {/* Focusable wraps the whole modal so D-pad events from the X button
-           bubble up here. The DialogButton is the only focusable child, so
-           Steam auto-focuses it on open and gamepad events always fire. */}
-      <Focusable
-        onGamepadDirection={(evt: GamepadEvent) => {
-          const btn = evt.detail.button;
-          void logFrontendEvent('DEBUG', 'HWCompare: gamepad direction', { button: btn });
-          // block left/right so we don't navigate away from the modal
-          if (btn === GamepadButton.DIR_LEFT || btn === GamepadButton.DIR_RIGHT) {
-            evt.preventDefault();
-            return;
-          }
-          const el = scrollRef.current;
-          if (!el) {
-            void logFrontendEvent('DEBUG', 'HWCompare: scrollRef is null');
-            return;
-          }
-          void logFrontendEvent('DEBUG', 'HWCompare: scroll state', {
-            scrollTop: Math.round(el.scrollTop),
-            scrollHeight: el.scrollHeight,
-            clientHeight: el.clientHeight,
-          });
-          if (btn === GamepadButton.DIR_DOWN) {
-            evt.preventDefault();
-            el.scrollBy({ top: HW_SCROLL_STEP, behavior: 'auto' });
-          } else if (btn === GamepadButton.DIR_UP) {
-            evt.preventDefault();
-            el.scrollBy({ top: -HW_SCROLL_STEP, behavior: 'auto' });
-          }
-        }}
-        style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}
-      >
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
         {/* fixed header */}
         <div
           style={{
@@ -571,10 +656,8 @@ function HardwareCompareModal({
             borderBottom: '1px solid #2a3a4a',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff' }}>
-              {t().detail.hardwareComparisonTitle}
-            </div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff' }}>
+            {t().detail.hardwareComparisonTitle}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
@@ -602,66 +685,58 @@ function HardwareCompareModal({
             >
               {t().detail.hardwareMatchPercent(hardwareMatchPercent)}
             </div>
-            <DialogButton
-              onClick={() => showModal(<MatchingRulesModal />)}
-              style={{
-                height: 32,
-                width: 32,
-                minWidth: 32,
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 16,
-                background: 'rgba(100, 149, 237, 0.15)',
-                color: '#6495ed',
-                border: '1px solid rgba(100, 149, 237, 0.3)',
-              }}
-              title={t().detail.matchingGuideButton}
-            >
-              ⓘ
-            </DialogButton>
-            {reqFields && reqFields.length > 0 && (
-              <DialogButton
-                onClick={() => {
-                  showModal(
-                    <SystemRequirementsModal fields={reqFields} />
-                  );
-                }}
-                style={{
-                  height: 32,
-                  minWidth: 'auto',
-                  padding: '0 10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 10,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {t().detail.systemRequirements}
-              </DialogButton>
-            )}
-            <DialogButton
-              onClick={closeModal}
-              style={{
-                height: 32,
-                width: 32,
-                minWidth: 32,
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 16,
-              }}
-            >
-              X
-            </DialogButton>
           </div>
         </div>
 
-        {/* scrollable body */}
-        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+        {/* button bar: same pattern as ReportDetailModal - Focusable handles
+            UP/DOWN to scroll the content, LEFT/RIGHT pass through for button nav */}
+        <Focusable
+          onGamepadDirection={(evt: GamepadEvent) => {
+            const btn = evt.detail.button;
+            if (btn === GamepadButton.DIR_UP) {
+              const el = scrollRef.current;
+              if (!el) return;
+              el.scrollBy({ top: el.scrollTop <= HW_SCROLL_STEP ? -el.scrollTop : -HW_SCROLL_STEP, behavior: 'auto' });
+            } else if (btn === GamepadButton.DIR_DOWN) {
+              const el = scrollRef.current;
+              if (!el) return;
+              evt.preventDefault();
+              el.scrollBy({ top: HW_SCROLL_STEP, behavior: 'auto' });
+            }
+            // LEFT/RIGHT: pass through for button navigation
+          }}
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            gap: 6,
+            padding: '6px 12px',
+            borderBottom: '1px solid #2a3a4a',
+          }}
+        >
+          <DialogButton
+            onClick={handleOpenMatchingGuide}
+            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
+          >
+            {t().detail.matchingGuideButton}
+          </DialogButton>
+          {reqFields && reqFields.length > 0 && (
+            <DialogButton
+              onClick={handleOpenSystemRequirements}
+              style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
+            >
+              {t().detail.systemRequirements}
+            </DialogButton>
+          )}
+          <DialogButton
+            onClick={closeModal}
+            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
+          >
+            {t().common.close}
+          </DialogButton>
+        </Focusable>
+
+        {/* scrollable body - 60px bottom padding clears the Steam menu bar */}
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 60px' }}>
           <div style={{ fontSize: 12, color: '#9db0c4', marginBottom: 14, lineHeight: 1.5 }}>
             {t().detail.hardwareComparisonDescription}
           </div>
@@ -710,7 +785,7 @@ function HardwareCompareModal({
             />
           </div>
         </div>
-      </Focusable>
+      </div>
     </ModalRoot>
   );
 }
@@ -876,8 +951,13 @@ export function ReportDetailModal({
   const [launchOptionsDisplay, setLaunchOptionsDisplay] = useState(currentLaunchOptions);
   const [versionStatus, setVersionStatus] = useState<'loading' | 'installed' | 'installable' | 'unavailable' | 'unmanaged'>('loading');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const applyButtonRef = useRef<HTMLElement | null>(null);
+  const editButtonRef = useRef<HTMLElement | null>(null);
+  const uploadButtonRef = useRef<HTMLElement | null>(null);
   const compareButtonRef = useRef<HTMLElement | null>(null);
   const clearButtonRef = useRef<HTMLElement | null>(null);
+  const upvoteButtonRef = useRef<HTMLElement | null>(null);
+  const downvoteButtonRef = useRef<HTMLElement | null>(null);
   const hardwareSectionRef = useRef<HTMLDivElement>(null);
   const cappedScore = Math.min(100, report.score);
   const confScore = (cappedScore / 10).toFixed(1);
@@ -1079,6 +1159,10 @@ export function ReportDetailModal({
     handleOpenHardwareCompare();
   }), [report, sysInfo]);
 
+  useEffect(() => registerScreenshotAutomationHandler('manage-game/report-detail/upload-destination', async () => {
+    handleUpload();
+  }), [report, appId, appName]);
+
   const statusEntry = versionStatus !== 'loading'
     ? getVersionStatusStyles()[versionStatus]
     : null;
@@ -1112,6 +1196,29 @@ export function ReportDetailModal({
       el.scrollBy({ top: el.scrollTop <= SCROLL_STEP ? -el.scrollTop : -SCROLL_STEP, behavior: 'auto' });
     }
     // LEFT/RIGHT: don't interfere -- let Steam navigate between buttons
+  };
+
+  const focusSiblingButton = (
+    evt: GamepadEvent,
+    previous: HTMLElement | null,
+    next: HTMLElement | null,
+    downTarget?: HTMLElement | null,
+  ) => {
+    if (evt.detail.button === GamepadButton.DIR_LEFT && previous) {
+      evt.preventDefault();
+      previous.focus();
+      return;
+    }
+    if (evt.detail.button === GamepadButton.DIR_RIGHT && next) {
+      evt.preventDefault();
+      next.focus();
+      return;
+    }
+    if (evt.detail.button === GamepadButton.DIR_DOWN && downTarget) {
+      evt.preventDefault();
+      hardwareSectionRef.current?.scrollIntoView({ block: 'start' });
+      downTarget.focus();
+    }
   };
 
   return (
@@ -1232,18 +1339,36 @@ export function ReportDetailModal({
           <DialogButton
             onClick={handleApply}
             disabled={applying}
+            ref={(node) => {
+              applyButtonRef.current = node;
+            }}
+            onGamepadDirection={(evt) => {
+              focusSiblingButton(evt, null, editButtonRef.current, compareButtonRef.current);
+            }}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
             {applying ? <SteamSpinner /> : t().detail.apply}
           </DialogButton>
           <DialogButton
             onClick={handleEditConfig}
+            ref={(node) => {
+              editButtonRef.current = node;
+            }}
+            onGamepadDirection={(evt) => {
+              focusSiblingButton(evt, applyButtonRef.current, uploadButtonRef.current, compareButtonRef.current);
+            }}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
             {t().detail.edit}
           </DialogButton>
           <DialogButton
             onClick={handleUpload}
+            ref={(node) => {
+              uploadButtonRef.current = node;
+            }}
+            onGamepadDirection={(evt) => {
+              focusSiblingButton(evt, editButtonRef.current, clearButtonRef.current, compareButtonRef.current);
+            }}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
             {t().detail.upload}
@@ -1259,6 +1384,9 @@ export function ReportDetailModal({
             ref={(node) => {
               clearButtonRef.current = node;
             }}
+            onGamepadDirection={(evt) => {
+              focusSiblingButton(evt, uploadButtonRef.current, upvoteButtonRef.current, compareButtonRef.current);
+            }}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
             {t().detail.clear}
@@ -1266,6 +1394,12 @@ export function ReportDetailModal({
           <DialogButton
             onClick={handleUpvote}
             disabled={voting || userVote === 1}
+            ref={(node) => {
+              upvoteButtonRef.current = node;
+            }}
+            onGamepadDirection={(evt) => {
+              focusSiblingButton(evt, clearButtonRef.current, downvoteButtonRef.current, compareButtonRef.current);
+            }}
             style={{
               flex: 0.5, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -1284,6 +1418,12 @@ export function ReportDetailModal({
           <DialogButton
             onClick={handleDownvote}
             disabled={voting || userVote === -1}
+            ref={(node) => {
+              downvoteButtonRef.current = node;
+            }}
+            onGamepadDirection={(evt) => {
+              focusSiblingButton(evt, upvoteButtonRef.current, null, compareButtonRef.current);
+            }}
             style={{
               flex: 0.5, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -1344,11 +1484,12 @@ export function ReportDetailModal({
                     style={{
                       flex: '0 0 auto',
                       width: 'fit-content',
-                      minWidth: 116,
-                      maxWidth: 132,
-                      fontSize: 9,
+                      minWidth: 140,
+                      maxWidth: 180,
+                      fontSize: 10,
+                      fontWeight: 700,
                       minHeight: 0,
-                      padding: '2px 12px',
+                      padding: '4px 14px',
                       whiteSpace: 'nowrap',
                       alignSelf: 'flex-start',
                     }}

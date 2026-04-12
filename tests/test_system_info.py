@@ -10,6 +10,7 @@ from lib.system_info import (
     read_ram_gb,
     detect_gpu_vendor,
     read_driver_version,
+    read_custom_proton,
 )
 
 
@@ -75,6 +76,60 @@ def test_collect_system_info_handles_gpu_detection_errors() -> None:
 
     assert info["gpu"] is None
     assert info["gpu_vendor"] is None
+
+
+def test_read_custom_proton_prefers_latest_slot_tag() -> None:
+    tools = [
+        {
+            "source": "custom",
+            "managed_slot": "latest",
+            "latest_tag": "GE-Proton10-3",
+            "display_name": "Proton-GE-Latest",
+            "internal_name": "GE-Proton10-3",
+            "directory_name": "Proton-GE-Latest",
+        },
+        {
+            "source": "custom",
+            "managed_slot": "versioned",
+            "latest_tag": None,
+            "display_name": "GE-Proton10-2",
+            "internal_name": "GE-Proton10-2",
+            "directory_name": "GE-Proton10-2",
+        },
+    ]
+    with (
+        patch("lib.system_info.os.path.isdir", return_value=True),
+        patch("lib.system_info.read_latest_metadata", return_value={"tag_name": "GE-Proton10-3"}),
+        patch("lib.system_info.list_installed_compatibility_tools", return_value=tools),
+    ):
+        assert read_custom_proton() == "GE-Proton10-3"
+
+
+def test_read_custom_proton_picks_highest_versioned_custom_tool() -> None:
+    tools = [
+        {
+            "source": "custom",
+            "managed_slot": "versioned",
+            "latest_tag": None,
+            "display_name": "GE-Proton9-27",
+            "internal_name": "GE-Proton9-27",
+            "directory_name": "GE-Proton9-27",
+        },
+        {
+            "source": "custom",
+            "managed_slot": "versioned",
+            "latest_tag": None,
+            "display_name": "GE-Proton10-1",
+            "internal_name": "GE-Proton10-1",
+            "directory_name": "GE-Proton10-1",
+        },
+    ]
+    with (
+        patch("lib.system_info.os.path.isdir", return_value=True),
+        patch("lib.system_info.read_latest_metadata", return_value=None),
+        patch("lib.system_info.list_installed_compatibility_tools", return_value=tools),
+    ):
+        assert read_custom_proton() == "GE-Proton10-1"
 
 
 def test_detect_gpu_vendor_nvidia() -> None:

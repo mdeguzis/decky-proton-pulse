@@ -22,5 +22,293 @@
     "src/components/tabs/settingsTabProgress.ts",
     "src/patches/gameContextMenu.tsx"
   ],
-  "findings": []
+  "findings": [
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 219,
+      "column": 18,
+      "kind": "string",
+      "text": "Rating base"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 220,
+      "column": 18,
+      "kind": "string",
+      "text": "Recency bonus"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 221,
+      "column": 18,
+      "kind": "string",
+      "text": "Custom Proton"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 222,
+      "column": 18,
+      "kind": "string",
+      "text": "Proton version"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 223,
+      "column": 18,
+      "kind": "string",
+      "text": "Notes sentiment"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 224,
+      "column": 18,
+      "kind": "string",
+      "text": "GPU mult"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 225,
+      "column": 18,
+      "kind": "string",
+      "text": "OS mult"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 226,
+      "column": 18,
+      "kind": "string",
+      "text": "Kernel mult"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 227,
+      "column": 18,
+      "kind": "string",
+      "text": "Borked decay"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 239,
+      "column": 18,
+      "kind": "string",
+      "text": "≥ 80% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 240,
+      "column": 18,
+      "kind": "string",
+      "text": "40–79% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 241,
+      "column": 18,
+      "kind": "string",
+      "text": "10% — red"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 252,
+      "column": 18,
+      "kind": "string",
+      "text": "100% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 253,
+      "column": 18,
+      "kind": "string",
+      "text": "75% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 254,
+      "column": 18,
+      "kind": "string",
+      "text": "50% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 255,
+      "column": 18,
+      "kind": "string",
+      "text": "20% — red"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 266,
+      "column": 18,
+      "kind": "string",
+      "text": "≥ 80% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 267,
+      "column": 18,
+      "kind": "string",
+      "text": "30–79% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 268,
+      "column": 18,
+      "kind": "string",
+      "text": "10% — red"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 279,
+      "column": 18,
+      "kind": "string",
+      "text": "100% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 280,
+      "column": 18,
+      "kind": "string",
+      "text": "70% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 281,
+      "column": 18,
+      "kind": "string",
+      "text": "10% — red"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 292,
+      "column": 18,
+      "kind": "string",
+      "text": "100% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 293,
+      "column": 18,
+      "kind": "string",
+      "text": "95% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 294,
+      "column": 18,
+      "kind": "string",
+      "text": "85% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 295,
+      "column": 18,
+      "kind": "string",
+      "text": "75% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 296,
+      "column": 18,
+      "kind": "string",
+      "text": "65% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 297,
+      "column": 18,
+      "kind": "string",
+      "text": "40% — red"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 298,
+      "column": 18,
+      "kind": "string",
+      "text": "10% — red"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 309,
+      "column": 18,
+      "kind": "string",
+      "text": "100% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 310,
+      "column": 18,
+      "kind": "string",
+      "text": "85% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 311,
+      "column": 18,
+      "kind": "string",
+      "text": "75% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 312,
+      "column": 18,
+      "kind": "string",
+      "text": "70% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 313,
+      "column": 18,
+      "kind": "string",
+      "text": "50% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 314,
+      "column": 18,
+      "kind": "string",
+      "text": "20% — red"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 326,
+      "column": 18,
+      "kind": "string",
+      "text": "100% — green"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 327,
+      "column": 18,
+      "kind": "string",
+      "text": "70% — amber"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 328,
+      "column": 18,
+      "kind": "string",
+      "text": "45% — red"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 329,
+      "column": 18,
+      "kind": "string",
+      "text": "20% — red"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 460,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Per-field match colours:"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 463,
+      "column": 72,
+      "kind": "jsx",
+      "text": "■ red &lt; 50%"
+    }
+  ]
 }

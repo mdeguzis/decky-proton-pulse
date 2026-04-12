@@ -575,7 +575,7 @@ export const en: TranslationTree = {
     ram: 'RAM',
     systemRequirements: 'System Requirements',
     matchingGuideTitle: 'How Matching Works',
-    matchingGuideButton: 'Matching Guide',
+    matchingGuideButton: 'How Scoring Works',
   },
   editReport: {
     title: 'Edit Report',

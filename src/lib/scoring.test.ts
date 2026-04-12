@@ -122,6 +122,24 @@ describe('scoreReport', () => {
     );
   });
 
+  it('SteamOS lineage scores higher than unrelated distros for Arch-based reports', () => {
+    const steamosSystem: SystemInfo = { ...nvidiaSystem, distro: 'SteamOS 3.7.0' };
+    const archReport = makeCdnReport({ os: 'Arch Linux' });
+    const fedoraReport = makeCdnReport({ os: 'Fedora 41' });
+    expect(scoreReport(archReport, steamosSystem).score).toBeGreaterThan(
+      scoreReport(fedoraReport, steamosSystem).score
+    );
+  });
+
+  it('Pop!_OS lineage scores higher than unrelated distros for Ubuntu reports', () => {
+    const popSystem: SystemInfo = { ...nvidiaSystem, distro: 'Pop!_OS 22.04 LTS' };
+    const ubuntuReport = makeCdnReport({ os: 'Ubuntu 22.04 LTS' });
+    const fedoraReport = makeCdnReport({ os: 'Fedora 41' });
+    expect(scoreReport(ubuntuReport, popSystem).score).toBeGreaterThan(
+      scoreReport(fedoraReport, popSystem).score
+    );
+  });
+
   it('exact kernel match scores higher than a nearby patch mismatch', () => {
     const exactKernel = makeCdnReport({ kernel: '6.19.8' });
     // delta of 2, hits the KERNEL_PATCH_CLOSE multiplier
@@ -222,6 +240,11 @@ describe('parseProtonMajorVersion', () => {
 
   it('parses hyphenated proton format', () => {
     expect(parseProtonMajorVersion('proton-7.0-6')).toBe(7);
+  });
+
+  it('parses plain ProtonDB version strings without a proton prefix', () => {
+    expect(parseProtonMajorVersion('9.0-4')).toBe(9);
+    expect(parseProtonMajorVersion('10.0-2')).toBe(10);
   });
 
   it('parses custom build formats like cachyos, tkg, protonplus', () => {
@@ -363,9 +386,10 @@ describe('getHardwareMatchBreakdown', () => {
   it('gpu: same vendor + different model gives partial match', () => {
     const report = makeCdnReport({ gpu: 'NVIDIA GeForce GTX 1060' });
     const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
-    // vendor match (40) + some token overlap for "geforce"
-    expect(bd.gpu.percent).toBeGreaterThanOrEqual(40);
-    expect(bd.gpu.percent).toBeLessThan(90);
+    // vendor match but GTX 1060 is 4 gens from RTX 5080, so gen penalty applies
+    // score = 40 (vendor) + 0 (no model token overlap) - 20 (gen penalty) = 20
+    expect(bd.gpu.percent).toBeGreaterThan(10);
+    expect(bd.gpu.percent).toBeLessThan(50);
   });
 
   it('gpu: different vendor gives low match', () => {
@@ -486,25 +510,32 @@ describe('getHardwareMatchBreakdown', () => {
   it('kernel: same major.minor nearby patch gives 85%', () => {
     const report = makeCdnReport({ kernel: '6.19.6' });
     const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
-    expect(bd.kernel.percent).toBe(85);
+    expect(bd.kernel.percent).toBe(90);
   });
 
-  it('kernel: same major nearby minor gives 65%', () => {
+  it('kernel: same major nearby minor gives 75%', () => {
     const report = makeCdnReport({ kernel: '6.18.4' });
     const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
-    expect(bd.kernel.percent).toBe(65);
+    expect(bd.kernel.percent).toBe(75);
   });
 
-  it('kernel: same major distant minor gives 40%', () => {
+  it('kernel: same major distant minor stays meaningfully positive', () => {
     const report = makeCdnReport({ kernel: '6.6.0' });
     const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
-    expect(bd.kernel.percent).toBe(40);
+    expect(bd.kernel.percent).toBe(60);
   });
 
-  it('kernel: different major gives 10%', () => {
+  it('kernel: adjacent major gives partial credit', () => {
+    const report = makeCdnReport({ kernel: '5.15.0' });
+    const sys: SystemInfo = { ...nvidiaSystem, kernel: '6.1.0' };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.kernel.percent).toBe(35);
+  });
+
+  it('kernel: adjacent major gets partial credit under the new lenient rule', () => {
     const report = makeCdnReport({ kernel: '5.15.0' });
     const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
-    expect(bd.kernel.percent).toBe(10);
+    expect(bd.kernel.percent).toBe(35);
   });
 
   it('kernel: empty kernel gives 0', () => {
@@ -552,26 +583,25 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.ram.percent).toBe(0);
   });
 
-  it('ram: both exceed game minimum gets boosted match', () => {
-    // 32GB report vs 14GB system = normally 20% (18GB diff)
-    // but if game only needs 6GB, both are fine
+  it('ram: both meeting game minimum gets treated as fully sufficient', () => {
     const sys14: SystemInfo = { ...nvidiaSystem, ram_gb: 14 };
     const report = makeCdnReport({ ram: '32 GB' });
-    const bdNoReqs = getHardwareMatchBreakdown(report, sys14);
-    const bdWithReqs = getHardwareMatchBreakdown(report, sys14, 6);
-    // with game reqs, should be significantly higher since both exceed 6GB
-    expect(bdWithReqs.ram.percent).toBeGreaterThan(bdNoReqs.ram.percent);
-    expect(bdWithReqs.ram.percent).toBeGreaterThanOrEqual(70);
+    const bdWithReqs = getHardwareMatchBreakdown(report, sys14, 12);
+    expect(bdWithReqs.ram.percent).toBe(100);
   });
 
-  it('ram: game minimum not met keeps normal scoring', () => {
-    // system has 4GB, game needs 8GB -- game min not met, no boost
-    const sys4: SystemInfo = { ...nvidiaSystem, ram_gb: 4 };
+  it('ram: slight shortfall below minimum only gets a modest deduction', () => {
+    const sys14: SystemInfo = { ...nvidiaSystem, ram_gb: 14 };
     const report = makeCdnReport({ ram: '16 GB' });
-    const bdNoReqs = getHardwareMatchBreakdown(report, sys4);
-    const bdWithReqs = getHardwareMatchBreakdown(report, sys4, 8);
-    // system doesn't meet minimum, so no boost applied
-    expect(bdWithReqs.ram.percent).toBe(bdNoReqs.ram.percent);
+    const bdWithReqs = getHardwareMatchBreakdown(report, sys14, 16);
+    expect(bdWithReqs.ram.percent).toBe(85);
+  });
+
+  it('ram: larger shortfall below minimum degrades more sharply', () => {
+    const sys8: SystemInfo = { ...nvidiaSystem, ram_gb: 8 };
+    const report = makeCdnReport({ ram: '16 GB' });
+    const bdWithReqs = getHardwareMatchBreakdown(report, sys8, 16);
+    expect(bdWithReqs.ram.percent).toBe(50);
   });
 
   // ── Color coding ───────────────────────────────────────────────────────────
@@ -623,6 +653,20 @@ describe('getHardwareMatchBreakdown', () => {
     expect(pct).toBeGreaterThan(0);
   });
 
+  it('OS lineage: SteamOS and Arch Linux get the family match score', () => {
+    const steamosSys: SystemInfo = { ...nvidiaSystem, distro: 'SteamOS 3.7.0' };
+    const report = makeCdnReport({ os: 'Arch Linux' });
+    const bd = getHardwareMatchBreakdown(report, steamosSys);
+    expect(bd.os.percent).toBe(70);
+  });
+
+  it('OS lineage: Pop!_OS and Ubuntu get the family match score', () => {
+    const popSys: SystemInfo = { ...nvidiaSystem, distro: 'Pop!_OS 22.04 LTS' };
+    const report = makeCdnReport({ os: 'Ubuntu 22.04 LTS' });
+    const bd = getHardwareMatchBreakdown(report, popSys);
+    expect(bd.os.percent).toBe(70);
+  });
+
   it('GPU synonym mapping: "Advanced Micro Devices" matches "AMD"', () => {
     // the system reports the full vendor name, the report uses "AMD"
     const report = makeCdnReport({ gpu: 'AMD Radeon RX 6700 XT' });
@@ -632,8 +676,9 @@ describe('getHardwareMatchBreakdown', () => {
       gpu_vendor: 'amd',
     };
     const bd = getHardwareMatchBreakdown(report, deckSys);
-    // should recognize both as AMD and give > 10% (vendor match at minimum)
-    expect(bd.gpu.percent).toBeGreaterThanOrEqual(40);
+    // both recognized as AMD (vendor match), but very different models (RX 6700 vs custom APU)
+    // with gen penalty for 6700 (gen 6) vs 0405 (gen 0), score drops below 40
+    expect(bd.gpu.percent).toBeGreaterThan(10);
   });
 
   it('CPU field match: same brand different model', () => {
@@ -675,6 +720,17 @@ describe('getHardwareMatchBreakdown', () => {
     });
     const bd = getHardwareMatchBreakdown(report, mesaSys);
     // major 22 vs 24 = diff of 2, should be 75%
+    expect(bd.gpuDriver.percent).toBe(75);
+  });
+
+  it('driver: Mesa patch/minor differences are not treated as exact matches', () => {
+    const mesaSys: SystemInfo = { ...nvidiaSystem, driver_version: 'Mesa 24.3.0', gpu_vendor: 'amd' };
+    const report = makeCdnReport({
+      gpu: 'AMD Radeon RX 6700',
+      gpuDriver: 'Mesa 24.2.8',
+    });
+    const bd = getHardwareMatchBreakdown(report, mesaSys);
+    expect(bd.gpuDriver.percent).toBeLessThan(100);
     expect(bd.gpuDriver.percent).toBe(75);
   });
 
@@ -732,17 +788,15 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.kernel.percent).toBe(50);
   });
 
-  it('kernel: one valve one standard still uses standard matching', () => {
-    // only one is a valve kernel, so we fall back to normal matching
+  it('kernel: one valve one standard still gives lenient same-major credit', () => {
     const report = makeCdnReport({ kernel: '5.13.0-valve36-1-neptune' });
     const bd = getHardwareMatchBreakdown(report, nvidiaSystem); // nvidiaSystem has 6.19.8-1-cachyos
-    // different major, no valve match -> 10%
-    expect(bd.kernel.percent).toBe(10);
+    expect(bd.kernel.percent).toBe(35);
   });
 
   // ── Proton version field matching ───────────────────────────────────────────
 
-  it('proton: same major version gives 100%', () => {
+  it('proton: same major and same proton family gives 100%', () => {
     const report = makeCdnReport({ protonVersion: 'GE-Proton9-7' });
     const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
     const bd = getHardwareMatchBreakdown(report, sys);
@@ -750,7 +804,21 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.protonVersion.color).toBe('#4caf50');
   });
 
-  it('proton: 1 major version apart gives 70%', () => {
+  it('proton: plain report version vs custom installed same major gets a small deduction', () => {
+    const report = makeCdnReport({ protonVersion: '10.0-4' });
+    const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'GE-Proton10-34' };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.protonVersion.percent).toBe(90);
+  });
+
+  it('proton: custom report vs regular installed same major gets a larger deduction', () => {
+    const report = makeCdnReport({ protonVersion: 'GE-Proton10-3' });
+    const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'Proton 10.0-4' };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.protonVersion.percent).toBe(82);
+  });
+
+  it('proton: 1 major version apart gives 70% for the same proton family', () => {
     const report = makeCdnReport({ protonVersion: 'GE-Proton8-32' });
     const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
     const bd = getHardwareMatchBreakdown(report, sys);
@@ -758,11 +826,18 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.protonVersion.color).toBe('#f59e0b');
   });
 
-  it('proton: 2 major versions apart gives 45%', () => {
+  it('proton: 1 major version apart with vanilla vs custom is slightly lower', () => {
+    const report = makeCdnReport({ protonVersion: '9.0-4' });
+    const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'GE-Proton10-34' };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.protonVersion.percent).toBe(62);
+  });
+
+  it('proton: 2 major versions apart with vanilla vs custom is slightly lower', () => {
     const report = makeCdnReport({ protonVersion: 'Proton 7.0-6' });
     const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
     const bd = getHardwareMatchBreakdown(report, sys);
-    expect(bd.protonVersion.percent).toBe(45);
+    expect(bd.protonVersion.percent).toBe(38);
   });
 
   it('proton: 3+ major versions apart gives 20%', () => {

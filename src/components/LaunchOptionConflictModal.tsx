@@ -1,4 +1,4 @@
-import { ConfirmModal, DialogButton, showModal } from '@decky/ui';
+import { ModalRoot, DialogButton, Focusable, showModal } from '@decky/ui';
 import { t } from '../lib/i18n';
 import { appendLaunchOptions, normalizeLaunchOptionsForComparison } from '../lib/launchVars';
 
@@ -13,17 +13,20 @@ function LaunchOptionConflictModal({
   appName: string;
   currentLaunchOptions: string;
   incomingLaunchOptions: string;
+  closeModal?: () => void;
   onResolve: (choice: LaunchOptionConflictChoice) => void;
 }) {
   return (
-    <ConfirmModal
-      strTitle={t().configure.launchOptionConflictTitle}
-      strDescription={t().configure.launchOptionConflictDescription(appName)}
-      strOKButtonText={t().common.cancel}
-      onOK={() => onResolve('cancel')}
-      onCancel={() => onResolve('cancel')}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
+    <ModalRoot onCancel={() => onResolve('cancel')}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 560, maxWidth: 720, padding: 16 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#e8f4ff', marginBottom: 8 }}>
+            {t().configure.launchOptionConflictTitle}
+          </div>
+          <div style={{ fontSize: 12, color: '#9eb7cc', lineHeight: 1.5 }}>
+            {t().configure.launchOptionConflictDescription(appName)}
+          </div>
+        </div>
         <div style={{ fontSize: 11, color: '#9eb7cc', lineHeight: 1.45 }}>
           {t().configure.launchOptionConflictWarning}
         </div>
@@ -45,16 +48,21 @@ function LaunchOptionConflictModal({
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
-          <DialogButton onClick={() => onResolve('append')}>
+        <Focusable
+          style={{ display: 'flex', gap: 10, justifyContent: 'stretch', marginTop: 4 }}
+        >
+          <DialogButton onClick={() => onResolve('append')} style={{ flex: 1, minWidth: 0 }}>
             {t().configure.launchOptionConflictAppend}
           </DialogButton>
-          <DialogButton onClick={() => onResolve('replace')}>
+          <DialogButton onClick={() => onResolve('replace')} style={{ flex: 1, minWidth: 0 }}>
             {t().configure.launchOptionConflictReplace}
           </DialogButton>
-        </div>
+          <DialogButton onClick={() => onResolve('cancel')} style={{ flex: 1, minWidth: 0 }}>
+            {t().common.cancel}
+          </DialogButton>
+        </Focusable>
       </div>
-    </ConfirmModal>
+    </ModalRoot>
   );
 }
 

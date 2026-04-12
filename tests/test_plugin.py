@@ -281,7 +281,9 @@ def test_read_custom_proton_single_entry(tmp_path: pathlib.Path) -> None:
     assert result == "GE-Proton10-1"
 
 
-def test_read_custom_proton_multiple_entries(tmp_path: pathlib.Path) -> None:
+def test_read_custom_proton_multiple_entries_returns_single_best_match(
+    tmp_path: pathlib.Path,
+) -> None:
     compat_dir = tmp_path / ".steam" / "root" / "compatibilitytools.d"
     compat_dir.mkdir(parents=True)
     (compat_dir / "GE-Proton10-1").mkdir()
@@ -289,9 +291,7 @@ def test_read_custom_proton_multiple_entries(tmp_path: pathlib.Path) -> None:
 
     with patch.object(decky, "DECKY_USER_HOME", str(tmp_path)):
         result = read_custom_proton()
-    assert result is not None
-    assert "GE-Proton10-1" in result
-    assert "cachyos-10.0" in result
+    assert result == "GE-Proton10-1"
 
 
 def test_read_custom_proton_empty_dir(tmp_path: pathlib.Path) -> None:

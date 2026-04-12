@@ -20,8 +20,24 @@
     "key": "hardware-compare",
     "title": "Manage Game Hardware Compare",
     "caption": "Side-by-side comparison between the report hardware and our current system.",
-    "instructions": "From the report detail view, open the Our System comparison modal.",
+    "instructions": "From the report detail view, open the System Comparison modal.",
     "automation": { "tab": "manage-game", "target": "manage-game/hardware-compare", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 900 }
+  },
+  {
+    "group": "manage-game",
+    "key": "matching-guide",
+    "title": "Manage Game Matching Guide",
+    "caption": "How Matching Works modal explaining relevance score and per-field comparison thresholds.",
+    "instructions": "From the hardware comparison modal, open How Matching Works.",
+    "automation": { "tab": "manage-game", "target": "manage-game/matching-guide", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 900 }
+  },
+  {
+    "group": "manage-game",
+    "key": "system-requirements",
+    "title": "Manage Game System Requirements",
+    "caption": "System Requirements modal showing parsed game requirements alongside the hardware comparison flow.",
+    "instructions": "From the hardware comparison modal, open System Requirements.",
+    "automation": { "tab": "manage-game", "target": "manage-game/system-requirements", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 900 }
   },
   {
     "group": "manage-game",
@@ -30,6 +46,14 @@
     "caption": "Edit modal used to change RAM, notes, and other report-derived launch settings.",
     "instructions": "From the report detail view, choose Edit and capture the modal with fields visible.",
     "automation": { "tab": "manage-game", "target": "manage-game/edit-modal", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 900 }
+  },
+  {
+    "group": "manage-game",
+    "key": "upload-destination",
+    "title": "Manage Game Upload Destination",
+    "caption": "Upload destination picker offering ProtonDB and Proton Pulse upload paths from the report detail view.",
+    "instructions": "From the report detail view, open the Upload destination picker.",
+    "automation": { "tab": "manage-game", "target": "manage-game/upload-destination", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "waitMs": 900 }
   },
   {
     "group": "manage-configurations",

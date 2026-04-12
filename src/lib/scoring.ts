@@ -59,11 +59,16 @@ const NEGATION_WORDS = new Set([
   'no', 'not', "doesn't", "don't", "didn't", 'never', 'without', 'none',
 ]);
 
+// conjunctions that break negation scope: "no freeze *but* crash" -> crash isnt negated
+const SCOPE_BREAKERS = new Set(['but', 'however', 'although', 'though', 'yet', 'except']);
+
 function isNegatedAt(text: string, keywordStart: number): boolean {
   // examine up to 30 chars before the keyword for a negation word
   const before = text.slice(Math.max(0, keywordStart - 30), keywordStart).trim();
   const words = before.split(/\s+/);
-  return words.slice(-3).some(w => NEGATION_WORDS.has(w));
+  // only check the 2 words immediately before, and stop at scope breakers
+  const nearby = words.slice(-2);
+  return nearby.some(w => NEGATION_WORDS.has(w) && !SCOPE_BREAKERS.has(w));
 }
 
 export function parseNotesSentiment(notes: string): number {
@@ -97,15 +102,32 @@ function isCustomProton(version: string): boolean {
   return CUSTOM_PROTON_MARKERS.some(m => lower.includes(m));
 }
 
-function parseDriverMajor(driverStr: string): number | null {
-  // Mesa drivers often have an OpenGL version prefix like "4.6 (Compatibility Profile)"
-  // before the actual Mesa version. Check for Mesa specifically first
-  const mesaMatch = driverStr.match(/Mesa\s+(\d+)\.\d+/i);
-  if (mesaMatch) return parseInt(mesaMatch[1], 10);
+type DriverVersion = {
+  major: number;
+  minor: number;
+  patch: number;
+  isMesa: boolean;
+};
 
-  // NVIDIA/other: "NVIDIA 545.29.06" -> 545, "NVIDIA 410.93" -> 410
-  const match = driverStr.match(/(\d+)\.\d+/);
-  return match ? parseInt(match[1], 10) : null;
+function parseDriverVersion(driverStr: string): DriverVersion | null {
+  const mesaMatch = driverStr.match(/Mesa\s+(\d+)\.(\d+)(?:\.(\d+))?/i);
+  if (mesaMatch) {
+    return {
+      major: parseInt(mesaMatch[1], 10),
+      minor: parseInt(mesaMatch[2], 10),
+      patch: parseInt(mesaMatch[3] ?? '0', 10),
+      isMesa: true,
+    };
+  }
+
+  const match = driverStr.match(/(\d+)\.(\d+)(?:\.(\d+))?/);
+  if (!match) return null;
+  return {
+    major: parseInt(match[1], 10),
+    minor: parseInt(match[2], 10),
+    patch: parseInt(match[3] ?? '0', 10),
+    isMesa: false,
+  };
 }
 
 type KernelVersion = {
@@ -128,16 +150,54 @@ function normalizeOsString(value: string | null | undefined): string {
   return (value ?? '').trim().toLowerCase();
 }
 
-function detectOsFamily(value: string | null | undefined): string | null {
+function detectOsIdentity(value: string | null | undefined): string | null {
   const normalized = normalizeOsString(value);
   if (!normalized) return null;
-  if (/steamos|holoiso/.test(normalized)) return 'steamos';
-  if (/bazzite|nobara|fedora/.test(normalized)) return 'fedora';
-  if (/arch|cachyos|chimeraos|endeavouros|manjaro|garuda/.test(normalized)) return 'arch';
-  if (/ubuntu|pop!_os|pop os|linux mint|elementary/.test(normalized)) return 'ubuntu';
+  if (/steamos/.test(normalized)) return 'steamos';
+  if (/holoiso/.test(normalized)) return 'holoiso';
+  if (/chimeraos/.test(normalized)) return 'chimeraos';
+  if (/bazzite/.test(normalized)) return 'bazzite';
+  if (/nobara/.test(normalized)) return 'nobara';
+  if (/fedora/.test(normalized)) return 'fedora';
+  if (/cachyos/.test(normalized)) return 'cachyos';
+  if (/endeavouros/.test(normalized)) return 'endeavouros';
+  if (/manjaro/.test(normalized)) return 'manjaro';
+  if (/garuda/.test(normalized)) return 'garuda';
+  if (/\barch\b/.test(normalized)) return 'arch';
+  if (/pop!_os|pop os/.test(normalized)) return 'popos';
+  if (/linux mint/.test(normalized)) return 'mint';
+  if (/elementary/.test(normalized)) return 'elementary';
+  if (/ubuntu/.test(normalized)) return 'ubuntu';
   if (/debian/.test(normalized)) return 'debian';
   if (/nixos/.test(normalized)) return 'nixos';
   return normalized;
+}
+
+function getOsLineage(value: string | null | undefined): string[] {
+  const identity = detectOsIdentity(value);
+  if (!identity) return [];
+
+  const lineage: Record<string, string[]> = {
+    steamos: ['steamos', 'arch'],
+    holoiso: ['holoiso', 'steamos', 'arch'],
+    chimeraos: ['chimeraos', 'arch'],
+    bazzite: ['bazzite', 'fedora'],
+    nobara: ['nobara', 'fedora'],
+    fedora: ['fedora'],
+    cachyos: ['cachyos', 'arch'],
+    endeavouros: ['endeavouros', 'arch'],
+    manjaro: ['manjaro', 'arch'],
+    garuda: ['garuda', 'arch'],
+    arch: ['arch'],
+    popos: ['popos', 'ubuntu', 'debian'],
+    mint: ['mint', 'ubuntu', 'debian'],
+    elementary: ['elementary', 'ubuntu', 'debian'],
+    ubuntu: ['ubuntu', 'debian'],
+    debian: ['debian'],
+    nixos: ['nixos'],
+  };
+
+  return lineage[identity] ?? [identity];
 }
 
 function gpuDriverMultiplier(report: CdnReport, sysInfo: SystemInfo): number {
@@ -148,12 +208,35 @@ function gpuDriverMultiplier(report: CdnReport, sysInfo: SystemInfo): number {
   if (reportTier !== sysVendor) return WEIGHTS.GPU_MISMATCH;
 
   // same GPU vendor, compare driver major versions to boost close matches
-  const reportMajor = parseDriverMajor(report.gpuDriver ?? '');
-  const sysMajor    = parseDriverMajor(sysInfo.driver_version ?? '');
+  const reportVersion = parseDriverVersion(report.gpuDriver ?? '');
+  const systemVersion = parseDriverVersion(sysInfo.driver_version ?? '');
 
-  if (reportMajor === null || sysMajor === null) return WEIGHTS.GPU_MATCH;
-  if (reportMajor === sysMajor) return WEIGHTS.GPU_DRIVER_EXACT;
-  if (Math.abs(reportMajor - sysMajor) <= 2) return WEIGHTS.GPU_DRIVER_CLOSE;
+  if (!reportVersion || !systemVersion) return WEIGHTS.GPU_MATCH;
+  if (!reportVersion.isMesa && !systemVersion.isMesa) {
+    if (reportVersion.major === systemVersion.major) return WEIGHTS.GPU_DRIVER_EXACT;
+    if (Math.abs(reportVersion.major - systemVersion.major) <= 2) return WEIGHTS.GPU_DRIVER_CLOSE;
+    return WEIGHTS.GPU_MATCH;
+  }
+  if (
+    reportVersion.major === systemVersion.major
+    && reportVersion.minor === systemVersion.minor
+    && reportVersion.patch === systemVersion.patch
+  ) {
+    return WEIGHTS.GPU_DRIVER_EXACT;
+  }
+  if (
+    reportVersion.major === systemVersion.major
+    && reportVersion.minor === systemVersion.minor
+  ) {
+    return 1.2;
+  }
+  if (
+    reportVersion.major === systemVersion.major
+    && Math.abs(reportVersion.minor - systemVersion.minor) <= 1
+  ) {
+    return WEIGHTS.GPU_DRIVER_CLOSE;
+  }
+  if (Math.abs(reportVersion.major - systemVersion.major) <= 2) return WEIGHTS.GPU_DRIVER_CLOSE;
   return WEIGHTS.GPU_MATCH;
 }
 
@@ -192,9 +275,15 @@ function osMultiplier(report: CdnReport, sysInfo: SystemInfo): number {
   if (!reportOs || !systemOs) return 1;
   if (reportOs === systemOs) return WEIGHTS.OS_EXACT;
 
-  const reportFamily = detectOsFamily(reportOs);
-  const systemFamily = detectOsFamily(systemOs);
-  if (reportFamily && systemFamily && reportFamily === systemFamily) {
+  const reportIdentity = detectOsIdentity(reportOs);
+  const systemIdentity = detectOsIdentity(systemOs);
+  if (reportIdentity && systemIdentity && reportIdentity === systemIdentity) {
+    return WEIGHTS.OS_EXACT;
+  }
+
+  const reportLineage = new Set(getOsLineage(reportOs));
+  const systemLineage = getOsLineage(systemOs);
+  if (systemLineage.some((entry) => reportLineage.has(entry))) {
     return WEIGHTS.OS_FAMILY_MATCH;
   }
   return 1;
@@ -205,7 +294,11 @@ function parseRamGb(value: string | null | undefined): number | null {
   return match ? Number.parseInt(match[1], 10) : null;
 }
 
-export function getHardwareMatchPercent(report: CdnReport, sysInfo: SystemInfo | null): number {
+export function getHardwareMatchPercent(
+  report: CdnReport,
+  sysInfo: SystemInfo | null,
+  gameMinRamGb?: number | null,
+): number {
   if (!sysInfo) return 0;
 
   let score = 0;
@@ -222,23 +315,31 @@ export function getHardwareMatchPercent(report: CdnReport, sysInfo: SystemInfo |
     score += 14;
   }
 
-  const reportDriverMajor = parseDriverMajor(report.gpuDriver ?? '');
-  const systemDriverMajor = parseDriverMajor(sysInfo.driver_version ?? '');
-  if (reportDriverMajor !== null && systemDriverMajor !== null) {
-    if (reportDriverMajor === systemDriverMajor) score += 15;
-    else if (Math.abs(reportDriverMajor - systemDriverMajor) <= 2) score += 10;
-    else if (Math.abs(reportDriverMajor - systemDriverMajor) <= 5) score += 6;
+  const reportDriver = parseDriverVersion(report.gpuDriver ?? '');
+  const systemDriver = parseDriverVersion(sysInfo.driver_version ?? '');
+  if (reportDriver && systemDriver) {
+    if (
+      reportDriver.major === systemDriver.major
+      && reportDriver.minor === systemDriver.minor
+      && reportDriver.patch === systemDriver.patch
+    ) score += 15;
+    else if (reportDriver.major === systemDriver.major && reportDriver.minor === systemDriver.minor) score += 13;
+    else if (reportDriver.major === systemDriver.major && Math.abs(reportDriver.minor - systemDriver.minor) <= 1) score += 10;
+    else if (Math.abs(reportDriver.major - systemDriver.major) <= 2) score += 6;
   } else if (reportTier !== 'unknown' && sysInfo.gpu_vendor && reportTier === sysInfo.gpu_vendor) {
     score += 8;
   }
 
-  const reportFamily = detectOsFamily(report.os);
-  const systemFamily = detectOsFamily(sysInfo.distro);
-  if (reportFamily && systemFamily) {
+  const reportIdentity = detectOsIdentity(report.os);
+  const systemIdentity = detectOsIdentity(sysInfo.distro);
+  if (reportIdentity && systemIdentity) {
     const reportOs = normalizeOsString(report.os);
     const systemOs = normalizeOsString(sysInfo.distro);
-    if (reportOs === systemOs) score += 20;
-    else if (reportFamily === systemFamily) score += 14;
+    if (reportOs === systemOs || reportIdentity === systemIdentity) score += 20;
+    else {
+      const reportLineage = new Set(getOsLineage(report.os));
+      if (getOsLineage(sysInfo.distro).some((entry) => reportLineage.has(entry))) score += 14;
+    }
   }
 
   const reportKernel = parseKernelVersion(report.kernel ?? '');
@@ -258,21 +359,21 @@ export function getHardwareMatchPercent(report: CdnReport, sysInfo: SystemInfo |
       score += 16;
     } else if (
       reportKernel.major === systemKernel.major
-      && Math.abs(reportKernel.minor - systemKernel.minor) <= 1
+      && Math.abs(reportKernel.minor - systemKernel.minor) <= 2
     ) {
-      score += 12;
+      score += 13;
     } else if (reportKernel.major === systemKernel.major) {
-      score += 6;
+      score += 10;
+    } else if (Math.abs(reportKernel.major - systemKernel.major) === 1) {
+      score += 5;
     }
   }
 
   const reportRamGb = parseRamGb(report.ram);
   const systemRamGb = sysInfo.ram_gb;
   if (reportRamGb !== null && systemRamGb !== null) {
-    const delta = Math.abs(reportRamGb - systemRamGb);
-    if (delta <= 2) score += 10;
-    else if (delta <= 4) score += 7;
-    else if (delta <= 8) score += 4;
+    const ramMatch = ramFieldMatch(report.ram, systemRamGb, gameMinRamGb);
+    score += Math.round((ramMatch / 100) * 10);
   }
 
   return Math.max(0, Math.min(100, score));
@@ -436,12 +537,25 @@ function gpuFieldMatch(reportGpu: string, systemGpu: string): number {
 }
 
 function driverFieldMatch(reportDriver: string, systemDriver: string): number {
-  const rMajor = parseDriverMajor(reportDriver);
-  const sMajor = parseDriverMajor(systemDriver);
+  const report = parseDriverVersion(reportDriver);
+  const system = parseDriverVersion(systemDriver);
 
-  if (rMajor === null || sMajor === null) return 0;
-  if (rMajor === sMajor) return 100;
-  const diff = Math.abs(rMajor - sMajor);
+  if (!report || !system) return 0;
+  if (!report.isMesa && !system.isMesa) {
+    if (report.major === system.major) return 100;
+    const majorDiff = Math.abs(report.major - system.major);
+    if (majorDiff <= 2) return 75;
+    if (majorDiff <= 5) return 50;
+    return 20;
+  }
+  if (
+    report.major === system.major
+    && report.minor === system.minor
+    && report.patch === system.patch
+  ) return 100;
+  if (report.major === system.major && report.minor === system.minor) return 90;
+  if (report.major === system.major && Math.abs(report.minor - system.minor) <= 1) return 75;
+  const diff = Math.abs(report.major - system.major);
   if (diff <= 2) return 75;
   if (diff <= 5) return 50;
   return 20;
@@ -454,9 +568,8 @@ function osFieldMatch(reportOs: string, systemOs: string): number {
   if (!rNorm || !sNorm) return 0;
   if (rNorm === sNorm) return 100;
 
-  const rFamily = detectOsFamily(reportOs);
-  const sFamily = detectOsFamily(systemOs);
-  if (rFamily && sFamily && rFamily === sFamily) return 70;
+  const reportLineage = new Set(getOsLineage(reportOs));
+  if (getOsLineage(systemOs).some((entry) => reportLineage.has(entry))) return 70;
   return 10;
 }
 
@@ -490,18 +603,34 @@ export function parseProtonMajorVersion(version: string): number | null {
   m = lower.match(/[a-z]+-(\d+)\.\d+/);
   if (m) return parseInt(m[1], 10);
 
+  // Plain ProtonDB-style version strings like "9.0-4"
+  m = lower.match(/^(\d+)\.\d+(?:-\d+)?$/);
+  if (m) return parseInt(m[1], 10);
+
   return null;
 }
 
-function protonVersionFieldMatch(reportVersion: string, systemVersion: string): number {
-  const rMajor = parseProtonMajorVersion(reportVersion);
-  const sMajor = parseProtonMajorVersion(systemVersion);
+function parseProtonDescriptor(version: string): { major: number; custom: boolean } | null {
+  const major = parseProtonMajorVersion(version);
+  if (major === null) return null;
+  return {
+    major,
+    custom: isCustomProton(version),
+  };
+}
 
-  if (rMajor === null || sMajor === null) return 0;
-  if (rMajor === sMajor) return 100;
-  const diff = Math.abs(rMajor - sMajor);
-  if (diff === 1) return 70;
-  if (diff === 2) return 45;
+function protonVersionFieldMatch(reportVersion: string, systemVersion: string): number {
+  const report = parseProtonDescriptor(reportVersion);
+  const system = parseProtonDescriptor(systemVersion);
+
+  if (!report || !system) return 0;
+  if (report.major === system.major) {
+    if (report.custom === system.custom) return 100;
+    return report.custom ? 82 : 90;
+  }
+  const diff = Math.abs(report.major - system.major);
+  if (diff === 1) return report.custom === system.custom ? 70 : 62;
+  if (diff === 2) return report.custom === system.custom ? 45 : 38;
   return 20;
 }
 
@@ -527,10 +656,11 @@ function kernelFieldMatch(reportKernel: string, systemKernel: string): number {
   }
 
   if (rk.major === sk.major && rk.minor === sk.minor && rk.patch === sk.patch) return 100;
-  if (rk.major === sk.major && rk.minor === sk.minor && Math.abs(rk.patch - sk.patch) <= 2) return 85;
-  if (rk.major === sk.major && Math.abs(rk.minor - sk.minor) <= 1) return 65;
-  if (rk.major === sk.major) return 40;
-  return 10;
+  if (rk.major === sk.major && rk.minor === sk.minor && Math.abs(rk.patch - sk.patch) <= 2) return 90;
+  if (rk.major === sk.major && Math.abs(rk.minor - sk.minor) <= 2) return 75;
+  if (rk.major === sk.major) return 60;
+  if (Math.abs(rk.major - sk.major) === 1) return 35;
+  return 15;
 }
 
 // CPU synonyms for token normalization
@@ -583,14 +713,16 @@ function ramFieldMatch(reportRam: string, systemRamGb: number | null, gameMinRam
   const rGb = parseRamGb(reportRam);
   if (rGb === null || systemRamGb === null) return 0;
 
-  // if we know the game's minimum RAM and both systems exceed it,
-  // the raw GB difference matters less for compatibility
-  if (gameMinRamGb && rGb >= gameMinRamGb && systemRamGb >= gameMinRamGb) {
-    // both have enough RAM for the game, scale based on how far above minimum
-    const diff = Math.abs(rGb - systemRamGb);
-    if (diff <= 2) return 100;
-    if (diff <= 8) return 85;   // both sufficient, minor difference
-    return 70;                   // both sufficient but big delta
+  // If we know the game's minimum RAM, meeting it matters more than matching
+  // exact capacity. Over the requirement is effectively "good enough".
+  if (gameMinRamGb && rGb >= gameMinRamGb) {
+    if (systemRamGb >= gameMinRamGb) return 100;
+
+    const shortfall = gameMinRamGb - systemRamGb;
+    if (shortfall <= 2) return 85;
+    if (shortfall <= 4) return 70;
+    if (shortfall <= 8) return 50;
+    return 25;
   }
 
   const diff = Math.abs(rGb - systemRamGb);

@@ -13,7 +13,9 @@ import subprocess
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
+from .compat_tools import extract_version_parts, list_installed_compatibility_tools
 from .plugin_utils import system_command_env
+from .proton_ge import read_latest_metadata
 
 
 def read_cpu() -> str | None:
@@ -150,18 +152,48 @@ def read_distro() -> str | None:
 
 
 def read_custom_proton() -> str | None:
-    """See what custom Proton builds live in ``compatibilitytools.d``."""
+    """Return the best current custom Proton reference, never a smashed list.
+
+    Prefer the managed ``Proton-GE-Latest`` slot resolved to its real tag.
+    Otherwise pick the highest-version custom tool we can identify.
+    """
     compat_dir = os.path.join(
         decky.DECKY_USER_HOME, ".steam", "root", "compatibilitytools.d"
     )
     if not os.path.isdir(compat_dir):
         return None
-    entries = [
-        d for d in os.listdir(compat_dir) if os.path.isdir(os.path.join(compat_dir, d))
-    ]
-    if not entries:
+
+    tools = list_installed_compatibility_tools(read_latest_metadata())
+    custom_tools = [tool for tool in tools if tool.get("source") == "custom"]
+    if not custom_tools:
         return None
-    return entries[0] if len(entries) == 1 else ", ".join(entries)
+
+    latest_slot = next(
+        (tool for tool in custom_tools if tool.get("managed_slot") == "latest"),
+        None,
+    )
+    if latest_slot and latest_slot.get("latest_tag"):
+        latest_tag = latest_slot.get("latest_tag")
+        if isinstance(latest_tag, str) and latest_tag.strip():
+            return latest_tag
+
+    def _tool_label(tool: dict[str, object]) -> str:
+        for field in ("display_name", "internal_name", "directory_name"):
+            value = tool.get(field)
+            if isinstance(value, str) and value.strip():
+                return value
+        return ""
+
+    def _tool_rank(tool: dict[str, object]) -> tuple[int, int, str]:
+        label = _tool_label(tool)
+        parts = extract_version_parts(label)
+        if parts:
+            return (parts[0], parts[1], label.lower())
+        return (-1, -1, label.lower())
+
+    selected = max(custom_tools, key=_tool_rank)
+    label = _tool_label(selected)
+    return label or None
 
 
 def collect_system_info() -> dict[str, object]:
