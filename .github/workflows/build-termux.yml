@@ -37,10 +37,10 @@ jobs:
               export UV_PYTHON_PREFERENCE=system
 
               mkdir -p \$UV_CACHE_DIR
-              mkdir -p /usr/bin && ln -sf /data/data/com.termux/files/usr/bin/env /usr/bin/env
               pkg update -y
               pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip uv xz-utils
               command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
+              sed -i '1s|#!/usr/bin/env|#!/data/data/com.termux/files/usr/bin/env|' /data/data/com.termux/files/usr/bin/pnpm
 
               python3 --version
               uv --version
@@ -72,10 +72,10 @@ jobs:
               export PATH=/data/data/com.termux/files/usr/bin:\$PATH
               export UV_PYTHON_PREFERENCE=system
 
-              mkdir -p /usr/bin && ln -sf /data/data/com.termux/files/usr/bin/env /usr/bin/env
               pkg update -y
               pkg install -y nodejs-lts python uv
               command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
+              sed -i '1s|#!/usr/bin/env|#!/data/data/com.termux/files/usr/bin/env|' /data/data/com.termux/files/usr/bin/pnpm
               pnpm install --frozen-lockfile
               uv sync --group dev
               pnpm run coverage:diff
