@@ -24,8 +24,11 @@ vi.mock('./trackedConfigs', () => ({
 
 import { restRequest } from './voting';
 import type { TrackedConfig } from './trackedConfigs';
+import { getTrackedConfigs, addTrackedConfig } from './trackedConfigs';
 
 const mockRestRequest = vi.mocked(restRequest);
+const mockGetTrackedConfigs = vi.mocked(getTrackedConfigs);
+const mockAddTrackedConfig = vi.mocked(addTrackedConfig);
 
 function makeConfig(overrides: Partial<TrackedConfig> = {}): TrackedConfig {
   return {
@@ -174,5 +177,53 @@ describe('getCloudSyncStatus', () => {
   it('returns not-synced when app is missing from cloud', async () => {
     const { getCloudSyncStatus } = await import('./cloudSync');
     expect(getCloudSyncStatus(999, [])).toBe('not-synced');
+  });
+});
+
+describe('restoreCloudConfigs', () => {
+  it('restores cloud configs that dont exist locally', async () => {
+    mockGetTrackedConfigs.mockReturnValue([]);
+    const cloudCfg = makeConfig({ appId: 500, appName: 'Cloud Game' });
+    mockRestRequest.mockResolvedValueOnce({
+      data: [
+        { voter_id: 'abc123voterId', app_id: 500, app_name: 'Cloud Game', config: cloudCfg, updated_at: '2026-04-11T00:00:00Z' },
+      ],
+      error: null,
+      status: 200,
+    });
+
+    const { restoreCloudConfigs } = await import('./cloudSync');
+    const result = await restoreCloudConfigs();
+
+    expect(result).toEqual({ restored: 1, skipped: 0, failed: 0 });
+    expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudCfg);
+  });
+
+  it('skips configs that already exist locally', async () => {
+    const localCfg = makeConfig({ appId: 100, appName: 'Local Game' });
+    mockGetTrackedConfigs.mockReturnValue([localCfg]);
+
+    mockRestRequest.mockResolvedValueOnce({
+      data: [
+        { voter_id: 'abc123voterId', app_id: 100, app_name: 'Local Game', config: localCfg, updated_at: '2026-04-11T00:00:00Z' },
+      ],
+      error: null,
+      status: 200,
+    });
+
+    const { restoreCloudConfigs } = await import('./cloudSync');
+    const result = await restoreCloudConfigs();
+
+    expect(result).toEqual({ restored: 0, skipped: 1, failed: 0 });
+    expect(mockAddTrackedConfig).not.toHaveBeenCalled();
+  });
+
+  it('returns zeros when cloud fetch fails', async () => {
+    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'offline', status: 500 });
+
+    const { restoreCloudConfigs } = await import('./cloudSync');
+    const result = await restoreCloudConfigs();
+
+    expect(result).toEqual({ restored: 0, skipped: 0, failed: 0 });
   });
 });

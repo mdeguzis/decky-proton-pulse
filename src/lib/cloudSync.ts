@@ -2,7 +2,7 @@
 import { logFrontendEvent } from './logger';
 import { getVoterId, restRequest } from './voting';
 import { getSetting, setSetting } from './settings';
-import { getTrackedConfigs, type TrackedConfig } from './trackedConfigs';
+import { getTrackedConfigs, addTrackedConfig, type TrackedConfig } from './trackedConfigs';
 
 const AUTO_SYNC_KEY = 'cloud-auto-sync';
 
@@ -99,7 +99,7 @@ export async function checkHasCloudBackup(): Promise<boolean> {
     const voterId = await getVoterId();
     const { data, error } = await restRequest<{ app_id: number }[]>('user_proton_configs', {
       method: 'GET',
-      headers: { Range: '0-0' },
+      headers: { Range: '0-0' }, // just need one row to confirm existence
     }, {
       select: 'app_id',
       voter_id: `eq.${voterId}`,
@@ -120,6 +120,38 @@ export function getCloudSyncStatus(
   const cloudRow = cloudConfigs.find((r) => r.app_id === appId);
   if (!cloudRow) return 'not-synced';
   return 'synced';
+}
+
+export interface RestoreResult {
+  restored: number;
+  skipped: number;
+  failed: number;
+}
+
+export async function restoreCloudConfigs(): Promise<RestoreResult> {
+  const cloudRows = await fetchCloudConfigs();
+  const localConfigs = getTrackedConfigs();
+  const localAppIds = new Set(localConfigs.map((c) => c.appId));
+
+  let restored = 0;
+  let skipped = 0;
+
+  for (const row of cloudRows) {
+    if (localAppIds.has(row.app_id)) {
+      skipped++;
+      continue;
+    }
+    try {
+      addTrackedConfig(row.config);
+      restored++;
+    } catch {
+      // failed count handled below
+    }
+  }
+
+  const failed = cloudRows.length - restored - skipped;
+  void logFrontendEvent('INFO', 'Cloud sync: restore complete', { restored, skipped, failed });
+  return { restored, skipped, failed };
 }
 
 export async function pushAllConfigs(): Promise<PushAllResult> {
