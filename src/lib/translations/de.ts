@@ -80,7 +80,7 @@ export const de: TranslationTree = {
     hardwareMatchPercent: (percent) => `${percent}% Übereinstimmung`,
     hardwareMatchCaption: 'Diese Zeilen stammen direkt aus dem Bericht.',
     gpu: 'GPU',
-    cpu: 'CPU',
+    cpu: 'Prozessor',
     os: 'Betriebssystem',
     kernel: 'Kernel',
     driver: 'Treiber',

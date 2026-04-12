@@ -80,7 +80,7 @@ export const ja: TranslationTree = {
     hardwareMatchPercent: (percent) => `${percent}% 一致`,
     hardwareMatchCaption: 'これらの行はレポート本文から取得しています。',
     gpu: 'GPU',
-    cpu: 'CPU',
+    cpu: 'プロセッサ',
     os: 'オペレーティングシステム',
     kernel: 'カーネル',
     driver: 'ドライバー',

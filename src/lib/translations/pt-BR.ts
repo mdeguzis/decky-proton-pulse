@@ -80,7 +80,7 @@ export const ptBR: TranslationTree = {
     hardwareMatchPercent: (percent) => `${percent}% de compatibilidade`,
     hardwareMatchCaption: 'Estas linhas vêm do próprio relatório.',
     gpu: 'GPU',
-    cpu: 'CPU',
+    cpu: 'Processador',
     os: 'SO',
     kernel: 'Kernel',
     driver: 'Controlador',

@@ -104,7 +104,7 @@ export const ru: TranslationTree = {
     hardwareMatchPercent: (percent) => `${percent}% совпадения`,
     hardwareMatchCaption: 'Эти строки взяты прямо из самого отчёта.',
     gpu: 'GPU',
-    cpu: 'CPU',
+    cpu: 'Процессор',
     os: 'ОС',
     kernel: 'Ядро',
     driver: 'Драйвер',

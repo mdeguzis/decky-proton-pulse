@@ -80,7 +80,7 @@ export const tr: TranslationTree = {
     hardwareMatchPercent: (percent) => `%${percent} eşleşme`,
     hardwareMatchCaption: 'Bu satırlar doğrudan rapordan gelir.',
     gpu: 'GPU',
-    cpu: 'CPU',
+    cpu: 'İşlemci',
     os: 'İşletim Sistemi',
     kernel: 'Çekirdek',
     driver: 'Sürücü',

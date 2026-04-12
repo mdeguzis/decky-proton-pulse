@@ -80,7 +80,7 @@ export const ko: TranslationTree = {
     hardwareMatchPercent: (percent) => `${percent}% 일치`,
     hardwareMatchCaption: '이 행들은 보고서 자체에서 가져온 값입니다.',
     gpu: 'GPU',
-    cpu: 'CPU',
+    cpu: '프로세서',
     os: '운영 체제',
     kernel: '커널',
     driver: '드라이버',

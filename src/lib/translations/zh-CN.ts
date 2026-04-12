@@ -80,7 +80,7 @@ export const zhCN: TranslationTree = {
     hardwareMatchPercent: (percent) => `${percent}% 匹配`,
     hardwareMatchCaption: '这些行直接来自报告本身。',
     gpu: 'GPU',
-    cpu: 'CPU',
+    cpu: '处理器',
     os: '操作系统',
     kernel: '内核',
     driver: '驱动',
