@@ -33,7 +33,7 @@ jobs:
             bash -c "
               set -e
               export PATH=/data/data/com.termux/files/usr/bin:\$PATH
-              export UV_CACHE_DIR=/root/.cache/uv
+              export UV_CACHE_DIR=/data/data/com.termux/files/home/.cache/uv
               export UV_PYTHON_PREFERENCE=system
 
               mkdir -p \$UV_CACHE_DIR

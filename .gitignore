@@ -44,6 +44,7 @@ Thumbs.db
 dist/
 
 __pycache__/
+*.egg-info/
 
 /.yalc
 yalc.lock
