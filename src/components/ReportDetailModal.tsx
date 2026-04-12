@@ -2,17 +2,20 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { ModalRoot, Focusable, DialogButton, SteamSpinner, GamepadButton, showModal } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
+import { callable } from '@decky/api';
 import { toaster } from '../lib/notify';
 import type { SystemInfo } from '../types';
 import type { DisplayReportCard } from './ReportCard';
 import type { EditedReportEntry } from './tabs/ConfigureTab';
 import { EditReportModal } from './EditReportModal';
+import { ProtonDBSubmitModal } from './ProtonDBSubmitModal';
 import {
   RATING_COLORS,
   formatProtonLabel,
   formatTimestamp,
   buildLaunchOptionPreview,
 } from '../lib/reportFormatters';
+import { getHardwareMatchPercent, getHardwareMatchBreakdown, matchColor, type FieldMatchInfo } from '../lib/scoring';
 import { getSteamAppDetails, getLaunchOptionsFromDetails, isSteamShortcutApp } from '../lib/steamApps';
 import { checkProtonVersionAvailability } from '../lib/compatTools';
 import { logFrontendEvent } from '../lib/logger';
@@ -118,6 +121,10 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+const HW_SCROLL_STEP = 80;
+
+const getGameRequirements = callable<[string], { min_ram_gb: number | null }>('get_game_requirements');
+
 function HardwareCompareModal({
   closeModal,
   report,
@@ -127,51 +134,191 @@ function HardwareCompareModal({
   report: DisplayReportCard;
   sysInfo: SystemInfo | null;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [gameMinRamGb, setGameMinRamGb] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!report.appId) return;
+    getGameRequirements(report.appId)
+      .then((reqs) => setGameMinRamGb(reqs.min_ram_gb))
+      .catch(() => {}); // silently fall back to no game requirements
+  }, [report.appId]);
+
   const systemRam = sysInfo?.ram_gb ? `${sysInfo.ram_gb} GB` : '-';
   const systemGpuTier = sysInfo?.gpu_vendor ? sysInfo.gpu_vendor.toUpperCase() : '-';
+  const hardwareMatchPercent = getHardwareMatchPercent(report, sysInfo);
+  const matchBadgeStyle = getHardwareMatchBadgeStyle(hardwareMatchPercent);
+  const breakdown = getHardwareMatchBreakdown(report, sysInfo, gameMinRamGb);
+
+  // confidence score for this report (same as the card shows)
+  const cappedScore = Math.min(100, report.score);
+  const confScore = (cappedScore / 10).toFixed(1);
+
+  // GPU tier match: same vendor = 100%, unknown = 50%, mismatch = 0%
+  const reportTier = report.gpuTier.toLowerCase();
+  const sysTier = (sysInfo?.gpu_vendor ?? '').toLowerCase();
+  const tierPercent = (!reportTier || reportTier === 'unknown' || !sysTier)
+    ? 50
+    : reportTier === sysTier ? 100 : 0;
+  const tierMatch: FieldMatchInfo = { percent: tierPercent, color: matchColor(tierPercent) };
 
   return (
-    <ModalRoot onCancel={closeModal}>
-      <div style={{ padding: 18, minWidth: 620, maxWidth: 760 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff', marginBottom: 6 }}>
-          {t().detail.hardwareComparisonTitle}
-        </div>
-        <div style={{ fontSize: 12, color: '#9db0c4', marginBottom: 14, lineHeight: 1.5 }}>
-          {t().detail.hardwareComparisonDescription}
-        </div>
-
+    <ModalRoot
+      onCancel={closeModal}
+      bAllowFullSize
+      className="proton-pulse-hw-compare-modal"
+      modalClassName="proton-pulse-hw-compare-modal"
+    >
+      <style>{`
+        .proton-pulse-hw-compare-modal,
+        .proton-pulse-hw-compare-modal > div,
+        .proton-pulse-hw-compare-modal .DialogContent_InnerWidth {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100vw !important;
+          width: 100vw !important;
+          max-height: 100vh !important;
+        }
+        .proton-pulse-hw-compare-modal .ModalPosition { inset: 0 !important; }
+      `}</style>
+      {/* Focusable wraps the whole modal so D-pad events from the X button
+           bubble up here. The DialogButton is the only focusable child, so
+           Steam auto-focuses it on open and gamepad events always fire. */}
+      <Focusable
+        onGamepadDirection={(evt: GamepadEvent) => {
+          const btn = evt.detail.button;
+          void logFrontendEvent('DEBUG', 'HWCompare: gamepad direction', { button: btn });
+          // block left/right so we don't navigate away from the modal
+          if (btn === GamepadButton.DIR_LEFT || btn === GamepadButton.DIR_RIGHT) {
+            evt.preventDefault();
+            return;
+          }
+          const el = scrollRef.current;
+          if (!el) {
+            void logFrontendEvent('DEBUG', 'HWCompare: scrollRef is null');
+            return;
+          }
+          void logFrontendEvent('DEBUG', 'HWCompare: scroll state', {
+            scrollTop: Math.round(el.scrollTop),
+            scrollHeight: el.scrollHeight,
+            clientHeight: el.clientHeight,
+          });
+          if (btn === GamepadButton.DIR_DOWN) {
+            evt.preventDefault();
+            el.scrollBy({ top: HW_SCROLL_STEP, behavior: 'auto' });
+          } else if (btn === GamepadButton.DIR_UP) {
+            evt.preventDefault();
+            el.scrollBy({ top: -HW_SCROLL_STEP, behavior: 'auto' });
+          }
+        }}
+        style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}
+      >
+        {/* fixed header */}
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: '140px minmax(0, 1fr) minmax(0, 1fr)',
-            gap: 0,
-            border: '1px solid #2a3a4a',
-            borderRadius: 8,
-            overflow: 'hidden',
-            background: 'rgba(13, 19, 28, 0.96)',
-            marginBottom: 14,
+            flexShrink: 0,
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            borderBottom: '1px solid #2a3a4a',
           }}
         >
-          <div style={{ padding: '10px 12px', background: '#162333' }} />
-          <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700 }}>
-            {t().detail.report}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff' }}>
+              {t().detail.hardwareComparisonTitle}
+            </div>
           </div>
-          <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700 }}>
-            {t().detail.ourSystem}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                borderRadius: 999,
+                padding: '4px 10px',
+                fontSize: 11,
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                background: 'rgba(100, 149, 237, 0.15)',
+                color: '#6495ed',
+              }}
+            >
+              {t().extras!.confidenceOutOfTen(confScore)}
+            </div>
+            <div
+              style={{
+                ...matchBadgeStyle,
+                borderRadius: 999,
+                padding: '4px 10px',
+                fontSize: 11,
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t().detail.hardwareMatchPercent(hardwareMatchPercent)}
+            </div>
+            <DialogButton
+              onClick={closeModal}
+              style={{
+                height: 32,
+                width: 32,
+                minWidth: 32,
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 16,
+              }}
+            >
+              X
+            </DialogButton>
           </div>
-
-          <InfoCompareRow label={t().detail.gpu} left={report.gpu || '-'} right={sysInfo?.gpu || '-'} />
-          <InfoCompareRow label={t().detail.gpuTier} left={report.gpuTier.toUpperCase()} right={systemGpuTier} />
-          <InfoCompareRow label={t().detail.os} left={report.os || '-'} right={sysInfo?.distro || '-'} />
-          <InfoCompareRow label={t().detail.kernel} left={report.kernel || '-'} right={sysInfo?.kernel || '-'} />
-          <InfoCompareRow label={t().detail.driver} left={report.gpuDriver || '-'} right={sysInfo?.driver_version || '-'} />
-          <InfoCompareRow label={t().detail.ram} left={report.ram || '-'} right={systemRam} />
         </div>
 
-        <DialogButton onClick={closeModal}>
-          {t().common.close}
-        </DialogButton>
-      </div>
+        {/* scrollable body */}
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+          <div style={{ fontSize: 12, color: '#9db0c4', marginBottom: 14, lineHeight: 1.5 }}>
+            {t().detail.hardwareComparisonDescription}
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '90px minmax(0, 1fr) minmax(0, 1fr) 60px',
+              gap: 0,
+              border: '1px solid #2a3a4a',
+              borderRadius: 8,
+              overflow: 'hidden',
+              background: 'rgba(13, 19, 28, 0.96)',
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ padding: '10px 12px', background: '#162333' }} />
+            <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700 }}>
+              {t().detail.report}
+            </div>
+            <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700 }}>
+              {t().detail.ourSystem}
+            </div>
+            <div style={{ padding: '10px 12px', background: '#162333', color: '#e8f4ff', fontWeight: 700, textAlign: 'center', fontSize: 11 }}>
+              {t().detail.match}
+            </div>
+
+            <InfoCompareRow label={t().detail.gpu} left={report.gpu || '-'} right={sysInfo?.gpu || '-'} match={breakdown.gpu} />
+            <InfoCompareRow label={t().detail.gpuTier} left={report.gpuTier.toUpperCase()} right={systemGpuTier} match={tierMatch} />
+            <InfoCompareRow label={t().detail.driver} left={report.gpuDriver || '-'} right={sysInfo?.driver_version || '-'} match={breakdown.gpuDriver} />
+            <InfoCompareRow label={t().detail.cpu} left={report.cpu || '-'} right={sysInfo?.cpu || '-'} match={breakdown.cpu} />
+            <InfoCompareRow label={t().detail.os} left={report.os || '-'} right={sysInfo?.distro || '-'} match={breakdown.os} />
+            <InfoCompareRow label={t().detail.kernel} left={report.kernel || '-'} right={sysInfo?.kernel || '-'} match={breakdown.kernel} />
+            <InfoCompareRow
+              label={gameMinRamGb ? `${t().detail.ram} (min: ${gameMinRamGb}GB)` : t().detail.ram}
+              left={report.ram || '-'}
+              right={systemRam}
+              match={breakdown.ram}
+            />
+          </div>
+        </div>
+      </Focusable>
     </ModalRoot>
   );
 }
@@ -180,10 +327,12 @@ function InfoCompareRow({
   label,
   left,
   right,
+  match,
 }: {
   label: string;
   left: string;
   right: string;
+  match?: FieldMatchInfo;
 }) {
   return (
     <>
@@ -221,7 +370,81 @@ function InfoCompareRow({
       >
         {right}
       </div>
+      <div
+        style={{
+          padding: '10px 12px',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          borderLeft: '1px solid rgba(255,255,255,0.04)',
+          textAlign: 'center',
+          fontSize: 11,
+          fontWeight: 700,
+          color: match?.color ?? '#555',
+        }}
+      >
+        {match ? `${match.percent}%` : ''}
+      </div>
     </>
+  );
+}
+
+function getHardwareMatchBadgeStyle(percent: number): { background: string; color: string } {
+  if (percent >= 75) return { background: '#2f6f4f', color: '#ecfff1' };
+  if (percent >= 45) return { background: '#7d6123', color: '#fff5dc' };
+  return { background: '#7a2f34', color: '#ffe8ea' };
+}
+
+function buildEditedReportEntry(report: DisplayReportCard): EditedReportEntry {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    label: '',
+    baseReportKey: `${report.timestamp}_${report.protonVersion}`,
+    report: {
+      appId: report.appId,
+      cpu: report.cpu,
+      duration: report.duration,
+      gpu: report.gpu,
+      gpuDriver: report.gpuDriver,
+      kernel: report.kernel,
+      notes: report.notes,
+      os: report.os,
+      protonVersion: report.protonVersion,
+      ram: report.ram,
+      rating: report.rating,
+      timestamp: report.timestamp,
+      title: report.title,
+    },
+    updatedAt: Date.now(),
+  };
+}
+
+function UploadDestinationModal({
+  closeModal,
+  onUploadToProtonDB,
+  onUploadToProtonPulse,
+  protonPulseDisabled,
+}: {
+  closeModal?: () => void;
+  onUploadToProtonDB: () => void;
+  onUploadToProtonPulse: () => void;
+  protonPulseDisabled: boolean;
+}) {
+  return (
+    <ModalRoot onCancel={closeModal}>
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10, minWidth: 340 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#e8f4ff' }}>
+          {t().detail.uploadDestinationTitle}
+        </div>
+        <DialogButton onClick={onUploadToProtonDB}>
+          {t().detail.uploadToProtonDB}
+        </DialogButton>
+        <DialogButton onClick={onUploadToProtonPulse} disabled={protonPulseDisabled}>
+          {t().detail.uploadToProtonPulse}
+        </DialogButton>
+        <DialogButton onClick={closeModal} style={{ background: '#555' }}>
+          {t().common.cancel}
+        </DialogButton>
+      </div>
+    </ModalRoot>
   );
 }
 
@@ -261,6 +484,9 @@ export function ReportDetailModal({
   const [launchOptionsDisplay, setLaunchOptionsDisplay] = useState(currentLaunchOptions);
   const [versionStatus, setVersionStatus] = useState<'loading' | 'installed' | 'installable' | 'unavailable' | 'unmanaged'>('loading');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const compareButtonRef = useRef<HTMLElement | null>(null);
+  const clearButtonRef = useRef<HTMLElement | null>(null);
+  const hardwareSectionRef = useRef<HTMLDivElement>(null);
   const cappedScore = Math.min(100, report.score);
   const confScore = (cappedScore / 10).toFixed(1);
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
@@ -416,6 +642,40 @@ export function ReportDetailModal({
     );
   };
 
+  const handleUploadToProtonDB = () => {
+    void logFrontendEvent('INFO', 'ReportDetail: Opening ProtonDB submit modal', {
+      appId,
+      appName,
+      reportTimestamp: report.timestamp,
+      protonVersion: report.protonVersion,
+    });
+    showModal(
+      <ProtonDBSubmitModal
+        appId={appId}
+        appName={appName || report.title}
+      />,
+    );
+  };
+
+  const handleUploadToProtonPulse = () => {
+    if (report.isEdited) {
+      toaster.toast({ title: 'Proton Pulse', body: t().toast.alreadyInProtonPulse });
+      return;
+    }
+    onSaveEdit(buildEditedReportEntry(report));
+    toaster.toast({ title: 'Proton Pulse', body: t().toast.savedToProtonPulse });
+  };
+
+  const handleUpload = () => {
+    showModal(
+      <UploadDestinationModal
+        onUploadToProtonDB={handleUploadToProtonDB}
+        onUploadToProtonPulse={handleUploadToProtonPulse}
+        protonPulseDisabled={Boolean(report.isEdited)}
+      />,
+    );
+  };
+
   useEffect(() => registerScreenshotAutomationHandler('manage-game/report-detail/edit-modal', async () => {
     handleEditConfig();
   }), [report, appId, appName]);
@@ -438,7 +698,14 @@ export function ReportDetailModal({
     const btn = evt.detail.button;
     void logFrontendEvent('DEBUG', 'ReportDetail: gamepad direction', { button: btn });
 
-    if (btn === GamepadButton.DIR_DOWN || btn === GamepadButton.DIR_UP) {
+    if (btn === GamepadButton.DIR_DOWN && compareButtonRef.current) {
+      evt.preventDefault();
+      hardwareSectionRef.current?.scrollIntoView({ block: 'start' });
+      compareButtonRef.current.focus();
+      return;
+    }
+
+    if (btn === GamepadButton.DIR_UP) {
       const el = scrollRef.current;
       if (!el) {
         void logFrontendEvent('DEBUG', 'ReportDetail: scrollRef is null');
@@ -450,12 +717,7 @@ export function ReportDetailModal({
         clientHeight: el.clientHeight,
         canScroll: el.scrollHeight > el.clientHeight,
       });
-      if (btn === GamepadButton.DIR_DOWN) {
-        const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
-        el.scrollBy({ top: remaining <= SCROLL_STEP ? remaining : SCROLL_STEP, behavior: 'auto' });
-      } else {
-        el.scrollBy({ top: el.scrollTop <= SCROLL_STEP ? -el.scrollTop : -SCROLL_STEP, behavior: 'auto' });
-      }
+      el.scrollBy({ top: el.scrollTop <= SCROLL_STEP ? -el.scrollTop : -SCROLL_STEP, behavior: 'auto' });
     }
     // LEFT/RIGHT: don't interfere -- let Steam navigate between buttons
   };
@@ -589,6 +851,27 @@ export function ReportDetailModal({
             {t().detail.edit}
           </DialogButton>
           <DialogButton
+            onClick={handleUpload}
+            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
+          >
+            {t().detail.upload}
+          </DialogButton>
+          <DialogButton
+            onClick={() => {
+              if (!launchOptionsDisplay) {
+                toaster.toast({ title: 'Proton Pulse', body: t().toast.noOptionsSet });
+                return;
+              }
+              void handleClearLaunchOptions();
+            }}
+            ref={(node) => {
+              clearButtonRef.current = node;
+            }}
+            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
+          >
+            {t().detail.clear}
+          </DialogButton>
+          <DialogButton
             onClick={handleUpvote}
             disabled={voting || userVote === 1}
             style={{
@@ -624,18 +907,6 @@ export function ReportDetailModal({
               </>
             )}
           </DialogButton>
-          <DialogButton
-            onClick={() => {
-              if (!launchOptionsDisplay) {
-                toaster.toast({ title: 'Proton Pulse', body: t().toast.noOptionsSet });
-                return;
-              }
-              void handleClearLaunchOptions();
-            }}
-            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
-          >
-            {t().detail.clear}
-          </DialogButton>
         </Focusable>
 
         {/* ── Scrollable info area (scrolled by button bar D-pad) ── */}
@@ -661,29 +932,40 @@ export function ReportDetailModal({
               />
             </InfoSection>
 
-            <SectionHeader
-              title={t().detail.hardwareMatch}
-              caption={t().detail.hardwareMatchCaption}
-              action={(
-                <DialogButton
-                  onClick={handleOpenHardwareCompare}
-                  disabled={!sysInfo}
-                  style={{
-                    flex: '0 0 auto',
-                    width: 'fit-content',
-                    minWidth: 116,
-                    maxWidth: 132,
-                    fontSize: 9,
-                    minHeight: 0,
-                    padding: '2px 12px',
-                    whiteSpace: 'nowrap',
-                    alignSelf: 'flex-start',
-                  }}
-                >
-                  {t().detail.ourSystem}
-                </DialogButton>
-              )}
-            />
+            <div ref={hardwareSectionRef}>
+              <SectionHeader
+                title={t().detail.hardwareMatch}
+                caption={t().detail.hardwareMatchCaption}
+                action={(
+                  <DialogButton
+                    ref={(node) => {
+                      compareButtonRef.current = node;
+                    }}
+                    onClick={handleOpenHardwareCompare}
+                    onGamepadDirection={(evt) => {
+                      if (evt.detail.button === GamepadButton.DIR_UP) {
+                        evt.preventDefault();
+                        clearButtonRef.current?.focus();
+                      }
+                    }}
+                    disabled={!sysInfo}
+                    style={{
+                      flex: '0 0 auto',
+                      width: 'fit-content',
+                      minWidth: 116,
+                      maxWidth: 132,
+                      fontSize: 9,
+                      minHeight: 0,
+                      padding: '2px 12px',
+                      whiteSpace: 'nowrap',
+                      alignSelf: 'flex-start',
+                    }}
+                  >
+                    {t().detail.systemComparison}
+                  </DialogButton>
+                )}
+              />
+            </div>
             <InfoSection title={t().detail.reportHardware}>
               <InfoRow label={t().detail.gpu} value={report.gpu || '-'} />
               <InfoRow label={t().detail.os} value={report.os || '-'} />

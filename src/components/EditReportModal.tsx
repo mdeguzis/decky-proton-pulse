@@ -1,5 +1,5 @@
 // src/components/EditReportModal.tsx
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ModalRoot,
   PanelSection,
@@ -8,13 +8,10 @@ import {
   DialogButton,
   DropdownItem,
   SteamSpinner,
-  ConfirmModal,
-  showModal,
 } from '@decky/ui';
 import { toaster } from '../lib/notify';
 import type { DisplayReportCard } from './ReportCard';
 import type { EditedReportEntry } from './tabs/ConfigureTab';
-import { ProtonDBSubmitModal } from './ProtonDBSubmitModal';
 import { getProtonGeManagerState, installProtonGe } from '../lib/compatTools';
 import { formatProtonLabel } from '../lib/reportFormatters';
 import { logFrontendEvent } from '../lib/logger';
@@ -252,57 +249,6 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
     closeModal?.();
   };
 
-  const changes = useMemo(() => {
-    const diffs: { field: string; from: string; to: string }[] = [];
-    if (protonVersion !== report.protonVersion) diffs.push({ field: t().detail.protonVersion, from: report.protonVersion, to: protonVersion });
-    if (rating !== report.rating) diffs.push({ field: t().editReport.rating, from: report.rating, to: rating });
-    if (gpu !== report.gpu) diffs.push({ field: t().detail.gpu, from: report.gpu, to: gpu });
-    if (gpuDriver !== report.gpuDriver) diffs.push({ field: t().detail.driver, from: report.gpuDriver, to: gpuDriver });
-    if (os !== report.os) diffs.push({ field: t().detail.os, from: report.os, to: os });
-    if (kernel !== report.kernel) diffs.push({ field: t().detail.kernel, from: report.kernel, to: kernel });
-    if (ram !== report.ram) diffs.push({ field: t().detail.ram, from: report.ram, to: ram });
-    if (notes !== report.notes) diffs.push({ field: t().reports.notes, from: report.notes, to: notes });
-    return diffs;
-  }, [protonVersion, rating, gpu, gpuDriver, os, kernel, ram, notes, report]);
-
-  const localizedChanges = useMemo(() => changes.map((change) => {
-    if (change.field !== strings.editReport.rating) {
-      return change;
-    }
-    return {
-      ...change,
-      from: strings.ratings[change.from as keyof typeof strings.ratings] ?? change.from,
-      to: strings.ratings[change.to as keyof typeof strings.ratings] ?? change.to,
-    };
-  }), [changes, strings.editReport.rating, strings.ratings]);
-
-  const hasChanges = localizedChanges.length > 0;
-
-  const handleSubmitToProtonDB = () => {
-    const submitStrings = strings.protondbSubmit;
-    const changesText = localizedChanges.map((c) => submitStrings.changed(c.field, c.from, c.to)).join('\n');
-    showModal(
-      <ConfirmModal
-        strTitle={submitStrings.confirmTitle}
-        strDescription={`${submitStrings.confirmChanges}\n\n${changesText}`}
-        strOKButtonText={submitStrings.confirmSubmit}
-        onOK={() => {
-          void logFrontendEvent('INFO', 'EditReport: Submit to ProtonDB confirmed', {
-            appId: report.appId, changes: localizedChanges.length,
-          });
-          const appIdNum = parseInt(report.appId, 10);
-          showModal(
-            <ProtonDBSubmitModal
-              appId={isNaN(appIdNum) ? null : appIdNum}
-              appName={report.title}
-            />,
-          );
-        }}
-        onCancel={() => {}}
-      />,
-    );
-  };
-
   const dropdownOptions = versionOptions.map((opt) => ({
     data: opt.value,
     label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
@@ -314,110 +260,134 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
   }));
 
   return (
-    <ModalRoot onCancel={closeModal}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>{t().editReport.title}</div>
-        <DialogButton
-          onClick={handleClearEdits}
-          style={{ fontSize: 10, padding: '3px 10px', minWidth: 0, width: 'auto' }}
+    <ModalRoot
+      onCancel={closeModal}
+      bAllowFullSize
+      className="proton-pulse-edit-report-modal"
+      modalClassName="proton-pulse-edit-report-modal"
+    >
+      <style>{`
+        .proton-pulse-edit-report-modal,
+        .proton-pulse-edit-report-modal > div,
+        .proton-pulse-edit-report-modal .DialogContent_InnerWidth {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100vw !important;
+          width: 100vw !important;
+          max-height: 100vh !important;
+        }
+        .proton-pulse-edit-report-modal .ModalPosition { inset: 0 !important; }
+      `}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
+        {/* fixed header */}
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '10px 16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid #2a3a4a',
+          }}
         >
-          {t().editReport.resetToOriginal}
-        </DialogButton>
-      </div>
-      <PanelSection>
-        <PanelSectionRow>
-          <TextField
-            label={t().editReport.label}
-            description={t().editReport.labelDescription}
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            bShowClearAction
-          />
-        </PanelSectionRow>
-        <PanelSectionRow>
-          {loadingVersions ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-              <SteamSpinner style={{ width: 16, height: 16 }} />
-              <span style={{ fontSize: 11, color: '#7a9bb5' }}>{t().common.loading}</span>
-            </div>
-          ) : (
-            <DropdownItem
-              label={installing ? strings.detail.installing(installing) : strings.detail.protonVersion}
-              rgOptions={dropdownOptions}
-              selectedOption={protonVersion}
-              onChange={(opt) => handleVersionChange(opt.data)}
-              disabled={!!installing}
-            />
-          )}
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <DropdownItem
-            label={strings.editReport.rating}
-            rgOptions={ratingOptions}
-            selectedOption={rating}
-            onChange={(opt) => setRating(opt.data)}
-          />
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <TextField
-            label={t().detail.gpu}
-            value={gpu}
-            onChange={(e) => setGpu(e.target.value)}
-          />
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <TextField
-            label={t().detail.driver}
-            value={gpuDriver}
-            onChange={(e) => setGpuDriver(e.target.value)}
-          />
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <TextField
-            label={t().detail.os}
-            value={os}
-            onChange={(e) => setOs(e.target.value)}
-          />
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <TextField
-            label={t().detail.kernel}
-            value={kernel}
-            onChange={(e) => setKernel(e.target.value)}
-          />
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <TextField
-            label={t().detail.ram}
-            value={ram}
-            onChange={(e) => setRam(e.target.value)}
-          />
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <TextField
-            label={t().reports.notes}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            bShowClearAction
-          />
-        </PanelSectionRow>
-      </PanelSection>
-      <PanelSection>
-        <PanelSectionRow>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>{t().editReport.title}</div>
+          <DialogButton
+            onClick={handleClearEdits}
+            style={{ fontSize: 10, padding: '3px 10px', minWidth: 0, width: 'auto' }}
+          >
+            {t().editReport.resetToOriginal}
+          </DialogButton>
+        </div>
+
+        {/* scrollable form body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px' }}>
+          <PanelSection>
+            <PanelSectionRow>
+              <TextField
+                label={t().editReport.label}
+                description={t().editReport.labelDescription}
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                bShowClearAction
+              />
+            </PanelSectionRow>
+            <PanelSectionRow>
+              {loadingVersions ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                  <SteamSpinner style={{ width: 16, height: 16 }} />
+                  <span style={{ fontSize: 11, color: '#7a9bb5' }}>{t().common.loading}</span>
+                </div>
+              ) : (
+                <DropdownItem
+                  label={installing ? strings.detail.installing(installing) : strings.detail.protonVersion}
+                  rgOptions={dropdownOptions}
+                  selectedOption={protonVersion}
+                  onChange={(opt) => handleVersionChange(opt.data)}
+                  disabled={!!installing}
+                />
+              )}
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <DropdownItem
+                label={strings.editReport.rating}
+                rgOptions={ratingOptions}
+                selectedOption={rating}
+                onChange={(opt) => setRating(opt.data)}
+              />
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <TextField
+                label={t().detail.gpu}
+                value={gpu}
+                onChange={(e) => setGpu(e.target.value)}
+              />
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <TextField
+                label={t().detail.driver}
+                value={gpuDriver}
+                onChange={(e) => setGpuDriver(e.target.value)}
+              />
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <TextField
+                label={t().detail.os}
+                value={os}
+                onChange={(e) => setOs(e.target.value)}
+              />
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <TextField
+                label={t().detail.kernel}
+                value={kernel}
+                onChange={(e) => setKernel(e.target.value)}
+              />
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <TextField
+                label={t().detail.ram}
+                value={ram}
+                onChange={(e) => setRam(e.target.value)}
+              />
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <TextField
+                label={t().reports.notes}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                bShowClearAction
+              />
+            </PanelSectionRow>
+          </PanelSection>
+        </div>
+
+        {/* fixed footer */}
+        <div style={{ flexShrink: 0, padding: '8px 16px', borderTop: '1px solid #2a3a4a' }}>
           <DialogButton onClick={handleSave} disabled={!!installing}>
             {installing ? strings.common.loading : strings.editReport.saveEdits}
           </DialogButton>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <DialogButton
-            onClick={handleSubmitToProtonDB}
-            disabled={!hasChanges || !!installing}
-            style={{ background: hasChanges ? undefined : '#333', opacity: hasChanges ? 1 : 0.5 }}
-          >
-            {strings.protondbSubmit.submitToProtonDB}
-          </DialogButton>
-        </PanelSectionRow>
-      </PanelSection>
+        </div>
+      </div>
     </ModalRoot>
   );
 }

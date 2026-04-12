@@ -269,7 +269,9 @@ describe('pluralization', () => {
 
 describe('translation function coverage', () => {
   it('invokes every translation helper function across all locales', () => {
-    for (const tree of [de, es, fr, ja, ko, ptBR, ru, tr, zhCN]) {
+    // include en via t() so the template functions in i18n.ts get covered
+    const en = t();
+    for (const tree of [en, de, es, fr, ja, ko, ptBR, ru, tr, zhCN]) {
       invokeAllTranslationFunctions(tree);
     }
   });

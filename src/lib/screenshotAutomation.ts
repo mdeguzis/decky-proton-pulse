@@ -99,6 +99,12 @@ async function resetTransientUiState(): Promise<void> {
   }
 }
 
+function shouldPreserveAppContext(action: ScreenshotAutomationAction): boolean {
+  return action.tab === 'manage-game'
+    || typeof action.appId === 'number'
+    || action.useFocusedApp === true;
+}
+
 async function ensurePluginRouteOpen(): Promise<void> {
   const currentPath = globalThis.location?.pathname ?? null;
   void logFrontendEvent('DEBUG', 'Screenshot automation ensuring plugin route', {
@@ -135,6 +141,24 @@ async function waitForHandler(target: string): Promise<ScreenshotAutomationHandl
   return handlers.get(target)!;
 }
 
+async function retryTargetHandlerAfterNavigation(
+  target: string,
+  action: ScreenshotAutomationAction,
+  payload: { tab: PageId; appId: number | null; appName: string } | null,
+): Promise<void> {
+  if (!payload || !pageNavigator) {
+    throw new Error(`Timed out waiting for screenshot handler "${target}"`);
+  }
+  void logFrontendEvent('WARNING', 'Screenshot automation retrying target handler after navigation', {
+    target,
+    payload,
+    pathname: globalThis.location?.pathname ?? null,
+  });
+  await pageNavigator(payload);
+  await delay(300);
+  await runRegisteredScreenshotAutomationHandler(target, action);
+}
+
 export async function runRegisteredScreenshotAutomationHandler(
   target: string,
   action: ScreenshotAutomationAction = {},
@@ -149,13 +173,29 @@ async function runAutomationAction(action: ScreenshotAutomationAction): Promise<
   pathname: string | null;
   target: string | null;
 }> {
+  let navigationPayload: { tab: PageId; appId: number | null; appName: string } | null = null;
+  const hasUiNavigationWork = Boolean(action.tab || action.target);
   void logFrontendEvent('DEBUG', 'Screenshot automation action started', {
     action,
     pathname: globalThis.location?.pathname ?? null,
     pageNavigatorReady: Boolean(pageNavigator),
     currentPageGetterReady: Boolean(currentPageGetter),
+    hasUiNavigationWork,
   });
-  await resetTransientUiState();
+  if (!hasUiNavigationWork) {
+    void logFrontendEvent('DEBUG', 'Screenshot automation skipping UI reset for passive action', {
+      action,
+      pathname: globalThis.location?.pathname ?? null,
+    });
+  } else if (shouldPreserveAppContext(action)) {
+    Router.CloseSideMenus();
+    void logFrontendEvent('DEBUG', 'Screenshot automation preserving app context for action', {
+      action,
+      pathname: globalThis.location?.pathname ?? null,
+    });
+  } else {
+    await resetTransientUiState();
+  }
   const requestedLanguage = normalizeLanguagePreference(action.language ?? null);
   if (requestedLanguage && requestedLanguage !== getActiveLanguage()) {
     setLanguage(requestedLanguage);
@@ -173,6 +213,7 @@ async function runAutomationAction(action: ScreenshotAutomationAction): Promise<
       appId,
       appName,
     };
+    navigationPayload = payload;
     if (!pageNavigator || !currentPageGetter) {
       void logFrontendEvent('DEBUG', 'Screenshot automation waiting for mounted page automation', {
         payload,
@@ -214,7 +255,16 @@ async function runAutomationAction(action: ScreenshotAutomationAction): Promise<
       target: action.target,
       pathname: globalThis.location?.pathname ?? null,
     });
-    await runRegisteredScreenshotAutomationHandler(action.target, action);
+    try {
+      await runRegisteredScreenshotAutomationHandler(action.target, action);
+    } catch (error) {
+      await retryTargetHandlerAfterNavigation(action.target, action, navigationPayload);
+      void logFrontendEvent('DEBUG', 'Screenshot automation target handler succeeded after retry', {
+        target: action.target,
+        pathname: globalThis.location?.pathname ?? null,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   if (action.waitMs && action.waitMs > 0) {

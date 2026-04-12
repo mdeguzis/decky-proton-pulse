@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 90,
-  "totalKeys": 360,
+  "totalKeys": 388,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 360,
-      "total": 360,
+      "translated": 388,
+      "total": 388,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -16,91 +16,109 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 360,
-      "total": 360,
-      "coveragePercent": 100,
+      "translated": 387,
+      "total": 388,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.cpu"
+      ],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
-      "translated": 360,
-      "total": 360,
-      "coveragePercent": 100,
+      "translated": 387,
+      "total": 388,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.cpu"
+      ],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
-      "translated": 360,
-      "total": 360,
-      "coveragePercent": 100,
+      "translated": 387,
+      "total": 388,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.cpu"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 360,
-      "total": 360,
-      "coveragePercent": 100,
+      "translated": 387,
+      "total": 388,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.cpu"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 360,
-      "total": 360,
-      "coveragePercent": 100,
+      "translated": 387,
+      "total": 388,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.cpu"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 360,
-      "total": 360,
-      "coveragePercent": 100,
+      "translated": 387,
+      "total": 388,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.cpu"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 360,
-      "total": 360,
-      "coveragePercent": 100,
+      "translated": 387,
+      "total": 388,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.cpu"
+      ],
       "typeMismatches": []
     },
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 360,
-      "total": 360,
-      "coveragePercent": 100,
+      "translated": 387,
+      "total": 388,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.cpu"
+      ],
       "typeMismatches": []
     },
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 360,
-      "total": 360,
-      "coveragePercent": 100,
+      "translated": 387,
+      "total": 388,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.cpu"
+      ],
       "typeMismatches": []
     }
   ]

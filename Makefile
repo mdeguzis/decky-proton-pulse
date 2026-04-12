@@ -1,9 +1,18 @@
 # Decky Proton Pulse — Makefile
-# Usage: make <target> [DECK_IP=x.x.x.x make deploy]
 #
-# DECK_IP can also be set persistently in any of:
-#   ~/.deckip         (just the IP: 192.168.1.x)
-#   ~/.bashrc / ~/.zshrc / ~/.zshenv  (export DECK_IP=192.168.1.x)
+# Remote vs local mode:
+#   When DECK_IP is set, device targets (deploy, logs, get-logs, etc.) run
+#   against the remote Deck over SSH. When unset, they run locally.
+#
+# Setting DECK_IP (pick one):
+#   DECK_IP=192.168.1.x make deploy      (one-off)
+#   echo '192.168.1.x' > ~/.deckip       (persistent via file)
+#   export DECK_IP=192.168.1.x           (persistent via shell env)
+#
+# Switching back to local mode:
+#   unset DECK_IP                         (current shell)
+#   rm ~/.deckip                          (remove persistent file)
+#   DECK_IP=local make <target>           (force local for one command)
 
 ifneq ($(wildcard $(HOME)/.deckip),)
   DECK_IP ?= $(shell cat $(HOME)/.deckip)
@@ -11,6 +20,12 @@ endif
 
 DECK_IP   ?=
 DECK_USER ?= deck
+
+# DECK_IP=local is a shortcut to force local mode
+ifeq ($(DECK_IP),local)
+  override DECK_IP :=
+endif
+
 DECK_HOST ?= $(if $(DECK_IP),$(DECK_IP),steamdeck)
 TARGET    ?= stable
 DRY_RUN ?= true
@@ -41,12 +56,17 @@ default: build
 help:
 	@echo "================ usage ================ "
 	@echo "Usage: make <target>"
-	@echo "       DECK_IP=x.x.x.x make deploy"
-	@echo "       DECK_IP=x.x.x.x DECK_USER=deck TARGET=stable make deploy"
+	@echo "       DECK_IP=192.168.1.x make deploy     (remote Deck)"
+	@echo "       DECK_IP=local make get-logs          (force local mode)"
 	@echo ""
-	@echo "Persistent DECK_IP (pick one):"
+	@echo "DECK_IP controls remote vs local mode."
+	@echo "When set, device targets run against the remote Deck over SSH."
+	@echo ""
+	@echo "Set DECK_IP persistently (pick one):"
 	@echo "  echo '192.168.1.x' > ~/.deckip"
-	@echo "  echo 'export DECK_IP=192.168.1.x' >> ~/.zshenv"
+	@echo "  export DECK_IP=192.168.1.x"
+	@echo ""
+	@echo "Switch back to local: unset DECK_IP, rm ~/.deckip, or pass DECK_IP=local"
 	@echo ""
 	@echo "============= main targets ============= "
 	@printf "  %-27s %s\n" "build" "Clean, test, then build frontend"
@@ -245,7 +265,17 @@ define require_deck_ip
 	$(if $(DECK_IP),,$(error DECK_IP is required: DECK_IP=192.168.1.x make $@))
 endef
 
+# print which mode we're running in so it's obvious in the output
+define show_mode
+	@if [ -n "$(DECK_IP)" ]; then \
+		echo "[remote] DECK_IP=$(DECK_IP) DECK_USER=$(DECK_USER)"; \
+	else \
+		echo "[local] no DECK_IP set, running locally (pass DECK_IP=x.x.x.x for remote)"; \
+	fi
+endef
+
 logs:
+	$(call show_mode)
 	@if [ -n "$(DECK_IP)" ]; then \
 		ssh $(DECK_USER)@$(DECK_IP) "tail -f ~/homebrew/logs/decky-proton-pulse/plugin.log"; \
 	else \
@@ -253,6 +283,7 @@ logs:
 	fi
 
 get-logs:
+	$(call show_mode)
 	@mkdir -p ../logs
 	@if [ -n "$(DECK_IP)" ]; then \
 		rsync -rav $(DECK_USER)@$(DECK_HOST):~/homebrew/logs/decky-proton-pulse/ ../logs/; \
@@ -302,7 +333,8 @@ check-protondb-data: fetch-protondb
 	bash scripts/check-protondb-data.sh "$(PROTONDB_REPO_DIR)" "$(PROTONDB_LOCAL_OUTPUT)" "$(UV_CACHE_DIR)" "$(APP_ID)"
 
 reload:
-	@echo "⏱ Reloading Decky plugin service..."
+	$(call show_mode)
+	@echo "Reloading Decky plugin service..."
 	@sleep 2
 	@if [ -n "$(DECK_IP)" ]; then \
 		echo "Reloading remote plugin_loader on $(DECK_USER)@$(DECK_IP)"; \

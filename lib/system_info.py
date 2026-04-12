@@ -72,7 +72,13 @@ def detect_gpu_vendor(gpu_string: str) -> str:
 
 
 def read_driver_version() -> str | None:
-    """Try nvidia-smi first; if that's not around, fall back to the DRM sysfs node."""
+    """Try nvidia-smi first, then vulkaninfo, then DRM sysfs as a last resort.
+
+    AMD/Intel systems use Mesa, and nvidia-smi won't exist. The DRM sysfs
+    version node also doesn't exist for amdgpu since the version is baked
+    into the kernel. vulkaninfo is the most reliable cross-vendor fallback.
+    """
+    # nvidia proprietary driver
     try:
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"],
@@ -86,6 +92,29 @@ def read_driver_version() -> str | None:
             return result.stdout.strip()
     except FileNotFoundError:
         pass
+
+    # vulkaninfo gives us the Mesa version on AMD/Intel
+    try:
+        result = subprocess.run(
+            ["vulkaninfo", "--summary"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+            env=system_command_env(),
+        )
+        if result.returncode == 0:
+            for line in result.stdout.splitlines():
+                stripped = line.strip()
+                # looks like: driverInfo         = Mesa 25.2.8-0ubuntu0.24.04.1
+                if stripped.startswith("driverInfo"):
+                    val = stripped.split("=", 1)[-1].strip()
+                    if val:
+                        return val
+    except FileNotFoundError:
+        pass
+
+    # DRM sysfs fallback (some nvidia setups have this)
     try:
         for path in glob.glob("/sys/class/drm/card*/device/driver/module/version"):
             with open(path, encoding="utf-8") as f:

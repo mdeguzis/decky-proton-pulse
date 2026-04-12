@@ -97,6 +97,10 @@ export interface TranslationTree {
   detail: {
     apply: string;
     edit: string;
+    upload: string;
+    uploadDestinationTitle: string;
+    uploadToProtonDB: string;
+    uploadToProtonPulse: string;
     upvote: string;
     clear: string;
     hardwareComparisonTitle: string;
@@ -105,14 +109,18 @@ export interface TranslationTree {
     currentLaunchOptions: string;
     noLaunchOptions: string;
     hardwareMatch: string;
+    hardwareMatchPercent: (percent: number) => string;
     hardwareMatchCaption: string;
     gpu: string;
+    cpu: string;
     os: string;
     kernel: string;
     driver: string;
     report: string;
     reportHardware: string;
     ourSystem: string;
+    match: string;
+    systemComparison: string;
     gpuTier: string;
     edited: string;
     customVariant: string;
@@ -209,6 +217,8 @@ export interface TranslationTree {
     cleared: string;
     clearFailed: (msg: string) => string;
     noOptionsSet: string;
+    savedToProtonPulse: string;
+    alreadyInProtonPulse: string;
   };
   manage: {
     instructions: string;
@@ -289,6 +299,24 @@ export interface TranslationTree {
     profileName: string;
     profileNameHint: string;
     gpuFilter: string;
+    synced: string;
+    notSynced: string;
+    uploadToCloud: string;
+    uploadingToCloud: string;
+    cloudUploadSuccess: string;
+    syncAllToCloud: string;
+    syncingCloud: string;
+    restoreFromCloud: string;
+    restoringFromCloud: string;
+    cloudSyncSummary: (succeeded: number, total: number) => string;
+    cloudRestoreSummary: (restored: number, skipped: number) => string;
+    cloudSyncFailed: (error: string) => string;
+    cloudRestoreFailed: (error: string) => string;
+    cloudRestoreSuccess: string;
+    cloudRestoreNoBackup: string;
+    cloudRestoreAvailable: string;
+    cloudAutoSync: string;
+    cloudAutoSyncDescription: string;
     toggleCategories: {
       nvidia: string;
       amd: string;
@@ -504,6 +532,10 @@ export const en: TranslationTree = {
   detail: {
     apply: 'Apply',
     edit: 'Edit',
+    upload: 'Upload',
+    uploadDestinationTitle: 'Choose Upload Destination',
+    uploadToProtonDB: 'Upload to ProtonDB',
+    uploadToProtonPulse: 'Upload to Proton Pulse',
     upvote: 'Upvote',
     clear: 'Clear',
     hardwareComparisonTitle: 'Hardware Comparison',
@@ -512,14 +544,18 @@ export const en: TranslationTree = {
     currentLaunchOptions: 'Current Launch Options',
     noLaunchOptions: 'No launch options set',
     hardwareMatch: 'Hardware Match',
+    hardwareMatchPercent: (percent) => `${percent}% match`,
     hardwareMatchCaption: 'These rows come from the report itself.',
     gpu: 'GPU',
+    cpu: 'CPU',
     os: 'OS',
     kernel: 'Kernel',
     driver: 'Driver',
     report: 'Report',
     reportHardware: 'Report Hardware',
     ourSystem: 'Our System',
+    match: 'Match',
+    systemComparison: 'System Comparison',
     gpuTier: 'GPU Tier',
     edited: 'Edited',
     customVariant: 'Custom Variant',
@@ -616,6 +652,8 @@ export const en: TranslationTree = {
     cleared: 'Launch options cleared.',
     clearFailed: (msg) => `Clear failed: ${msg}`,
     noOptionsSet: 'No launch options set.',
+    savedToProtonPulse: 'Saved to Proton Pulse.',
+    alreadyInProtonPulse: 'This report is already saved in Proton Pulse.',
   },
   manage: {
     instructions: 'Right-click any game in your library, or use the settings gear, and select',
@@ -696,6 +734,24 @@ export const en: TranslationTree = {
     profileName: 'Profile Name',
     profileNameHint: 'Pick a short label for this configuration, like "High Performance" or "Compatible".',
     gpuFilter: 'GPU',
+    synced: 'Synced',
+    notSynced: 'Not synced',
+    uploadToCloud: 'Upload to Cloud',
+    uploadingToCloud: 'Uploading...',
+    cloudUploadSuccess: 'Config uploaded to cloud',
+    syncAllToCloud: 'Sync All to Cloud',
+    syncingCloud: 'Syncing...',
+    restoreFromCloud: 'Restore from Cloud',
+    restoringFromCloud: 'Restoring...',
+    cloudSyncSummary: (succeeded, total) => `Synced ${succeeded}/${total} configs to cloud`,
+    cloudRestoreSummary: (restored, skipped) => `Restored ${restored} configs (${skipped} already local)`,
+    cloudSyncFailed: (error) => `Cloud sync failed: ${error}`,
+    cloudRestoreFailed: (error) => `Cloud restore failed: ${error}`,
+    cloudRestoreSuccess: 'Config restored from cloud',
+    cloudRestoreNoBackup: 'No cloud backup found for this game',
+    cloudRestoreAvailable: 'Cloud backups found. Restore them from Configurations.',
+    cloudAutoSync: 'Auto-sync configs to cloud',
+    cloudAutoSyncDescription: 'Automatically back up your configurations when they are saved.',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

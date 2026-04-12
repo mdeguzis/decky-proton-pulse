@@ -1,6 +1,6 @@
 [project]
 name = "decky-proton-pulse"
-version = "0.5.0"
+version = "0.6.1"
 requires-python = ">=3.11"
 dependencies = []
 

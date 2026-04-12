@@ -257,6 +257,11 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         """Gather CPU, GPU, kernel, distro info and send it to the frontend."""
         return collect_system_info()
 
+    async def get_game_requirements(self, app_id: str) -> dict[str, object]:
+        """Fetch minimum system requirements from the Steam Store API."""
+        from lib.game_requirements import get_game_requirements as _get_reqs
+        return _get_reqs(app_id)
+
     ################################################################
     # CDN Cache
     ################################################################

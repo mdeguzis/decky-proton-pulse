@@ -32,6 +32,9 @@ import { runStartupPrefetch } from './lib/prefetch';
 import { startAutoFlush, stopAutoFlush, flushMetricsToDisk } from './lib/metrics';
 import { getProtonGeManagerState, installProtonGe } from './lib/compatTools';
 import { startSessionTracking, stopSessionTracking } from './lib/playtime';
+import { initCloudSync, teardownCloudSync, checkHasCloudBackup } from './lib/cloudSync';
+import { getTrackedConfigs } from './lib/trackedConfigs';
+import { toaster } from './lib/notify';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -195,7 +198,21 @@ export default definePlugin(() => {
 
   // init cache from localStorage and start prefetch in background
   initCache();
+  initCloudSync();
   startAutoFlush();
+  void (async () => {
+    try {
+      if (getTrackedConfigs().length > 0) return;
+      const hasBackup = await checkHasCloudBackup();
+      if (!hasBackup) return;
+      toaster.toast({
+        title: 'Proton Pulse',
+        body: t().configManager.cloudRestoreAvailable,
+      });
+    } catch {
+      // best-effort startup nudge
+    }
+  })();
   // delay prefetch and playtime tracking so Steam's UI is fully loaded
   const prefetchTimer = setTimeout(() => {
     void runStartupPrefetch();
@@ -287,6 +304,7 @@ export default definePlugin(() => {
     onDismount() {
       console.log('Proton Pulse unloading');
       void logFrontendEvent('INFO', 'Plugin frontend unloading');
+      teardownCloudSync();
       // finalize any active playtime session before shutdown
       stopSessionTracking();
       // flush metrics one last time before shutdown

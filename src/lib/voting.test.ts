@@ -219,6 +219,53 @@ describe('getUserVote', () => {
   });
 });
 
+describe('restRequest edge cases', () => {
+  it('returns a string error message from a text response body', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response('something went wrong', { status: 400 }),
+    );
+
+    const { restRequest } = await import('./voting');
+    const result = await restRequest('test_path', { method: 'GET' });
+    expect(result.error).toBe('something went wrong');
+    expect(result.status).toBe(400);
+  });
+
+  it('falls back to HTTP status when body is empty on error', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response('', { status: 502 }),
+    );
+
+    const { restRequest } = await import('./voting');
+    const result = await restRequest('test_path', { method: 'GET' });
+    expect(result.error).toBe('HTTP 502');
+  });
+
+  it('handles non-JSON text body on successful response', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response('not json', { status: 200, headers: { 'Content-Type': 'text/plain' } }),
+    );
+
+    const { restRequest } = await import('./voting');
+    const result = await restRequest('test_path');
+    // the text that cant be parsed comes back as the raw string
+    expect(result.data).toBe('not json');
+    expect(result.error).toBeNull();
+  });
+});
+
+describe('fetchExistingVote error path', () => {
+  it('returns null for getUserVote when fetch returns an error', async () => {
+    // return a non-406 error so it goes to the error/!data branch
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ message: 'server error' }, { status: 500 }),
+    );
+
+    const { getUserVote } = await import('./voting');
+    await expect(getUserVote('42', 'report-x')).resolves.toBeNull();
+  });
+});
+
 describe('isVoteCooldownActive', () => {
   it('is false before a vote is submitted', async () => {
     const { isVoteCooldownActive } = await import('./voting');

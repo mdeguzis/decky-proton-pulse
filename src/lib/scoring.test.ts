@@ -1,6 +1,6 @@
 // src/lib/scoring.test.ts
 import { describe, it, expect } from 'vitest';
-import { scoreReport, bucketByGpuTier, parseNotesSentiment } from './scoring';
+import { scoreReport, bucketByGpuTier, parseNotesSentiment, getHardwareMatchPercent, getHardwareMatchBreakdown } from './scoring';
 import type { CdnReport, SystemInfo } from '../types';
 
 const nvidiaSystem: SystemInfo = {
@@ -106,6 +106,39 @@ describe('scoreReport', () => {
     );
   });
 
+  it('exact distro match scores higher than a same-family distro match', () => {
+    const exactDistro = makeCdnReport({ os: 'CachyOS' });
+    const familyMatch = makeCdnReport({ os: 'Arch Linux' });
+    expect(scoreReport(exactDistro, nvidiaSystem).score).toBeGreaterThan(
+      scoreReport(familyMatch, nvidiaSystem).score
+    );
+  });
+
+  it('same-family distro match scores higher than an unrelated distro', () => {
+    const familyMatch = makeCdnReport({ os: 'Arch Linux' });
+    const unrelated = makeCdnReport({ os: 'Ubuntu 24.04' });
+    expect(scoreReport(familyMatch, nvidiaSystem).score).toBeGreaterThan(
+      scoreReport(unrelated, nvidiaSystem).score
+    );
+  });
+
+  it('exact kernel match scores higher than a nearby patch mismatch', () => {
+    const exactKernel = makeCdnReport({ kernel: '6.19.8' });
+    // delta of 2, hits the KERNEL_PATCH_CLOSE multiplier
+    const nearbyKernel = makeCdnReport({ kernel: '6.19.6' });
+    expect(scoreReport(exactKernel, nvidiaSystem).score).toBeGreaterThan(
+      scoreReport(nearbyKernel, nvidiaSystem).score
+    );
+  });
+
+  it('nearby minor kernel match scores higher than a distant kernel line', () => {
+    const nearbyMinor = makeCdnReport({ kernel: '6.18.4' });
+    const distantKernel = makeCdnReport({ kernel: '6.6.0' });
+    expect(scoreReport(nearbyMinor, nvidiaSystem).score).toBeGreaterThan(
+      scoreReport(distantKernel, nvidiaSystem).score
+    );
+  });
+
   // ── borked decay ─────────────────────────────────────────────────────────────
 
   it('fresh borked report scores lower than old borked (decay raises old score)', () => {
@@ -169,5 +202,413 @@ describe('bucketByGpuTier', () => {
     const r2 = makeCdnReport({ rating: 'silver', timestamp: now - 500 * 86400 });
     const buckets = bucketByGpuTier([r1, r2].map(r => scoreReport(r, nvidiaSystem)));
     expect(buckets.nvidia[0].score).toBeGreaterThanOrEqual(buckets.nvidia[1].score);
+  });
+
+  it('puts unknown GPU reports into the other bucket', () => {
+    const unknownGpu = makeCdnReport({ gpu: 'Some weird GPU' });
+    const buckets = bucketByGpuTier([unknownGpu].map(r => scoreReport(r, nvidiaSystem)));
+    expect(buckets.other).toHaveLength(1);
+    expect(buckets.nvidia).toHaveLength(0);
+  });
+});
+
+describe('getHardwareMatchPercent', () => {
+  it('returns a higher percentage for a close system match than a distant one', () => {
+    const closeMatch = makeCdnReport({
+      gpu: 'NVIDIA GeForce RTX 4090',
+      gpuDriver: 'NVIDIA 595.10.00',
+      os: 'CachyOS',
+      kernel: '6.19.8',
+      ram: '64 GB',
+    });
+    const distantMatch = makeCdnReport({
+      gpu: 'AMD Radeon RX 6800',
+      gpuDriver: 'Mesa 23.1.0',
+      os: 'Ubuntu 24.04',
+      kernel: '6.6.0',
+      ram: '16 GB',
+    });
+
+    expect(getHardwareMatchPercent(closeMatch, nvidiaSystem)).toBeGreaterThan(
+      getHardwareMatchPercent(distantMatch, nvidiaSystem)
+    );
+  });
+
+  it('returns 0 when system info is unavailable', () => {
+    expect(getHardwareMatchPercent(makeCdnReport(), null)).toBe(0);
+  });
+
+  it('gives partial score for amd/intel report on other gpu vendor system', () => {
+    const otherSys: SystemInfo = { ...nvidiaSystem, gpu_vendor: 'other' };
+    const amdReport = makeCdnReport({ gpu: 'AMD Radeon RX 7900 XTX', gpuDriver: 'Mesa 23.1.0' });
+    const pct = getHardwareMatchPercent(amdReport, otherSys);
+    // should get the 14pt partial GPU score, not 35 or 0
+    expect(pct).toBeGreaterThan(0);
+  });
+
+  it('awards driver fallback points when driver strings are missing but vendors match', () => {
+    const noDriverSys: SystemInfo = { ...nvidiaSystem, driver_version: '' };
+    const noDriverReport = makeCdnReport({ gpuDriver: '' });
+    const pct = getHardwareMatchPercent(noDriverReport, noDriverSys);
+    // should still get 8pts for vendor match even tho drivers cant be parsed
+    expect(pct).toBeGreaterThan(0);
+  });
+
+  it('awards points for same-major.minor nearby-patch kernel', () => {
+    const nearbyPatch = makeCdnReport({ kernel: '6.19.6' });
+    const exactPatch = makeCdnReport({ kernel: '6.19.8' });
+    // exact should beat nearby patch
+    expect(getHardwareMatchPercent(exactPatch, nvidiaSystem)).toBeGreaterThan(
+      getHardwareMatchPercent(nearbyPatch, nvidiaSystem)
+    );
+    // but nearby patch should beat distant minor
+    const distantMinor = makeCdnReport({ kernel: '6.6.0' });
+    expect(getHardwareMatchPercent(nearbyPatch, nvidiaSystem)).toBeGreaterThan(
+      getHardwareMatchPercent(distantMinor, nvidiaSystem)
+    );
+  });
+
+  it('awards points for same-major nearby-minor kernel', () => {
+    const nearbyMinor = makeCdnReport({ kernel: '6.18.4' });
+    const distantMinor = makeCdnReport({ kernel: '6.6.0' });
+    // nearby minor (within 1) should score higher than distant minor
+    expect(getHardwareMatchPercent(nearbyMinor, nvidiaSystem)).toBeGreaterThan(
+      getHardwareMatchPercent(distantMinor, nvidiaSystem)
+    );
+  });
+
+  it('awards points for same-major distant-minor kernel', () => {
+    const sameMajor = makeCdnReport({ kernel: '6.6.0' });
+    const diffMajor = makeCdnReport({ kernel: '5.15.0' });
+    expect(getHardwareMatchPercent(sameMajor, nvidiaSystem)).toBeGreaterThan(
+      getHardwareMatchPercent(diffMajor, nvidiaSystem)
+    );
+  });
+});
+
+// ─── getHardwareMatchBreakdown ──────────────────────────────────────────────
+
+describe('getHardwareMatchBreakdown', () => {
+  it('returns all-zero breakdown when sysInfo is null', () => {
+    const bd = getHardwareMatchBreakdown(makeCdnReport(), null);
+    expect(bd.gpu.percent).toBe(0);
+    expect(bd.gpuDriver.percent).toBe(0);
+    expect(bd.os.percent).toBe(0);
+    expect(bd.kernel.percent).toBe(0);
+    expect(bd.ram.percent).toBe(0);
+    // all should be red
+    expect(bd.gpu.color).toBe('#ef4444');
+  });
+
+  // ── GPU field matching ──────────────────────────────────────────────────────
+
+  it('gpu: same vendor + same model gives high match', () => {
+    const report = makeCdnReport({ gpu: 'NVIDIA GeForce RTX 5080' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.gpu.percent).toBeGreaterThanOrEqual(80);
+    expect(bd.gpu.color).toBe('#4caf50'); // green
+  });
+
+  it('gpu: same vendor + different model gives partial match', () => {
+    const report = makeCdnReport({ gpu: 'NVIDIA GeForce GTX 1060' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    // vendor match (40) + some token overlap for "geforce"
+    expect(bd.gpu.percent).toBeGreaterThanOrEqual(40);
+    expect(bd.gpu.percent).toBeLessThan(90);
+  });
+
+  it('gpu: different vendor gives low match', () => {
+    const report = makeCdnReport({ gpu: 'AMD Radeon RX 7900 XTX' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.gpu.percent).toBeLessThanOrEqual(10);
+    expect(bd.gpu.color).toBe('#ef4444'); // red
+  });
+
+  it('gpu: empty gpu string gives 0', () => {
+    const report = makeCdnReport({ gpu: '' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.gpu.percent).toBe(0);
+  });
+
+  it('gpu: unknown vendor keyword falls through to default', () => {
+    // "qualcomm" isnt in vendorKeywords, so vendorGroup returns "qualcomm"
+    // both report and system have it, so they match on vendor
+    const qualcommSys: SystemInfo = { ...nvidiaSystem, gpu: 'Qualcomm Adreno 740' };
+    const report = makeCdnReport({ gpu: 'Qualcomm Adreno 730' });
+    const bd = getHardwareMatchBreakdown(report, qualcommSys);
+    // no vendor keyword found, so rVendor/sVendor are undefined -> vendorGroup returns ''
+    // both empty strings match -> doesn't return 10 (vendor mismatch)
+    // instead falls through to model token comparison
+    expect(bd.gpu.percent).toBeGreaterThanOrEqual(40);
+  });
+
+  it('gpu: intel vs intel arc matches on vendor', () => {
+    const intelSys: SystemInfo = { ...nvidiaSystem, gpu: 'Intel Arc A770', gpu_vendor: 'intel' };
+    const report = makeCdnReport({ gpu: 'Intel Arc A750' });
+    const bd = getHardwareMatchBreakdown(report, intelSys);
+    expect(bd.gpu.percent).toBeGreaterThanOrEqual(40);
+  });
+
+  // ── Driver field matching ───────────────────────────────────────────────────
+
+  it('driver: exact major version gives 100%', () => {
+    const report = makeCdnReport({ gpuDriver: 'NVIDIA 595.10.00' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.gpuDriver.percent).toBe(100);
+    expect(bd.gpuDriver.color).toBe('#4caf50');
+  });
+
+  it('driver: within 2 major versions gives 75%', () => {
+    const report = makeCdnReport({ gpuDriver: 'NVIDIA 593.10.00' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.gpuDriver.percent).toBe(75);
+  });
+
+  it('driver: within 5 major versions gives 50%', () => {
+    const report = makeCdnReport({ gpuDriver: 'NVIDIA 590.10.00' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.gpuDriver.percent).toBe(50);
+    expect(bd.gpuDriver.color).toBe('#f59e0b'); // amber
+  });
+
+  it('driver: far apart gives 20%', () => {
+    const report = makeCdnReport({ gpuDriver: 'NVIDIA 410.93' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.gpuDriver.percent).toBe(20);
+  });
+
+  it('driver: missing driver string gives 0', () => {
+    const report = makeCdnReport({ gpuDriver: '' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.gpuDriver.percent).toBe(0);
+  });
+
+  // ── OS field matching ───────────────────────────────────────────────────────
+
+  it('os: exact match gives 100%', () => {
+    const report = makeCdnReport({ os: 'CachyOS' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.os.percent).toBe(100);
+  });
+
+  it('os: same family gives 70%', () => {
+    const report = makeCdnReport({ os: 'Arch Linux' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.os.percent).toBe(70);
+    expect(bd.os.color).toBe('#f59e0b'); // amber
+  });
+
+  it('os: different family gives 10%', () => {
+    const report = makeCdnReport({ os: 'Ubuntu 24.04' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.os.percent).toBe(10);
+  });
+
+  it('os: debian family matches other debian distros', () => {
+    const debianSys: SystemInfo = { ...nvidiaSystem, distro: 'Debian 12' };
+    const report = makeCdnReport({ os: 'Debian 11' });
+    const bd = getHardwareMatchBreakdown(report, debianSys);
+    expect(bd.os.percent).toBe(70);
+  });
+
+  it('os: nixos matches itself', () => {
+    const nixSys: SystemInfo = { ...nvidiaSystem, distro: 'NixOS 24.05' };
+    const report = makeCdnReport({ os: 'NixOS 23.11' });
+    const bd = getHardwareMatchBreakdown(report, nixSys);
+    expect(bd.os.percent).toBe(70);
+  });
+
+  it('os: empty os gives 0', () => {
+    const report = makeCdnReport({ os: '' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.os.percent).toBe(0);
+  });
+
+  // ── Kernel field matching ───────────────────────────────────────────────────
+
+  it('kernel: exact match gives 100%', () => {
+    const report = makeCdnReport({ kernel: '6.19.8' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.kernel.percent).toBe(100);
+  });
+
+  it('kernel: same major.minor nearby patch gives 85%', () => {
+    const report = makeCdnReport({ kernel: '6.19.6' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.kernel.percent).toBe(85);
+  });
+
+  it('kernel: same major nearby minor gives 65%', () => {
+    const report = makeCdnReport({ kernel: '6.18.4' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.kernel.percent).toBe(65);
+  });
+
+  it('kernel: same major distant minor gives 40%', () => {
+    const report = makeCdnReport({ kernel: '6.6.0' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.kernel.percent).toBe(40);
+  });
+
+  it('kernel: different major gives 10%', () => {
+    const report = makeCdnReport({ kernel: '5.15.0' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.kernel.percent).toBe(10);
+  });
+
+  it('kernel: empty kernel gives 0', () => {
+    const report = makeCdnReport({ kernel: '' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.kernel.percent).toBe(0);
+  });
+
+  // ── RAM field matching ──────────────────────────────────────────────────────
+
+  it('ram: exact match gives 100%', () => {
+    const report = makeCdnReport({ ram: '64 GB' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.ram.percent).toBe(100);
+  });
+
+  it('ram: within 4GB gives 75%', () => {
+    const report = makeCdnReport({ ram: '60 GB' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.ram.percent).toBe(75);
+  });
+
+  it('ram: within 8GB gives 50%', () => {
+    const report = makeCdnReport({ ram: '56 GB' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.ram.percent).toBe(50);
+  });
+
+  it('ram: far apart gives 20%', () => {
+    const report = makeCdnReport({ ram: '16 GB' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.ram.percent).toBe(20);
+  });
+
+  it('ram: missing ram gives 0', () => {
+    const report = makeCdnReport({ ram: '' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.ram.percent).toBe(0);
+  });
+
+  it('ram: null system ram gives 0', () => {
+    const noRamSys: SystemInfo = { ...nvidiaSystem, ram_gb: null as unknown as number };
+    const report = makeCdnReport({ ram: '32 GB' });
+    const bd = getHardwareMatchBreakdown(report, noRamSys);
+    expect(bd.ram.percent).toBe(0);
+  });
+
+  it('ram: both exceed game minimum gets boosted match', () => {
+    // 32GB report vs 14GB system = normally 20% (18GB diff)
+    // but if game only needs 6GB, both are fine
+    const sys14: SystemInfo = { ...nvidiaSystem, ram_gb: 14 };
+    const report = makeCdnReport({ ram: '32 GB' });
+    const bdNoReqs = getHardwareMatchBreakdown(report, sys14);
+    const bdWithReqs = getHardwareMatchBreakdown(report, sys14, 6);
+    // with game reqs, should be significantly higher since both exceed 6GB
+    expect(bdWithReqs.ram.percent).toBeGreaterThan(bdNoReqs.ram.percent);
+    expect(bdWithReqs.ram.percent).toBeGreaterThanOrEqual(70);
+  });
+
+  it('ram: game minimum not met keeps normal scoring', () => {
+    // system has 4GB, game needs 8GB -- game min not met, no boost
+    const sys4: SystemInfo = { ...nvidiaSystem, ram_gb: 4 };
+    const report = makeCdnReport({ ram: '16 GB' });
+    const bdNoReqs = getHardwareMatchBreakdown(report, sys4);
+    const bdWithReqs = getHardwareMatchBreakdown(report, sys4, 8);
+    // system doesn't meet minimum, so no boost applied
+    expect(bdWithReqs.ram.percent).toBe(bdNoReqs.ram.percent);
+  });
+
+  // ── Color coding ───────────────────────────────────────────────────────────
+
+  it('green for 80%+, amber for 50-79%, red for <50%', () => {
+    // exact match should be green
+    const exactReport = makeCdnReport({
+      gpu: 'NVIDIA GeForce RTX 5080',
+      gpuDriver: 'NVIDIA 595.45.04',
+      os: 'CachyOS',
+      kernel: '6.19.8',
+      ram: '64 GB',
+    });
+    const bd = getHardwareMatchBreakdown(exactReport, nvidiaSystem);
+    expect(bd.gpu.color).toBe('#4caf50');
+    expect(bd.gpuDriver.color).toBe('#4caf50');
+    expect(bd.os.color).toBe('#4caf50');
+    expect(bd.kernel.color).toBe('#4caf50');
+    expect(bd.ram.color).toBe('#4caf50');
+
+    // distant match should be red for gpu
+    const distantReport = makeCdnReport({ gpu: 'AMD Radeon RX 7900 XTX' });
+    const bd2 = getHardwareMatchBreakdown(distantReport, nvidiaSystem);
+    expect(bd2.gpu.color).toBe('#ef4444');
+  });
+
+  it('handles unknown GPU vendor in gpuFieldMatch vendorGroup fallback', () => {
+    // "Qualcomm Adreno" doesn't match any known vendor keyword
+    const report = makeCdnReport({ gpu: 'Qualcomm Adreno 740' });
+    const qualcommSys: SystemInfo = { ...nvidiaSystem, gpu: 'Qualcomm Adreno 740', gpu_vendor: 'other' };
+    const bd = getHardwareMatchBreakdown(report, qualcommSys);
+    // same string, but vendor group falls through to the raw token
+    expect(bd.gpu.percent).toBeGreaterThan(0);
+  });
+
+  it('gives 18pts for unknown GPU tier in getHardwareMatchPercent', () => {
+    // empty gpu string -> unknown tier
+    const unknownGpuReport = makeCdnReport({ gpu: '' });
+    const pct = getHardwareMatchPercent(unknownGpuReport, nvidiaSystem);
+    expect(pct).toBeGreaterThanOrEqual(18);
+  });
+
+  it('handles OS family that matches no known distro in detectOsFamily', () => {
+    // "Void Linux" doesnt match any family regex, returns normalized string
+    const voidReport = makeCdnReport({ os: 'Void Linux' });
+    const voidSys: SystemInfo = { ...nvidiaSystem, distro: 'Void Linux' };
+    // same OS should still get exact match points
+    const pct = getHardwareMatchPercent(voidReport, voidSys);
+    expect(pct).toBeGreaterThan(0);
+  });
+
+  it('GPU synonym mapping: "Advanced Micro Devices" matches "AMD"', () => {
+    // the system reports the full vendor name, the report uses "AMD"
+    const report = makeCdnReport({ gpu: 'AMD Radeon RX 6700 XT' });
+    const deckSys: SystemInfo = {
+      ...nvidiaSystem,
+      gpu: 'Advanced Micro Devices, Inc. [AMD/ATI] VanGogh [AMD Custom GPU 0405] (rev ae)',
+      gpu_vendor: 'amd',
+    };
+    const bd = getHardwareMatchBreakdown(report, deckSys);
+    // should recognize both as AMD and give > 10% (vendor match at minimum)
+    expect(bd.gpu.percent).toBeGreaterThanOrEqual(40);
+  });
+
+  it('CPU field match: same brand different model', () => {
+    const report = makeCdnReport({ cpu: 'AMD Ryzen 7 5700G with Radeon Graphics' });
+    const deckSys: SystemInfo = { ...nvidiaSystem, cpu: 'AMD Custom APU 0405' };
+    const bd = getHardwareMatchBreakdown(report, deckSys);
+    // same brand (amd), some token overlap
+    expect(bd.cpu.percent).toBeGreaterThanOrEqual(30);
+  });
+
+  it('CPU field match: different brands', () => {
+    const report = makeCdnReport({ cpu: 'Intel Core i7-12700K' });
+    const amdSys: SystemInfo = { ...nvidiaSystem, cpu: 'AMD Ryzen 9 5900X' };
+    const bd = getHardwareMatchBreakdown(report, amdSys);
+    expect(bd.cpu.percent).toBe(10);
+  });
+
+  it('CPU field match: empty strings give 0', () => {
+    const report = makeCdnReport({ cpu: '' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.cpu.percent).toBe(0);
+  });
+
+  it('breakdown includes cpu field when sysInfo is null', () => {
+    const bd = getHardwareMatchBreakdown(makeCdnReport(), null);
+    expect(bd.cpu).toBeDefined();
+    expect(bd.cpu.percent).toBe(0);
   });
 });

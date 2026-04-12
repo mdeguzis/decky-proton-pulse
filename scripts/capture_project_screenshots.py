@@ -320,13 +320,26 @@ def main() -> int:
                     if action == "skip":
                         continue
                     language_started = True
-                    run_capture_command(
-                        entry,
-                        deck_ip=args.deck_ip,
-                        deck_user=args.deck_user,
-                        output_dir=screenshots_dir,
-                        language=language,
-                    )
+                    try:
+                        run_capture_command(
+                            entry,
+                            deck_ip=args.deck_ip,
+                            deck_user=args.deck_user,
+                            output_dir=screenshots_dir,
+                            language=language,
+                        )
+                    except subprocess.CalledProcessError:
+                        if args.deck_ip:
+                            print(
+                                "Remote screenshot capture failed. "
+                                "If the Deck may be running an older plugin build, try:",
+                                file=sys.stderr,
+                            )
+                            print(
+                                f"  make deploy-reload DECK_IP={args.deck_ip} DECK_USER={args.deck_user}",
+                                file=sys.stderr,
+                            )
+                        raise
                     captured_count += 1
             finally:
                 if language_started:

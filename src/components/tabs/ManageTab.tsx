@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '../../lib/notify';
-import { getTrackedConfigs, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
+import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } from '../../lib/screenshotAutomation';
@@ -11,6 +11,15 @@ import { ConfigEditorModal } from '../ConfigEditorModal';
 import { ProtonDBSubmitModal } from '../ProtonDBSubmitModal';
 import { getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
 import type { GpuVendor } from '../../types';
+import {
+  fetchCloudConfigs,
+  getCloudSyncStatus,
+  restoreCloudConfigs,
+  pushAllConfigs,
+  pushConfig,
+  type CloudConfigRow,
+  type SyncStatus,
+} from '../../lib/cloudSync';
 
 interface Props {
   appId: number | null;
@@ -36,10 +45,25 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
   const extras = t().extras!;
   const [configs, setConfigs] = useState<TrackedConfig[]>([]);
   const [resolvedNames, setResolvedNames] = useState<Record<number, string>>({});
+  const [cloudConfigs, setCloudConfigs] = useState<CloudConfigRow[]>([]);
+  const [cloudLoading, setCloudLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   const refresh = () => setConfigs(getTrackedConfigs());
+  const refreshCloud = async () => {
+    try {
+      const rows = await fetchCloudConfigs();
+      setCloudConfigs(rows);
+    } finally {
+      setCloudLoading(false);
+    }
+  };
 
   useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    void refreshCloud();
+  }, []);
 
   useEffect(() => registerScreenshotAutomationHandler('manage-configurations/config-editor', async (action: ScreenshotAutomationAction) => {
     showModal(
@@ -91,7 +115,7 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
     );
   }), [appId, appName]);
 
-  // Resolve missing app names from Steam
+  // Resolve missing app names from Steam and backfill into stored config
   useEffect(() => {
     for (const config of configs) {
       if (!config.appName && !resolvedNames[config.appId]) {
@@ -100,6 +124,8 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
             const name = result?.details?.strDisplayName;
             if (name) {
               setResolvedNames((prev) => ({ ...prev, [config.appId]: name }));
+              // persist the name so cloud sync picks it up
+              addTrackedConfig({ ...config, appName: name });
             }
           })
           .catch(() => {});
@@ -171,10 +197,73 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
     );
   };
 
+  const handleSyncAll = () => {
+    setSyncing(true);
+    void pushAllConfigs()
+      .then((result) => {
+        toaster.toast({
+          title: 'Proton Pulse',
+          body: t().configManager.cloudSyncSummary(result.succeeded, result.total),
+        });
+        return refreshCloud();
+      })
+      .catch((error) => {
+        toaster.toast({
+          title: 'Proton Pulse',
+          body: t().configManager.cloudSyncFailed(error instanceof Error ? error.message : String(error)),
+        });
+      })
+      .finally(() => setSyncing(false));
+  };
+
+  const handleRestoreCloud = () => {
+    setRestoring(true);
+    void restoreCloudConfigs()
+      .then((result) => {
+        toaster.toast({
+          title: 'Proton Pulse',
+          body: t().configManager.cloudRestoreSummary(result.restored, result.skipped),
+        });
+        refresh();
+        return refreshCloud();
+      })
+      .catch((error) => {
+        toaster.toast({
+          title: 'Proton Pulse',
+          body: t().configManager.cloudRestoreFailed(error instanceof Error ? error.message : String(error)),
+        });
+      })
+      .finally(() => setRestoring(false));
+  };
+
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
       evt.preventDefault();
     }
+  };
+
+  const handleUploadOne = (config: TrackedConfig) => {
+    void pushConfig(config)
+      .then(async (ok) => {
+        toaster.toast({
+          title: 'Proton Pulse',
+          body: ok
+            ? t().configManager.cloudUploadSuccess
+            : t().configManager.cloudSyncFailed('push failed'),
+        });
+        if (ok) await refreshCloud();
+      });
+  };
+
+  const handleRestoreOne = (config: TrackedConfig) => {
+    const cloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
+    if (!cloudRow) {
+      toaster.toast({ title: 'Proton Pulse', body: t().configManager.cloudRestoreNoBackup });
+      return;
+    }
+    addTrackedConfig(cloudRow.config);
+    refresh();
+    toaster.toast({ title: 'Proton Pulse', body: t().configManager.cloudRestoreSuccess });
   };
 
   const openActionsMenu = (config: TrackedConfig, e: MouseEvent) => {
@@ -183,6 +272,12 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
       <Menu label={displayName(config)}>
         <MenuItem onClick={() => handleEdit(config)}>
           {t().common.edit}
+        </MenuItem>
+        <MenuItem onClick={() => handleUploadOne(config)}>
+          {t().configManager.uploadToCloud}
+        </MenuItem>
+        <MenuItem onClick={() => handleRestoreOne(config)}>
+          {t().configManager.restoreFromCloud}
         </MenuItem>
         {!isShortcut ? (
           <MenuItem onClick={() => handleSubmitReport(config)}>
@@ -224,11 +319,20 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
           {t().configManager.createConfig}
         </DialogButton>
       </div>
+      <Focusable flow-children="horizontal" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <DialogButton onClick={handleSyncAll} disabled={syncing || restoring} style={{ flex: 1 }}>
+          {syncing ? t().configManager.syncingCloud : t().configManager.syncAllToCloud}
+        </DialogButton>
+        <DialogButton onClick={handleRestoreCloud} disabled={syncing || restoring} style={{ flex: 1 }}>
+          {restoring ? t().configManager.restoringFromCloud : t().configManager.restoreFromCloud}
+        </DialogButton>
+      </Focusable>
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {sorted.map((config) => {
           const isCurrent = appId === config.appId;
           const name = displayName(config);
           const isShortcut = isSteamShortcutApp(config.appId);
+          const syncStatus: SyncStatus = cloudLoading ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
           const metaParts = [
             isShortcut ? extras.nonSteamShortcut() : extras.appIdLabel(config.appId),
             config.protonVersion,
@@ -260,6 +364,24 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
                 {config.profileName && (
                   <div style={{ fontSize: 10, fontWeight: 600, color: '#4c9eff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {config.profileName}
+                    {!cloudLoading && (
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: 999,
+                          marginLeft: 6,
+                          background: syncStatus === 'synced' ? 'rgba(76,175,80,0.18)' : 'rgba(245,158,11,0.18)',
+                          color: syncStatus === 'synced' ? '#4caf50' : '#f59e0b',
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.3,
+                        }}
+                      >
+                        {syncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced}
+                      </span>
+                    )}
                   </div>
                 )}
                 <div style={{ fontSize: 10, color: '#7a9bb5' }}>

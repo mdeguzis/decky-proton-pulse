@@ -128,8 +128,25 @@ describe('route normalization helpers', () => {
     expect(normalizeDeckRoutePath('/routes/routes/library/home')).toBe('/routes/library/home');
   });
 
+  it('returns null for null, undefined, empty, and whitespace-only input', () => {
+    expect(normalizeDeckRoutePath(null)).toBeNull();
+    expect(normalizeDeckRoutePath(undefined)).toBeNull();
+    expect(normalizeDeckRoutePath('')).toBeNull();
+    expect(normalizeDeckRoutePath('   ')).toBeNull();
+  });
+
+  it('adds leading slash when missing', () => {
+    expect(normalizeDeckRoutePath('library/app/42')).toBe('/library/app/42');
+  });
+
   it('converts /routes paths into Navigation.Navigate-friendly paths', () => {
     expect(toNavigationPath('/routes/library/home')).toBe('/library/home');
+  });
+
+  it('toNavigationPath returns null for empty input', () => {
+    expect(toNavigationPath(null)).toBeNull();
+    expect(toNavigationPath('')).toBeNull();
+    expect(toNavigationPath('   ')).toBeNull();
   });
 
   it('passes through plugin-local paths unchanged for navigation', () => {

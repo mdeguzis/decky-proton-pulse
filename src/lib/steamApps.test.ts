@@ -136,6 +136,33 @@ describe('steamApps helpers', () => {
     );
   });
 
+  it('handles unregister throwing without breaking the result', async () => {
+    vi.useFakeTimers();
+    const unregister = vi.fn().mockImplementation(() => {
+      throw new Error('unregister blew up');
+    });
+    (globalThis as any).SteamClient = {
+      Apps: {
+        RegisterForAppDetails: (_appId: number, callback: (details: unknown) => void) => {
+          setTimeout(() => callback({ strLaunchOptions: 'works' }), 0);
+          return { unregister };
+        },
+      },
+    };
+
+    const promise = getSteamAppDetails(620);
+    await vi.runAllTimersAsync();
+    await expect(promise).resolves.toEqual({ details: { strLaunchOptions: 'works' } });
+    expect(unregister).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('returns false for null/undefined appId in isSteamShortcutApp', () => {
+    expect(isSteamShortcutApp(null)).toBe(false);
+    expect(isSteamShortcutApp(undefined)).toBe(false);
+    expect(isSteamShortcutApp(0)).toBe(false);
+  });
+
   it('returns launch options only when present on the details payload', () => {
     expect(getLaunchOptionsFromDetails({ strLaunchOptions: 'DXVK=1 %command%' })).toBe('DXVK=1 %command%');
     expect(getLaunchOptionsFromDetails({})).toBe('');

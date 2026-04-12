@@ -20,15 +20,17 @@ vi.mock('./settings', () => {
 vi.mock('./trackedConfigs', () => ({
   getTrackedConfigs: vi.fn().mockReturnValue([]),
   addTrackedConfig: vi.fn(),
+  onConfigSaved: vi.fn(),
 }));
 
 import { restRequest } from './voting';
 import type { TrackedConfig } from './trackedConfigs';
-import { getTrackedConfigs, addTrackedConfig } from './trackedConfigs';
+import { getTrackedConfigs, addTrackedConfig, onConfigSaved } from './trackedConfigs';
 
 const mockRestRequest = vi.mocked(restRequest);
 const mockGetTrackedConfigs = vi.mocked(getTrackedConfigs);
 const mockAddTrackedConfig = vi.mocked(addTrackedConfig);
+const mockOnConfigSaved = vi.mocked(onConfigSaved);
 
 function makeConfig(overrides: Partial<TrackedConfig> = {}): TrackedConfig {
   return {
@@ -43,8 +45,17 @@ function makeConfig(overrides: Partial<TrackedConfig> = {}): TrackedConfig {
   };
 }
 
-beforeEach(() => {
+async function flushAsyncWork(): Promise<void> {
+  await Promise.resolve();
+  await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+}
+
+beforeEach(async () => {
   vi.clearAllMocks();
+  mockOnConfigSaved.mockImplementation(() => () => {});
+  const { teardownCloudSync, setAutoSyncEnabled } = await import('./cloudSync');
+  teardownCloudSync();
+  setAutoSyncEnabled(true);
 });
 
 describe('pushConfig', () => {
@@ -225,5 +236,62 @@ describe('restoreCloudConfigs', () => {
     const result = await restoreCloudConfigs();
 
     expect(result).toEqual({ restored: 0, skipped: 0, failed: 0 });
+  });
+});
+
+describe('cloud auto-sync lifecycle', () => {
+  it('registers a save listener once and pushes saved configs when enabled', async () => {
+    let savedCallback: ((config: TrackedConfig) => void) | null = null;
+    const unsubscribe = vi.fn();
+    mockOnConfigSaved.mockImplementation((cb) => {
+      savedCallback = cb;
+      return unsubscribe;
+    });
+    mockRestRequest.mockResolvedValue({ data: null, error: null, status: 201 });
+
+    const { initCloudSync } = await import('./cloudSync');
+    initCloudSync();
+    initCloudSync();
+
+    expect(mockOnConfigSaved).toHaveBeenCalledTimes(1);
+    const callback = savedCallback as ((config: TrackedConfig) => void) | null;
+    if (!callback) {
+      throw new Error('Expected cloud sync save callback to be registered');
+    }
+    callback(makeConfig({ appId: 77, appName: 'Auto Sync Game' }));
+    await flushAsyncWork();
+    expect(mockRestRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not push saved configs when auto-sync is disabled', async () => {
+    let savedCallback: ((config: TrackedConfig) => void) | null = null;
+    mockOnConfigSaved.mockImplementation((cb) => {
+      savedCallback = cb;
+      return () => {};
+    });
+
+    const { initCloudSync, teardownCloudSync, setAutoSyncEnabled } = await import('./cloudSync');
+    setAutoSyncEnabled(false);
+    initCloudSync();
+    const callback = savedCallback as ((config: TrackedConfig) => void) | null;
+    if (!callback) {
+      throw new Error('Expected cloud sync save callback to be registered');
+    }
+    callback(makeConfig({ appId: 88 }));
+
+    expect(mockRestRequest).not.toHaveBeenCalled();
+    teardownCloudSync();
+    setAutoSyncEnabled(true);
+  });
+
+  it('tears down the save listener', async () => {
+    const unsubscribe = vi.fn();
+    mockOnConfigSaved.mockImplementation(() => unsubscribe);
+
+    const { initCloudSync, teardownCloudSync } = await import('./cloudSync');
+    initCloudSync();
+    teardownCloudSync();
+
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
   });
 });

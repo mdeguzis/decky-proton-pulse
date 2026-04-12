@@ -2,9 +2,10 @@
 import { logFrontendEvent } from './logger';
 import { getVoterId, restRequest } from './voting';
 import { getSetting, setSetting } from './settings';
-import { getTrackedConfigs, addTrackedConfig, type TrackedConfig } from './trackedConfigs';
+import { getTrackedConfigs, addTrackedConfig, onConfigSaved, type TrackedConfig } from './trackedConfigs';
 
 const AUTO_SYNC_KEY = 'cloud-auto-sync';
+let teardownAutoSyncListener: (() => void) | null = null;
 
 export function isAutoSyncEnabled(): boolean {
   return getSetting<boolean>(AUTO_SYNC_KEY, true);
@@ -169,4 +170,18 @@ export async function pushAllConfigs(): Promise<PushAllResult> {
     total: configs.length, succeeded, failed,
   });
   return { total: configs.length, succeeded, failed };
+}
+
+export function initCloudSync(): void {
+  if (teardownAutoSyncListener) return;
+  teardownAutoSyncListener = onConfigSaved((config) => {
+    if (!isAutoSyncEnabled()) return;
+    void pushConfig(config);
+  });
+  void logFrontendEvent('INFO', 'Cloud sync: auto-sync listener registered');
+}
+
+export function teardownCloudSync(): void {
+  teardownAutoSyncListener?.();
+  teardownAutoSyncListener = null;
 }

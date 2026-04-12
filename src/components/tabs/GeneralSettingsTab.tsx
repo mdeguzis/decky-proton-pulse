@@ -13,6 +13,7 @@ import { getSummary, getPrefetchFailureSummary } from '../../lib/metrics';
 import { getInstalledGameStats } from '../../lib/prefetch';
 import { CacheManagerModalContent } from '../CacheManagerModal';
 import { exportLocalDataBackup, importLocalDataBackup } from '../../lib/localDataBackup';
+import { isAutoSyncEnabled, setAutoSyncEnabled } from '../../lib/cloudSync';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const setLogLevelSafe = (level: string) =>
@@ -176,6 +177,7 @@ export function GeneralSettingsTab() {
   const cacheStats = getCacheStats();
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
+  const [cloudAutoSync, setCloudAutoSync] = useState(() => isAutoSyncEnabled());
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
@@ -338,6 +340,18 @@ export function GeneralSettingsTab() {
             onChange={(enabled) => {
               setNotificationsEnabled(enabled);
               setSetting(NOTIFICATIONS_ENABLED_KEY, enabled);
+            }}
+          />
+        </div>
+        <div style={focusClipRowStyle()}>
+          <ToggleField
+            label={t().configManager.cloudAutoSync}
+            description={t().configManager.cloudAutoSyncDescription}
+            checked={cloudAutoSync}
+            onChange={(enabled) => {
+              setCloudAutoSync(enabled);
+              setAutoSyncEnabled(enabled);
+              void logFrontendEvent('INFO', 'Cloud auto-sync toggled', { enabled });
             }}
           />
         </div>
