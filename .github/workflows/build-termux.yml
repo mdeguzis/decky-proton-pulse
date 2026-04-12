@@ -23,6 +23,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fix workspace permissions for container
+        run: chmod -R 777 "$GITHUB_WORKSPACE"
+
       - name: Build in Termux container
         run: |
           docker run --rm \
