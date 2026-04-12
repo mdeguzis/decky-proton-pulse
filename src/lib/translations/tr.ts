@@ -104,6 +104,8 @@ export const tr: TranslationTree = {
     unknownGpu: 'Bilinmeyen GPU',
     ram: 'RAM',
     systemRequirements: 'Sistem Gereksinimleri',
+    matchingGuideTitle: 'Eşleştirme Nasıl Çalışır',
+    matchingGuideButton: 'Eşleştirme Kılavuzu',
   },
   editReport: {
     title: 'Raporu Düzenle',

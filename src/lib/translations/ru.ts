@@ -128,6 +128,8 @@ export const ru: TranslationTree = {
     unknownGpu: 'Неизвестный GPU',
     ram: 'ОЗУ',
     systemRequirements: 'Системные требования',
+    matchingGuideTitle: 'Как работает сравнение',
+    matchingGuideButton: 'Руководство по сравнению',
   },
   editReport: {
     title: 'Изменить отчёт',

@@ -136,6 +136,8 @@ export interface TranslationTree {
     unknownGpu: string;
     ram: string;
     systemRequirements: string;
+    matchingGuideTitle: string;
+    matchingGuideButton: string;
   };
   editReport: {
     title: string;
@@ -572,6 +574,8 @@ export const en: TranslationTree = {
     unknownGpu: 'Unknown GPU',
     ram: 'RAM',
     systemRequirements: 'System Requirements',
+    matchingGuideTitle: 'How Matching Works',
+    matchingGuideButton: 'Matching Guide',
   },
   editReport: {
     title: 'Edit Report',

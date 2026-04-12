@@ -104,6 +104,8 @@ export const zhCN: TranslationTree = {
     unknownGpu: '未知 GPU',
     ram: '内存',
     systemRequirements: '系统要求',
+    matchingGuideTitle: '匹配规则说明',
+    matchingGuideButton: '匹配指南',
   },
   editReport: {
     title: '编辑报告',

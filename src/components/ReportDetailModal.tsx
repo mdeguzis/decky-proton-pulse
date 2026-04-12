@@ -15,7 +15,7 @@ import {
   formatTimestamp,
   buildLaunchOptionPreview,
 } from '../lib/reportFormatters';
-import { getHardwareMatchPercent, getHardwareMatchBreakdown, matchColor, type FieldMatchInfo } from '../lib/scoring';
+import { getHardwareMatchPercent, getHardwareMatchBreakdown, matchColor, WEIGHTS, type FieldMatchInfo } from '../lib/scoring';
 import { getSteamAppDetails, getLaunchOptionsFromDetails, isSteamShortcutApp } from '../lib/steamApps';
 import { checkProtonVersionAvailability } from '../lib/compatTools';
 import { logFrontendEvent } from '../lib/logger';
@@ -192,6 +192,281 @@ function SystemRequirementsModal({
   );
 }
 
+// ─── Matching Rules explainer ─────────────────────────────────────────────────
+
+interface RuleTier {
+  label: string;  // short outcome label ("100% — green", "+8 pts", etc.)
+  note: string;   // explanation of when this tier applies
+}
+
+interface RuleSection {
+  field: string;
+  description: string;
+  tiers: RuleTier[];
+}
+
+// Builds the rule sections at call time so WEIGHTS values are always current.
+function buildMatchingRules(): RuleSection[] {
+  return [
+    // ── Relevance Score (scoreReport) ───────────────────────────────────────
+    {
+      field: 'Overall Relevance Score',
+      description:
+        `The relevance score is a composite number used to rank reports. It is NOT the same as the ` +
+        `per-field match % shown in the table — those are independent field comparisons. ` +
+        `The score starts from the report's Proton rating, then adds bonuses and applies multipliers.`,
+      tiers: [
+        { label: `Rating base`,           note: `Platinum=${WEIGHTS.BASE_MAX}, Gold=${Math.round(0.8*WEIGHTS.BASE_MAX)}, Silver=${Math.round(0.6*WEIGHTS.BASE_MAX)}, Bronze=${Math.round(0.4*WEIGHTS.BASE_MAX)}, Borked=0 pts` },
+        { label: `Recency bonus`,         note: `< 90 days: +${WEIGHTS.RECENCY_RECENT} pts · 90–365 days: +${WEIGHTS.RECENCY_MID} pts · > 1 year: ${WEIGHTS.RECENCY_OLD} pts` },
+        { label: `Custom Proton`,         note: `+${WEIGHTS.CUSTOM_PROTON} pts if report used a custom build (GE, CachyOS, TKG, etc.)` },
+        { label: `Proton version`,        note: `+${WEIGHTS.PROTON_MATCH} pts same major · +${WEIGHTS.PROTON_CLOSE} pts adjacent major` },
+        { label: `Notes sentiment`,       note: `±0–${WEIGHTS.NOTES_MAX} pts from positive/negative keywords in the report notes` },
+        { label: `GPU mult`,              note: `×${WEIGHTS.GPU_DRIVER_EXACT} exact driver · ×${WEIGHTS.GPU_DRIVER_CLOSE} close driver · ×${WEIGHTS.GPU_MATCH} vendor match · ×${WEIGHTS.GPU_UNKNOWN} unknown · ×${WEIGHTS.GPU_MISMATCH} vendor mismatch` },
+        { label: `OS mult`,               note: `×${WEIGHTS.OS_EXACT} exact distro · ×${WEIGHTS.OS_FAMILY_MATCH} same family · ×1.0 different family` },
+        { label: `Kernel mult`,           note: `×${WEIGHTS.KERNEL_EXACT} exact · ×${WEIGHTS.KERNEL_PATCH_CLOSE} nearby patch · ×${WEIGHTS.KERNEL_MINOR_CLOSE} nearby minor · ×1.0 otherwise` },
+        { label: `Borked decay`,          note: `Borked reports older than ${WEIGHTS.BORKED_DECAY_DAYS} days are treated as Bronze (they may have been fixed)` },
+      ],
+    },
+    // ── Per-field breakdown (getHardwareMatchBreakdown) ─────────────────────
+    {
+      field: 'GPU Model',
+      description:
+        'Vendor mismatch (NVIDIA vs AMD) immediately gives 10%. ' +
+        'Same vendor: 40 pts base + up to 60 pts from model token overlap. ' +
+        'Cross-generation penalty applied after: −5 pts (1 gen apart), −12 pts (2 gens), −20 pts (3+ gens). ' +
+        'Noise tokens (LLVM, DRM, kernel version) are stripped before comparison.',
+      tiers: [
+        { label: '≥ 80% — green',  note: 'Same vendor + strong model overlap + same generation' },
+        { label: '40–79% — amber', note: 'Same vendor, partial overlap or adjacent generation' },
+        { label: '10% — red',      note: 'Different vendor' },
+        { label: '0%',             note: 'GPU string missing' },
+      ],
+    },
+    {
+      field: 'GPU Driver',
+      description:
+        'Compares major driver version numbers. Mesa strings with an OpenGL prefix ' +
+        '("4.6 (Compatibility Profile) Mesa 22.2.0") correctly extract the Mesa major (22), ' +
+        'not the OpenGL version.',
+      tiers: [
+        { label: '100% — green', note: 'Same major driver version' },
+        { label: '75% — amber',  note: 'Within 2 major versions' },
+        { label: '50% — amber',  note: 'Within 5 major versions' },
+        { label: '20% — red',    note: 'More than 5 major versions apart' },
+        { label: '0%',           note: 'Driver string missing or unparseable' },
+      ],
+    },
+    {
+      field: 'CPU',
+      description:
+        'Compares CPU brand (AMD vs Intel) and model name tokens. ' +
+        'Noise words ("with", "Processor", "APU", "Graphics", trademark symbols) are stripped. ' +
+        'Brand mismatch immediately gives 10%.',
+      tiers: [
+        { label: '≥ 80% — green',  note: 'Same brand + high model token overlap' },
+        { label: '30–79% — amber', note: 'Same brand, 30 pts base + up to 70 pts from token overlap' },
+        { label: '10% — red',      note: 'Different brand (AMD vs Intel)' },
+        { label: '0%',             note: 'CPU string missing' },
+      ],
+    },
+    {
+      field: 'OS / Distro',
+      description:
+        'Detects distro family from the OS string. ' +
+        'Known families: SteamOS/HoloISO · Fedora/Bazzite/Nobara · Arch/CachyOS/Manjaro/Garuda · ' +
+        'Ubuntu/Pop!_OS/Mint/Elementary · Debian · NixOS.',
+      tiers: [
+        { label: '100% — green', note: 'Exact distro string match' },
+        { label: '70% — amber',  note: 'Same distro family (e.g. both Arch-based)' },
+        { label: '10% — red',    note: 'Different family' },
+        { label: '0%',           note: 'OS string missing' },
+      ],
+    },
+    {
+      field: 'Kernel',
+      description:
+        'Compares major.minor.patch kernel versions. ' +
+        'Valve/neptune kernels (e.g. "5.13.0-valve36") use the Valve build number for comparison — ' +
+        'both systems share Valve\'s downstream patches regardless of upstream version.',
+      tiers: [
+        { label: '100% — green', note: 'Exact major.minor.patch' },
+        { label: '95% — green',  note: 'Both Valve kernels, same major.minor, build diff ≤ 5' },
+        { label: '85% — green',  note: 'Same major.minor, patch diff ≤ 2 (or Valve same major)' },
+        { label: '75% — amber',  note: 'Both Valve kernels, different upstream major, build diff ≤ 10' },
+        { label: '65% — amber',  note: 'Same major, minor differs by 1' },
+        { label: '40% — red',    note: 'Same major, distant minor' },
+        { label: '10% — red',    note: 'Different major kernel version' },
+        { label: '0%',           note: 'Kernel string missing' },
+      ],
+    },
+    {
+      field: 'RAM',
+      description:
+        'Compares reported RAM in GB. ' +
+        'When game minimum requirements are fetched from the Steam Store API and both systems ' +
+        'exceed that minimum, the raw GB delta matters less — both rigs have enough for the game.',
+      tiers: [
+        { label: '100% — green', note: 'Within 2 GB' },
+        { label: '85% — green',  note: 'Both exceed game minimum, moderate delta (≤ 8 GB apart)' },
+        { label: '75% — amber',  note: 'Within 4 GB' },
+        { label: '70% — amber',  note: 'Both exceed game minimum, large delta (> 8 GB apart)' },
+        { label: '50% — amber',  note: 'Within 8 GB' },
+        { label: '20% — red',    note: 'More than 8 GB apart' },
+        { label: '0%',           note: 'RAM string or system RAM missing' },
+      ],
+    },
+    {
+      field: 'Proton Version',
+      description:
+        `Compares the major Proton version in the report vs your current build. ` +
+        `Formats parsed: GE-Proton9-7, Proton 9.0-4, cachyos-10.0-..., proton-7.0-6. ` +
+        `"Proton Experimental" and SteamLinuxRuntime have no parseable version → 0%. ` +
+        `Same major also adds +${WEIGHTS.PROTON_MATCH} pts to the relevance score; adjacent major adds +${WEIGHTS.PROTON_CLOSE} pts.`,
+      tiers: [
+        { label: '100% — green', note: 'Same major version (e.g. both Proton 9.x)' },
+        { label: '70% — amber',  note: 'Adjacent major version (e.g. 8 vs 9)' },
+        { label: '45% — red',    note: '2 major versions apart' },
+        { label: '20% — red',    note: '3 or more major versions apart' },
+        { label: '0%',           note: 'Version unparseable or not set' },
+      ],
+    },
+  ];
+}
+
+function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
+  const rules = buildMatchingRules();
+  return (
+    <ModalRoot onCancel={closeModal}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: 'calc(100vh - 80px)',
+          minWidth: 380,
+          maxWidth: 540,
+        }}
+      >
+        {/* header */}
+        <div
+          style={{
+            padding: '14px 16px 10px',
+            borderBottom: '1px solid #2a3a4a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#e8f4ff' }}>
+            {t().detail.matchingGuideTitle}
+          </div>
+          <DialogButton
+            onClick={closeModal}
+            style={{ height: 28, width: 28, minWidth: 28, padding: 0, fontSize: 14 }}
+          >
+            X
+          </DialogButton>
+        </div>
+
+        {/* scrollable body */}
+        <div style={{ overflowY: 'auto', padding: '12px 16px', flex: 1 }}>
+          {/* colour legend */}
+          <div
+            style={{
+              fontSize: 11,
+              color: '#9db0c4',
+              marginBottom: 14,
+              lineHeight: 1.6,
+              background: 'rgba(13,19,28,0.5)',
+              border: '1px solid #2a3a4a',
+              borderRadius: 6,
+              padding: '8px 10px',
+            }}
+          >
+            Per-field match colours:
+            {' '}<span style={{ color: '#4caf50', fontWeight: 700 }}>■ green ≥ 80%</span>
+            {' · '}<span style={{ color: '#f59e0b', fontWeight: 700 }}>■ amber ≥ 50%</span>
+            {' · '}<span style={{ color: '#ef4444', fontWeight: 700 }}>■ red &lt; 50%</span>
+          </div>
+
+          {rules.map((rule, i) => (
+            <div
+              key={rule.field}
+              style={{
+                marginBottom: i < rules.length - 1 ? 14 : 0,
+                background: 'rgba(13, 19, 28, 0.6)',
+                border: '1px solid #2a3a4a',
+                borderRadius: 8,
+                overflow: 'hidden',
+              }}
+            >
+              {/* field title */}
+              <div
+                style={{
+                  padding: '7px 12px',
+                  background: '#162333',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#e8f4ff',
+                  borderBottom: '1px solid #2a3a4a',
+                }}
+              >
+                {rule.field}
+              </div>
+
+              <div style={{ padding: '8px 12px' }}>
+                {/* description */}
+                <div style={{ fontSize: 11, color: '#9db0c4', lineHeight: 1.5, marginBottom: 8 }}>
+                  {rule.description}
+                </div>
+
+                {/* tier table */}
+                <div
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                  }}
+                >
+                  {rule.tiers.map((tier, ti) => (
+                    <div
+                      key={tier.label}
+                      style={{
+                        display: 'flex',
+                        gap: 0,
+                        fontSize: 11,
+                        borderTop: ti > 0 ? '1px solid rgba(255,255,255,0.04)' : undefined,
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: '#7a9bb5',
+                          whiteSpace: 'nowrap',
+                          minWidth: 120,
+                          padding: '4px 8px',
+                          fontFamily: 'monospace',
+                          background: 'rgba(255,255,255,0.03)',
+                          borderRight: '1px solid rgba(255,255,255,0.04)',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {tier.label}
+                      </span>
+                      <span style={{ color: '#c0d4e8', padding: '4px 8px', lineHeight: 1.4 }}>
+                        {tier.note}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </ModalRoot>
+  );
+}
+
 function HardwareCompareModal({
   closeModal,
   report,
@@ -327,6 +602,25 @@ function HardwareCompareModal({
             >
               {t().detail.hardwareMatchPercent(hardwareMatchPercent)}
             </div>
+            <DialogButton
+              onClick={() => showModal(<MatchingRulesModal />)}
+              style={{
+                height: 32,
+                width: 32,
+                minWidth: 32,
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 16,
+                background: 'rgba(100, 149, 237, 0.15)',
+                color: '#6495ed',
+                border: '1px solid rgba(100, 149, 237, 0.3)',
+              }}
+              title={t().detail.matchingGuideButton}
+            >
+              ⓘ
+            </DialogButton>
             {reqFields && reqFields.length > 0 && (
               <DialogButton
                 onClick={() => {
@@ -407,6 +701,12 @@ function HardwareCompareModal({
               left={report.ram || '-'}
               right={systemRam}
               match={breakdown.ram}
+            />
+            <InfoCompareRow
+              label={t().detail.protonVersion}
+              left={report.protonVersion || '-'}
+              right={sysInfo?.proton_custom || '-'}
+              match={breakdown.protonVersion}
             />
           </div>
         </div>

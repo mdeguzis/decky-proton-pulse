@@ -29,6 +29,8 @@ export const WEIGHTS = {
   KERNEL_MINOR_CLOSE: 1.04,// same major, nearby minor line
   BORKED_DECAY_DAYS: 365,  // borked reports older than this get treated as bronze
   NOTES_MAX: 10,           // cap on the sentiment modifier from user notes
+  PROTON_MATCH: 8,         // bonus for same Proton major version as user's build
+  PROTON_CLOSE: 4,         // bonus for adjacent Proton major version
 } as const;
 
 const RATING_SCORES: Record<string, number> = {
@@ -51,12 +53,29 @@ const POSITIVE_KEYWORDS = [
   'excellent', 'runs perfectly', 'zero issues', 'works flawlessly',
 ];
 
+// words that negate the following negative keyword
+// "no crash", "never crashes", "doesn't hang" should NOT score negative
+const NEGATION_WORDS = new Set([
+  'no', 'not', "doesn't", "don't", "didn't", 'never', 'without', 'none',
+]);
+
+function isNegatedAt(text: string, keywordStart: number): boolean {
+  // examine up to 30 chars before the keyword for a negation word
+  const before = text.slice(Math.max(0, keywordStart - 30), keywordStart).trim();
+  const words = before.split(/\s+/);
+  return words.slice(-3).some(w => NEGATION_WORDS.has(w));
+}
+
 export function parseNotesSentiment(notes: string): number {
   if (!notes) return 0;
   const lower = notes.toLowerCase();
   let score = 0;
   for (const kw of NEGATIVE_KEYWORDS) {
-    if (lower.includes(kw)) score -= 3;
+    let idx = lower.indexOf(kw);
+    while (idx !== -1) {
+      if (!isNegatedAt(lower, idx)) score -= 3;
+      idx = lower.indexOf(kw, idx + 1);
+    }
   }
   for (const kw of POSITIVE_KEYWORDS) {
     if (lower.includes(kw)) score += 2;
@@ -273,6 +292,7 @@ export interface HardwareMatchBreakdown {
   os: FieldMatchInfo;
   kernel: FieldMatchInfo;
   ram: FieldMatchInfo;
+  protonVersion: FieldMatchInfo;
 }
 
 // extract GPU tokens for tiered matching:
@@ -316,6 +336,41 @@ export function matchColor(pct: number): string {
   return '#ef4444';                  // red
 }
 
+// Extract a GPU generation bucket from model tokens for a given vendor.
+// Returns a comparable integer (higher = newer) or null if undetermined.
+//
+// NVIDIA: first digit of the 4-digit model number (10xx=1, 20xx=2, 30xx=3, ...)
+// AMD:    first digit of the RX model number (5xxx=5, 6xxx=6, 7xxx=7, 8xxx=8)
+//         older 3-digit RX (480, 580) map to generation 0
+// Intel:  Arc A-series=1, Arc B-series=2
+function extractGpuGeneration(vendorGroup: string, modelTokens: string[]): number | null {
+  if (vendorGroup === 'intel') {
+    // Arc A770, B580 -> a/b letter prefix on 3-digit number
+    const arcToken = modelTokens.find(t => /^[ab]\d{3}$/.test(t));
+    if (arcToken) return arcToken.startsWith('a') ? 1 : 2;
+    return null;
+  }
+
+  // Find the first 3-4 digit pure number token (model number)
+  const numToken = modelTokens.find(t => /^\d{3,4}$/.test(t));
+  if (!numToken) return null;
+  const num = parseInt(numToken, 10);
+
+  if (vendorGroup === 'nvidia') {
+    // 4-digit: 1000-series=1, 2000=2, 3000=3, 4000=4, 5000=5
+    if (num >= 1000) return Math.floor(num / 1000);
+    return 0;  // older 3-digit cards (980, 780, etc.)
+  }
+
+  if (vendorGroup === 'amd') {
+    // 4-digit RX: 5000s=5, 6000s=6, 7000s=7, 8000s=8
+    if (num >= 5000) return Math.floor(num / 1000);
+    return 0;  // older 3-digit RX cards (480, 580, etc.)
+  }
+
+  return null;
+}
+
 function gpuFieldMatch(reportGpu: string, systemGpu: string): number {
   if (!reportGpu || !systemGpu) return 0;
 
@@ -337,7 +392,10 @@ function gpuFieldMatch(reportGpu: string, systemGpu: string): number {
     return v;
   };
 
-  if (vendorGroup(rVendor) !== vendorGroup(sVendor)) return 10;
+  const rVG = vendorGroup(rVendor);
+  const sVG = vendorGroup(sVendor);
+
+  if (rVG !== sVG) return 10;
 
   // same vendor, check how many tokens overlap
   // strip vendor tokens so we're comparing model parts
@@ -358,7 +416,23 @@ function gpuFieldMatch(reportGpu: string, systemGpu: string): number {
   const tokenRatio = matches / maxTokens;
 
   // 40 base for vendor match, up to 60 more based on model overlap
-  return Math.round(40 + tokenRatio * 60);
+  let score = Math.round(40 + tokenRatio * 60);
+
+  // Apply generation penalty for cross-generation matches.
+  // Same-gen GPUs have similar driver support, features, and perf tiers.
+  // Reports from a different generation are less representative of likely behavior.
+  if (rVG) {
+    const rGen = extractGpuGeneration(rVG, rModel);
+    const sGen = extractGpuGeneration(sVG, sModel);
+    if (rGen !== null && sGen !== null && rGen !== sGen) {
+      const genDiff = Math.abs(rGen - sGen);
+      // 1 gen apart: -5, 2 gens: -12, 3+ gens: -20
+      const penalty = genDiff === 1 ? 5 : genDiff === 2 ? 12 : 20;
+      score = Math.max(0, score - penalty);
+    }
+  }
+
+  return score;
 }
 
 function driverFieldMatch(reportDriver: string, systemDriver: string): number {
@@ -390,6 +464,45 @@ function parseValveBuild(kernelStr: string): number | null {
   // "5.13.0-valve36-1-neptune" -> 36
   const m = kernelStr.match(/valve(\d+)/i);
   return m ? parseInt(m[1], 10) : null;
+}
+
+// Extracts the major Proton version number from a proton version string.
+// Handles the common formats found in ProtonDB reports and system info:
+//   "GE-Proton9-7"              -> 9
+//   "Proton 9.0-4"              -> 9
+//   "proton-7.0-6"              -> 7
+//   "cachyos-10.0-202603012"    -> 10
+//   "Proton Experimental"       -> null  (no version number)
+//   "SteamLinuxRuntime"         -> null
+export function parseProtonMajorVersion(version: string): number | null {
+  if (!version) return null;
+  const lower = version.toLowerCase();
+
+  // GE-Proton9-7 style
+  let m = lower.match(/ge-proton(\d+)/);
+  if (m) return parseInt(m[1], 10);
+
+  // "Proton 9.0" or "proton-9.0" style
+  m = lower.match(/\bproton[\s-](\d+)/);
+  if (m) return parseInt(m[1], 10);
+
+  // Custom builds like "cachyos-10.0-...", "tkg-9.0", "protonplus-9.0"
+  m = lower.match(/[a-z]+-(\d+)\.\d+/);
+  if (m) return parseInt(m[1], 10);
+
+  return null;
+}
+
+function protonVersionFieldMatch(reportVersion: string, systemVersion: string): number {
+  const rMajor = parseProtonMajorVersion(reportVersion);
+  const sMajor = parseProtonMajorVersion(systemVersion);
+
+  if (rMajor === null || sMajor === null) return 0;
+  if (rMajor === sMajor) return 100;
+  const diff = Math.abs(rMajor - sMajor);
+  if (diff === 1) return 70;
+  if (diff === 2) return 45;
+  return 20;
 }
 
 function kernelFieldMatch(reportKernel: string, systemKernel: string): number {
@@ -494,7 +607,7 @@ export function getHardwareMatchBreakdown(
 ): HardwareMatchBreakdown {
   if (!sysInfo) {
     const empty: FieldMatchInfo = { percent: 0, color: matchColor(0) };
-    return { gpu: empty, gpuDriver: empty, cpu: empty, os: empty, kernel: empty, ram: empty };
+    return { gpu: empty, gpuDriver: empty, cpu: empty, os: empty, kernel: empty, ram: empty, protonVersion: empty };
   }
 
   const gpu = gpuFieldMatch(report.gpu ?? '', sysInfo.gpu ?? '');
@@ -503,6 +616,7 @@ export function getHardwareMatchBreakdown(
   const os = osFieldMatch(report.os ?? '', sysInfo.distro ?? '');
   const kernel = kernelFieldMatch(report.kernel ?? '', sysInfo.kernel ?? '');
   const ram = ramFieldMatch(report.ram ?? '', sysInfo.ram_gb, gameMinRamGb);
+  const proton = protonVersionFieldMatch(report.protonVersion ?? '', sysInfo.proton_custom ?? '');
 
   return {
     gpu: { percent: gpu, color: matchColor(gpu) },
@@ -511,6 +625,7 @@ export function getHardwareMatchBreakdown(
     os: { percent: os, color: matchColor(os) },
     kernel: { percent: kernel, color: matchColor(kernel) },
     ram: { percent: ram, color: matchColor(ram) },
+    protonVersion: { percent: proton, color: matchColor(proton) },
   };
 }
 
@@ -538,9 +653,20 @@ export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredRepor
   const customBonus = isCustomProton(report.protonVersion) ? WEIGHTS.CUSTOM_PROTON : 0;
   const notesModifier = parseNotesSentiment(report.notes);
 
+  // Proton version proximity bonus: reports run with a similar Proton version
+  // to what the user has are more likely to reflect the user's experience
+  const reportProtonMajor = parseProtonMajorVersion(report.protonVersion);
+  const systemProtonMajor = parseProtonMajorVersion(sysInfo.proton_custom ?? '');
+  let protonBonus = 0;
+  if (reportProtonMajor !== null && systemProtonMajor !== null) {
+    const diff = Math.abs(reportProtonMajor - systemProtonMajor);
+    if (diff === 0) protonBonus = WEIGHTS.PROTON_MATCH;
+    else if (diff === 1) protonBonus = WEIGHTS.PROTON_CLOSE;
+  }
+
   // GPU multiplier scales everything except the notes sentiment modifier,
   // so a mismatched GPU report still gets credit for good/bad user feedback
-  const raw = (ratingScore + recencyBonus + customBonus) * gpuMult * distroMult * kernelMult + notesModifier;
+  const raw = (ratingScore + recencyBonus + customBonus + protonBonus) * gpuMult * distroMult * kernelMult + notesModifier;
 
   return {
     ...report,

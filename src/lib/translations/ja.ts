@@ -104,6 +104,8 @@ export const ja: TranslationTree = {
     unknownGpu: '不明な GPU',
     ram: 'RAM',
     systemRequirements: 'システム要件',
+    matchingGuideTitle: 'マッチングの仕組み',
+    matchingGuideButton: 'マッチングガイド',
   },
   editReport: {
     title: 'レポートを編集',

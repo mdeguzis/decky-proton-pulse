@@ -1,6 +1,6 @@
 // src/lib/scoring.test.ts
 import { describe, it, expect } from 'vitest';
-import { scoreReport, bucketByGpuTier, parseNotesSentiment, getHardwareMatchPercent, getHardwareMatchBreakdown } from './scoring';
+import { scoreReport, bucketByGpuTier, parseNotesSentiment, parseProtonMajorVersion, getHardwareMatchPercent, getHardwareMatchBreakdown } from './scoring';
 import type { CdnReport, SystemInfo } from '../types';
 
 const nvidiaSystem: SystemInfo = {
@@ -148,6 +148,15 @@ describe('scoreReport', () => {
       scoreReport(freshBorked, nvidiaSystem).score
     );
   });
+
+  it('matching Proton major version gives higher score than different version', () => {
+    // nvidiaSystem.proton_custom = 'cachyos-10.0-202603012' -> major 10
+    const matchProton = makeCdnReport({ protonVersion: 'GE-Proton10-5' }); // same major
+    const diffProton  = makeCdnReport({ protonVersion: 'Proton 7.0-6' });   // 3 apart
+    expect(scoreReport(matchProton, nvidiaSystem).score).toBeGreaterThan(
+      scoreReport(diffProton, nvidiaSystem).score
+    );
+  });
 });
 
 // ─── parseNotesSentiment ──────────────────────────────────────────────────────
@@ -183,6 +192,48 @@ describe('parseNotesSentiment', () => {
 
   it('is case-insensitive', () => {
     expect(parseNotesSentiment('CRASH')).toBe(parseNotesSentiment('crash'));
+  });
+
+  it('negated negative keyword does not score negative', () => {
+    // "no crash" should not count as a crash
+    expect(parseNotesSentiment('no crash reported')).toBeGreaterThanOrEqual(0);
+    expect(parseNotesSentiment("doesn't crash")).toBeGreaterThanOrEqual(0);
+    expect(parseNotesSentiment('never hang')).toBeGreaterThanOrEqual(0);
+  });
+
+  it('non-negated crash still scores negative even with negation present elsewhere', () => {
+    // "no freeze but crash on launch" - "freeze" negated, "crash" is not
+    expect(parseNotesSentiment('no freeze but crash on launch')).toBeLessThan(0);
+  });
+});
+
+// ─── parseProtonMajorVersion ─────────────────────────────────────────────────
+
+describe('parseProtonMajorVersion', () => {
+  it('parses GE-Proton format', () => {
+    expect(parseProtonMajorVersion('GE-Proton9-7')).toBe(9);
+    expect(parseProtonMajorVersion('GE-Proton8-32')).toBe(8);
+  });
+
+  it('parses "Proton N.M" format', () => {
+    expect(parseProtonMajorVersion('Proton 9.0-4')).toBe(9);
+    expect(parseProtonMajorVersion('Proton 7.0-6')).toBe(7);
+  });
+
+  it('parses hyphenated proton format', () => {
+    expect(parseProtonMajorVersion('proton-7.0-6')).toBe(7);
+  });
+
+  it('parses custom build formats like cachyos, tkg, protonplus', () => {
+    expect(parseProtonMajorVersion('cachyos-10.0-202603012')).toBe(10);
+    expect(parseProtonMajorVersion('tkg-9.0-3')).toBe(9);
+    expect(parseProtonMajorVersion('protonplus-9.0')).toBe(9);
+  });
+
+  it('returns null for Proton Experimental and non-version strings', () => {
+    expect(parseProtonMajorVersion('Proton Experimental')).toBeNull();
+    expect(parseProtonMajorVersion('SteamLinuxRuntime')).toBeNull();
+    expect(parseProtonMajorVersion('')).toBeNull();
   });
 });
 
@@ -687,5 +738,80 @@ describe('getHardwareMatchBreakdown', () => {
     const bd = getHardwareMatchBreakdown(report, nvidiaSystem); // nvidiaSystem has 6.19.8-1-cachyos
     // different major, no valve match -> 10%
     expect(bd.kernel.percent).toBe(10);
+  });
+
+  // ── Proton version field matching ───────────────────────────────────────────
+
+  it('proton: same major version gives 100%', () => {
+    const report = makeCdnReport({ protonVersion: 'GE-Proton9-7' });
+    const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.protonVersion.percent).toBe(100);
+    expect(bd.protonVersion.color).toBe('#4caf50');
+  });
+
+  it('proton: 1 major version apart gives 70%', () => {
+    const report = makeCdnReport({ protonVersion: 'GE-Proton8-32' });
+    const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.protonVersion.percent).toBe(70);
+    expect(bd.protonVersion.color).toBe('#f59e0b');
+  });
+
+  it('proton: 2 major versions apart gives 45%', () => {
+    const report = makeCdnReport({ protonVersion: 'Proton 7.0-6' });
+    const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.protonVersion.percent).toBe(45);
+  });
+
+  it('proton: 3+ major versions apart gives 20%', () => {
+    const report = makeCdnReport({ protonVersion: 'Proton 5.0-10' });
+    const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.protonVersion.percent).toBe(20);
+  });
+
+  it('proton: unparseable version gives 0%', () => {
+    const report = makeCdnReport({ protonVersion: 'Proton Experimental' });
+    const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.protonVersion.percent).toBe(0);
+  });
+
+  it('proton: null system proton gives 0%', () => {
+    const report = makeCdnReport({ protonVersion: 'GE-Proton9-7' });
+    const sys: SystemInfo = { ...nvidiaSystem, proton_custom: null };
+    const bd = getHardwareMatchBreakdown(report, sys);
+    expect(bd.protonVersion.percent).toBe(0);
+  });
+
+  it('proton version breakdown field is defined even when sysInfo is null', () => {
+    const bd = getHardwareMatchBreakdown(makeCdnReport(), null);
+    expect(bd.protonVersion).toBeDefined();
+    expect(bd.protonVersion.percent).toBe(0);
+  });
+
+  // ── GPU generation penalty ──────────────────────────────────────────────────
+
+  it('gpu: adjacent AMD generations score lower than same generation', () => {
+    // RX 6800 vs RX 6700 XT (same RDNA2 gen) should beat RX 6800 vs RX 7800 XT (diff gen)
+    const sys6800: SystemInfo = { ...nvidiaSystem, gpu: 'AMD Radeon RX 6800 XT', gpu_vendor: 'amd' };
+    const sameGen  = makeCdnReport({ gpu: 'AMD Radeon RX 6700 XT' });   // RDNA2 vs RDNA2
+    const crossGen = makeCdnReport({ gpu: 'AMD Radeon RX 7800 XT' });   // RDNA2 vs RDNA3
+    const bdSame  = getHardwareMatchBreakdown(sameGen, sys6800);
+    const bdCross = getHardwareMatchBreakdown(crossGen, sys6800);
+    // Both should be in the vendor-match range (>=40) but same-gen should be higher
+    expect(bdSame.gpu.percent).toBeGreaterThan(bdCross.gpu.percent);
+  });
+
+  it('gpu: 2-gen apart NVIDIA match is penalized more than adjacent-gen', () => {
+    // RTX 4090 system: RTX 3080 (1 gen) vs RTX 2080 (2 gens)
+    const sys4090: SystemInfo = { ...nvidiaSystem, gpu: 'NVIDIA GeForce RTX 4090', gpu_vendor: 'nvidia' };
+    const oneGen = makeCdnReport({ gpu: 'NVIDIA GeForce RTX 3080' });
+    const twoGen = makeCdnReport({ gpu: 'NVIDIA GeForce RTX 2080' });
+    const bdOne = getHardwareMatchBreakdown(oneGen, sys4090);
+    const bdTwo = getHardwareMatchBreakdown(twoGen, sys4090);
+    expect(bdOne.gpu.percent).toBeGreaterThan(bdTwo.gpu.percent);
   });
 });

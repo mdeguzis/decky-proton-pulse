@@ -104,6 +104,8 @@ export const es: TranslationTree = {
     unknownGpu: 'GPU desconocida',
     ram: 'RAM',
     systemRequirements: 'Requisitos del sistema',
+    matchingGuideTitle: 'Cómo funciona la comparación',
+    matchingGuideButton: 'Guía de compatibilidad',
   },
   editReport: {
     title: 'Editar informe',
