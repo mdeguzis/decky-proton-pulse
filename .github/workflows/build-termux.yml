@@ -39,9 +39,16 @@ jobs:
               export UV_CACHE_DIR=/data/data/com.termux/files/home/.cache/uv
               export UV_PYTHON_PREFERENCE=system
 
+              # Switch to the official Termux CDN — the default mirror in this
+              # Docker image (mirrors.zju.edu.cn) is unreliable for large pkgs.
+              echo 'deb https://packages.termux.dev/apt/termux-main stable main' \
+                > /data/data/com.termux/files/usr/etc/apt/sources.list
+
               mkdir -p \$UV_CACHE_DIR
               pkg update -y
-              pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip uv xz-utils
+              # git/curl/unzip/xz-utils are not needed: workspace is already
+              # mounted from the host runner.
+              pkg install -y make nodejs-lts python rsync uv
               npm install -g pnpm
               printf '#!/data/data/com.termux/files/usr/bin/sh\nexec /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/lib/node_modules/pnpm/dist/pnpm.cjs \"\$@\"\n' > /data/data/com.termux/files/usr/bin/pnpm
               chmod +x /data/data/com.termux/files/usr/bin/pnpm
@@ -80,6 +87,8 @@ jobs:
               export PATH=/data/data/com.termux/files/usr/bin:\$PATH
               export UV_PYTHON_PREFERENCE=system
 
+              echo 'deb https://packages.termux.dev/apt/termux-main stable main' \
+                > /data/data/com.termux/files/usr/etc/apt/sources.list
               pkg update -y
               pkg install -y nodejs-lts python uv
               npm install -g pnpm
