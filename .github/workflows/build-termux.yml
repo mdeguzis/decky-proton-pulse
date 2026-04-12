@@ -39,8 +39,9 @@ jobs:
               mkdir -p \$UV_CACHE_DIR
               pkg update -y
               pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip uv xz-utils
-              command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
-              sed -i '1s|#!/usr/bin/env|#!/data/data/com.termux/files/usr/bin/env|' /data/data/com.termux/files/usr/bin/pnpm
+              npm install -g pnpm
+              printf '#!/data/data/com.termux/files/usr/bin/sh\nexec /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/lib/node_modules/pnpm/dist/pnpm.cjs \"\$@\"\n' > /data/data/com.termux/files/usr/bin/pnpm
+              chmod +x /data/data/com.termux/files/usr/bin/pnpm
 
               python3 --version
               uv --version
@@ -74,8 +75,9 @@ jobs:
 
               pkg update -y
               pkg install -y nodejs-lts python uv
-              command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
-              sed -i '1s|#!/usr/bin/env|#!/data/data/com.termux/files/usr/bin/env|' /data/data/com.termux/files/usr/bin/pnpm
+              npm install -g pnpm
+              printf '#!/data/data/com.termux/files/usr/bin/sh\nexec /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/lib/node_modules/pnpm/dist/pnpm.cjs \"\$@\"\n' > /data/data/com.termux/files/usr/bin/pnpm
+              chmod +x /data/data/com.termux/files/usr/bin/pnpm
               pnpm install --frozen-lockfile
               uv sync --group dev
               pnpm run coverage:diff
