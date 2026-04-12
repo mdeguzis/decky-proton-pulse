@@ -29,11 +29,13 @@ describe('custom toggle storage', () => {
     setCustomToggles([
       { id: 'a', title: '  MangoHud  ', key: '  MANGOHUD  ', scope: 'global', valueType: 'string', value: '  1  ' },
       { id: 'b', title: '   ', key: 'BROKEN', scope: 'global', valueType: 'string', value: 'x' },
-      { id: 'c', title: 'Missing key', key: '   ', scope: 'global', valueType: 'string', value: 'x' },
+      { id: 'c', title: 'Raw arg', key: '   ', scope: 'global', valueType: 'string', value: '  mangohud  ' },
+      { id: 'd', title: 'Missing payload', key: '   ', scope: 'global', valueType: 'string', value: '   ' },
     ]);
 
     expect(getCustomToggles()).toEqual([
       { id: 'a', title: 'MangoHud', key: 'MANGOHUD', scope: 'global', valueType: 'string', value: '1' },
+      { id: 'c', title: 'Raw arg', key: '', scope: 'global', valueType: 'string', value: 'mangohud' },
     ]);
   });
 
