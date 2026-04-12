@@ -8,7 +8,7 @@
     "build": "node scripts/sync-version.mjs && node scripts/check-translations.mjs --no-fail && node scripts/check-ui-strings.mjs --no-fail && rollup -c",
     "watch": "rollup -c -w",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "pnpm exec vitest run --coverage",
     "coverage:check": "pnpm test:coverage && UV_CACHE_DIR=${UV_CACHE_DIR:-${HOME}/.cache/uv} UV_PYTHON_PREFERENCE=${UV_PYTHON_PREFERENCE:-system} uv run --group dev python -m pytest tests --cov=main --cov=lib --cov-report=term-missing --cov-report=json:coverage/python/coverage.json --cov-report=xml:coverage/python/coverage.xml",
     "coverage:diff": "UV_CACHE_DIR=${UV_CACHE_DIR:-${HOME}/.cache/uv} UV_PYTHON_PREFERENCE=${UV_PYTHON_PREFERENCE:-system} uv run --group dev python scripts/check_diff_coverage.py",
     "coverage:summary": "node scripts/print-coverage-summary.mjs",
