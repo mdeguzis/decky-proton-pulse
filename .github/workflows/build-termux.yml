@@ -1,0 +1,31 @@
+name: Build Termux
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-reusable.yml
+    with:
+      workflow_name: Termux Build
+      container_image: termux/termux-docker:x86_64
+      uv_cache_dir: /github/home/.cache/uv
+      install_cmd: |
+        true
+      bootstrap_cmd: |
+        export HOME="${HOME:-/github/home}"
+        export PATH="$HOME/.local/bin:$PATH"
+        export UV_CACHE_DIR="$HOME/.cache/uv"
+        mkdir -p "$UV_CACHE_DIR"
+        pkg update -y
+        pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip xz-utils
+        curl https://mise.run | sh
+        mise --version
+        mise trust --yes mise.toml >/dev/null 2>&1 || mise trust mise.toml
+        mise install || echo "Warning: mise install failed in Termux CI; continuing with pkg-provided toolchain."
+        command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
+        command -v uv >/dev/null 2>&1 || python -m pip install --user uv
+        pnpm install --frozen-lockfile
+        uv sync --group dev

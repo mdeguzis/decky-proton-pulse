@@ -29,7 +29,12 @@ endif
 DECK_HOST ?= $(if $(DECK_IP),$(DECK_IP),steamdeck)
 TARGET    ?= stable
 DRY_RUN ?= true
+IS_TERMUX := $(if $(findstring com.termux,$(PREFIX)),1,)
+ifeq ($(IS_TERMUX),1)
+UV_CACHE_DIR ?= $(if $(TMPDIR),$(TMPDIR)/uv-cache,$(HOME)/.cache/uv)
+else
 UV_CACHE_DIR ?= /tmp/uv-cache
+endif
 PROTONDB_REPO_URL ?= https://github.com/bdefore/protondb-data
 PROTONDB_PROJECT_REPO_DIR := $(abspath ../protondb-data)
 PROTONDB_REPO_DIR ?= $(if $(wildcard $(PROTONDB_PROJECT_REPO_DIR)/.git),$(PROTONDB_PROJECT_REPO_DIR),$(HOME)/src/protondb-data)
@@ -82,6 +87,7 @@ help:
 	@printf "  %-27s %s\n" "test-ts" "Run TypeScript tests only (vitest)"
 	@printf "  %-27s %s\n" "test-py" "Run Python tests only (pytest via uv)"
 	@printf "  %-27s %s\n" "setup" "Install mise (if missing), runtime toolchains, and dependencies"
+	@printf "  %-27s %s\n" "" "Termux: uses pkg for base tools and keeps uv cache out of /tmp"
 	@printf "  %-27s %s\n" "deploy" "Build and deploy to Steam Deck (requires DECK_IP)"
 	@printf "  %-27s %s\n" "deploy-reload" "Build, deploy, then restart plugin_loader (requires DECK_IP)"
 	@printf "  %-27s %s\n" "build-and-deploy" "Clean, test, build, and deploy (requires DECK_IP)"
@@ -209,6 +215,11 @@ test-py:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m pytest tests/ -v
 
 ensure-mise:
+	@if [ -n "$(IS_TERMUX)" ]; then \
+		echo "Termux detected via PREFIX=$$PREFIX"; \
+		echo "Installing Termux base packages with pkg ..."; \
+		pkg update -y && pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip xz-utils; \
+	fi
 	@if command -v mise >/dev/null 2>&1; then \
 		echo "mise already installed: $$(command -v mise)"; \
 	else \
@@ -219,6 +230,8 @@ ensure-mise:
 	"$$MISE_BIN" --version
 
 setup: ensure-mise
+	@mkdir -p "$(UV_CACHE_DIR)"
+	@echo "Using UV_CACHE_DIR=$(UV_CACHE_DIR)"
 	@if [ -f mise.toml ]; then \
 		MISE_BIN="$$(command -v mise 2>/dev/null || echo "$$HOME/.local/bin/mise")"; \
 		"$$MISE_BIN" trust --yes mise.toml >/dev/null 2>&1 || "$$MISE_BIN" trust mise.toml; \

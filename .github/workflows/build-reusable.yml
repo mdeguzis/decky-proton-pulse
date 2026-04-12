@@ -6,6 +6,14 @@ on:
       workflow_name:
         required: true
         type: string
+      bootstrap_cmd:
+        required: false
+        type: string
+        default: ""
+      uv_cache_dir:
+        required: false
+        type: string
+        default: ""
       container_image:
         required: false
         type: string
@@ -88,31 +96,43 @@ jobs:
           fetch-depth: 0
 
       - name: Set up pnpm
+        if: ${{ inputs.bootstrap_cmd == '' }}
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
       - name: Set up Node.js
+        if: ${{ inputs.bootstrap_cmd == '' }}
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
       - name: Install frontend dependencies
+        if: ${{ inputs.bootstrap_cmd == '' }}
         run: pnpm install --frozen-lockfile
 
       - name: Set up Python
+        if: ${{ inputs.bootstrap_cmd == '' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Set up uv
+        if: ${{ inputs.bootstrap_cmd == '' }}
         uses: astral-sh/setup-uv@v5
 
       - name: Sync Python dependencies
+        if: ${{ inputs.bootstrap_cmd == '' }}
         run: uv sync --group dev
 
+      - name: Bootstrap native container toolchain
+        if: ${{ inputs.bootstrap_cmd != '' }}
+        run: ${{ inputs.bootstrap_cmd }}
+
       - name: Build
+        env:
+          UV_CACHE_DIR: ${{ inputs.uv_cache_dir }}
         run: make build
 
       - name: Fetch base branch for diff coverage
@@ -125,4 +145,5 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         env:
           DIFF_COVERAGE_BASE: origin/${{ github.base_ref }}
+          UV_CACHE_DIR: ${{ inputs.uv_cache_dir }}
         run: pnpm run coverage:diff
