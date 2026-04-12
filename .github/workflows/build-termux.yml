@@ -1,41 +1,82 @@
 name: Build Termux
 
+# Termux Docker uses Android's Bionic libc, so the glibc-compiled Node.js binary
+# that GitHub Actions injects into containers (/__e/node20/bin/node) cannot run.
+# Solution: checkout on the host runner, then build inside the container via docker run.
+
 on:
   workflow_dispatch:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    uses: ./.github/workflows/build-reusable.yml
-    with:
-      workflow_name: Termux Build
-      container_image: termux/termux-docker:x86_64
-      uv_cache_dir: /github/home/.cache/uv
-      uv_python_preference: system
-      install_cmd: |
-        true
-      bootstrap_cmd: |
-        export HOME="${HOME:-/github/home}"
-        export PATH="$HOME/.local/bin:$PATH"
-        export UV_CACHE_DIR="$HOME/.cache/uv"
-        export UV_PYTHON_PREFERENCE="system"
+    name: Termux Build
+    runs-on: ubuntu-latest
 
-        # persist env for subsequent steps (export only lasts this step)
-        echo "HOME=$HOME" >> "$GITHUB_ENV"
-        echo "UV_CACHE_DIR=$UV_CACHE_DIR" >> "$GITHUB_ENV"
-        echo "UV_PYTHON_PREFERENCE=$UV_PYTHON_PREFERENCE" >> "$GITHUB_ENV"
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-        mkdir -p "$UV_CACHE_DIR"
-        pkg update -y
-        pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip xz-utils
-        command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
-        pip install uv
+      - name: Build in Termux container
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            -e CI=true \
+            termux/termux-docker:x86_64 \
+            bash -c "
+              set -e
+              export PATH=/data/data/com.termux/files/usr/bin:\$PATH
+              export UV_CACHE_DIR=/root/.cache/uv
+              export UV_PYTHON_PREFERENCE=system
 
-        # sanity check: make sure python and uv are reachable
-        python3 --version
-        uv --version
+              mkdir -p \$UV_CACHE_DIR
+              pkg update -y
+              pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip xz-utils
+              command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
+              pip install uv
 
-        pnpm install --frozen-lockfile
-        uv sync --group dev
+              python3 --version
+              uv --version
+
+              pnpm install --frozen-lockfile
+              uv sync --group dev
+              make build
+            "
+
+      - name: Fetch base branch for diff coverage
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
+
+      - name: Enforce diff coverage
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            -e CI=true \
+            -e DIFF_COVERAGE_BASE="origin/$BASE_REF" \
+            termux/termux-docker:x86_64 \
+            bash -c "
+              set -e
+              export PATH=/data/data/com.termux/files/usr/bin:\$PATH
+              export UV_PYTHON_PREFERENCE=system
+
+              pkg update -y
+              pkg install -y nodejs-lts python
+              command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
+              pip install uv
+              pnpm install --frozen-lockfile
+              uv sync --group dev
+              pnpm run coverage:diff
+            "
