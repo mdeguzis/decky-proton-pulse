@@ -226,11 +226,12 @@ ensure-mise:
 		echo "Termux detected via PREFIX=$$PREFIX"; \
 		echo "Installing Termux base packages with pkg ..."; \
 		pkg update -y && pkg install -y bash ca-certificates curl git make nodejs-lts python openssh rsync unzip xz-utils; \
-		echo "Termux: skipping mise (Android linker cant run it)."; \
+		command -v pnpm >/dev/null 2>&1 || npm install -g pnpm; \
+		echo "Termux: skipping mise-managed runtimes and using pkg-installed Node/Python instead."; \
 		echo "Using pkg-installed toolchain: node=$$(node --version 2>/dev/null || echo missing), python=$$(python3 --version 2>/dev/null || echo missing)"; \
 		if ! command -v uv >/dev/null 2>&1; then \
 			echo "Installing uv via pip ..."; \
-			pip install uv; \
+			python -m pip install --user uv; \
 		fi; \
 		echo "uv=$$(uv --version 2>/dev/null || echo missing)"; \
 		exit 0; \

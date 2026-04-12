@@ -49,6 +49,8 @@ jobs:
               export PATH=/data/data/com.termux/files/usr/bin:$PATH
               export UV_CACHE_DIR="$HOME/.cache/uv"
               export UV_PYTHON_PREFERENCE=system
+              EVENT_NAME="${EVENT_NAME:-}"
+              BASE_REF="${BASE_REF:-}"
 
               # default mirror in this Docker image is unreliable
               echo "deb https://packages.termux.dev/apt/termux-main stable main" \
@@ -70,7 +72,7 @@ jobs:
                 --cov-report=json:coverage/python/coverage.json \
                 --cov-report=xml:coverage/python/coverage.xml
 
-              if [ "$EVENT_NAME" = "pull_request" ]; then
+              if [ "$EVENT_NAME" = "pull_request" ] && [ -n "$BASE_REF" ]; then
                 git config --global --add safe.directory /workspace
                 git fetch origin "${BASE_REF}:${BASE_REF}"
                 # diff coverage for python only -- frontend diff coverage
