@@ -173,6 +173,7 @@ dev = [
     { name = "pylint" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "vitest" },
 ]
 
 [package.metadata]
@@ -184,6 +185,7 @@ dev = [
     { name = "pylint", specifier = ">=4.0.5" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
+    { name = "vitest", specifier = ">=2.0" },
 ]
 
 [[package]]
@@ -618,4 +620,12 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/72/94/1a15dd82efb362ac84269196e94cf00f187f7ed21c242792a923cdb1c61f/typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466", size = 109391, upload-time = "2025-08-25T13:49:26.313Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548", size = 44614, upload-time = "2025-08-25T13:49:24.86Z" },
+]
+
+[[package]]
+name = "vitest"
+version = "2.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/86/ba54db9959add50ddb5113dd4383116e236c0eea81a6670988b5509b5e4a/ViTest-2.0-py38-none-any.whl", hash = "sha256:d24c815f7a30178a9645a72c8ba14accd01deeaf45a3a6d2f7b3e7dfdc959fdf", size = 1839, upload-time = "2023-05-08T08:25:26.07Z" },
 ]
