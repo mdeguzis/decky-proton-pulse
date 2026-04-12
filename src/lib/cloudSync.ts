@@ -59,6 +59,69 @@ export interface PushAllResult {
   failed: number;
 }
 
+export interface CloudConfigRow {
+  voter_id: string;
+  app_id: number;
+  app_name: string;
+  config: TrackedConfig;
+  updated_at: string;
+}
+
+export type SyncStatus = 'synced' | 'not-synced';
+
+export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
+  try {
+    const voterId = await getVoterId();
+    const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', {
+      method: 'GET',
+    }, {
+      select: 'voter_id,app_id,app_name,config,updated_at',
+      voter_id: `eq.${voterId}`,
+    });
+
+    if (error || !data) {
+      void logFrontendEvent('ERROR', 'Cloud sync: fetch failed', { error });
+      return [];
+    }
+
+    void logFrontendEvent('DEBUG', 'Cloud sync: fetched configs', { count: data.length });
+    return data;
+  } catch (err) {
+    void logFrontendEvent('ERROR', 'Cloud sync: fetch threw', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return [];
+  }
+}
+
+export async function checkHasCloudBackup(): Promise<boolean> {
+  try {
+    const voterId = await getVoterId();
+    const { data, error } = await restRequest<{ app_id: number }[]>('user_proton_configs', {
+      method: 'GET',
+      headers: { Range: '0-0' },
+    }, {
+      select: 'app_id',
+      voter_id: `eq.${voterId}`,
+      limit: '1',
+    });
+
+    if (error || !data) return false;
+    return data.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+export function getCloudSyncStatus(
+  appId: number,
+  cloudConfigs: CloudConfigRow[],
+): SyncStatus {
+  const cloudRow = cloudConfigs.find((r) => r.app_id === appId);
+  if (!cloudRow) return 'not-synced';
+  return 'synced';
+}
+
 export async function pushAllConfigs(): Promise<PushAllResult> {
   const configs = getTrackedConfigs();
   let succeeded = 0;

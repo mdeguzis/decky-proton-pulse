@@ -55,6 +55,9 @@ describe('pushConfig', () => {
     expect(mockRestRequest).toHaveBeenCalledTimes(1);
 
     const [path, init, query] = mockRestRequest.mock.calls[0];
+    if (!init) {
+      throw new Error('Expected request init to be defined');
+    }
     expect(path).toBe('user_proton_configs');
     expect(init.method).toBe('POST');
     expect(query).toMatchObject({ on_conflict: 'voter_id,app_id' });
@@ -95,5 +98,81 @@ describe('pushAllConfigs', () => {
 
     expect(results).toEqual({ total: 2, succeeded: 2, failed: 0 });
     expect(mockRestRequest).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('fetchCloudConfigs', () => {
+  it('returns configs from Supabase', async () => {
+    const cfg = makeConfig();
+    mockRestRequest.mockResolvedValueOnce({
+      data: [
+        { voter_id: 'abc123voterId', app_id: 12345, app_name: 'Test Game', config: cfg, updated_at: '2026-04-11T00:00:00Z' },
+      ],
+      error: null,
+      status: 200,
+    });
+
+    const { fetchCloudConfigs } = await import('./cloudSync');
+    const result = await fetchCloudConfigs();
+
+    expect(result).toHaveLength(1);
+    expect(result[0].app_id).toBe(12345);
+    expect(result[0].config.appId).toBe(12345);
+  });
+
+  it('returns empty array on error', async () => {
+    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'broken', status: 500 });
+
+    const { fetchCloudConfigs } = await import('./cloudSync');
+    expect(await fetchCloudConfigs()).toEqual([]);
+  });
+
+  it('returns empty array when fetch throws', async () => {
+    mockRestRequest.mockRejectedValueOnce(new Error('offline'));
+
+    const { fetchCloudConfigs } = await import('./cloudSync');
+    expect(await fetchCloudConfigs()).toEqual([]);
+  });
+});
+
+describe('checkHasCloudBackup', () => {
+  it('returns true when cloud has configs', async () => {
+    mockRestRequest.mockResolvedValueOnce({
+      data: [{ app_id: 1 }],
+      error: null,
+      status: 200,
+    });
+
+    const { checkHasCloudBackup } = await import('./cloudSync');
+    expect(await checkHasCloudBackup()).toBe(true);
+  });
+
+  it('returns false when cloud is empty', async () => {
+    mockRestRequest.mockResolvedValueOnce({ data: [], error: null, status: 200 });
+
+    const { checkHasCloudBackup } = await import('./cloudSync');
+    expect(await checkHasCloudBackup()).toBe(false);
+  });
+
+  it('returns false on error', async () => {
+    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'down', status: 500 });
+
+    const { checkHasCloudBackup } = await import('./cloudSync');
+    expect(await checkHasCloudBackup()).toBe(false);
+  });
+});
+
+describe('getCloudSyncStatus', () => {
+  it('returns synced when app exists in cloud configs', async () => {
+    const { getCloudSyncStatus } = await import('./cloudSync');
+    const cloudConfigs = [
+      { voter_id: 'abc', app_id: 100, app_name: 'Game', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T01:00:00Z' },
+    ];
+    expect(getCloudSyncStatus(100, cloudConfigs)).toBe('synced');
+  });
+
+  it('returns not-synced when app is missing from cloud', async () => {
+    const { getCloudSyncStatus } = await import('./cloudSync');
+    expect(getCloudSyncStatus(999, [])).toBe('not-synced');
   });
 });
