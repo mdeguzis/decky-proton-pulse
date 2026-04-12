@@ -38,9 +38,8 @@ jobs:
 
               mkdir -p \$UV_CACHE_DIR
               pkg update -y
-              pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip xz-utils
+              pkg install -y bash ca-certificates curl git make nodejs-lts python rsync unzip uv xz-utils
               command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
-              pip install uv
 
               python3 --version
               uv --version
@@ -73,9 +72,8 @@ jobs:
               export UV_PYTHON_PREFERENCE=system
 
               pkg update -y
-              pkg install -y nodejs-lts python
+              pkg install -y nodejs-lts python uv
               command -v pnpm >/dev/null 2>&1 || npm install -g pnpm
-              pip install uv
               pnpm install --frozen-lockfile
               uv sync --group dev
               pnpm run coverage:diff
