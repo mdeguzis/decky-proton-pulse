@@ -35,6 +35,7 @@ UV_CACHE_DIR ?= $(if $(TMPDIR),$(TMPDIR)/uv-cache,$(HOME)/.cache/uv)
 else
 UV_CACHE_DIR ?= /tmp/uv-cache
 endif
+export UV_CACHE_DIR
 PROTONDB_REPO_URL ?= https://github.com/bdefore/protondb-data
 PROTONDB_PROJECT_REPO_DIR := $(abspath ../protondb-data)
 PROTONDB_REPO_DIR ?= $(if $(wildcard $(PROTONDB_PROJECT_REPO_DIR)/.git),$(PROTONDB_PROJECT_REPO_DIR),$(HOME)/src/protondb-data)
