@@ -135,6 +135,7 @@ export interface TranslationTree {
     differentGpu: string;
     unknownGpu: string;
     ram: string;
+    systemRequirements: string;
   };
   editReport: {
     title: string;
@@ -570,6 +571,7 @@ export const en: TranslationTree = {
     differentGpu: 'Different GPU',
     unknownGpu: 'Unknown GPU',
     ram: 'RAM',
+    systemRequirements: 'System Requirements',
   },
   editReport: {
     title: 'Edit Report',

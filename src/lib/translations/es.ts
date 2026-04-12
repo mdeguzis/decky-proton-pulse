@@ -103,6 +103,7 @@ export const es: TranslationTree = {
     differentGpu: 'GPU diferente',
     unknownGpu: 'GPU desconocida',
     ram: 'RAM',
+    systemRequirements: 'Requisitos del sistema',
   },
   editReport: {
     title: 'Editar informe',

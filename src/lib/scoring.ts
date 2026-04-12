@@ -79,7 +79,12 @@ function isCustomProton(version: string): boolean {
 }
 
 function parseDriverMajor(driverStr: string): number | null {
-  // "NVIDIA 545.29.06" --> 545, "Mesa 23.1.0" --> 23, "NVIDIA 410.93" --> 410
+  // Mesa drivers often have an OpenGL version prefix like "4.6 (Compatibility Profile)"
+  // before the actual Mesa version. Check for Mesa specifically first
+  const mesaMatch = driverStr.match(/Mesa\s+(\d+)\.\d+/i);
+  if (mesaMatch) return parseInt(mesaMatch[1], 10);
+
+  // NVIDIA/other: "NVIDIA 545.29.06" -> 545, "NVIDIA 410.93" -> 410
   const match = driverStr.match(/(\d+)\.\d+/);
   return match ? parseInt(match[1], 10) : null;
 }
@@ -285,13 +290,24 @@ const GPU_SYNONYMS: Record<string, string> = {
   'navi': 'radeon',     // navi is AMD's GPU arch
 };
 
+// noise that shows up in GPU strings from ProtonDB/lspci but isn't model-relevant
+const GPU_NOISE = new Set([
+  'llvm', 'drm', 'rev', 'compatibility', 'profile', 'git',
+  'devel', 'mesa', 'ae', 'display', 'controller', 'video',
+]);
+
+// version-like patterns (X.Y.Z, X.Y, or kernel-style X.Y.Z-foo) aren't GPU model info
+const VERSION_PATTERN = /^\d+\.\d+(\.\d+)?/;
+
 function normalizeGpuTokens(gpu: string): string[] {
   return gpu.toLowerCase()
     .replace(/[(),\[\]\/]/g, ' ')  // strip brackets, parens, commas, slashes
     .split(/\s+/)
     .filter(Boolean)
     .map(t => GPU_SYNONYMS[t] !== undefined ? GPU_SYNONYMS[t] : t)
-    .filter(Boolean);  // drop empty strings from synonym removal
+    .filter(Boolean)
+    .filter(t => !GPU_NOISE.has(t))
+    .filter(t => !VERSION_PATTERN.test(t));  // drop embedded version strings
 }
 
 export function matchColor(pct: number): string {
@@ -370,11 +386,33 @@ function osFieldMatch(reportOs: string, systemOs: string): number {
   return 10;
 }
 
+function parseValveBuild(kernelStr: string): number | null {
+  // "5.13.0-valve36-1-neptune" -> 36
+  const m = kernelStr.match(/valve(\d+)/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
 function kernelFieldMatch(reportKernel: string, systemKernel: string): number {
   const rk = parseKernelVersion(reportKernel);
   const sk = parseKernelVersion(systemKernel);
 
   if (!rk || !sk) return 0;
+
+  // Valve/SteamOS kernels share compat patches regardless of upstream major,
+  // so the valve build number matters more than raw kernel version
+  const rValve = parseValveBuild(reportKernel);
+  const sValve = parseValveBuild(systemKernel);
+  if (rValve !== null && sValve !== null) {
+    const buildDiff = Math.abs(rValve - sValve);
+    if (rk.major === sk.major && rk.minor === sk.minor) {
+      return buildDiff <= 5 ? 95 : 85;
+    }
+    // different upstream major but both valve kernels
+    if (buildDiff <= 10) return 75;
+    if (buildDiff <= 20) return 60;
+    return 50;
+  }
+
   if (rk.major === sk.major && rk.minor === sk.minor && rk.patch === sk.patch) return 100;
   if (rk.major === sk.major && rk.minor === sk.minor && Math.abs(rk.patch - sk.patch) <= 2) return 85;
   if (rk.major === sk.major && Math.abs(rk.minor - sk.minor) <= 1) return 65;

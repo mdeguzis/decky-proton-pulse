@@ -103,6 +103,7 @@ export const ja: TranslationTree = {
     differentGpu: '異なる GPU',
     unknownGpu: '不明な GPU',
     ram: 'RAM',
+    systemRequirements: 'システム要件',
   },
   editReport: {
     title: 'レポートを編集',

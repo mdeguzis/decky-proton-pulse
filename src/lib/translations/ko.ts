@@ -103,6 +103,7 @@ export const ko: TranslationTree = {
     differentGpu: '다른 GPU',
     unknownGpu: '알 수 없는 GPU',
     ram: 'RAM',
+    systemRequirements: '시스템 요구 사항',
   },
   editReport: {
     title: '보고서 편집',

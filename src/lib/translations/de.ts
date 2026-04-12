@@ -103,6 +103,7 @@ export const de: TranslationTree = {
     differentGpu: 'Andere GPU',
     unknownGpu: 'Unbekannte GPU',
     ram: 'RAM',
+    systemRequirements: 'Systemanforderungen',
   },
   editReport: {
     title: 'Bericht bearbeiten',

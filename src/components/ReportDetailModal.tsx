@@ -123,7 +123,74 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 const HW_SCROLL_STEP = 80;
 
-const getGameRequirements = callable<[string], { min_ram_gb: number | null }>('get_game_requirements');
+interface GameReqField {
+  label: string;
+  value: string;
+}
+
+interface GameReqResponse {
+  min_ram_gb: number | null;
+  fields: GameReqField[] | null;
+}
+
+const getGameRequirements = callable<[string], GameReqResponse>('get_game_requirements');
+
+function SystemRequirementsModal({
+  closeModal,
+  fields,
+}: {
+  closeModal?: () => void;
+  fields: GameReqField[];
+}) {
+  return (
+    <ModalRoot onCancel={closeModal}>
+      <div style={{ padding: 16, minWidth: 400 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#e8f4ff', marginBottom: 12 }}>
+          {t().detail.systemRequirements}
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '120px 1fr',
+            gap: 0,
+            border: '1px solid #2a3a4a',
+            borderRadius: 8,
+            overflow: 'hidden',
+            background: 'rgba(13, 19, 28, 0.96)',
+          }}
+        >
+          {fields.map((f, i) => (
+            <div key={i} style={{ display: 'contents' }}>
+              <div
+                style={{
+                  padding: '8px 12px',
+                  borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : undefined,
+                  color: '#9db0c4',
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                {f.label}
+              </div>
+              <div
+                style={{
+                  padding: '8px 12px',
+                  borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : undefined,
+                  borderLeft: '1px solid rgba(255,255,255,0.04)',
+                  color: '#e8f4ff',
+                  fontSize: 12,
+                  wordBreak: 'break-word',
+                }}
+              >
+                {f.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </ModalRoot>
+  );
+}
 
 function HardwareCompareModal({
   closeModal,
@@ -136,11 +203,15 @@ function HardwareCompareModal({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [gameMinRamGb, setGameMinRamGb] = useState<number | null>(null);
+  const [reqFields, setReqFields] = useState<GameReqField[] | null>(null);
 
   useEffect(() => {
     if (!report.appId) return;
     getGameRequirements(report.appId)
-      .then((reqs) => setGameMinRamGb(reqs.min_ram_gb))
+      .then((reqs) => {
+        setGameMinRamGb(reqs.min_ram_gb);
+        setReqFields(reqs.fields ?? null);
+      })
       .catch(() => {}); // silently fall back to no game requirements
   }, [report.appId]);
 
@@ -256,6 +327,27 @@ function HardwareCompareModal({
             >
               {t().detail.hardwareMatchPercent(hardwareMatchPercent)}
             </div>
+            {reqFields && reqFields.length > 0 && (
+              <DialogButton
+                onClick={() => {
+                  showModal(
+                    <SystemRequirementsModal fields={reqFields} />
+                  );
+                }}
+                style={{
+                  height: 32,
+                  minWidth: 'auto',
+                  padding: '0 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 10,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {t().detail.systemRequirements}
+              </DialogButton>
+            )}
             <DialogButton
               onClick={closeModal}
               style={{
@@ -311,7 +403,7 @@ function HardwareCompareModal({
             <InfoCompareRow label={t().detail.os} left={report.os || '-'} right={sysInfo?.distro || '-'} match={breakdown.os} />
             <InfoCompareRow label={t().detail.kernel} left={report.kernel || '-'} right={sysInfo?.kernel || '-'} match={breakdown.kernel} />
             <InfoCompareRow
-              label={gameMinRamGb ? `${t().detail.ram} (min: ${gameMinRamGb}GB)` : t().detail.ram}
+              label={t().detail.ram}
               left={report.ram || '-'}
               right={systemRam}
               match={breakdown.ram}

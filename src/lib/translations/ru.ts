@@ -127,6 +127,7 @@ export const ru: TranslationTree = {
     differentGpu: 'Другой GPU',
     unknownGpu: 'Неизвестный GPU',
     ram: 'ОЗУ',
+    systemRequirements: 'Системные требования',
   },
   editReport: {
     title: 'Изменить отчёт',

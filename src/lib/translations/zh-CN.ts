@@ -103,6 +103,7 @@ export const zhCN: TranslationTree = {
     differentGpu: '不同的 GPU',
     unknownGpu: '未知 GPU',
     ram: '内存',
+    systemRequirements: '系统要求',
   },
   editReport: {
     title: '编辑报告',

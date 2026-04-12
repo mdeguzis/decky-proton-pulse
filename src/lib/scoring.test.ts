@@ -611,4 +611,81 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.cpu).toBeDefined();
     expect(bd.cpu.percent).toBe(0);
   });
+
+  // ── Mesa driver parsing ─────────────────────────────────────────────────────
+
+  it('driver: Mesa with OpenGL prefix parses correctly', () => {
+    // "4.6 (Compatibility Profile) Mesa 22.2.0" should compare against "Mesa 24.3.0"
+    // as major 22 vs 24, not 4 vs 24
+    const mesaSys: SystemInfo = { ...nvidiaSystem, driver_version: 'Mesa 24.3.0-devel (git-aef01ebd12)', gpu_vendor: 'amd' };
+    const report = makeCdnReport({
+      gpu: 'AMD Radeon RX 6700',
+      gpuDriver: '4.6 (Compatibility Profile) Mesa 22.2.0 (git-17e5312102)',
+    });
+    const bd = getHardwareMatchBreakdown(report, mesaSys);
+    // major 22 vs 24 = diff of 2, should be 75%
+    expect(bd.gpuDriver.percent).toBe(75);
+  });
+
+  it('driver: Mesa without OpenGL prefix still works', () => {
+    const mesaSys: SystemInfo = { ...nvidiaSystem, driver_version: 'Mesa 23.1.0', gpu_vendor: 'amd' };
+    const report = makeCdnReport({
+      gpu: 'AMD Radeon RX 6700',
+      gpuDriver: 'Mesa 23.1.0',
+    });
+    const bd = getHardwareMatchBreakdown(report, mesaSys);
+    expect(bd.gpuDriver.percent).toBe(100);
+  });
+
+  // ── GPU noise filtering ─────────────────────────────────────────────────────
+
+  it('gpu: noise tokens (LLVM, DRM, kernel version) dont dilute match', () => {
+    // Steam Deck style: GPU string has embedded driver/kernel info
+    const deckSys: SystemInfo = {
+      ...nvidiaSystem,
+      gpu: 'Advanced Micro Devices, Inc. [AMD/ATI] VanGogh [AMD Custom GPU 0405] (rev ae)',
+      gpu_vendor: 'amd',
+    };
+    const report = makeCdnReport({
+      gpu: 'AMD Custom GPU 0405 (vangogh, LLVM 14.0.6, DRM 3.45, 5.13.0-valve36-1-neptune)',
+    });
+    const bd = getHardwareMatchBreakdown(report, deckSys);
+    // should be high match, both are the same GPU with noise stripped
+    expect(bd.gpu.percent).toBeGreaterThanOrEqual(80);
+  });
+
+  // ── Valve kernel matching ───────────────────────────────────────────────────
+
+  it('kernel: both valve kernels, same major, close builds', () => {
+    const valveSys: SystemInfo = { ...nvidiaSystem, kernel: '5.13.0-valve36-1-neptune' };
+    const report = makeCdnReport({ kernel: '5.13.0-valve34-1-neptune' });
+    const bd = getHardwareMatchBreakdown(report, valveSys);
+    // same major.minor, valve build diff of 2 -> 95%
+    expect(bd.kernel.percent).toBe(95);
+  });
+
+  it('kernel: both valve kernels, different major, close builds', () => {
+    // the screenshot case: valve36 vs valve27, diff major
+    const valveSys: SystemInfo = { ...nvidiaSystem, kernel: '6.11.11-valve27-1-neptune-611-g60ef8556a811' };
+    const report = makeCdnReport({ kernel: '5.13.0-valve36-1-neptune' });
+    const bd = getHardwareMatchBreakdown(report, valveSys);
+    // different major but both valve, build diff 9 (within 10) -> 75%
+    expect(bd.kernel.percent).toBe(75);
+  });
+
+  it('kernel: both valve kernels, distant builds', () => {
+    const valveSys: SystemInfo = { ...nvidiaSystem, kernel: '6.11.11-valve50-1-neptune' };
+    const report = makeCdnReport({ kernel: '5.13.0-valve10-1-neptune' });
+    const bd = getHardwareMatchBreakdown(report, valveSys);
+    // build diff 40, different major -> 50%
+    expect(bd.kernel.percent).toBe(50);
+  });
+
+  it('kernel: one valve one standard still uses standard matching', () => {
+    // only one is a valve kernel, so we fall back to normal matching
+    const report = makeCdnReport({ kernel: '5.13.0-valve36-1-neptune' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem); // nvidiaSystem has 6.19.8-1-cachyos
+    // different major, no valve match -> 10%
+    expect(bd.kernel.percent).toBe(10);
+  });
 });
