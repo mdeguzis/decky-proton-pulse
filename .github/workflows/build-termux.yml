@@ -50,7 +50,10 @@ jobs:
               uv --version
 
               pnpm install --frozen-lockfile
-              find /workspace/node_modules -type f | xargs grep -l '^#!/usr/bin/env' 2>/dev/null | xargs -r sed -i 's|^#!/usr/bin/env node|#!/data/data/com.termux/files/usr/bin/node|g'
+              for f in /workspace/node_modules/.bin/*; do
+                t=$(readlink -f "\$f" 2>/dev/null) || continue
+                sed -i '1s|#!/usr/bin/env node|#!/data/data/com.termux/files/usr/bin/node|' "\$t" 2>/dev/null || true
+              done
               uv sync --group dev
               make build
             "
