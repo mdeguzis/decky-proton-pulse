@@ -52,13 +52,16 @@ jobs:
               EVENT_NAME="${EVENT_NAME:-}"
               BASE_REF="${BASE_REF:-}"
 
-              # default mirror in this Docker image is unreliable
-              echo "deb https://packages.termux.dev/apt/termux-main stable main" \
+              # Avoid pkg mirror auto-selection in CI; pin a known-good mirror
+              # and use apt directly for deterministic package resolution.
+              echo "deb https://packages-cf.termux.dev/apt/termux-main stable main" \
                 > /data/data/com.termux/files/usr/etc/apt/sources.list
+              rm -rf /data/data/com.termux/files/usr/etc/termux/chosen_mirrors
 
               mkdir -p "$UV_CACHE_DIR"
-              pkg update -y
-              pkg install -y git make python uv
+              apt update
+              apt full-upgrade -y
+              apt install -y git make python uv
 
               python3 --version
               uv --version
