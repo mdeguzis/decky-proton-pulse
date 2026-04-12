@@ -1,9 +1,5 @@
 name: Build Termux
 
-# Termux Docker uses Android's Bionic libc, so the glibc-compiled Node.js binary
-# that GitHub Actions injects into containers (/__e/node20/bin/node) cannot run.
-# Solution: checkout on the host runner, then build inside the container via docker run.
-
 on:
   workflow_dispatch:
   push:
@@ -27,77 +23,58 @@ jobs:
         run: chmod -R 777 "$GITHUB_WORKSPACE"
 
       - name: Build in Termux container
-        run: |
-          docker run --rm \
-            -v "$GITHUB_WORKSPACE:/workspace" \
-            -w /workspace \
-            -e CI=true \
-            termux/termux-docker:x86_64 \
-            bash -c "
-              set -e
-              export PATH=/data/data/com.termux/files/usr/bin:\$PATH
-              export UV_CACHE_DIR=/data/data/com.termux/files/home/.cache/uv
-              export UV_PYTHON_PREFERENCE=system
-
-              # Switch to the official Termux CDN — the default mirror in this
-              # Docker image (mirrors.zju.edu.cn) is unreliable for large pkgs.
-              echo 'deb https://packages.termux.dev/apt/termux-main stable main' \
-                > /data/data/com.termux/files/usr/etc/apt/sources.list
-
-              mkdir -p \$UV_CACHE_DIR
-              pkg update -y
-              # git/curl/unzip/xz-utils are not needed: workspace is already
-              # mounted from the host runner.
-              pkg install -y make nodejs-lts python rsync uv
-              # Pin to pnpm v9 — the lockfile is v9.0 and pnpm v10 changed
-              # default behaviour (build scripts blocked) which breaks esbuild/vitest.
-              npm install -g pnpm@9
-              printf '#!/data/data/com.termux/files/usr/bin/sh\nexec /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/lib/node_modules/pnpm/dist/pnpm.cjs \"\$@\"\n' > /data/data/com.termux/files/usr/bin/pnpm
-              chmod +x /data/data/com.termux/files/usr/bin/pnpm
-
-              python3 --version
-              uv --version
-
-              pnpm install --frozen-lockfile
-              for f in /workspace/node_modules/.bin/*; do
-                t=$(readlink -f "\$f" 2>/dev/null) || continue
-                sed -i '1s|#!/usr/bin/env node|#!/data/data/com.termux/files/usr/bin/node|' "\$t" 2>/dev/null || true
-              done
-              uv sync --group dev
-              make build
-            "
-
-      - name: Fetch base branch for diff coverage
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
-
-      - name: Enforce diff coverage
-        if: ${{ github.event_name == 'pull_request' }}
         env:
+          EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             -e CI=true \
-            -e DIFF_COVERAGE_BASE="origin/$BASE_REF" \
+            -e EVENT_NAME="$EVENT_NAME" \
+            -e BASE_REF="$BASE_REF" \
             termux/termux-docker:x86_64 \
-            bash -c "
-              set -e
-              export PATH=/data/data/com.termux/files/usr/bin:\$PATH
+            bash -c '
+              set -euo pipefail
+              export PATH=/data/data/com.termux/files/usr/bin:$PATH
+              export UV_CACHE_DIR=/data/data/com.termux/files/home/.cache/uv
               export UV_PYTHON_PREFERENCE=system
 
-              echo 'deb https://packages.termux.dev/apt/termux-main stable main' \
+              # switch to the official Termux CDN -- the default mirror
+              # in this Docker image is unreliable for large packages
+              echo "deb https://packages.termux.dev/apt/termux-main stable main" \
                 > /data/data/com.termux/files/usr/etc/apt/sources.list
+
+              mkdir -p "$UV_CACHE_DIR"
               pkg update -y
-              pkg install -y nodejs-lts python uv
+              pkg install -y curl git make python rsync uv xz-utils
+
+              # Standard Linux node instead of Termux nodejs-lts.
+              # Termux node reports process.platform="android" which makes
+              # pnpm install @esbuild/android-x64 (Bionic libc) instead of
+              # @esbuild/linux-x64 (glibc). The android binary cant run in
+              # this Docker host, so the postinstall ENOENT errors out.
+              NODE_VER=20.18.1
+              mkdir -p /opt/node
+              curl -fsSL "https://nodejs.org/dist/v${NODE_VER}/node-v${NODE_VER}-linux-x64.tar.xz" \
+                | tar -xJ --strip-components=1 -C /opt/node/
+              export PATH="/opt/node/bin:$PATH"
+
+              # pin to pnpm v9 to match the v9.0 lockfile format
               npm install -g pnpm@9
-              printf '#!/data/data/com.termux/files/usr/bin/sh\nexec /data/data/com.termux/files/usr/bin/node /data/data/com.termux/files/usr/lib/node_modules/pnpm/dist/pnpm.cjs \"\$@\"\n' > /data/data/com.termux/files/usr/bin/pnpm
-              chmod +x /data/data/com.termux/files/usr/bin/pnpm
+
+              python3 --version
+              node --version
+              pnpm --version
+              uv --version
+
               pnpm install --frozen-lockfile
-              find /workspace/node_modules -type f | xargs grep -l '^#!/usr/bin/env' 2>/dev/null | xargs -r sed -i 's|^#!/usr/bin/env node|#!/data/data/com.termux/files/usr/bin/node|g'
               uv sync --group dev
-              pnpm run coverage:diff
-            "
+              make build
+
+              if [ "$EVENT_NAME" = "pull_request" ]; then
+                git config --global --add safe.directory /workspace
+                git fetch origin "${BASE_REF}:${BASE_REF}"
+                DIFF_COVERAGE_BASE="origin/${BASE_REF}" pnpm run coverage:diff
+              fi
+            '
