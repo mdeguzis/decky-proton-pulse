@@ -18,6 +18,7 @@ import {
   addTrackedConfig,
   removeTrackedConfig,
   getTrackedConfig,
+  onConfigSaved,
   type TrackedConfig,
 } from './trackedConfigs';
 
@@ -128,5 +129,54 @@ describe('trackedConfigs', () => {
     });
     removeTrackedConfig(999);
     expect(getTrackedConfigs()).toHaveLength(1);
+  });
+});
+
+describe('onConfigSaved hook', () => {
+  it('calls registered callbacks after addTrackedConfig', () => {
+    const spy = vi.fn();
+    const unsub = onConfigSaved(spy);
+
+    const config: TrackedConfig = {
+      appId: 777,
+      appName: 'Hook Test',
+      profileName: '',
+      protonVersion: 'GE-Proton10-1',
+      launchOptions: '%command%',
+      enabledVars: {},
+      appliedAt: Date.now(),
+    };
+    addTrackedConfig(config);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(config);
+
+    unsub();
+    addTrackedConfig({ ...config, appId: 888 });
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not block save when callback throws', () => {
+    const bad = vi.fn(() => { throw new Error('boom'); });
+    const good = vi.fn();
+    const unsub1 = onConfigSaved(bad);
+    const unsub2 = onConfigSaved(good);
+
+    addTrackedConfig({
+      appId: 999,
+      appName: 'Error Test',
+      profileName: '',
+      protonVersion: 'v1',
+      launchOptions: '%command%',
+      enabledVars: {},
+      appliedAt: Date.now(),
+    });
+
+    expect(bad).toHaveBeenCalledTimes(1);
+    expect(good).toHaveBeenCalledTimes(1);
+    expect(getTrackedConfig(999)).not.toBeNull();
+
+    unsub1();
+    unsub2();
   });
 });

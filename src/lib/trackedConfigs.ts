@@ -3,6 +3,14 @@ import { getSetting, setSetting } from './settings';
 
 const STORAGE_KEY = 'tracked-configs';
 
+type ConfigSavedCallback = (config: TrackedConfig) => void;
+const configSavedCallbacks: Set<ConfigSavedCallback> = new Set();
+
+export function onConfigSaved(cb: ConfigSavedCallback): () => void {
+  configSavedCallbacks.add(cb);
+  return () => { configSavedCallbacks.delete(cb); };
+}
+
 export type ConfigSource = 'protondb' | 'protondb-local' | 'user';
 
 export interface TrackedConfig {
@@ -30,6 +38,10 @@ export function addTrackedConfig(config: TrackedConfig): void {
     configs.push(config);
   }
   setSetting(STORAGE_KEY, configs);
+
+  for (const cb of configSavedCallbacks) {
+    try { cb(config); } catch { /* don't block save on callback errors */ }
+  }
 }
 
 export function removeTrackedConfig(appId: number): void {
