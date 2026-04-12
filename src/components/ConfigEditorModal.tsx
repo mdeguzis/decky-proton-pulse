@@ -116,7 +116,8 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
     const trimmedTitle = title.trim();
     const trimmedKey = key.trim();
     const normalizedValue = normalizeCustomToggleValue(valueType, value);
-    if (!trimmedTitle || !trimmedKey || !normalizedValue) {
+    // key is optional for value-only toggles (raw args like gamemoderun)
+    if (!trimmedTitle || (!trimmedKey && !normalizedValue)) {
       toaster.toast({
         title: 'Proton Pulse',
         body: t().configManager.customToggleValidation,
@@ -277,7 +278,7 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
                 <div style={{ display: 'grid', gap: 2, minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>{item.title}</div>
                   <div style={{ fontSize: 11, color: '#9dc4e8', overflowWrap: 'anywhere' }}>
-                    {item.key} = {item.value}
+                    {item.key ? `${item.key} = ${item.value}` : item.value}
                   </div>
                   <div style={{ fontSize: 10, color: '#7a9bb5' }}>
                     {t().configManager.customToggleType}: {customToggleStorageTypeLabel(item.scope)}
@@ -519,9 +520,20 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     return merged;
   }, [enabledVars, customToggles, enabledCustomToggleIds]);
 
+  // raw args from key-less custom toggles (wrappers, flags, etc)
+  const rawArgs = useMemo(() => {
+    const args: string[] = [];
+    for (const toggle of customToggles) {
+      if (enabledCustomToggleIds.has(toggle.id) && !toggle.key.trim() && toggle.value.trim()) {
+        args.push(normalizeCustomToggleValue(toggle.valueType, toggle.value));
+      }
+    }
+    return args;
+  }, [customToggles, enabledCustomToggleIds]);
+
   const preview = useMemo(
-    () => buildLaunchOptions(protonVersion || null, allVars),
-    [protonVersion, allVars],
+    () => buildLaunchOptions(protonVersion || null, allVars, rawArgs),
+    [protonVersion, allVars, rawArgs],
   );
 
   const toggleVar = (key: string, def: LaunchVarDef) => {
@@ -827,7 +839,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
                 <div key={toggle.id} style={{ marginBottom: 2 }}>
                   <ToggleField
                     label={toggle.title}
-                    description={`${toggle.key} = ${toggle.value}`}
+                    description={toggle.key ? `${toggle.key} = ${toggle.value}` : toggle.value}
                     checked={enabledCustomToggleIds.has(toggle.id)}
                     onChange={() => toggleCustomToggle(toggle.id)}
                   />

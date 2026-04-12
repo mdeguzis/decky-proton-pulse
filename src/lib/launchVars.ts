@@ -47,10 +47,17 @@ export const LAUNCH_VAR_CATALOG: LaunchVarDef[] = [
 export function buildLaunchOptions(
   protonVersion: string | null,
   enabledVars: Record<string, string>,
+  rawArgs?: string[],
 ): string {
   const parts: string[] = [];
   for (const [key, value] of Object.entries(enabledVars)) {
     parts.push(`${key}=${value}`);
+  }
+  // raw args go before %command% (wrappers like gamemoderun, mangohud, etc)
+  if (rawArgs) {
+    for (const arg of rawArgs) {
+      if (arg.trim()) parts.push(arg.trim());
+    }
   }
   if (protonVersion) {
     parts.push(`PROTON_VERSION="${protonVersion}"`);
@@ -61,8 +68,9 @@ export function buildLaunchOptions(
 
 export function parseLaunchOptions(
   launchOptions: string,
-): { protonVersion: string | null; vars: Record<string, string> } {
+): { protonVersion: string | null; vars: Record<string, string>; rawArgs: string[] } {
   const vars: Record<string, string> = {};
+  const rawArgs: string[] = [];
   let protonVersion: string | null = null;
 
   // Match PROTON_VERSION="..." (quoted)
@@ -71,14 +79,13 @@ export function parseLaunchOptions(
     protonVersion = pvMatch[1];
   }
 
-  // Remove %command% and PROTON_VERSION="..." from the string, then parse remaining KEY=VALUE pairs
+  // Remove %command% and PROTON_VERSION="..." from the string, then parse remaining tokens
   const cleaned = launchOptions
     .replace(/PROTON_VERSION="[^"]*"/, '')
     .replace(/%command%/g, '')
     .trim();
 
   if (cleaned) {
-    // Split on spaces, but respect quoted values
     const tokens = cleaned.split(/\s+/);
     for (const token of tokens) {
       const eqIndex = token.indexOf('=');
@@ -86,11 +93,14 @@ export function parseLaunchOptions(
         const key = token.slice(0, eqIndex);
         const value = token.slice(eqIndex + 1).replace(/^"|"$/g, '');
         vars[key] = value;
+      } else if (token.trim()) {
+        // bare tokens without KEY= are raw args (wrappers, flags, etc)
+        rawArgs.push(token.trim());
       }
     }
   }
 
-  return { protonVersion, vars };
+  return { protonVersion, vars, rawArgs };
 }
 
 export function normalizeLaunchOptionsForComparison(launchOptions: string): string {

@@ -24,11 +24,16 @@ function sanitizeStoredToggle(toggle: StoredCustomToggle): StoredCustomToggle {
   };
 }
 
+// a toggle is valid if it has a title and either a key (env var) or a value (raw arg)
+function isValidToggle(toggle: StoredCustomToggle): boolean {
+  return !!toggle.title && (!!toggle.key || !!toggle.value);
+}
+
 export function getCustomToggles(): StoredCustomToggle[] {
   const raw = getSetting<StoredCustomToggle[]>(STORAGE_KEY, []);
   return raw
     .map(sanitizeStoredToggle)
-    .filter((toggle) => toggle.title && toggle.key);
+    .filter(isValidToggle);
 }
 
 export function setCustomToggles(toggles: StoredCustomToggle[]): void {
@@ -36,7 +41,7 @@ export function setCustomToggles(toggles: StoredCustomToggle[]): void {
     STORAGE_KEY,
     toggles
       .map(sanitizeStoredToggle)
-      .filter((toggle) => toggle.title && toggle.key),
+      .filter(isValidToggle),
   );
 }
 
