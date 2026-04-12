@@ -220,21 +220,21 @@ ensure-mise:
 	@if [ -n "$(IS_TERMUX)" ]; then \
 		echo "Termux detected via PREFIX=$$PREFIX"; \
 		echo "Installing Termux base packages with pkg ..."; \
-		pkg update -y && pkg install -y bash ca-certificates curl git make nodejs-lts python openssh rsync termux-elf-cleaner unzip xz-utils; \
+		pkg update -y && pkg install -y bash ca-certificates curl git make nodejs-lts python openssh rsync unzip xz-utils; \
+		echo "Termux: skipping mise (Android linker cant run it)."; \
+		echo "Using pkg-installed toolchain: node=$$(node --version 2>/dev/null || echo missing), python=$$(python3 --version 2>/dev/null || echo missing)"; \
+		if ! command -v uv >/dev/null 2>&1; then \
+			echo "Installing uv via pip ..."; \
+			pip install uv; \
+		fi; \
+		echo "uv=$$(uv --version 2>/dev/null || echo missing)"; \
+		exit 0; \
 	fi
 	@if command -v mise >/dev/null 2>&1; then \
 		echo "mise already installed: $$(command -v mise)"; \
 	else \
 		echo "Installing mise via https://mise.run ..."; \
-		if [ -n "$(IS_TERMUX)" ]; then \
-			MISE_INSTALL_TARGET=aarch64-unknown-linux-musl curl https://mise.run | sh; \
-			if command -v termux-elf-cleaner >/dev/null 2>&1; then \
-				echo "Cleaning mise binary ELF headers for Termux ..."; \
-				termux-elf-cleaner "$$HOME/.local/bin/mise" 2>/dev/null || true; \
-			fi; \
-		else \
-			curl https://mise.run | sh; \
-		fi; \
+		curl https://mise.run | sh; \
 	fi
 	@MISE_BIN="$$(command -v mise 2>/dev/null || echo "$$HOME/.local/bin/mise")"; \
 	"$$MISE_BIN" --version
@@ -242,17 +242,11 @@ ensure-mise:
 setup: ensure-mise
 	@mkdir -p "$(UV_CACHE_DIR)"
 	@echo "Using UV_CACHE_DIR=$(UV_CACHE_DIR)"
-	@MISE_BIN="$$(command -v mise 2>/dev/null || echo "$$HOME/.local/bin/mise")"; \
-	if [ -n "$(IS_TERMUX)" ]; then \
-		echo "Termux: activating mise in current shell ..."; \
-		eval "$$("$$MISE_BIN" activate bash 2>/dev/null)" || true; \
-		echo "Termux: telling mise to use system python (pkg python) ..."; \
-		"$$MISE_BIN" use --global python@system 2>/dev/null || true; \
-	fi; \
-	if [ -f mise.toml ]; then \
+	@if [ -z "$(IS_TERMUX)" ] && [ -f mise.toml ]; then \
+		MISE_BIN="$$(command -v mise 2>/dev/null || echo "$$HOME/.local/bin/mise")"; \
 		"$$MISE_BIN" trust --yes mise.toml >/dev/null 2>&1 || "$$MISE_BIN" trust mise.toml; \
 		"$$MISE_BIN" install || echo "Warning: mise install failed (likely offline). Continuing with currently installed toolchain."; \
-	else \
+	elif [ -z "$(IS_TERMUX)" ]; then \
 		echo "No mise.toml found; skipping mise toolchain install."; \
 	fi
 	$(PNPM) i
