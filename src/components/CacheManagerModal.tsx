@@ -206,8 +206,9 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
             </div>
           )}
           {filtered.map(row => (
-            <div
+            <Focusable
               key={row.appId}
+              flow-children="horizontal"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -275,7 +276,7 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
                 >
                   ✕
                 </DialogButton>
-            </div>
+            </Focusable>
           ))}
         </div>
       </div>
