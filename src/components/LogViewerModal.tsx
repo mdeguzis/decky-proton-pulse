@@ -3,6 +3,7 @@ import { ModalRoot, Focusable, DialogButton, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { t } from '../lib/i18n';
 import { toaster } from '../lib/notify';
+import { copyToClipboard } from '../lib/clipboard';
 
 const SCROLL_STEP = 120;
 
@@ -33,7 +34,8 @@ export function LogViewerModal({ logs, entryCount, closeModal }: Props) {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(logs);
+      const ok = await copyToClipboard(logs);
+      if (!ok) throw new Error('backend copy failed');
       setCopied(true);
       toaster.toast({ title: 'Proton Pulse', body: t().logs.copiedToClipboard });
       window.setTimeout(() => setCopied(false), 2500);

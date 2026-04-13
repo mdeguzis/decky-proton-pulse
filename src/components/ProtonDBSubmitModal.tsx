@@ -5,6 +5,7 @@ import { callable } from '@decky/api';
 import { t } from '../lib/i18n';
 import { logFrontendEvent } from '../lib/logger';
 import { toaster } from '../lib/notify';
+import { copyToClipboard } from '../lib/clipboard';
 import { isSteamShortcutApp } from '../lib/steamApps';
 
 const getProtonDBSystemInfo = callable<[], string>('get_protondb_systeminfo');
@@ -40,7 +41,8 @@ export function ProtonDBSubmitModal({ appId, appName, closeModal }: Props) {
   const handleCopy = async () => {
     if (!systemInfo) return;
     try {
-      await navigator.clipboard.writeText(systemInfo);
+      const ok = await copyToClipboard(systemInfo);
+      if (!ok) throw new Error('backend copy failed');
       setCopied(true);
       toaster.toast({ title: 'Proton Pulse', body: t().protondbSubmit.copiedToClipboard });
       setTimeout(() => setCopied(false), 3000);

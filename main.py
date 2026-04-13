@@ -164,6 +164,21 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             decky.logger.error(f"Failed to generate ProtonDB system info: {e}")
             return f"Error generating system info: {e}"
 
+    async def copy_to_clipboard(self, text: str) -> bool:
+        """Copy *text* to the system clipboard via wl-copy or xclip."""
+        for cmd in (
+            ["wl-copy", "--"],
+            ["xclip", "-selection", "clipboard"],
+        ):
+            if shutil.which(cmd[0]):
+                try:
+                    subprocess.run(cmd, input=text, check=True, timeout=5)
+                    return True
+                except (subprocess.SubprocessError, OSError):
+                    continue
+        decky.logger.warning("No clipboard tool found (tried wl-copy, xclip)")
+        return False
+
     async def export_metrics(self, data: str) -> bool:
         """Dump frontend metrics JSON to disk so you can poke at it offline."""
         return export_metrics_to_disk(data)
