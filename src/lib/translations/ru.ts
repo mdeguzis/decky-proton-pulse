@@ -296,6 +296,7 @@ export const ru: TranslationTree = {
     profileName: 'Имя профиля',
     profileNameHint: 'Метка для этой конфигурации (например, «Высокая производительность», «Совместимость»)',
     protonVersionToggleHint: 'Включает или отключает закрепленную версию Proton для этой конфигурации.',
+    protonVersionNone: 'Нет',
     gpuFilter: 'GPU',
     synced: 'Синхронизировано',
     notSynced: 'Не синхронизировано',

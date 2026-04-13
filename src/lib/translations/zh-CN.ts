@@ -272,6 +272,7 @@ export const zhCN: TranslationTree = {
     profileName: '配置名称',
     profileNameHint: '此配置的标签（例如"高性能"、"兼容模式"）',
     protonVersionToggleHint: '启用或禁用此配置固定的 Proton 版本。',
+    protonVersionNone: '无',
     gpuFilter: 'GPU',
     synced: '已同步',
     notSynced: '未同步',

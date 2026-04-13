@@ -10,7 +10,7 @@ import { cancelProtonGeInstall, getProtonGeManagerState, installCompatibilityToo
 import type { CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { t } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
-import { shouldPollInstallStatus, shouldShowInstallStatusToast } from './settingsTabProgress';
+import { buildInstallProgressDetails, shouldPollInstallStatus, shouldShowInstallStatusToast } from './settingsTabProgress';
 
 const AUTO_UPDATE_KEY = 'compat-auto-update-proton-ge';
 const RESTART_HINT = ' Steam may need a restart before the new compatibility tool appears everywhere.';
@@ -40,53 +40,6 @@ interface CompatibilityCatalogRow {
   onAction?: () => void;
   reinstallLabel?: string;
   onReinstall?: () => void;
-}
-
-function buildInstallProgressDetails(
-  installStatus: ProtonGeManagerState['install_status'] | null,
-  assetSize: number | null | undefined,
-): {
-  progressRatio: number | null;
-  progressLabel: string;
-  progressMeta: string;
-  etaLabel: string;
-} {
-  const elapsedSeconds = installStatus?.started_at
-    ? Math.max(1, Math.round(Date.now() / 1000 - installStatus.started_at))
-    : null;
-  const progressRatio = installStatus?.progress_fraction ?? null;
-  const progressPercent = Math.round(
-    Math.max(0, Math.min(100, (progressRatio ?? 0.08) * 100)),
-  );
-  const etaSeconds =
-    installStatus?.total_bytes
-    && installStatus.downloaded_bytes !== null
-    && elapsedSeconds
-    && installStatus.downloaded_bytes > 0
-      ? (
-        (installStatus.total_bytes - installStatus.downloaded_bytes)
-        / (installStatus.downloaded_bytes / elapsedSeconds)
-      )
-      : null;
-  const progressMeta =
-    installStatus?.total_bytes && installStatus.downloaded_bytes !== null
-      ? `${formatByteCount(installStatus.downloaded_bytes)} / ${formatByteCount(installStatus.total_bytes)}`
-      : assetSize
-        ? `${formatByteCount(installStatus?.downloaded_bytes)} / ${formatByteCount(assetSize)}`
-        : `${
-          installStatus?.stage === 'finalizing'
-            ? t().extras!.compatFinalizing()
-            : installStatus?.stage === 'extracting'
-              ? t().extras!.compatExtracting()
-              : t().extras!.compatDownloading()
-        }`;
-
-  return {
-    progressRatio,
-    progressLabel: `${progressPercent}%`,
-    progressMeta,
-    etaLabel: formatEta(etaSeconds),
-  };
 }
 
 function sectionStyle(): React.CSSProperties {
@@ -132,34 +85,19 @@ function formatReleaseVersion(tagName: string): string {
   return tagName.replace(/^GE-Proton/i, '');
 }
 
-function formatByteCount(value: number | null | undefined): string {
-  if (!value || value <= 0) return '0 B';
-  const units = ['B', 'KiB', 'MiB', 'GiB'];
-  let size = value;
-  let unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex += 1;
-  }
-  const digits = unitIndex === 0 ? 0 : size >= 100 ? 0 : size >= 10 ? 1 : 2;
-  return `${size.toFixed(digits)} ${units[unitIndex]}`;
-}
-
-function formatEta(seconds: number | null | undefined): string {
-  if (!seconds || seconds <= 0 || !Number.isFinite(seconds)) return t().compatTools.estimating;
-  const rounded = Math.max(1, Math.round(seconds));
-  if (rounded < 60) return t().compatTools.timeLeft(`${rounded}s`);
-  const minutes = Math.floor(rounded / 60);
-  const secs = rounded % 60;
-  if (minutes < 60) return secs ? t().compatTools.timeLeft(`${minutes}m ${secs}s`) : t().compatTools.timeLeft(`${minutes}m`);
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins ? t().compatTools.timeLeft(`${hours}h ${mins}m`) : t().compatTools.timeLeft(`${hours}h`);
-}
-
 function withRestartHint(message: string, shouldAppend = true): string {
   if (!shouldAppend) return message;
   return message.includes('restart') ? message : `${message}${RESTART_HINT}`;
+}
+
+function getInstallProgressLabels() {
+  return {
+    finalizing: t().extras!.compatFinalizing(),
+    extracting: t().extras!.compatExtracting(),
+    downloading: t().extras!.compatDownloading(),
+    estimating: t().compatTools.estimating,
+    timeLeft: t().compatTools.timeLeft,
+  };
 }
 
 function releaseStatusLabel(release: CompatToolRelease, installedReleaseTags: Set<string>, currentReleaseTag?: string | null): string {
@@ -293,7 +231,7 @@ function VersionBrowserModal({
               const installed = installedReleaseTags.has(release.tag_name);
               const isInstalling = installingTag === release.tag_name;
               const progress = isInstalling
-                ? buildInstallProgressDetails(installStatus, release.asset_size)
+                ? buildInstallProgressDetails(installStatus, release.asset_size, getInstallProgressLabels())
                 : null;
               return (
                 <div
@@ -621,7 +559,7 @@ export function SettingsTab() {
       const isInstalling = installingTag === release.tag_name;
       const installStatus = managerState.install_status;
       const progress = isInstalling && installStatus.tag_name === release.tag_name
-        ? buildInstallProgressDetails(installStatus, release.asset_size)
+        ? buildInstallProgressDetails(installStatus, release.asset_size, getInstallProgressLabels())
         : null;
 
       return {
@@ -667,7 +605,7 @@ export function SettingsTab() {
           && managerState.install_status.install_as_latest
           && managerState.install_status.state === 'running';
         const progress = isLatestSlotInstall
-          ? buildInstallProgressDetails(managerState.install_status, managerState.current_release?.asset_size)
+          ? buildInstallProgressDetails(managerState.install_status, managerState.current_release?.asset_size, getInstallProgressLabels())
           : null;
         return ({
         key: `installed:${tool.directory_name}`,

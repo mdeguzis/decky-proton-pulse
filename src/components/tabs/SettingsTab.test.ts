@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildInstallProgressDetails,
   getInstallStatusToastStamp,
   resetInstallStatusToastMemory,
   shouldPollInstallStatus,
@@ -83,5 +84,31 @@ describe('install status toast memory', () => {
     expect(shouldShowInstallStatusToast(installStatus)).toBe(false);
 
     resetInstallStatusToastMemory();
+  });
+});
+
+describe('buildInstallProgressDetails', () => {
+  it('switches eta text to finalizing once download reaches 100%', () => {
+    const progress = buildInstallProgressDetails(
+      makeManagerState({
+        state: 'running',
+        stage: 'downloading',
+        downloaded_bytes: 1024,
+        total_bytes: 1024,
+        progress_fraction: 1,
+        started_at: Math.round(Date.now() / 1000) - 20,
+      }).install_status,
+      1024,
+      {
+        finalizing: 'Finalizing...',
+        extracting: 'Extracting...',
+        downloading: 'Downloading...',
+        estimating: 'Estimating...',
+        timeLeft: (value) => `${value} left`,
+      },
+    );
+
+    expect(progress.progressLabel).toBe('100%');
+    expect(progress.etaLabel).toBe('Finalizing...');
   });
 });

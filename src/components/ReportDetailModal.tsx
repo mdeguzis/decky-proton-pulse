@@ -206,6 +206,8 @@ const RULES_SCROLL_STEP = 80;
 function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
   const rules = buildMatchingRules();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLElement | null>(null);
+  const sectionHeaderRefs = useRef<Record<string, HTMLElement | null>>({});
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
     () => new Set(rules.slice(1).map((rule) => rule.field)),
   );
@@ -254,63 +256,35 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
           <div style={{ fontSize: 18, fontWeight: 700, color: '#e8f4ff' }}>
             {t().detail.matchingGuideTitle}
           </div>
-          <button
-            type="button"
+          <DialogButton
+            ref={(node) => {
+              closeButtonRef.current = node;
+            }}
             onClick={closeModal}
+            onGamepadDirection={(evt: GamepadEvent) => {
+              if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                evt.preventDefault();
+                const firstRule = rules[0];
+                if (firstRule) {
+                  sectionHeaderRefs.current[firstRule.field]?.focus();
+                }
+              }
+            }}
             style={{
               flex: '0 0 auto',
-              width: 'auto',
               minWidth: 72,
               maxWidth: 96,
               fontSize: 10,
-              lineHeight: 1.2,
               padding: '6px 10px',
-              minHeight: 0,
-              borderRadius: 6,
-              border: '1px solid #3a4d63',
-              background: '#1a2736',
-              color: '#e8f4ff',
-              fontWeight: 700,
-              cursor: 'pointer',
-              alignSelf: 'flex-start',
             }}
           >
             {t().common.close}
-          </button>
+          </DialogButton>
         </div>
-        <Focusable
-          onGamepadDirection={(evt: GamepadEvent) => {
-            const el = scrollRef.current;
-            if (!el) return;
-            if (evt.detail.button === GamepadButton.DIR_UP) {
-              evt.preventDefault();
-              el.scrollBy({
-                top: el.scrollTop <= RULES_SCROLL_STEP ? -el.scrollTop : -RULES_SCROLL_STEP,
-                behavior: 'auto',
-              });
-            } else if (evt.detail.button === GamepadButton.DIR_DOWN) {
-              evt.preventDefault();
-              el.scrollBy({ top: RULES_SCROLL_STEP, behavior: 'auto' });
-            }
-          }}
-          style={{ display: 'contents' }}
-        >
         {/* scrollable body */}
         <div
           ref={scrollRef}
           style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 128px' }}
-          onKeyDown={(evt) => {
-            if (evt.key === 'ArrowUp') {
-              const el = scrollRef.current;
-              if (!el) return;
-              el.scrollBy({ top: el.scrollTop <= RULES_SCROLL_STEP ? -el.scrollTop : -RULES_SCROLL_STEP, behavior: 'auto' });
-            } else if (evt.key === 'ArrowDown') {
-              const el = scrollRef.current;
-              if (!el) return;
-              evt.preventDefault();
-              el.scrollBy({ top: RULES_SCROLL_STEP, behavior: 'auto' });
-            }
-          }}
         >
           {/* colour legend */}
           <div
@@ -346,9 +320,38 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
               }}
             >
               {/* field title */}
-              <button
-                type="button"
+              <Focusable
+                ref={(node) => {
+                  sectionHeaderRefs.current[rule.field] = node;
+                }}
                 onClick={() => toggleSection(rule.field)}
+                onOKButton={() => toggleSection(rule.field)}
+                onGamepadDirection={(evt: GamepadEvent) => {
+                  const index = rules.findIndex((entry) => entry.field === rule.field);
+                  if (evt.detail.button === GamepadButton.DIR_UP) {
+                    evt.preventDefault();
+                    if (index <= 0) {
+                      closeButtonRef.current?.focus();
+                    } else {
+                      const prevRule = rules[index - 1];
+                      sectionHeaderRefs.current[prevRule.field]?.focus();
+                      sectionHeaderRefs.current[prevRule.field]?.scrollIntoView({ block: 'nearest' });
+                    }
+                    return;
+                  }
+                  if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                    evt.preventDefault();
+                    const nextRule = rules[index + 1];
+                    if (!nextRule) {
+                      const el = scrollRef.current;
+                      if (!el) return;
+                      el.scrollBy({ top: RULES_SCROLL_STEP, behavior: 'auto' });
+                      return;
+                    }
+                    sectionHeaderRefs.current[nextRule.field]?.focus();
+                    sectionHeaderRefs.current[nextRule.field]?.scrollIntoView({ block: 'nearest' });
+                  }
+                }}
                 style={{
                   width: '100%',
                   padding: '7px 12px',
@@ -363,13 +366,27 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   cursor: 'pointer',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden',
+                  borderRadius: 8,
                 }}
               >
-                <span>{rule.field}</span>
-                <span style={{ fontSize: 11, color: '#7a9bb5', marginLeft: 12 }}>
-                  {collapsed ? '▸' : '▾'}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    fontSize: 12,
+                    color: '#9dc4e8',
+                    minWidth: 18,
+                    textAlign: 'center',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    marginRight: 8,
+                  }}
+                >
+                  {collapsed ? '>' : 'v'}
                 </span>
-              </button>
+                <span style={{ minWidth: 0, flex: 1 }}>{rule.field}</span>
+              </Focusable>
 
               {!collapsed && (
               <div style={{ padding: '8px 12px' }}>
@@ -423,7 +440,6 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
             })()
           ))}
         </div>
-        </Focusable>
       </div>
     </ModalRoot>
   );
@@ -1317,7 +1333,8 @@ export function ReportDetailModal({
             flex: 1,
             minHeight: 0,
             overflowY: 'auto',
-            padding: '0 16px 120px',
+            padding: '0 16px 80px',
+            scrollPaddingBottom: 80,
             outline: 'none',
           }}
         >
@@ -1343,9 +1360,26 @@ export function ReportDetailModal({
                     }}
                     onClick={handleOpenHardwareCompare}
                     onGamepadDirection={(evt) => {
+                      const el = scrollRef.current;
                       if (evt.detail.button === GamepadButton.DIR_UP) {
+                        if (el && el.scrollTop > 0) {
+                          evt.preventDefault();
+                          el.scrollBy({
+                            top: el.scrollTop <= SCROLL_STEP ? -el.scrollTop : -SCROLL_STEP,
+                            behavior: 'auto',
+                          });
+                          return;
+                        }
                         evt.preventDefault();
                         clearButtonRef.current?.focus();
+                        return;
+                      }
+                      if (evt.detail.button === GamepadButton.DIR_DOWN) {
+                        if (!el) return;
+                        const remaining = el.scrollHeight - el.clientHeight - el.scrollTop;
+                        if (remaining <= 0) return;
+                        evt.preventDefault();
+                        el.scrollBy({ top: SCROLL_STEP, behavior: 'auto' });
                       }
                     }}
                     disabled={!sysInfo}

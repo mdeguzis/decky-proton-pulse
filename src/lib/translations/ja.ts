@@ -272,6 +272,7 @@ export const ja: TranslationTree = {
     profileName: 'プロファイル名',
     profileNameHint: 'この設定のラベル（例：「高パフォーマンス」「互換性重視」）',
     protonVersionToggleHint: 'この設定で固定する Proton バージョンを有効または無効にします。',
+    protonVersionNone: 'なし',
     gpuFilter: 'GPU',
     synced: '同期済み',
     notSynced: '未同期',

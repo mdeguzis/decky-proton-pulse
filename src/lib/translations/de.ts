@@ -272,6 +272,7 @@ export const de: TranslationTree = {
     profileName: 'Profilname',
     profileNameHint: 'Eine Bezeichnung für diese Konfiguration (z.B. „Hohe Leistung", „Kompatibel")',
     protonVersionToggleHint: 'Aktiviert oder deaktiviert eine feste Proton-Version fuer diese Konfiguration.',
+    protonVersionNone: 'Keine',
     gpuFilter: 'GPU',
     synced: 'Synchronisiert',
     notSynced: 'Nicht synchronisiert',

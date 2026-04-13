@@ -272,6 +272,7 @@ export const tr: TranslationTree = {
     profileName: 'Profil Adı',
     profileNameHint: 'Bu yapılandırma için bir etiket (ör. "Yüksek Performans", "Uyumlu")',
     protonVersionToggleHint: 'Bu yapilandirma icin sabit bir Proton surumunu acar veya kapatir.',
+    protonVersionNone: 'Yok',
     gpuFilter: 'GPU',
     synced: 'Senkronize',
     notSynced: 'Senkronize değil',

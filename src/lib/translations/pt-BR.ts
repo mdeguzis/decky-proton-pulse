@@ -272,6 +272,7 @@ export const ptBR: TranslationTree = {
     profileName: 'Nome do Perfil',
     profileNameHint: 'Um rótulo para esta configuração (ex: "Alto Desempenho", "Compatível")',
     protonVersionToggleHint: 'Ativa ou desativa uma versao fixa do Proton para esta configuracao.',
+    protonVersionNone: 'Nenhuma',
     gpuFilter: 'GPU',
     synced: 'Sincronizado',
     notSynced: 'Não sincronizado',

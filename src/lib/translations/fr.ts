@@ -272,6 +272,7 @@ export const fr: TranslationTree = {
     profileName: 'Nom du profil',
     profileNameHint: 'Un libellé pour cette configuration (ex. « Haute Performance », « Compatible »)',
     protonVersionToggleHint: 'Active ou desactive une version Proton epinglee pour cette configuration.',
+    protonVersionNone: 'Aucune',
     gpuFilter: 'GPU',
     synced: 'Synchronisé',
     notSynced: 'Non synchronisé',

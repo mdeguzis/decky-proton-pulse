@@ -456,7 +456,6 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
 
   const [profileName, setProfileName] = useState(existingConfig?.profileName ?? '');
   const [protonVersion, setProtonVersion] = useState(parsed.protonVersion ?? '');
-  const [protonVersionEnabled, setProtonVersionEnabled] = useState(Boolean(parsed.protonVersion));
   const [enabledVars, setEnabledVars] = useState<Record<string, string>>(
     Object.fromEntries(
       Object.entries(parsed.vars).filter(([key]) => catalogKeys.has(key)),
@@ -638,10 +637,16 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     }
   };
 
-  const versionDropdownOptions = versionOptions.map((opt) => ({
-    data: opt.value,
-    label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
-  }));
+  const versionDropdownOptions = [
+    {
+      data: '',
+      label: t().configManager.protonVersionNone,
+    },
+    ...versionOptions.map((opt) => ({
+      data: opt.value,
+      label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
+    })),
+  ];
 
   const allVars = useMemo(() => {
     const merged = { ...enabledVars };
@@ -675,8 +680,8 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   }, [customToggles, enabledCustomToggleIds]);
 
   const preview = useMemo(
-    () => buildLaunchOptions(protonVersionEnabled ? (protonVersion || null) : null, allVars, rawArgs, postCommandArgs),
-    [protonVersion, protonVersionEnabled, allVars, rawArgs, postCommandArgs],
+    () => buildLaunchOptions(protonVersion || null, allVars, rawArgs, postCommandArgs),
+    [protonVersion, allVars, rawArgs, postCommandArgs],
   );
 
   const toggleVar = (key: string, def: LaunchVarDef) => {
@@ -742,7 +747,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         appId,
         appName,
         profileName: profileName.trim(),
-        protonVersion: protonVersionEnabled ? (protonVersion || '') : '',
+        protonVersion: protonVersion || '',
         launchOptions: resolvedLaunchOptions,
         enabledVars: allVars,
         appliedAt: Date.now(),
@@ -946,26 +951,20 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               </div>
             ) : (
               <div style={{ display: 'grid', gap: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#e8f4ff' }}>
+                  {t().detail.protonVersion}
+                </div>
                 <div
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(210px, 0.9fr) minmax(260px, 1.1fr)',
-                    gap: 12,
-                    alignItems: 'center',
+                    minWidth: 0,
                   }}
                 >
-                  <ToggleField
-                    label={t().detail.protonVersion}
-                    description={t().configManager.protonVersionToggleHint}
-                    checked={protonVersionEnabled}
-                    onChange={() => setProtonVersionEnabled((prev) => !prev)}
-                  />
                   <DropdownItem
                     label={installing ? t().detail.installing(installing) : t().detail.protonVersion}
                     rgOptions={versionDropdownOptions}
-                    selectedOption={protonVersion}
+                    selectedOption={protonVersion || ''}
                     onChange={(opt) => handleVersionChange(opt.data)}
-                    disabled={!!installing || !protonVersionEnabled}
+                    disabled={!!installing}
                   />
                 </div>
               </div>

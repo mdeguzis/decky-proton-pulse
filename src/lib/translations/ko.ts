@@ -272,6 +272,7 @@ export const ko: TranslationTree = {
     profileName: '프로필 이름',
     profileNameHint: '이 구성의 레이블 (예: "고성능", "호환 모드")',
     protonVersionToggleHint: '이 구성에 고정할 Proton 버전을 켜거나 끕니다.',
+    protonVersionNone: '없음',
     gpuFilter: 'GPU',
     synced: '동기화됨',
     notSynced: '동기화 안 됨',

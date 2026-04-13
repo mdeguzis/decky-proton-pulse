@@ -304,6 +304,7 @@ export interface TranslationTree {
     profileName: string;
     profileNameHint: string;
     protonVersionToggleHint: string;
+    protonVersionNone: string;
     gpuFilter: string;
     synced: string;
     notSynced: string;
@@ -745,6 +746,7 @@ export const en: TranslationTree = {
     profileName: 'Profile Name',
     profileNameHint: 'Pick a short label for this configuration, like "High Performance" or "Compatible".',
     protonVersionToggleHint: 'Enable or disable a pinned Proton version for this configuration.',
+    protonVersionNone: 'None',
     gpuFilter: 'GPU',
     synced: 'Synced',
     notSynced: 'Not synced',
