@@ -15,6 +15,10 @@ A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for S
 
 Coverage policy: overall Python and TypeScript coverage must stay at or above `90%`, and pull requests must keep changed-line coverage at `95%` or higher.
 
+## Screenshots
+
+see: [UI screenshot gallery](https://github.com/mdeguzis/decky-proton-pulse/wiki/UI-Screenshot-Gallery)
+
 ---
 
 ## Acknowledgments & Credits
