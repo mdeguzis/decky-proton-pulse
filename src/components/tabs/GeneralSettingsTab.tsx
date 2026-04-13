@@ -178,7 +178,7 @@ export function GeneralSettingsTab() {
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
   const [cloudAutoSync, setCloudAutoSync] = useState(() => isAutoSyncEnabled());
-  const [badgeEnabled, setBadgeEnabled] = useState(() => getSetting('showGamePageBadge', true));
+  const [badgeEnabled, setBadgeEnabled] = useState(() => getSetting('showGamePageBadge', false));
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
   const [devAreaEnabled, setDevAreaEnabled] = useState(() => getSetting('developer-area-enabled', false));
   const [devFetchUpdates, setDevFetchUpdates] = useState(() => getSetting('dev-fetch-updates', false));
@@ -346,6 +346,18 @@ export function GeneralSettingsTab() {
         </div>
         <div style={focusClipRowStyle()}>
           <ToggleField
+            label={t().settings.gamePageBadge}
+            description={t().settings.gamePageBadgeDescription}
+            checked={badgeEnabled}
+            onChange={(enabled) => {
+              setBadgeEnabled(enabled);
+              setSetting('showGamePageBadge', enabled);
+              void logFrontendEvent('INFO', 'Game page badge toggled', { enabled });
+            }}
+          />
+        </div>
+        <div style={focusClipRowStyle()}>
+          <ToggleField
             label={t().configManager.cloudAutoSync}
             description={t().configManager.cloudAutoSyncDescription}
             checked={cloudAutoSync}
@@ -405,19 +417,6 @@ export function GeneralSettingsTab() {
               </div>
             </DialogButton>
           </div>
-        </div>
-
-        <div style={focusClipRowStyle()}>
-          <ToggleField
-            label={t().settings.gamePageBadge}
-            description={t().settings.gamePageBadgeDescription}
-            checked={badgeEnabled}
-            onChange={(enabled) => {
-              setBadgeEnabled(enabled);
-              setSetting('showGamePageBadge', enabled);
-              void logFrontendEvent('INFO', 'Game page badge toggled', { enabled });
-            }}
-          />
         </div>
       </div>
 

@@ -33,7 +33,7 @@
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 524,
+      "line": 523,
       "column": 89,
       "kind": "jsx",
       "text": "pre-release"

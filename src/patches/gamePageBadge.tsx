@@ -59,7 +59,7 @@ export function patchGamePageBadge(): ReturnType<typeof routerHook.addPatch> {
         ],
         (_: Array<unknown>, ret?: ReactElement) => {
           // Hot-toggle: read setting on every render so toggling takes effect immediately
-          if (!getSetting('showGamePageBadge', true)) return ret;
+          if (!getSetting('showGamePageBadge', false)) return ret;
 
           const container = findInReactTree(
             ret,

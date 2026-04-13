@@ -255,7 +255,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
 
     async def get_system_info(self) -> dict[str, object]:
         """Gather CPU, GPU, kernel, distro info and send it to the frontend."""
-        return collect_system_info()
+        import asyncio
+        return await asyncio.get_event_loop().run_in_executor(None, collect_system_info)
 
     async def get_game_requirements(self, app_id: str) -> dict[str, object]:
         """Fetch minimum system requirements from the Steam Store API."""
