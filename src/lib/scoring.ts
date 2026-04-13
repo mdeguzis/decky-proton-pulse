@@ -422,6 +422,58 @@ const GPU_NOISE = new Set([
 // version-like patterns (X.Y.Z, X.Y, or kernel-style X.Y.Z-foo) aren't GPU model info
 const VERSION_PATTERN = /^\d+\.\d+(\.\d+)?/;
 
+// ─── VRAM estimation ────────────────────────────────────────────────────────
+
+/** Static GPU model → VRAM (GB) lookup. Patterns are matched against the
+ *  lowercased GPU string. Order matters — first match wins. */
+const VRAM_TABLE: [RegExp, number][] = [
+  // NVIDIA RTX 50xx
+  [/rtx\s*5090/, 32], [/rtx\s*5080/, 16], [/rtx\s*5070\s*ti/, 16], [/rtx\s*5070/, 12], [/rtx\s*5060\s*ti/, 16], [/rtx\s*5060/, 8],
+  // NVIDIA RTX 40xx
+  [/rtx\s*4090/, 24], [/rtx\s*4080\s*super/, 16], [/rtx\s*4080/, 16], [/rtx\s*4070\s*ti\s*super/, 16], [/rtx\s*4070\s*ti/, 12], [/rtx\s*4070\s*super/, 12], [/rtx\s*4070/, 12], [/rtx\s*4060\s*ti/, 8], [/rtx\s*4060/, 8],
+  // NVIDIA RTX 30xx
+  [/rtx\s*3090\s*ti/, 24], [/rtx\s*3090/, 24], [/rtx\s*3080\s*ti/, 12], [/rtx\s*3080/, 10], [/rtx\s*3070\s*ti/, 8], [/rtx\s*3070/, 8], [/rtx\s*3060\s*ti/, 8], [/rtx\s*3060/, 12], [/rtx\s*3050/, 8],
+  // NVIDIA RTX 20xx
+  [/rtx\s*2080\s*ti/, 11], [/rtx\s*2080\s*super/, 8], [/rtx\s*2080/, 8], [/rtx\s*2070\s*super/, 8], [/rtx\s*2070/, 8], [/rtx\s*2060\s*super/, 8], [/rtx\s*2060/, 6],
+  // NVIDIA GTX 16xx
+  [/gtx\s*1660\s*ti/, 6], [/gtx\s*1660\s*super/, 6], [/gtx\s*1660/, 6], [/gtx\s*1650\s*super/, 4], [/gtx\s*1650/, 4],
+  // NVIDIA GTX 10xx
+  [/gtx\s*1080\s*ti/, 11], [/gtx\s*1080/, 8], [/gtx\s*1070\s*ti/, 8], [/gtx\s*1070/, 8], [/gtx\s*1060/, 6], [/gtx\s*1050\s*ti/, 4], [/gtx\s*1050/, 2],
+  // NVIDIA GTX 9xx/7xx
+  [/gtx\s*980\s*ti/, 6], [/gtx\s*980/, 4], [/gtx\s*970/, 4], [/gtx\s*960/, 2], [/gtx\s*780\s*ti/, 3], [/gtx\s*780/, 3], [/gtx\s*770/, 2], [/gtx\s*760/, 2],
+  // AMD RX 7xxx
+  [/rx\s*7900\s*xtx/, 24], [/rx\s*7900\s*xt/, 20], [/rx\s*7900\s*gre/, 16], [/rx\s*7800\s*xt/, 16], [/rx\s*7700\s*xt/, 12], [/rx\s*7600\s*xt/, 16], [/rx\s*7600/, 8],
+  // AMD RX 6xxx
+  [/rx\s*6950\s*xt/, 16], [/rx\s*6900\s*xt/, 16], [/rx\s*6800\s*xt/, 16], [/rx\s*6800/, 16], [/rx\s*6750\s*xt/, 12], [/rx\s*6700\s*xt/, 12], [/rx\s*6700/, 10], [/rx\s*6650\s*xt/, 8], [/rx\s*6600\s*xt/, 8], [/rx\s*6600/, 8], [/rx\s*6500\s*xt/, 4],
+  // AMD RX 5xxx
+  [/rx\s*5700\s*xt/, 8], [/rx\s*5700/, 8], [/rx\s*5600\s*xt/, 6], [/rx\s*5500\s*xt/, 8],
+  // AMD RX 580/570/etc
+  [/rx\s*590/, 8], [/rx\s*580/, 8], [/rx\s*570/, 4], [/rx\s*560/, 4], [/rx\s*480/, 8], [/rx\s*470/, 4],
+  // AMD older
+  [/r9\s*390x?/, 8], [/r9\s*290x?/, 4], [/r9\s*280x?/, 3],
+  // Intel Arc
+  [/arc\s*a770/, 16], [/arc\s*a750/, 8], [/arc\s*a580/, 8], [/arc\s*a380/, 6],
+  // Steam Deck
+  [/custom gpu 0405/, 1], [/vangogh|aerith|sephiroth/, 1],
+];
+
+/** Estimate VRAM in GB from a GPU model string. Returns null if unknown. */
+export function estimateVramGb(gpu: string): number | null {
+  if (!gpu) return null;
+  const lower = gpu.toLowerCase();
+  for (const [pattern, vram] of VRAM_TABLE) {
+    if (pattern.test(lower)) return vram;
+  }
+  return null;
+}
+
+/** Parse VRAM from a game requirements GPU string like "GTX 780 (3 GB)". */
+export function parseVramFromRequirements(gpuReq: string): number | null {
+  if (!gpuReq) return null;
+  const m = gpuReq.match(/\(\s*(\d+)\s*GB\s*\)/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
 function normalizeGpuTokens(gpu: string): string[] {
   return gpu.toLowerCase()
     .replace(/[(),\[\]\/]/g, ' ')  // strip brackets, parens, commas, slashes
@@ -551,12 +603,26 @@ function gpuFieldMatch(reportGpu: string, systemGpu: string, gameMinGpu?: string
 
   // game-aware boost: if both report and system GPU share a vendor with the
   // game's minimum requirement, boost confidence
+  let gameAwareBoosted = false;
   if (gameMinGpu && rVG) {
     const gTokens = normalizeGpuTokens(gameMinGpu);
     const gVendor = gTokens.find(t => vendorKeywords.includes(t));
     const gVG = vendorGroup(gVendor);
     if (gVG && rVG === gVG && sVG === gVG) {
       score = Math.max(score, 80);
+      gameAwareBoosted = true;
+    }
+  }
+
+  // VRAM consideration: boost when both meet game min, penalize large gaps otherwise
+  const rVram = estimateVramGb(reportGpu);
+  const sVram = estimateVramGb(systemGpu);
+  if (rVram !== null && sVram !== null) {
+    const gameMinVram = gameMinGpu ? parseVramFromRequirements(gameMinGpu) : null;
+    if (gameMinVram && rVram >= gameMinVram && sVram >= gameMinVram) {
+      score = Math.max(score, 85);
+    } else if (!gameAwareBoosted && Math.abs(rVram - sVram) >= 8) {
+      score = Math.max(0, score - 5);
     }
   }
 

@@ -1,6 +1,6 @@
 // src/lib/scoring.test.ts
 import { describe, it, expect } from 'vitest';
-import { scoreReport, bucketByGpuTier, parseNotesSentiment, parseProtonMajorVersion, getHardwareMatchPercent, getHardwareMatchBreakdown, scoreToRating } from './scoring';
+import { scoreReport, bucketByGpuTier, parseNotesSentiment, parseProtonMajorVersion, getHardwareMatchPercent, getHardwareMatchBreakdown, scoreToRating, estimateVramGb, parseVramFromRequirements } from './scoring';
 import type { CdnReport, SystemInfo } from '../types';
 
 const nvidiaSystem: SystemInfo = {
@@ -421,7 +421,8 @@ describe('getHardwareMatchBreakdown', () => {
     const intelSys: SystemInfo = { ...nvidiaSystem, gpu: 'Intel Arc A770', gpu_vendor: 'intel' };
     const report = makeCdnReport({ gpu: 'Intel Arc A750' });
     const bd = getHardwareMatchBreakdown(report, intelSys);
-    expect(bd.gpu.percent).toBeGreaterThanOrEqual(40);
+    // A750 (8GB) vs A770 (16GB) = 8GB VRAM gap → -5 penalty on top of vendor match
+    expect(bd.gpu.percent).toBeGreaterThanOrEqual(35);
   });
 
   // ── Driver field matching ───────────────────────────────────────────────────
@@ -974,5 +975,62 @@ describe('game-aware GPU matching', () => {
     const withoutGame = getHardwareMatchBreakdown(report, nvidiaSystem, null, null, null);
     // GTX 1060 vs RTX 5080 — same vendor but big gen gap, should be below 80
     expect(withoutGame.gpu.percent).toBeLessThan(80);
+  });
+});
+
+// ─── VRAM estimation ────────────────────────────────────────────────────────
+
+describe('estimateVramGb', () => {
+  it('identifies common NVIDIA GPUs', () => {
+    expect(estimateVramGb('NVIDIA GeForce RTX 4090')).toBe(24);
+    expect(estimateVramGb('NVIDIA GeForce GTX 1060')).toBe(6);
+    expect(estimateVramGb('NVIDIA GeForce RTX 3060')).toBe(12);
+  });
+
+  it('identifies common AMD GPUs', () => {
+    expect(estimateVramGb('AMD Radeon RX 7900 XTX')).toBe(24);
+    expect(estimateVramGb('AMD Radeon RX 580')).toBe(8);
+    expect(estimateVramGb('AMD Radeon RX 6700 XT')).toBe(12);
+  });
+
+  it('identifies Intel Arc', () => {
+    expect(estimateVramGb('Intel Arc A770')).toBe(16);
+  });
+
+  it('returns null for unknown GPUs', () => {
+    expect(estimateVramGb('Some Unknown GPU')).toBeNull();
+    expect(estimateVramGb('')).toBeNull();
+  });
+});
+
+describe('parseVramFromRequirements', () => {
+  it('extracts VRAM from parenthesized GB value', () => {
+    expect(parseVramFromRequirements('Nvidia GeForce GTX 780 (3 GB)')).toBe(3);
+    expect(parseVramFromRequirements('AMD Radeon RX 580 (8GB)')).toBe(8);
+  });
+
+  it('returns null when no VRAM specified', () => {
+    expect(parseVramFromRequirements('Nvidia GeForce GTX 780')).toBeNull();
+    expect(parseVramFromRequirements('')).toBeNull();
+  });
+});
+
+describe('VRAM in GPU scoring', () => {
+  it('boosts when both GPUs meet game min VRAM', () => {
+    // RTX 3060 (12GB) report, RTX 5080 (16GB) system, game wants 3GB
+    const report = makeCdnReport({ gpu: 'NVIDIA GeForce RTX 3060' });
+    const withVram = getHardwareMatchBreakdown(report, nvidiaSystem, null, null, 'Nvidia GeForce GTX 780 (3 GB)');
+    const withoutVram = getHardwareMatchBreakdown(report, nvidiaSystem, null, null, null);
+    expect(withVram.gpu.percent).toBeGreaterThanOrEqual(withoutVram.gpu.percent);
+  });
+
+  it('penalizes large VRAM gap between report and system', () => {
+    // GTX 1050 (2GB) report vs RTX 5080 (16GB) system — 14GB gap
+    const report = makeCdnReport({ gpu: 'NVIDIA GeForce GTX 1050' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    // should be penalized relative to a closer VRAM match
+    const closeReport = makeCdnReport({ gpu: 'NVIDIA GeForce RTX 4080' }); // 16GB
+    const bdClose = getHardwareMatchBreakdown(closeReport, nvidiaSystem);
+    expect(bdClose.gpu.percent).toBeGreaterThan(bd.gpu.percent);
   });
 });
