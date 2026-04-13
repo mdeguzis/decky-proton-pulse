@@ -178,7 +178,13 @@ export function GeneralSettingsTab() {
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
   const [cloudAutoSync, setCloudAutoSync] = useState(() => isAutoSyncEnabled());
+  const [badgeEnabled, setBadgeEnabled] = useState(() => getSetting('showGamePageBadge', true));
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
+  const [devAreaEnabled, setDevAreaEnabled] = useState(() => getSetting('developer-area-enabled', false));
+  const [devFetchUpdates, setDevFetchUpdates] = useState(() => getSetting('dev-fetch-updates', false));
+  const [devReleases, setDevReleases] = useState<Array<{ tag_name: string; name: string; published_at: string; prerelease: boolean }>>([]);
+  const [devReleasesLoading, setDevReleasesLoading] = useState(false);
+
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const languageRowRef = useRef<HTMLDivElement>(null);
@@ -234,13 +240,8 @@ export function GeneralSettingsTab() {
   }), []);
 
   useEffect(() => registerScreenshotAutomationHandler('settings/local-data', async () => {
-    if (!advancedEnabled) {
-      setAdvancedEnabled(true);
-      setSetting(ADVANCED_SETTINGS_KEY, true);
-      await new Promise((resolve) => window.setTimeout(resolve, 150));
-    }
     localDataSectionRef.current?.scrollIntoView({ block: 'center' });
-  }), [advancedEnabled]);
+  }), []);
 
   const handleExportLocalData = async () => {
     setBackupBusy(true);
@@ -355,73 +356,11 @@ export function GeneralSettingsTab() {
             }}
           />
         </div>
-      </div>
 
-      {/* advanced settings toggle */}
-      <div style={sectionStyle()}>
-        <div style={focusClipRowStyle()}>
-          <ToggleField
-            label={extras.advancedSettings()}
-            description={extras.advancedSettingsDescription()}
-            checked={advancedEnabled}
-            onChange={(enabled) => {
-              setAdvancedEnabled(enabled);
-              setSetting(ADVANCED_SETTINGS_KEY, enabled);
-              void logFrontendEvent('INFO', 'Advanced settings toggled', { enabled });
-            }}
-          />
-        </div>
-      </div>
-
-      {/* advanced section: cache management */}
-      {advancedEnabled && (
-        <div style={sectionStyle()}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
-            {extras.cacheSection()}
-          </div>
-          <div style={focusClipRowStyle()}>
-            <SliderField
-              label={stripUnitHint(extras.cacheTtlHours())}
-              description={`Data re-fetched after ${formatCacheTtl(cacheTtlHours)}`}
-              value={cacheTtlHours}
-              min={1}
-              max={720}
-              step={1}
-              showValue={false}
-              onChange={(val) => {
-                setCacheTtlLocal(val);
-                setCacheTtlHours(val);
-              }}
-            />
-          </div>
-          <div style={{ ...focusClipRowStyle(), paddingTop: 8 }}>
-            <DialogButton
-              onClick={() => {
-                showModal(<CacheManagerModalContent />);
-              }}
-              style={{ padding: '8px 16px' }}
-            >
-              <div style={{ fontSize: 12, fontWeight: 600 }}>
-                {extras.manageCache()}
-              </div>
-              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
-                {extras.manageCacheDescription()}
-              </div>
-              {cacheStats.networkFetchAvgMs !== null && (
-                <div style={{ fontSize: 10, color: '#5dade2', marginTop: 4 }}>
-                  {extras.cdnFetchAvg()}: {cacheStats.networkFetchAvgMs}ms
-                  {cacheStats.networkFetchP95Ms !== null ? ` (p95: ${cacheStats.networkFetchP95Ms}ms)` : ''}
-                </div>
-              )}
-            </DialogButton>
-          </div>
-        </div>
-      )}
-
-      {advancedEnabled && (
-        <div ref={localDataSectionRef} style={sectionStyle()}>
+        {/* Backup & Restore — in normal section */}
+        <div ref={localDataSectionRef} style={{ marginTop: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 4, marginRight: 8 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#c8dde8', marginLeft: 8 }}>
               {extras.localDataSection()}
             </div>
             {backupStatusMessage && (
@@ -464,6 +403,185 @@ export function GeneralSettingsTab() {
               <div style={{ fontSize: 11, color: '#7a9bb5' }}>
                 {extras.importLocalDataDescription()}
               </div>
+            </DialogButton>
+          </div>
+        </div>
+
+        <div style={focusClipRowStyle()}>
+          <ToggleField
+            label={t().settings.gamePageBadge}
+            description={t().settings.gamePageBadgeDescription}
+            checked={badgeEnabled}
+            onChange={(enabled) => {
+              setBadgeEnabled(enabled);
+              setSetting('showGamePageBadge', enabled);
+              void logFrontendEvent('INFO', 'Game page badge toggled', { enabled });
+            }}
+          />
+        </div>
+      </div>
+
+      {/* advanced settings toggle */}
+      <div style={sectionStyle()}>
+        <div style={focusClipRowStyle()}>
+          <ToggleField
+            label={extras.advancedSettings()}
+            description={extras.advancedSettingsDescription()}
+            checked={advancedEnabled}
+            onChange={(enabled) => {
+              setAdvancedEnabled(enabled);
+              setSetting(ADVANCED_SETTINGS_KEY, enabled);
+              void logFrontendEvent('INFO', 'Advanced settings toggled', { enabled });
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Developer Area toggle */}
+      <div style={sectionStyle()}>
+        <div style={focusClipRowStyle()}>
+          <ToggleField
+            label={t().settings.developerArea}
+            description={t().settings.developerAreaDescription}
+            checked={devAreaEnabled}
+            onChange={(enabled) => {
+              setDevAreaEnabled(enabled);
+              setSetting('developer-area-enabled', enabled);
+              void logFrontendEvent('INFO', 'Developer area toggled', { enabled });
+            }}
+          />
+        </div>
+      </div>
+
+      {devAreaEnabled && (
+        <div style={sectionStyle()}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
+            {t().settings.developerArea}
+          </div>
+          <div style={focusClipRowStyle()}>
+            <ToggleField
+              label={t().settings.fetchUpdatesFromGitHub}
+              description={t().settings.fetchUpdatesFromGitHubDescription}
+              checked={devFetchUpdates}
+              onChange={(enabled) => {
+                setDevFetchUpdates(enabled);
+                setSetting('dev-fetch-updates', enabled);
+                void logFrontendEvent('INFO', 'Dev fetch updates toggled', { enabled });
+              }}
+            />
+          </div>
+          {devFetchUpdates && (
+            <div style={{ margin: '10px 8px 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#c8dde8' }}>
+                  {t().settings.releaseTagInstall}
+                </div>
+                <Focusable
+                  onClick={() => {
+                    setDevReleasesLoading(true);
+                    void fetch('https://api.github.com/repos/mdeguzis/decky-proton-pulse/releases?per_page=10')
+                      .then((r) => r.json())
+                      .then((data: any[]) => {
+                        setDevReleases(data.map((r: any) => ({
+                          tag_name: r.tag_name,
+                          name: r.name || r.tag_name,
+                          published_at: r.published_at?.slice(0, 10) ?? '',
+                          prerelease: !!r.prerelease,
+                        })));
+                      })
+                      .catch(() => setDevReleases([]))
+                      .finally(() => setDevReleasesLoading(false));
+                  }}
+                  onOKButton={() => {}}
+                  style={{ cursor: 'pointer', fontSize: 11, color: '#5dade2', padding: '2px 6px' }}
+                >
+                  {devReleasesLoading ? t().compatTools.refreshing : t().compatTools.refresh}
+                </Focusable>
+              </div>
+              {devReleases.length === 0 && !devReleasesLoading && (
+                <div style={{ fontSize: 11, color: '#7a9bb5', padding: '4px 0' }}>
+                  {t().settings.noReleasesLoaded}
+                </div>
+              )}
+              {devReleases.map((rel) => (
+                <div
+                  key={rel.tag_name}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '6px 8px',
+                    borderRadius: 6,
+                    background: '#0d1b2a',
+                    border: '1px solid #1b2f44',
+                    marginBottom: 4,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f4ff' }}>
+                      {rel.tag_name}
+                      {rel.prerelease && (
+                        <span style={{ fontSize: 10, color: '#f0ad4e', marginLeft: 6 }}>pre-release</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#7a9bb5' }}>{rel.published_at}</div>
+                  </div>
+                  <DialogButton
+                    onClick={() => {
+                      void logFrontendEvent('INFO', 'Dev release install requested', { tag: rel.tag_name });
+                      // TODO: wire to backend install callable
+                    }}
+                    style={{ minWidth: 70, padding: '4px 10px', fontSize: 11 }}
+                  >
+                    {t().compatTools.install}
+                  </DialogButton>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* advanced section: cache management */}
+      {advancedEnabled && (
+        <div style={sectionStyle()}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
+            {extras.cacheSection()}
+          </div>
+          <div style={focusClipRowStyle()}>
+            <SliderField
+              label={stripUnitHint(extras.cacheTtlHours())}
+              description={`Data re-fetched after ${formatCacheTtl(cacheTtlHours)}`}
+              value={cacheTtlHours}
+              min={1}
+              max={720}
+              step={1}
+              showValue={false}
+              onChange={(val) => {
+                setCacheTtlLocal(val);
+                setCacheTtlHours(val);
+              }}
+            />
+          </div>
+          <div style={{ ...focusClipRowStyle(), paddingTop: 8 }}>
+            <DialogButton
+              onClick={() => {
+                showModal(<CacheManagerModalContent />);
+              }}
+              style={{ padding: '8px 16px' }}
+            >
+              <div style={{ fontSize: 12, fontWeight: 600 }}>
+                {extras.manageCache()}
+              </div>
+              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+                {extras.manageCacheDescription()}
+              </div>
+              {cacheStats.networkFetchAvgMs !== null && (
+                <div style={{ fontSize: 10, color: '#5dade2', marginTop: 4 }}>
+                  {extras.cdnFetchAvg()}: {cacheStats.networkFetchAvgMs}ms
+                  {cacheStats.networkFetchP95Ms !== null ? ` (p95: ${cacheStats.networkFetchP95Ms}ms)` : ''}
+                </div>
+              )}
             </DialogButton>
           </div>
         </div>

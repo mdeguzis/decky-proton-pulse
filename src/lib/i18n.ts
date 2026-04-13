@@ -158,6 +158,14 @@ export interface TranslationTree {
     notifications: string;
     notificationsDescription: string;
     general: string;
+    gamePageBadge: string;
+    gamePageBadgeDescription: string;
+    developerArea: string;
+    developerAreaDescription: string;
+    fetchUpdatesFromGitHub: string;
+    fetchUpdatesFromGitHubDescription: string;
+    releaseTagInstall: string;
+    noReleasesLoaded: string;
   };
   compatTools: {
     install: string;
@@ -603,6 +611,14 @@ export const en: TranslationTree = {
     notifications: 'Notifications',
     notificationsDescription: 'Show Proton Pulse toast notifications and sounds',
     general: 'General',
+    gamePageBadge: 'Game Page Badge',
+    gamePageBadgeDescription: 'Show a Proton Pulse icon on game library pages',
+    developerArea: 'Developer Area',
+    developerAreaDescription: 'Tools for plugin development and testing',
+    fetchUpdatesFromGitHub: 'Fetch updates from GitHub',
+    fetchUpdatesFromGitHubDescription: 'Check for new plugin releases on GitHub',
+    releaseTagInstall: 'Available Releases',
+    noReleasesLoaded: 'Press Refresh to load releases from GitHub.',
   },
   compatTools: {
     install: 'Install',

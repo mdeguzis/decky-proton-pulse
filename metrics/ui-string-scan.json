@@ -20,7 +20,8 @@
     "src/components/tabs/ManageTab.tsx",
     "src/components/tabs/SettingsTab.tsx",
     "src/components/tabs/settingsTabProgress.ts",
-    "src/patches/gameContextMenu.tsx"
+    "src/patches/gameContextMenu.tsx",
+    "src/patches/gamePageBadge.tsx"
   ],
   "findings": [
     {
@@ -29,6 +30,13 @@
       "column": 13,
       "kind": "jsx",
       "text": "ProtonDB"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 524,
+      "column": 89,
+      "kind": "jsx",
+      "text": "pre-release"
     }
   ]
 }

@@ -35,6 +35,7 @@ import { startSessionTracking, stopSessionTracking } from './lib/playtime';
 import { initCloudSync, teardownCloudSync, checkHasCloudBackup } from './lib/cloudSync';
 import { getTrackedConfigs } from './lib/trackedConfigs';
 import { toaster } from './lib/notify';
+import { patchGamePageBadge } from './patches/gamePageBadge';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -288,6 +289,7 @@ export default definePlugin(() => {
     return props;
   });
   const menuPatch = patchGameContextMenu(LibraryContextMenu);
+  const badgePatch = patchGamePageBadge();
 
   return {
     name: 'Proton Pulse',
@@ -314,6 +316,7 @@ export default definePlugin(() => {
       void flushMetricsToDisk();
       routerHook.removeRoute('/proton-pulse');
       routerHook.removePatch('/library/app/:appid', gamePagePatch);
+      routerHook.removePatch('/library/app/:appid', badgePatch);
       clearInterval(focusedGamePoll);
       menuPatch.unpatch();
       teardownScreenshotAutomation();
