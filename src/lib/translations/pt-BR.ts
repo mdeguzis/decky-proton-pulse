@@ -105,6 +105,8 @@ export const ptBR: TranslationTree = {
     unknownGpu: 'GPU Desconhecida',
     ram: 'RAM',
     systemRequirements: 'Requisitos do sistema',
+    noGameRequirementsFound: 'No system requirements found from the Steam Store for this game.',
+    viewOnPCGamingWiki: 'View on PCGamingWiki',
     matchingGuideTitle: 'Como funciona a comparação',
     matchingGuideButton: 'Guia de compatibilidade',
   },

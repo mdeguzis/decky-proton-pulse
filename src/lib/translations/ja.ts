@@ -105,6 +105,8 @@ export const ja: TranslationTree = {
     unknownGpu: '不明な GPU',
     ram: 'RAM',
     systemRequirements: 'システム要件',
+    noGameRequirementsFound: 'No system requirements found from the Steam Store for this game.',
+    viewOnPCGamingWiki: 'View on PCGamingWiki',
     matchingGuideTitle: 'マッチングの仕組み',
     matchingGuideButton: 'マッチングガイド',
   },

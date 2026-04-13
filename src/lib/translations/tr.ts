@@ -105,6 +105,8 @@ export const tr: TranslationTree = {
     unknownGpu: 'Bilinmeyen GPU',
     ram: 'RAM',
     systemRequirements: 'Sistem Gereksinimleri',
+    noGameRequirementsFound: 'No system requirements found from the Steam Store for this game.',
+    viewOnPCGamingWiki: 'View on PCGamingWiki',
     matchingGuideTitle: 'Eşleştirme Nasıl Çalışır',
     matchingGuideButton: 'Eşleştirme Kılavuzu',
   },

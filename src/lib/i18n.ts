@@ -137,6 +137,8 @@ export interface TranslationTree {
     unknownGpu: string;
     ram: string;
     systemRequirements: string;
+    noGameRequirementsFound: string;
+    viewOnPCGamingWiki: string;
     matchingGuideTitle: string;
     matchingGuideButton: string;
   };
@@ -580,6 +582,8 @@ export const en: TranslationTree = {
     unknownGpu: 'Unknown GPU',
     ram: 'RAM',
     systemRequirements: 'System Requirements',
+    noGameRequirementsFound: 'No system requirements found from the Steam Store for this game.',
+    viewOnPCGamingWiki: 'View on PCGamingWiki',
     matchingGuideTitle: 'How Matching Works',
     matchingGuideButton: 'How Scoring Works',
   },

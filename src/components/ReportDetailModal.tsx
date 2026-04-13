@@ -1,6 +1,6 @@
 // src/components/ReportDetailModal.tsx
 import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { ModalRoot, Focusable, DialogButton, SteamSpinner, GamepadButton, showModal } from '@decky/ui';
+import { ModalRoot, Focusable, DialogButton, SteamSpinner, GamepadButton, showModal, Navigation } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { callable } from '@decky/api';
 import { toaster } from '../lib/notify';
@@ -145,54 +145,86 @@ const getGameRequirements = callable<[string], GameReqResponse>('get_game_requir
 function SystemRequirementsModal({
   closeModal,
   fields,
+  appName,
 }: {
   closeModal?: () => void;
-  fields: GameReqField[];
+  fields: GameReqField[] | null;
+  appName?: string;
 }) {
+  const pcgwSlug = appName ? appName.replace(/ /g, '_') : null;
+  const pcgwUrl = pcgwSlug ? `https://www.pcgamingwiki.com/wiki/${pcgwSlug}` : 'https://www.pcgamingwiki.com';
+  const hasFields = fields && fields.length > 0;
+
   return (
     <ModalRoot onCancel={closeModal}>
       <div style={{ padding: 16, minWidth: 400 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#e8f4ff', marginBottom: 12 }}>
           {t().detail.systemRequirements}
         </div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '120px 1fr',
-            gap: 0,
-            border: '1px solid #2a3a4a',
-            borderRadius: 8,
-            overflow: 'hidden',
-            background: 'rgba(13, 19, 28, 0.96)',
-          }}
-        >
-          {fields.map((f, i) => (
-            <div key={i} style={{ display: 'contents' }}>
-              <div
-                style={{
-                  padding: '8px 12px',
-                  borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : undefined,
-                  color: '#9db0c4',
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
-                {f.label}
+
+        {hasFields ? (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '120px 1fr',
+              gap: 0,
+              border: '1px solid #2a3a4a',
+              borderRadius: 8,
+              overflow: 'hidden',
+              background: 'rgba(13, 19, 28, 0.96)',
+            }}
+          >
+            {fields.map((f, i) => (
+              <div key={i} style={{ display: 'contents' }}>
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : undefined,
+                    color: '#9db0c4',
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  {f.label}
+                </div>
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : undefined,
+                    borderLeft: '1px solid rgba(255,255,255,0.04)',
+                    color: '#e8f4ff',
+                    fontSize: 12,
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {f.value}
+                </div>
               </div>
-              <div
-                style={{
-                  padding: '8px 12px',
-                  borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : undefined,
-                  borderLeft: '1px solid rgba(255,255,255,0.04)',
-                  color: '#e8f4ff',
-                  fontSize: 12,
-                  wordBreak: 'break-word',
-                }}
-              >
-                {f.value}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        ) : (
+          <div
+            style={{
+              padding: '12px 16px',
+              border: '1px solid #2a3a4a',
+              borderRadius: 8,
+              background: 'rgba(13, 19, 28, 0.96)',
+              color: '#9db0c4',
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}
+          >
+            {t().detail.noGameRequirementsFound}
+          </div>
+        )}
+
+        <div style={{ marginTop: 14 }}>
+          <DialogButton
+            onClick={() => Navigation.NavigateToExternalWeb(pcgwUrl)}
+            style={{ fontSize: 12, padding: '6px 10px', minHeight: 0 }}
+          >
+            {t().detail.viewOnPCGamingWiki}
+          </DialogButton>
         </div>
       </div>
     </ModalRoot>
@@ -449,10 +481,12 @@ function HardwareCompareModal({
   closeModal,
   report,
   sysInfo,
+  appName,
 }: {
   closeModal?: () => void;
   report: DisplayReportCard;
   sysInfo: SystemInfo | null;
+  appName?: string;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [gameMinRamGb, setGameMinRamGb] = useState<number | null>(null);
@@ -479,10 +513,7 @@ function HardwareCompareModal({
   };
 
   const handleOpenSystemRequirements = () => {
-    if (!reqFields || reqFields.length === 0) {
-      throw new Error('System requirements are not available for this report.');
-    }
-    showModal(<SystemRequirementsModal fields={reqFields} />);
+    showModal(<SystemRequirementsModal fields={reqFields} appName={appName} />);
   };
 
   // confidence score for this report (same as the card shows)
@@ -502,9 +533,6 @@ function HardwareCompareModal({
   }), [report]);
 
   useEffect(() => registerScreenshotAutomationHandler('manage-game/report-detail/system-requirements', async () => {
-    if (!reqFields || reqFields.length === 0) {
-      throw new Error('System requirements are not available for the screenshot.');
-    }
     handleOpenSystemRequirements();
   }), [report, reqFields]);
 
@@ -603,14 +631,12 @@ function HardwareCompareModal({
           >
             {t().detail.matchingGuideButton}
           </DialogButton>
-          {reqFields && reqFields.length > 0 && (
-            <DialogButton
-              onClick={handleOpenSystemRequirements}
-              style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
-            >
-              {t().detail.systemRequirements}
-            </DialogButton>
-          )}
+          <DialogButton
+            onClick={handleOpenSystemRequirements}
+            style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
+          >
+            {t().detail.systemRequirements}
+          </DialogButton>
           <DialogButton
             onClick={closeModal}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
@@ -994,6 +1020,7 @@ export function ReportDetailModal({
       <HardwareCompareModal
         report={report}
         sysInfo={sysInfo}
+        appName={appName}
       />,
     );
   };

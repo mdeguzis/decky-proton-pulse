@@ -129,6 +129,8 @@ export const ru: TranslationTree = {
     unknownGpu: 'Неизвестный GPU',
     ram: 'ОЗУ',
     systemRequirements: 'Системные требования',
+    noGameRequirementsFound: 'No system requirements found from the Steam Store for this game.',
+    viewOnPCGamingWiki: 'View on PCGamingWiki',
     matchingGuideTitle: 'Как работает сравнение',
     matchingGuideButton: 'Руководство по сравнению',
   },

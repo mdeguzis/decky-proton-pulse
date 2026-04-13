@@ -105,6 +105,8 @@ export const ko: TranslationTree = {
     unknownGpu: '알 수 없는 GPU',
     ram: 'RAM',
     systemRequirements: '시스템 요구 사항',
+    noGameRequirementsFound: 'No system requirements found from the Steam Store for this game.',
+    viewOnPCGamingWiki: 'View on PCGamingWiki',
     matchingGuideTitle: '매칭 방식 안내',
     matchingGuideButton: '매칭 가이드',
   },

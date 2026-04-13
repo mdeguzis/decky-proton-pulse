@@ -105,6 +105,8 @@ export const zhCN: TranslationTree = {
     unknownGpu: '未知 GPU',
     ram: '内存',
     systemRequirements: '系统要求',
+    noGameRequirementsFound: 'No system requirements found from the Steam Store for this game.',
+    viewOnPCGamingWiki: 'View on PCGamingWiki',
     matchingGuideTitle: '匹配规则说明',
     matchingGuideButton: '匹配指南',
   },
