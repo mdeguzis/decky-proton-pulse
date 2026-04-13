@@ -42,6 +42,9 @@ echo "Building plugin..."
 pnpm build
 
 echo ""
+echo "=== Configuring git hooks ==="
+git config core.hooksPath .githooks
+
 echo "=== Build complete ==="
 echo ""
 echo "To deploy to your Steam Deck (set DECK_IP first):"
