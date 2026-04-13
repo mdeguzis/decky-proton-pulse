@@ -64,11 +64,21 @@ def _parse_requirements_fields(html: str) -> list[dict[str, str]]:
     return fields
 
 
+def _find_field(fields: list[dict[str, str]], *labels: str) -> str | None:
+    """Return the value of the first field whose label matches (case-insensitive)."""
+    for f in fields:
+        if f['label'].lower() in labels:
+            return f['value']
+    return None
+
+
 def get_game_requirements(app_id: str) -> dict[str, Any]:
     """Fetch and cache minimum system requirements for a Steam game.
 
     Returns a dict with:
       min_ram_gb: int | None       -- minimum RAM in GB, or None if unparseable
+      min_cpu: str | None          -- minimum CPU string, or None
+      min_gpu: str | None          -- minimum GPU string, or None
       raw_minimum: str | None      -- the raw HTML minimum requirements string
       fields: list[dict] | None    -- parsed [{label, value}, ...] pairs
     """
@@ -77,6 +87,8 @@ def get_game_requirements(app_id: str) -> dict[str, Any]:
 
     result: dict[str, Any] = {
         'min_ram_gb': None,
+        'min_cpu': None,
+        'min_gpu': None,
         'raw_minimum': None,
         'fields': None,
     }
@@ -101,10 +113,16 @@ def get_game_requirements(app_id: str) -> dict[str, Any]:
         if minimum_html:
             result['raw_minimum'] = minimum_html
             result['min_ram_gb'] = _parse_min_ram_gb(minimum_html)
-            result['fields'] = _parse_requirements_fields(minimum_html)
+            fields = _parse_requirements_fields(minimum_html)
+            result['fields'] = fields
+            result['min_cpu'] = _find_field(fields, 'processor', 'cpu')
+            result['min_gpu'] = _find_field(fields, 'graphics', 'gpu', 'video')
 
         decky.logger.debug(
-            f'Game requirements for {app_id}: min_ram={result["min_ram_gb"]}GB'
+            f'Game requirements for {app_id}: '
+            f'min_ram={result["min_ram_gb"]}GB '
+            f'min_cpu={result["min_cpu"]} '
+            f'min_gpu={result["min_gpu"]}'
         )
     except Exception as exc:
         decky.logger.warning(f'Failed to fetch game requirements for {app_id}: {exc}')

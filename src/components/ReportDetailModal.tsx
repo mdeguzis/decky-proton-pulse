@@ -137,6 +137,8 @@ interface GameReqField {
 
 interface GameReqResponse {
   min_ram_gb: number | null;
+  min_cpu: string | null;
+  min_gpu: string | null;
   fields: GameReqField[] | null;
 }
 
@@ -490,6 +492,8 @@ function HardwareCompareModal({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [gameMinRamGb, setGameMinRamGb] = useState<number | null>(null);
+  const [gameMinCpu, setGameMinCpu] = useState<string | null>(null);
+  const [gameMinGpu, setGameMinGpu] = useState<string | null>(null);
   const [reqFields, setReqFields] = useState<GameReqField[] | null>(null);
 
   useEffect(() => {
@@ -497,6 +501,8 @@ function HardwareCompareModal({
     getGameRequirements(report.appId)
       .then((reqs) => {
         setGameMinRamGb(reqs.min_ram_gb);
+        setGameMinCpu(reqs.min_cpu);
+        setGameMinGpu(reqs.min_gpu);
         setReqFields(reqs.fields ?? null);
       })
       .catch(() => {}); // silently fall back to no game requirements
@@ -504,9 +510,9 @@ function HardwareCompareModal({
 
   const systemRam = sysInfo?.ram_gb ? `${sysInfo.ram_gb} GB` : '-';
   const systemGpuTier = sysInfo?.gpu_vendor ? sysInfo.gpu_vendor.toUpperCase() : '-';
-  const hardwareMatchPercent = getHardwareMatchPercent(report, sysInfo, gameMinRamGb);
+  const hardwareMatchPercent = getHardwareMatchPercent(report, sysInfo, gameMinRamGb, gameMinCpu, gameMinGpu);
   const matchBadgeStyle = getHardwareMatchBadgeStyle(hardwareMatchPercent);
-  const breakdown = getHardwareMatchBreakdown(report, sysInfo, gameMinRamGb);
+  const breakdown = getHardwareMatchBreakdown(report, sysInfo, gameMinRamGb, gameMinCpu, gameMinGpu);
 
   const handleOpenMatchingGuide = () => {
     showModal(<MatchingRulesModal />);

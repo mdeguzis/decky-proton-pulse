@@ -298,6 +298,8 @@ export function getHardwareMatchPercent(
   report: CdnReport,
   sysInfo: SystemInfo | null,
   gameMinRamGb?: number | null,
+  _gameMinCpu?: string | null,
+  _gameMinGpu?: string | null,
 ): number {
   if (!sysInfo) return 0;
 
@@ -472,7 +474,7 @@ function extractGpuGeneration(vendorGroup: string, modelTokens: string[]): numbe
   return null;
 }
 
-function gpuFieldMatch(reportGpu: string, systemGpu: string): number {
+function gpuFieldMatch(reportGpu: string, systemGpu: string, gameMinGpu?: string | null): number {
   if (!reportGpu || !systemGpu) return 0;
 
   const rTokens = normalizeGpuTokens(reportGpu);
@@ -530,6 +532,17 @@ function gpuFieldMatch(reportGpu: string, systemGpu: string): number {
       // 1 gen apart: -5, 2 gens: -12, 3+ gens: -20
       const penalty = genDiff === 1 ? 5 : genDiff === 2 ? 12 : 20;
       score = Math.max(0, score - penalty);
+    }
+  }
+
+  // game-aware boost: if both report and system GPU share a vendor with the
+  // game's minimum requirement, boost confidence
+  if (gameMinGpu && rVG) {
+    const gTokens = normalizeGpuTokens(gameMinGpu);
+    const gVendor = gTokens.find(t => vendorKeywords.includes(t));
+    const gVG = vendorGroup(gVendor);
+    if (gVG && rVG === gVG && sVG === gVG) {
+      score = Math.max(score, 80);
     }
   }
 
@@ -675,7 +688,7 @@ const CPU_SYNONYMS: Record<string, string> = {
   'cpu': '',
 };
 
-function cpuFieldMatch(reportCpu: string, systemCpu: string): number {
+function cpuFieldMatch(reportCpu: string, systemCpu: string, gameMinCpu?: string | null): number {
   if (!reportCpu || !systemCpu) return 0;
 
   // tokenize and clean both strings
@@ -706,7 +719,19 @@ function cpuFieldMatch(reportCpu: string, systemCpu: string): number {
   const ratio = matches / maxTokens;
 
   // 30 base for brand match, up to 70 more from token overlap
-  return Math.round(30 + ratio * 70);
+  let score = Math.round(30 + ratio * 70);
+
+  // game-aware boost: if both report and system CPU share a brand with the
+  // game's minimum requirement, boost confidence (both "meet" the game's need)
+  if (gameMinCpu) {
+    const gTokens = tokenize(gameMinCpu);
+    const gBrand = gTokens.find(t => brands.includes(t));
+    if (gBrand && rBrand === gBrand && sBrand === gBrand) {
+      score = Math.max(score, 80);
+    }
+  }
+
+  return score;
 }
 
 function ramFieldMatch(reportRam: string, systemRamGb: number | null, gameMinRamGb?: number | null): number {
@@ -736,15 +761,17 @@ export function getHardwareMatchBreakdown(
   report: CdnReport,
   sysInfo: SystemInfo | null,
   gameMinRamGb?: number | null,
+  gameMinCpu?: string | null,
+  gameMinGpu?: string | null,
 ): HardwareMatchBreakdown {
   if (!sysInfo) {
     const empty: FieldMatchInfo = { percent: 0, color: matchColor(0) };
     return { gpu: empty, gpuDriver: empty, cpu: empty, os: empty, kernel: empty, ram: empty, protonVersion: empty };
   }
 
-  const gpu = gpuFieldMatch(report.gpu ?? '', sysInfo.gpu ?? '');
+  const gpu = gpuFieldMatch(report.gpu ?? '', sysInfo.gpu ?? '', gameMinGpu);
   const gpuDriver = driverFieldMatch(report.gpuDriver ?? '', sysInfo.driver_version ?? '');
-  const cpu = cpuFieldMatch(report.cpu ?? '', sysInfo.cpu ?? '');
+  const cpu = cpuFieldMatch(report.cpu ?? '', sysInfo.cpu ?? '', gameMinCpu);
   const os = osFieldMatch(report.os ?? '', sysInfo.distro ?? '');
   const kernel = kernelFieldMatch(report.kernel ?? '', sysInfo.kernel ?? '');
   const ram = ramFieldMatch(report.ram ?? '', sysInfo.ram_gb, gameMinRamGb);

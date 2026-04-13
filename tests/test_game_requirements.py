@@ -69,13 +69,13 @@ def test_get_game_requirements_handles_missing_or_list_requirements() -> None:
     no_success = {app_id: {"success": False}}
     with patch("lib.game_requirements.curl_json", return_value=no_success):
         result = game_requirements.get_game_requirements(app_id)
-    assert result == {"min_ram_gb": None, "raw_minimum": None, "fields": None}
+    assert result == {"min_ram_gb": None, "min_cpu": None, "min_gpu": None, "raw_minimum": None, "fields": None}
 
     game_requirements._cache.clear()
     list_payload = {app_id: {"success": True, "data": {"pc_requirements": []}}}
     with patch("lib.game_requirements.curl_json", return_value=list_payload):
         result = game_requirements.get_game_requirements(app_id)
-    assert result == {"min_ram_gb": None, "raw_minimum": None, "fields": None}
+    assert result == {"min_ram_gb": None, "min_cpu": None, "min_gpu": None, "raw_minimum": None, "fields": None}
 
 
 def test_get_game_requirements_handles_exception_and_logs_warning() -> None:
@@ -85,5 +85,27 @@ def test_get_game_requirements_handles_exception_and_logs_warning() -> None:
     ):
         result = game_requirements.get_game_requirements("789")
 
-    assert result == {"min_ram_gb": None, "raw_minimum": None, "fields": None}
+    assert result == {"min_ram_gb": None, "min_cpu": None, "min_gpu": None, "raw_minimum": None, "fields": None}
     warning.assert_called_once()
+
+
+def test_get_game_requirements_extracts_cpu_and_gpu() -> None:
+    app_id = "1151640"
+    html = (
+        "<strong>Processor:</strong> Intel Core i5-2500K@3.3GHz or AMD FX 6300@3.5GHz<br>"
+        "<strong>Memory:</strong> 8 GB RAM<br>"
+        "<strong>Graphics:</strong> Nvidia GeForce GTX 780 (3 GB) or AMD Radeon R9 290 (4GB)<br>"
+    )
+    payload = {
+        app_id: {
+            "success": True,
+            "data": {"pc_requirements": {"minimum": html}},
+        }
+    }
+
+    with patch("lib.game_requirements.curl_json", return_value=payload):
+        result = game_requirements.get_game_requirements(app_id)
+
+    assert result["min_ram_gb"] == 8
+    assert result["min_cpu"] == "Intel Core i5-2500K@3.3GHz or AMD FX 6300@3.5GHz"
+    assert result["min_gpu"] == "Nvidia GeForce GTX 780 (3 GB) or AMD Radeon R9 290 (4GB)"

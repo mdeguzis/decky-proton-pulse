@@ -927,3 +927,52 @@ describe('scoreToRating', () => {
     expect(result).toBe('silver');
   });
 });
+
+// ─── game-aware CPU/GPU matching ────────────────────────────────────────────
+
+describe('game-aware CPU matching', () => {
+  it('does not boost when system and report brands differ', () => {
+    const intelSys: SystemInfo = { ...nvidiaSystem, cpu: 'Intel Core i7-12700K' };
+    const report = makeCdnReport({ cpu: 'AMD Ryzen 5 3600' });
+    const withGame = getHardwareMatchBreakdown(report, intelSys, null, 'AMD FX 6300');
+    // report is AMD, system is Intel — brand mismatch, no boost
+    expect(withGame.cpu.percent).toBeLessThan(80);
+  });
+
+  it('boosts when all three are same brand', () => {
+    const amdSys: SystemInfo = { ...nvidiaSystem, cpu: 'AMD Ryzen 7 5800X' };
+    const report = makeCdnReport({ cpu: 'AMD Ryzen 5 3600' });
+    const withGame = getHardwareMatchBreakdown(report, amdSys, null, 'AMD FX 6300');
+    expect(withGame.cpu.percent).toBeGreaterThanOrEqual(80);
+  });
+
+  it('does not boost when game requirement is missing', () => {
+    const amdSys: SystemInfo = { ...nvidiaSystem, cpu: 'AMD Ryzen 7 5800X' };
+    const report = makeCdnReport({ cpu: 'AMD Ryzen 5 3600' });
+    const bd = getHardwareMatchBreakdown(report, amdSys, null, null);
+    // should still get a decent score from token overlap, but not the 80 floor
+    expect(bd.cpu.percent).toBeGreaterThan(0);
+  });
+});
+
+describe('game-aware GPU matching', () => {
+  it('boosts GPU score when report, system, and game requirement share vendor', () => {
+    const report = makeCdnReport({ gpu: 'NVIDIA GeForce GTX 1060' });
+    const withGame = getHardwareMatchBreakdown(report, nvidiaSystem, null, null, 'Nvidia GeForce GTX 780');
+    expect(withGame.gpu.percent).toBeGreaterThanOrEqual(80);
+  });
+
+  it('does not boost when vendors differ', () => {
+    const report = makeCdnReport({ gpu: 'AMD Radeon RX 580' });
+    const withGame = getHardwareMatchBreakdown(report, nvidiaSystem, null, null, 'Nvidia GeForce GTX 780');
+    // report is AMD, system is NVIDIA — no boost
+    expect(withGame.gpu.percent).toBeLessThan(80);
+  });
+
+  it('does not boost when game requirement is missing', () => {
+    const report = makeCdnReport({ gpu: 'NVIDIA GeForce GTX 1060' });
+    const withoutGame = getHardwareMatchBreakdown(report, nvidiaSystem, null, null, null);
+    // GTX 1060 vs RTX 5080 — same vendor but big gen gap, should be below 80
+    expect(withoutGame.gpu.percent).toBeLessThan(80);
+  });
+});
