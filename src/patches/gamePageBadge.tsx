@@ -84,6 +84,8 @@ function findContainer(ret: ReactElement | undefined) {
     console.log(
       '[ProtonPulse] gamePageBadge: appDetailsClasses lookup missed, fell back to fuzzy match',
     );
+  } else {
+    console.warn('[ProtonPulse] gamePageBadge: findContainer — both strategies failed; appDetailsClasses.InnerContainer=', appDetailsClasses?.InnerContainer);
   }
   return node;
 }
@@ -125,11 +127,13 @@ export function patchGamePageBadge(): ReturnType<typeof routerHook.addPatch> {
           },
         ],
         (_: Array<unknown>, ret?: ReactElement) => {
-          if (!getSetting('showGamePageBadge', false)) return ret;
+          const badgeEnabled = getSetting('showGamePageBadge', false);
+          console.log('[ProtonPulse] gamePageBadge: patcher fired, badgeEnabled=', badgeEnabled, 'path=', globalThis.location?.pathname);
+          if (!badgeEnabled) return ret;
 
           const container = findContainer(ret);
-          if (typeof container !== 'object') {
-            console.warn('[ProtonPulse] gamePageBadge: InnerContainer not found');
+          if (container == null) {
+            console.warn('[ProtonPulse] gamePageBadge: InnerContainer not found (container is null/undefined)');
             return ret;
           }
 
@@ -137,13 +141,20 @@ export function patchGamePageBadge(): ReturnType<typeof routerHook.addPatch> {
             globalThis.location?.pathname?.match(/\/library\/app\/(\d+)/)?.[1] ?? '0',
             10,
           );
-          if (!appId) return ret;
+          console.log('[ProtonPulse] gamePageBadge: appId=', appId, 'container className=', container?.props?.className);
+          if (!appId) {
+            console.warn('[ProtonPulse] gamePageBadge: could not parse appId from path');
+            return ret;
+          }
 
           // Prevent duplicate injection
           const children = container.props.children as any[];
-          if (children.some((c: any) => c?.props?.id === BADGE_ID)) return ret;
+          const alreadyInjected = children.some((c: any) => c?.props?.id === BADGE_ID);
+          console.log('[ProtonPulse] gamePageBadge: children.length=', children.length, 'alreadyInjected=', alreadyInjected);
+          if (alreadyInjected) return ret;
 
           children.splice(1, 0, <BadgeIcon appId={appId} />);
+          console.log('[ProtonPulse] gamePageBadge: badge injected for appId=', appId);
           return ret;
         },
       );

@@ -322,4 +322,96 @@ describe('playtime', () => {
     expect(await getConfigPlaytimeTotals('123')).toEqual({});
     expect(await getConfigPlaytimeTotals('123')).toEqual({});
   });
+
+  it('startSessionTracking is a no-op when already running', async () => {
+    const { startSessionTracking, stopSessionTracking } = await import('./playtime');
+
+    startSessionTracking();
+    startSessionTracking(); // second call hits "if (pollTimer) return"
+    await flushAsyncWork();
+
+    stopSessionTracking();
+    // no errors thrown, mockRestRequest not called (no tracked game)
+    expect(mockRestRequest).not.toHaveBeenCalled();
+  });
+
+  it('getConfigPlaytimeTotals handles non-Error throws in catch', async () => {
+    // throw a plain string (not an Error instance) to cover String(err) branch
+    mockRestRequest.mockRejectedValueOnce('connection reset');
+
+    const { getConfigPlaytimeTotals } = await import('./playtime');
+    await expect(getConfigPlaytimeTotals('123')).resolves.toEqual({});
+  });
+
+  it('uses protondb as source fallback when config.source is undefined (initial insert)', async () => {
+    const runningApps = vi.fn().mockReturnValue([{ appid: 999 }]);
+    (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
+      GameSessions: { GetRunningApps: runningApps },
+    };
+    // source=undefined: hits ?? 'protondb' on both initial insert (line 74) and fallback insert (line 129)
+    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 999, source: undefined }));
+    mockRestRequest
+      .mockResolvedValueOnce({ data: null, error: 'insert failed', status: 500 }) // initial fails → rowId=null
+      .mockResolvedValueOnce({ data: null, error: null, status: 201 }); // fallback insert succeeds
+
+    const { startSessionTracking, stopSessionTracking } = await import('./playtime');
+    startSessionTracking();
+    await flushAsyncWork();
+
+    // verify initial insert body has source='protondb' (line 74 fallback)
+    const [, insertInit] = mockRestRequest.mock.calls[0];
+    expect(JSON.parse(String(insertInit?.body))).toMatchObject({ source: 'protondb' });
+
+    vi.advanceTimersByTime(61_000);
+    stopSessionTracking();
+    await flushAsyncWork();
+
+    // verify fallback insert body also has source='protondb' (line 129 fallback)
+    const [, fallbackInit] = mockRestRequest.mock.calls[1];
+    expect(JSON.parse(String(fallbackInit?.body))).toMatchObject({ source: 'protondb' });
+  });
+
+  it('buildConfigKey uses appName when profileName is empty', async () => {
+    const runningApps = vi.fn().mockReturnValue([{ appid: 888 }]);
+    (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
+      GameSessions: { GetRunningApps: runningApps },
+    };
+    // profileName='' falls back to appName in the || expression (line 30)
+    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 888, source: 'user' as const, profileName: '' }));
+    mockRestRequest.mockResolvedValueOnce({ data: [{ id: 1 }], error: null, status: 201 });
+
+    const { startSessionTracking, stopSessionTracking } = await import('./playtime');
+    startSessionTracking();
+    await flushAsyncWork();
+
+    const [, init] = mockRestRequest.mock.calls[0];
+    const body = JSON.parse(String(init?.body));
+    // empty profileName → appName is used → config_key = "custom:Test Game"
+    expect(body.config_key).toBe('custom:Test Game');
+
+    stopSessionTracking();
+    await flushAsyncWork();
+  });
+
+  it('getRunningAppIds handles entries with capital-A appId field', async () => {
+    // some Steam builds return { appId: N } (capital A) instead of { appid: N }
+    const runningApps = vi.fn().mockReturnValue([{ appId: 777 }]);
+    (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
+      GameSessions: { GetRunningApps: runningApps },
+    };
+    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 777 }));
+    mockRestRequest.mockResolvedValueOnce({ data: [{ id: 2 }], error: null, status: 201 });
+
+    const { startSessionTracking, stopSessionTracking } = await import('./playtime');
+    startSessionTracking();
+    await flushAsyncWork();
+
+    // app was detected and session started
+    expect(mockRestRequest).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(String(mockRestRequest.mock.calls[0][1]?.body));
+    expect(body.app_id).toBe('777');
+
+    stopSessionTracking();
+    await flushAsyncWork();
+  });
 });

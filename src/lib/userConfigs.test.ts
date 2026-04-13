@@ -187,4 +187,111 @@ describe('getMyConfig', () => {
     const { getMyConfig } = await import('./userConfigs');
     await expect(getMyConfig('20')).resolves.toBeNull();
   });
+
+  it('returns null when response data is null (200 with empty body)', async () => {
+    // 200 response with no body → payload=null → data=null → !data branch
+    fetchMock.mockResolvedValueOnce(new Response('', { status: 200 }));
+
+    const { getMyConfig } = await import('./userConfigs');
+    await expect(getMyConfig('20')).resolves.toBeNull();
+  });
+
+  it('returns null when fetch throws', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('network down'));
+
+    const { getMyConfig } = await import('./userConfigs');
+    await expect(getMyConfig('20')).resolves.toBeNull();
+  });
+});
+
+describe('validateUserConfig lower bound', () => {
+  it('rejects confidenceScore below 0', async () => {
+    const { validateUserConfig } = await import('./userConfigs');
+    expect(validateUserConfig({ ...validInput(), confidenceScore: -1 })).toMatch(/confidenceScore/i);
+  });
+});
+
+describe('submitUserConfig optional field fallbacks', () => {
+  it('uses defaults when optional fields are omitted', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+    const { submitUserConfig } = await import('./userConfigs');
+    // omit all optional fields — each ?? fallback must be covered
+    const result = await submitUserConfig({
+      appId: '20',
+      title: 'Team Fortress Classic',
+      cpu: 'Intel Core i5-6600K',
+      gpu: 'NVIDIA GeForce GTX 980 Ti',
+      ram: '16 GB',
+      os: 'SteamOS 3.6',
+      protonVersion: 'Proton 9.0-4',
+      rating: 'gold',
+    });
+
+    expect(result.ok).toBe(true);
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(body).toMatchObject({
+      gpu_driver: '',
+      gpu_vendor: 'other',
+      kernel: '',
+      duration: 'unreported',
+      notes: '',
+      launch_options: '',
+      enabled_vars: {},
+      confidence_score: null,
+      source: 'user',
+      vram_mb: null,
+      cpu_cores: null,
+      display_resolution: null,
+      steam_deck_model: null,
+    });
+  });
+});
+
+describe('submitUserConfig cooldown', () => {
+  it('blocks a second submit within the cooldown window', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+    const { submitUserConfig } = await import('./userConfigs');
+    const first = await submitUserConfig(validInput());
+    expect(first.ok).toBe(true);
+
+    // immediate second call hits the SUBMIT_COOLDOWN_MS guard
+    const second = await submitUserConfig(validInput());
+    expect(second.ok).toBe(false);
+    expect(second.error).toMatch(/cooldown/i);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('getUserConfigs error paths', () => {
+  it('returns empty array when fetch throws', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('offline'));
+
+    const { getUserConfigs } = await import('./userConfigs');
+    await expect(getUserConfigs('20')).resolves.toEqual([]);
+  });
+});
+
+describe('restRequest non-object error payload', () => {
+  it('returns HTTP status fallback when error body is empty', async () => {
+    // empty body on a 400 response → payload=null → non-object path → "HTTP 400"
+    fetchMock.mockResolvedValueOnce(new Response('', { status: 400 }));
+
+    const { submitUserConfig } = await import('./userConfigs');
+    const result = await submitUserConfig(validInput());
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/HTTP 400/);
+  });
+});
+
+describe('submitUserConfig fetch throws', () => {
+  it('returns error when fetch throws during submit', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('connection refused'));
+
+    const { submitUserConfig } = await import('./userConfigs');
+    const result = await submitUserConfig(validInput());
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('connection refused');
+  });
 });

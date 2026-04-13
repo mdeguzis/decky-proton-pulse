@@ -464,3 +464,73 @@ describe('getProtonDBReports', () => {
     expect(result.diagnostics.liveSummaryStatus).toBe(404);
   });
 });
+
+// ─── protondb catch path coverage ─────────────────────────────────────────────
+// These tests mock cdnCache directly so cachedFetchJson can throw, exercising
+// the inner year-file catch (lines 449-458) and outer index catch (lines 485-499).
+
+describe('protondb cdnCache throw paths', () => {
+  it('handles a year file cachedFetchJson throwing a non-Error (String(error) branch)', async () => {
+    vi.resetModules();
+
+    const cachedFetchJsonMock = vi.fn();
+    vi.doMock('./cdnCache', () => ({ cachedFetchJson: cachedFetchJsonMock }));
+    vi.doMock('@decky/api', () => ({
+      fetchNoCors: vi.fn(),
+      callable: vi.fn(() => vi.fn().mockResolvedValue(true)),
+    }));
+    vi.doMock('./cache', () => ({ getCached: vi.fn(() => null), setCache: vi.fn() }));
+    vi.doMock('./metrics', () => ({
+      startDetailedSpan: vi.fn(() => ({ end: vi.fn() })),
+      countFetch: vi.fn(),
+    }));
+
+    // index fetch succeeds, year file throws a plain string (not Error)
+    cachedFetchJsonMock
+      .mockResolvedValueOnce({ data: ['2023'], fromCache: false })
+      .mockRejectedValueOnce('plain string error');
+
+    // fallback fetch calls
+    const { fetchNoCors } = await import('@decky/api');
+    (fetchNoCors as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(makeResponse(200, { reports: 5, timestamp: 1775704890 }))
+      .mockResolvedValueOnce(makeResponse(200, fakeLiveDetailedPayload));
+
+    const { getProtonDBReportsWithDiagnostics } = await import('./protondb');
+    const result = await getProtonDBReportsWithDiagnostics('730');
+
+    // year threw, no cdn reports → falls back to live
+    expect(result.diagnostics.yearStatuses['2023']).toBeNull();
+  });
+
+  it('handles the outer index cachedFetchJson throwing a non-Error (String(error) branch)', async () => {
+    vi.resetModules();
+
+    const cachedFetchJsonMock = vi.fn();
+    vi.doMock('./cdnCache', () => ({ cachedFetchJson: cachedFetchJsonMock }));
+    vi.doMock('@decky/api', () => ({
+      fetchNoCors: vi.fn(),
+      callable: vi.fn(() => vi.fn().mockResolvedValue(true)),
+    }));
+    vi.doMock('./cache', () => ({ getCached: vi.fn(() => null), setCache: vi.fn() }));
+    vi.doMock('./metrics', () => ({
+      startDetailedSpan: vi.fn(() => ({ end: vi.fn() })),
+      countFetch: vi.fn(),
+    }));
+
+    // index fetch throws a plain string (not Error) → outer catch at lines 485-499
+    cachedFetchJsonMock.mockRejectedValueOnce('index network reset');
+
+    // fallback fetch calls after the outer catch triggers fallbackToLiveSummary
+    const { fetchNoCors } = await import('@decky/api');
+    (fetchNoCors as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(makeResponse(200, { reports: 5, timestamp: 1775704890 }))
+      .mockResolvedValueOnce(makeResponse(200, fakeLiveDetailedPayload));
+
+    const { getProtonDBReportsWithDiagnostics } = await import('./protondb');
+    const result = await getProtonDBReportsWithDiagnostics('730');
+
+    // outer catch hit, fell back to live
+    expect(result.diagnostics.source).toMatch(/^live-/);
+  });
+});

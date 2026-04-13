@@ -175,6 +175,20 @@ describe('getSummaryText', () => {
     expect(text).toContain('Cache hit rate:   66.7%');
     expect(text).toContain('Non-Steam local:  0');
   });
+
+  it('shows "n/a" hit rate when no cache operations have been recorded', () => {
+    // after reset: cacheHits=0, cacheMisses=0 → the false branch of the hitRate ternary
+    const text = getSummaryText();
+    expect(text).toContain('Cache hit rate:   n/a%');
+  });
+
+  it('includes error count in timing category lines', () => {
+    // record a span that ends with failure → errorCount > 0 → shows "(N errors)"
+    const span = startDetailedSpan('fetch-cdn-index', '730');
+    span.end(false, { reason: 'timeout' });
+    const text = getSummaryText();
+    expect(text).toMatch(/fetch-cdn-index:.*\(1 errors\)/);
+  });
 });
 
 describe('flush and timers', () => {

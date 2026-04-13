@@ -1038,3 +1038,26 @@ describe('VRAM in GPU scoring', () => {
     expect(bdClose.gpu.percent).toBeGreaterThan(bd.gpu.percent);
   });
 });
+
+// ── kernel major diff > 1 ───────────────────────────────────────────────────
+
+describe('kernelFieldMatch distant major', () => {
+  it('kernel: 2+ major versions apart gives 15%', () => {
+    // nvidiaSystem kernel is 6.19.8; report kernel 4.14.0 → diff=2, no valve build → return 15
+    const report = makeCdnReport({ kernel: '4.14.0' });
+    const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
+    expect(bd.kernel.percent).toBe(15);
+  });
+});
+
+// ── ram shortfall > 8 below game minimum ───────────────────────────────────
+
+describe('ramFieldMatch shortfall > 8 below game minimum', () => {
+  it('ram: shortfall > 8 GB below game minimum gives 25%', () => {
+    // report has 32 GB (meets game min of 16), but system only has 4 GB (shortfall=12 > 8)
+    const sys4: SystemInfo = { ...nvidiaSystem, ram_gb: 4 };
+    const report = makeCdnReport({ ram: '32 GB' });
+    const bd = getHardwareMatchBreakdown(report, sys4, 16);
+    expect(bd.ram.percent).toBe(25);
+  });
+});

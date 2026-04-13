@@ -264,6 +264,14 @@ describe('fetchExistingVote error path', () => {
     const { getUserVote } = await import('./voting');
     await expect(getUserVote('42', 'report-x')).resolves.toBeNull();
   });
+
+  it('returns null when response is 200 but data is null (empty body)', async () => {
+    // 200 with empty body → payload=null → data=null → !result.data branch
+    fetchMock.mockResolvedValueOnce(new Response('', { status: 200 }));
+
+    const { getUserVote } = await import('./voting');
+    await expect(getUserVote('42', 'report-x')).resolves.toBeNull();
+  });
 });
 
 describe('isVoteCooldownActive', () => {
