@@ -6,6 +6,10 @@ All notable changes to Proton Pulse should be recorded here.
 
 - No unreleased changes yet.
 
+## v0.8.2
+
+- feat: polish report detail and install progress UX
+
 ## v0.5.0
 
 - autogen changelog
