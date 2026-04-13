@@ -43,10 +43,16 @@ export function buildMatchingRules(): RuleSection[] {
         'Vendor mismatch (NVIDIA vs AMD) immediately gives 10%. '
         + 'Same vendor: 40 pts base + up to 60 pts from model token overlap. '
         + 'Cross-generation penalty applied after: −5 pts (1 gen apart), −12 pts (2 gens), −20 pts (3+ gens). '
-        + 'Noise tokens (LLVM, DRM, kernel version) are stripped before comparison.',
+        + 'Noise tokens (LLVM, DRM, kernel version) are stripped before comparison. '
+        + 'VRAM is estimated from a built-in lookup table (~80 GPU models). '
+        + 'When game minimum requirements include a VRAM figure and both GPUs meet it, score is boosted to 85%. '
+        + 'An 8+ GB VRAM gap between report and system GPUs applies a −5 penalty (only when no game-aware boost is active). '
+        + 'When game requirements are available and all three GPUs (report, system, game min) share the same vendor, score is boosted to at least 80%.',
       tiers: [
-        { label: '≥ 80% — green', note: 'Same vendor + strong model overlap + same generation' },
-        { label: '40–79% — amber', note: 'Same vendor, partial overlap or adjacent generation' },
+        { label: '≥ 85% — green', note: 'Both GPUs meet game minimum VRAM requirement' },
+        { label: '≥ 80% — green', note: 'Same vendor as game requirement + report + system' },
+        { label: '≥ 60% — green', note: 'Same vendor + strong model overlap + same generation' },
+        { label: '35–59% — amber', note: 'Same vendor, partial overlap or adjacent generation' },
         { label: '10% — red', note: 'Different vendor' },
         { label: '0%', note: 'GPU string missing' },
       ],
@@ -56,10 +62,11 @@ export function buildMatchingRules(): RuleSection[] {
       description:
         'Compares major driver version numbers. Mesa strings with an OpenGL prefix '
         + '("4.6 (Compatibility Profile) Mesa 22.2.0") correctly extract the Mesa major (22), '
-        + 'not the OpenGL version.',
+        + 'not the OpenGL version. '
+        + 'Color thresholds: green ≥ 60%, amber ≥ 35%.',
       tiers: [
         { label: '100% — green', note: 'Same major driver version' },
-        { label: '75% — amber', note: 'Within 2 major versions' },
+        { label: '75% — green', note: 'Within 2 major versions' },
         { label: '50% — amber', note: 'Within 5 major versions' },
         { label: '20% — red', note: 'More than 5 major versions apart' },
         { label: '0%', note: 'Driver string missing or unparseable' },
@@ -70,10 +77,11 @@ export function buildMatchingRules(): RuleSection[] {
       description:
         'Compares CPU brand (AMD vs Intel) and model name tokens. '
         + 'Noise words ("with", "Processor", "APU", "Graphics", trademark symbols) are stripped. '
-        + 'Brand mismatch immediately gives 10%.',
+        + 'Brand mismatch immediately gives 10%. '
+        + 'When game requirements are available and all three CPUs (report, system, game min) share the same brand, score is boosted to at least 80%.',
       tiers: [
-        { label: '≥ 80% — green', note: 'Same brand + high model token overlap' },
-        { label: '30–79% — amber', note: 'Same brand, 30 pts base + up to 70 pts from token overlap' },
+        { label: '≥ 80% — green', note: 'Same brand as game requirement + report + system, or high model token overlap' },
+        { label: '35–59% — amber', note: 'Same brand, 30 pts base + up to 70 pts from token overlap' },
         { label: '10% — red', note: 'Different brand (AMD vs Intel)' },
         { label: '0%', note: 'CPU string missing' },
       ],
@@ -83,7 +91,8 @@ export function buildMatchingRules(): RuleSection[] {
       description:
         'Detects distro family from the OS string. '
         + 'Known families: SteamOS/HoloISO · Fedora/Bazzite/Nobara · Arch/CachyOS/Manjaro/Garuda · '
-        + 'Ubuntu/Pop!_OS/Mint/Elementary · Debian · NixOS.',
+        + 'Ubuntu/Pop!_OS/Mint/Elementary · Debian · NixOS. '
+        + 'Color thresholds: green ≥ 80%, amber ≥ 50%.',
       tiers: [
         { label: '100% — green', note: 'Exact distro string match' },
         { label: '70% — amber', note: 'Same distro family (e.g. both Arch-based)' },
@@ -96,7 +105,8 @@ export function buildMatchingRules(): RuleSection[] {
       description:
         'Compares major.minor.patch kernel versions. '
         + 'Valve/neptune kernels (e.g. "5.13.0-valve36") use the Valve build number for comparison — '
-        + "both systems share Valve's downstream patches regardless of upstream version.",
+        + "both systems share Valve's downstream patches regardless of upstream version. "
+        + 'Color thresholds: green ≥ 80%, amber ≥ 50%.',
       tiers: [
         { label: '100% — green', note: 'Exact major.minor.patch' },
         { label: '95% — green', note: 'Both Valve kernels, same major.minor, build diff ≤ 5' },
@@ -113,7 +123,8 @@ export function buildMatchingRules(): RuleSection[] {
       description:
         'Compares reported RAM in GB. '
         + 'When game minimum requirements are fetched from the Steam Store API and both systems '
-        + 'exceed that minimum, the raw GB delta matters less — both rigs have enough for the game.',
+        + 'exceed that minimum, the raw GB delta matters less — both rigs have enough for the game. '
+        + 'Color thresholds: green ≥ 80%, amber ≥ 50%.',
       tiers: [
         { label: '100% — green', note: 'Within 2 GB' },
         { label: '85% — green', note: 'Both exceed game minimum, moderate delta (≤ 8 GB apart)' },
@@ -130,7 +141,8 @@ export function buildMatchingRules(): RuleSection[] {
         `Compares the major Proton version in the report vs your current build. `
         + `Formats parsed: GE-Proton9-7, Proton 9.0-4, cachyos-10.0-..., proton-7.0-6. `
         + `"Proton Experimental" and SteamLinuxRuntime have no parseable version → 0%. `
-        + `Same major also adds +${WEIGHTS.PROTON_MATCH} pts to the relevance score; adjacent major adds +${WEIGHTS.PROTON_CLOSE} pts.`,
+        + `Same major also adds +${WEIGHTS.PROTON_MATCH} pts to the relevance score; adjacent major adds +${WEIGHTS.PROTON_CLOSE} pts. `
+        + 'Color thresholds: green ≥ 60%, amber ≥ 35%.',
       tiers: [
         { label: '100% — green', note: 'Same major version (e.g. both Proton 9.x)' },
         { label: '70% — amber', note: 'Adjacent major version (e.g. 8 vs 9)' },
