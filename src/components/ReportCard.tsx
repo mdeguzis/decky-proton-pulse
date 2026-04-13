@@ -2,6 +2,7 @@
 import { Focusable } from '@decky/ui';
 import type { ScoredReport } from '../types';
 import { RATING_COLORS, buildNotesPreview, formatProtonLabel } from '../lib/reportFormatters';
+import { scoreToRating } from '../lib/scoring';
 import { t } from '../lib/i18n';
 
 export interface DisplayReportCard extends ScoredReport {
@@ -30,7 +31,8 @@ function confidenceColor(score: number): string {
 
 export function ReportCard({ report, selected, focused = false, systemGpuVendor, onSelect, onFocus, onUpvote }: Props) {
   const strings = t();
-  const ratingColor = RATING_COLORS[report.rating] ?? '#888';
+  const displayRating = scoreToRating(report.score);
+  const ratingColor = RATING_COLORS[displayRating] ?? '#888';
   const cappedScore = Math.min(100, report.score);
   const confScore = (cappedScore / 10).toFixed(1);
   const confColor = confidenceColor(cappedScore);
@@ -138,10 +140,9 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
               fontSize: 10,
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
-              opacity: gpuMismatch ? 0.5 : 1,
             }}
           >
-            {strings.ratings[report.rating]}
+            {(strings.ratings as Record<string, string>)[displayRating]}
           </span>
           <span style={{ fontSize: 11, color: gpuMismatch ? '#f59e0b' : '#d9e8f4' }}>
             {report.gpuTier.toUpperCase()}

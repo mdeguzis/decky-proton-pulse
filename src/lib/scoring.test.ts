@@ -1,6 +1,6 @@
 // src/lib/scoring.test.ts
 import { describe, it, expect } from 'vitest';
-import { scoreReport, bucketByGpuTier, parseNotesSentiment, parseProtonMajorVersion, getHardwareMatchPercent, getHardwareMatchBreakdown } from './scoring';
+import { scoreReport, bucketByGpuTier, parseNotesSentiment, parseProtonMajorVersion, getHardwareMatchPercent, getHardwareMatchBreakdown, scoreToRating } from './scoring';
 import type { CdnReport, SystemInfo } from '../types';
 
 const nvidiaSystem: SystemInfo = {
@@ -888,5 +888,42 @@ describe('getHardwareMatchBreakdown', () => {
     const bdOne = getHardwareMatchBreakdown(oneGen, sys4090);
     const bdTwo = getHardwareMatchBreakdown(twoGen, sys4090);
     expect(bdOne.gpu.percent).toBeGreaterThan(bdTwo.gpu.percent);
+  });
+});
+
+// ─── scoreToRating ──────────────────────────────────────────────────────────
+
+describe('scoreToRating', () => {
+  it('maps high scores to platinum', () => {
+    expect(scoreToRating(70)).toBe('platinum');
+    expect(scoreToRating(100)).toBe('platinum');
+  });
+
+  it('maps mid-high scores to gold', () => {
+    expect(scoreToRating(55)).toBe('gold');
+    expect(scoreToRating(69)).toBe('gold');
+  });
+
+  it('maps mid scores to silver', () => {
+    expect(scoreToRating(40)).toBe('silver');
+    expect(scoreToRating(54)).toBe('silver');
+  });
+
+  it('maps low scores to bronze', () => {
+    expect(scoreToRating(20)).toBe('bronze');
+    expect(scoreToRating(39)).toBe('bronze');
+  });
+
+  it('maps very low scores to borked', () => {
+    expect(scoreToRating(0)).toBe('borked');
+    expect(scoreToRating(19)).toBe('borked');
+  });
+
+  it('GPU-mismatched platinum report downgrades to silver or below', () => {
+    // A platinum recent report with GPU mismatch scores ~37-45
+    // which should map to silver or bronze, not platinum
+    const result = scoreToRating(45);
+    expect(result).not.toBe('platinum');
+    expect(result).toBe('silver');
   });
 });

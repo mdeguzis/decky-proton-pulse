@@ -811,6 +811,15 @@ export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredRepor
   };
 }
 
+/** Map a final confidence score to a display-tier rating. */
+export function scoreToRating(score: number): string {
+  if (score >= 70) return 'platinum';
+  if (score >= 55) return 'gold';
+  if (score >= 40) return 'silver';
+  if (score >= 20) return 'bronze';
+  return 'borked';
+}
+
 export function bucketByGpuTier(reports: ScoredReport[]): TieredReports {
   const buckets: TieredReports = { nvidia: [], amd: [], other: [] };
   for (const r of reports) {
