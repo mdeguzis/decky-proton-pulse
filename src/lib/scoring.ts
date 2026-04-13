@@ -433,10 +433,24 @@ function normalizeGpuTokens(gpu: string): string[] {
     .filter(t => !VERSION_PATTERN.test(t));  // drop embedded version strings
 }
 
-export function matchColor(pct: number): string {
-  if (pct >= 80) return '#4caf50';  // green
-  if (pct >= 50) return '#f59e0b';  // amber
-  return '#ef4444';                  // red
+type MatchField = 'gpu' | 'gpuDriver' | 'cpu' | 'os' | 'kernel' | 'ram' | 'protonVersion' | 'default';
+
+const FIELD_COLOR_THRESHOLDS: Record<MatchField, { green: number; amber: number }> = {
+  gpu:            { green: 60, amber: 35 },
+  gpuDriver:      { green: 60, amber: 35 },
+  cpu:            { green: 60, amber: 35 },
+  os:             { green: 80, amber: 50 },
+  kernel:         { green: 80, amber: 50 },
+  ram:            { green: 80, amber: 50 },
+  protonVersion:  { green: 60, amber: 35 },
+  default:        { green: 80, amber: 50 },
+};
+
+export function matchColor(pct: number, field?: MatchField): string {
+  const t = FIELD_COLOR_THRESHOLDS[field ?? 'default'];
+  if (pct >= t.green) return '#4caf50';  // green
+  if (pct >= t.amber) return '#f59e0b';  // amber
+  return '#ef4444';                       // red
 }
 
 // Extract a GPU generation bucket from model tokens for a given vendor.
@@ -778,13 +792,13 @@ export function getHardwareMatchBreakdown(
   const proton = protonVersionFieldMatch(report.protonVersion ?? '', sysInfo.proton_custom ?? '');
 
   return {
-    gpu: { percent: gpu, color: matchColor(gpu) },
-    gpuDriver: { percent: gpuDriver, color: matchColor(gpuDriver) },
-    cpu: { percent: cpu, color: matchColor(cpu) },
-    os: { percent: os, color: matchColor(os) },
-    kernel: { percent: kernel, color: matchColor(kernel) },
-    ram: { percent: ram, color: matchColor(ram) },
-    protonVersion: { percent: proton, color: matchColor(proton) },
+    gpu: { percent: gpu, color: matchColor(gpu, 'gpu') },
+    gpuDriver: { percent: gpuDriver, color: matchColor(gpuDriver, 'gpuDriver') },
+    cpu: { percent: cpu, color: matchColor(cpu, 'cpu') },
+    os: { percent: os, color: matchColor(os, 'os') },
+    kernel: { percent: kernel, color: matchColor(kernel, 'kernel') },
+    ram: { percent: ram, color: matchColor(ram, 'ram') },
+    protonVersion: { percent: proton, color: matchColor(proton, 'protonVersion') },
   };
 }
 

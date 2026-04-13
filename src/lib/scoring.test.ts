@@ -823,7 +823,7 @@ describe('getHardwareMatchBreakdown', () => {
     const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
     const bd = getHardwareMatchBreakdown(report, sys);
     expect(bd.protonVersion.percent).toBe(70);
-    expect(bd.protonVersion.color).toBe('#f59e0b');
+    expect(bd.protonVersion.color).toBe('#4caf50'); // green — 70% exceeds proton field threshold
   });
 
   it('proton: 1 major version apart with vanilla vs custom is slightly lower', () => {
