@@ -61,6 +61,7 @@ export const ptBR: TranslationTree = {
     hardwareUnavailable: 'Detalhes do hardware indisponíveis',
     editedBadge: 'Editado*',
     originalNotesInDetail: 'Abra o relatório completo para ler a nota original.',
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
   detail: {
     apply: 'Aplicar',

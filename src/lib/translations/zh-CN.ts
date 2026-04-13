@@ -61,6 +61,7 @@ export const zhCN: TranslationTree = {
     hardwareUnavailable: '硬件信息不可用',
     editedBadge: '已编辑*',
     originalNotesInDetail: '打开完整报告以查看原始备注。',
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
   detail: {
     apply: '应用',

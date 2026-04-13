@@ -93,6 +93,7 @@ export interface TranslationTree {
     hardwareUnavailable: string;
     editedBadge: string;
     originalNotesInDetail: string;
+    gpuMismatchBadgeHint: (gpuTier: string) => string;
   };
   detail: {
     apply: string;
@@ -535,6 +536,7 @@ export const en: TranslationTree = {
     hardwareUnavailable: 'Hardware details are unavailable',
     editedBadge: 'Edited*',
     originalNotesInDetail: 'Open the full report to read the original note.',
+    gpuMismatchBadgeHint: (gpuTier) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
   detail: {
     apply: 'Apply',

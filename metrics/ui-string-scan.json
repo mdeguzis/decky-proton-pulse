@@ -22,5 +22,13 @@
     "src/components/tabs/settingsTabProgress.ts",
     "src/patches/gameContextMenu.tsx"
   ],
-  "findings": []
+  "findings": [
+    {
+      "file": "src/components/tabs/ConfigureTab.tsx",
+      "line": 246,
+      "column": 13,
+      "kind": "jsx",
+      "text": "ProtonDB"
+    }
+  ]
 }

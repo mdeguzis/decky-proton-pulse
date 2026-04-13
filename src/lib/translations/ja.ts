@@ -61,6 +61,7 @@ export const ja: TranslationTree = {
     hardwareUnavailable: 'ハードウェア情報を取得できません',
     editedBadge: '編集済*',
     originalNotesInDetail: '元のメモは詳細レポートで確認できます。',
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
   detail: {
     apply: '適用',

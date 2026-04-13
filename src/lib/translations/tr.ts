@@ -61,6 +61,7 @@ export const tr: TranslationTree = {
     hardwareUnavailable: 'Donanım bilgileri kullanılamıyor',
     editedBadge: 'Düzenlendi*',
     originalNotesInDetail: 'Orijinal notu okumak için tam raporu açın.',
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
   detail: {
     apply: 'Uygula',

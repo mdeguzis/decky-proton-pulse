@@ -14,6 +14,7 @@ interface Props {
   report: DisplayReportCard;
   selected: boolean;
   focused?: boolean;
+  systemGpuVendor?: string | null;
   onSelect: (report: DisplayReportCard) => void;
   onFocus?: (report: DisplayReportCard) => void;
   onUpvote?: (report: DisplayReportCard) => void;
@@ -27,7 +28,7 @@ function confidenceColor(score: number): string {
   return '#f44336';
 }
 
-export function ReportCard({ report, selected, focused = false, onSelect, onFocus, onUpvote }: Props) {
+export function ReportCard({ report, selected, focused = false, systemGpuVendor, onSelect, onFocus, onUpvote }: Props) {
   const strings = t();
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
   const cappedScore = Math.min(100, report.score);
@@ -35,6 +36,10 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
   const confColor = confidenceColor(cappedScore);
   const highlighted = selected || focused;
   const notesPreview = buildNotesPreview(report.notes);
+  const gpuMismatch =
+    !!systemGpuVendor &&
+    report.gpuTier !== 'unknown' &&
+    report.gpuTier !== systemGpuVendor;
 
   return (
     <Focusable
@@ -123,6 +128,7 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
           }}
         >
           <span
+            title={gpuMismatch ? strings.reports.gpuMismatchBadgeHint(report.gpuTier) : undefined}
             style={{
               background: ratingColor,
               color: '#111',
@@ -132,11 +138,12 @@ export function ReportCard({ report, selected, focused = false, onSelect, onFocu
               fontSize: 10,
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
+              opacity: gpuMismatch ? 0.5 : 1,
             }}
           >
             {strings.ratings[report.rating]}
           </span>
-          <span style={{ fontSize: 11, color: '#d9e8f4' }}>
+          <span style={{ fontSize: 11, color: gpuMismatch ? '#f59e0b' : '#d9e8f4' }}>
             {report.gpuTier.toUpperCase()}
           </span>
           <span style={{ fontSize: 12, fontWeight: 700, color: confColor }}>

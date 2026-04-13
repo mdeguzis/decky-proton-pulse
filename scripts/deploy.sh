@@ -373,7 +373,7 @@ fi
 
 banner "Packaging ${ZIP_NAME}"
 
-STAGING_DIR="/tmp/${PLUGIN_NAME}"
+STAGING_DIR="${TMPDIR:-/tmp}/${PLUGIN_NAME}"
 rm -rf "$STAGING_DIR"
 mkdir -p "${STAGING_DIR}/${PLUGIN_NAME}/dist"
 
@@ -434,7 +434,7 @@ if [[ -n "$GH_RELEASE" ]]; then
     echo "Would prepare notes and create/update ${RELEASE_TAG} with asset ${ZIP_NAME}."
   else
 
-    NOTES_FILE="/tmp/decky-proton-pulse-release-notes-${VERSION}.md"
+    NOTES_FILE="${TMPDIR:-/tmp}/decky-proton-pulse-release-notes-${VERSION}.md"
     node scripts/release-notes.mjs > "$NOTES_FILE"
 
     GH_ARGS=(

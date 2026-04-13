@@ -61,6 +61,7 @@ export const ko: TranslationTree = {
     hardwareUnavailable: '하드웨어 정보를 사용할 수 없습니다',
     editedBadge: '편집됨*',
     originalNotesInDetail: '원문 메모는 전체 보고서에서 확인할 수 있습니다.',
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
   detail: {
     apply: '적용',

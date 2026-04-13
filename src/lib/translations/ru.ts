@@ -85,6 +85,7 @@ export const ru: TranslationTree = {
     hardwareUnavailable: 'Сведения об оборудовании недоступны',
     editedBadge: 'Изменено*',
     originalNotesInDetail: 'Откройте полный отчёт, чтобы прочитать исходную заметку.',
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
   detail: {
     apply: 'Применить',

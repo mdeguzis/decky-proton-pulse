@@ -21,6 +21,7 @@ import {
 } from '../../lib/screenshotAutomation';
 import { ReportCard, type DisplayReportCard } from '../ReportCard';
 import { ReportDetailModal } from '../ReportDetailModal';
+import { RATING_COLORS } from '../../lib/reportFormatters';
 import { resolveLaunchOptionsWithPrompt, showLaunchOptionConflictPreview } from '../LaunchOptionConflictModal';
 import { t } from '../../lib/i18n';
 import { isSteamShortcutApp } from '../../lib/steamApps';
@@ -212,13 +213,16 @@ function GameSummaryHeader({
   appId,
   appName,
   reportsCount,
+  protondbTier,
 }: {
   appId: number;
   appName: string;
   reportsCount?: number;
+  protondbTier?: string | null;
 }) {
   const extras = t().extras!;
   const isShortcut = isSteamShortcutApp(appId);
+  const tierColor = protondbTier ? (RATING_COLORS[protondbTier] ?? '#888') : null;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
       <img
@@ -226,7 +230,7 @@ function GameSummaryHeader({
         style={{ height: 40, borderRadius: 3, objectFit: 'cover' }}
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
-      <div>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
           {appName || `App ${appId}`}
         </div>
@@ -236,6 +240,27 @@ function GameSummaryHeader({
             : `${extras.appIdLabel(appId)}${typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}`}
         </div>
       </div>
+      {tierColor && protondbTier && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+          <span style={{ fontSize: 9, color: '#7a9bb5', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            ProtonDB
+          </span>
+          <span
+            style={{
+              background: tierColor,
+              color: '#111',
+              borderRadius: 999,
+              padding: '3px 10px',
+              fontWeight: 700,
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}
+          >
+            {(t().ratings as Record<string, string>)[protondbTier] ?? protondbTier}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -914,7 +939,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} />
+      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} protondbTier={reportDiagnostics?.liveSummaryTier ?? null} />
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
           <SteamSpinner />
@@ -1027,6 +1052,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                     report={r}
                     selected={selectedKey === r.displayKey}
                     focused={focusedCardKey === r.displayKey}
+                    systemGpuVendor={gpuVendor}
                     onFocus={(report) => {
                       setFocusedCardKey(report.displayKey);
                       setSelectedKey(report.displayKey);
