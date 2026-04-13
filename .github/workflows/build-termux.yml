@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
 
       - name: Fix workspace permissions for container
-        run: chmod -R a+rX "$GITHUB_WORKSPACE"
+        run: chmod -R a+rwX "$GITHUB_WORKSPACE"
 
       - name: Run Python tests in Termux container
         env:
