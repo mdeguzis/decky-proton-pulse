@@ -27,6 +27,14 @@ def read_cpu() -> str | None:
     return None
 
 
+def read_cpu_cores() -> int | None:
+    """Return logical CPU core count via ``nproc``."""
+    try:
+        return int(subprocess.check_output(["nproc"], text=True).strip())
+    except (subprocess.SubprocessError, ValueError):
+        return None
+
+
 def read_ram_gb() -> int | None:
     """Figure out total RAM in GB from ``/proc/meminfo``."""
     with open("/proc/meminfo", "r", encoding="utf-8") as f:
@@ -34,6 +42,63 @@ def read_ram_gb() -> int | None:
             if line.startswith("MemTotal"):
                 kb = int(line.split()[1])
                 return round(kb / 1024 / 1024)
+    return None
+
+
+import re as _re
+
+
+def read_vram_mb() -> int | None:
+    """Estimate GPU VRAM in MB from ``lspci -v`` memory region sizes."""
+    result = subprocess.run(
+        ["lspci", "-v"],
+        capture_output=True, text=True, timeout=10, check=False,
+        env=system_command_env(),
+    )
+    if result.returncode != 0:
+        return None
+    in_gpu = False
+    best_mb = 0
+    for line in result.stdout.splitlines():
+        if not line.startswith("\t"):
+            lower = line.lower()
+            in_gpu = any(k in lower for k in ("vga", "3d controller", "display controller"))
+            continue
+        if in_gpu and "Memory" in line and "prefetchable" in line:
+            m = _re.search(r"\[size=(\d+)(M|G)\]", line)
+            if m:
+                val = int(m.group(1))
+                if m.group(2) == "G":
+                    val *= 1024
+                best_mb = max(best_mb, val)
+    return best_mb if best_mb > 0 else None
+
+
+def read_display_resolution() -> str | None:
+    """Read the current display resolution from DRM sysfs."""
+    modes = glob.glob("/sys/class/drm/card*-*/modes")
+    for path in sorted(modes):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                first = f.readline().strip()
+                if first:
+                    return first
+        except OSError:
+            continue
+    return None
+
+
+def read_steam_deck_model() -> str | None:
+    """Detect Steam Deck model from DMI product name."""
+    try:
+        with open("/sys/devices/virtual/dmi/id/product_name", "r", encoding="utf-8") as f:
+            name = f.read().strip().lower()
+        if "jupiter" in name:
+            return "lcd"
+        if "galileo" in name:
+            return "oled"
+    except OSError:
+        pass
     return None
 
 
@@ -211,6 +276,10 @@ def collect_system_info() -> dict[str, object]:
         "kernel": None,
         "distro": None,
         "proton_custom": None,
+        "vram_mb": None,
+        "cpu_cores": None,
+        "display_resolution": None,
+        "steam_deck_model": None,
     }
     for field, fn in (
         ("cpu", read_cpu),
@@ -219,6 +288,10 @@ def collect_system_info() -> dict[str, object]:
         ("distro", read_distro),
         ("driver_version", read_driver_version),
         ("proton_custom", read_custom_proton),
+        ("vram_mb", read_vram_mb),
+        ("cpu_cores", read_cpu_cores),
+        ("display_resolution", read_display_resolution),
+        ("steam_deck_model", read_steam_deck_model),
     ):
         try:
             info[field] = fn()

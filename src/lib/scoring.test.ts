@@ -12,6 +12,10 @@ const nvidiaSystem: SystemInfo = {
   kernel: '6.19.8-1-cachyos',
   distro: 'CachyOS',
   proton_custom: 'cachyos-10.0-202603012',
+  vram_mb: null,
+  cpu_cores: null,
+  display_resolution: null,
+  steam_deck_model: null,
 };
 
 const now = Math.floor(Date.now() / 1000);

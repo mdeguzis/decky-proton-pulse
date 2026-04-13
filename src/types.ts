@@ -13,6 +13,10 @@ export interface SystemInfo {
   kernel: string | null;
   distro: string | null;
   proton_custom: string | null;
+  vram_mb: number | null;
+  cpu_cores: number | null;
+  display_resolution: string | null;
+  steam_deck_model: string | null;
 }
 
 // ─── ProtonDB Summary ─────────────────────────────────────────────────────────

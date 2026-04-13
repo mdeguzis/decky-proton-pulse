@@ -21,15 +21,22 @@ def test_system_info_keys() -> None:
          patch("lib.system_info.read_driver_version", return_value="595.45.04"), \
          patch("lib.system_info.read_kernel", return_value="6.19.8-1-cachyos"), \
          patch("lib.system_info.read_distro", return_value="CachyOS Linux"), \
-         patch("lib.system_info.read_custom_proton", return_value="cachyos-10.0"):
+         patch("lib.system_info.read_custom_proton", return_value="cachyos-10.0"), \
+         patch("lib.system_info.read_vram_mb", return_value=16384), \
+         patch("lib.system_info.read_cpu_cores", return_value=32), \
+         patch("lib.system_info.read_display_resolution", return_value="2560x1440"), \
+         patch("lib.system_info.read_steam_deck_model", return_value=None):
         info = collect_system_info()
 
     assert set(info.keys()) == {
         'cpu', 'ram_gb', 'gpu', 'gpu_vendor',
-        'driver_version', 'kernel', 'distro', 'proton_custom'
+        'driver_version', 'kernel', 'distro', 'proton_custom',
+        'vram_mb', 'cpu_cores', 'display_resolution', 'steam_deck_model',
     }
     assert info['gpu_vendor'] == 'nvidia'
     assert info['ram_gb'] == 64
+    assert info['vram_mb'] == 16384
+    assert info['cpu_cores'] == 32
 
 
 def test_system_info_field_failure_returns_none() -> None:

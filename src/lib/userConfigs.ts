@@ -64,6 +64,10 @@ export interface UserConfigInput {
   enabledVars?: Record<string, string>;
   confidenceScore?: number | null;
   source?: 'user' | 'protondb' | 'protondb-local';
+  vramMb?: number | null;
+  cpuCores?: number | null;
+  displayResolution?: string | null;
+  steamDeckModel?: string | null;
 }
 
 export interface UserConfigRow {
@@ -194,6 +198,10 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
         enabled_vars: input.enabledVars ?? {},
         confidence_score: input.confidenceScore ?? null,
         source: input.source ?? 'user',
+        vram_mb: input.vramMb ?? null,
+        cpu_cores: input.cpuCores ?? null,
+        display_resolution: input.displayResolution ?? null,
+        steam_deck_model: input.steamDeckModel ?? null,
       }),
     }, { on_conflict: 'client_id,app_id' });
 
