@@ -1,6 +1,8 @@
-# Supabase User Configs Setup
+# Native Pulse Reports & User Configs
 
-Custom user-submitted compatibility reports (ProtonDB-style). Only stores configs submitted by plugin users — never imported/scraped data.
+Proton Pulse has its own compatibility reporting system that works alongside ProtonDB. Users can submit reports directly from the plugin — the plugin automatically captures CPU, GPU, RAM, VRAM, driver, kernel, OS, and display resolution, so you only fill in the rating, Proton version, and optional notes.
+
+Reports appear on the Proton Pulse site at `mdeguzis.github.io/proton-pulse-data` alongside ProtonDB community reports, labelled with a Pulse badge. They're open source in the same way ProtonDB is — anyone with the plugin can contribute.
 
 ## Overview
 

@@ -57,6 +57,7 @@ You can also review, edit, or clear the options later from the sidebar.
 ## Features
 
 * **ProtonDB report fetching** — pulls from cached, mirrored, and live ProtonDB sources so the plugin still has something useful to show when one source comes up empty
+* **Native Pulse reports** — submit your own compatibility report directly from the plugin; hardware (CPU, GPU, RAM, VRAM, driver, kernel, OS, resolution) is captured automatically so you only need to pick a rating and Proton version
 * **Hardware-aware scoring** — ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier
 * **Launch option management** — apply, review, edit, and clear launch options directly from the Steam Deck UI
 * **Saved configurations** — keep reusable per-game setups with custom variables and a live launch preview
