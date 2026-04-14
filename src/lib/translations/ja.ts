@@ -279,6 +279,7 @@ export const ja: TranslationTree = {
     previewHint: '以下のオプションを切り替えて起動コマンドを作成します。セクションはハードウェアに基づいてフィルタリングされています。トグルを適用するにはセクションを展開してください。',
     profileName: 'プロファイル名',
     profileNameHint: 'この設定のラベル（例：「高パフォーマンス」「互換性重視」）',
+    profileNameRequired: 'A Profile Name is required before saving.',
     protonVersionToggleHint: 'この設定で固定する Proton バージョンを有効または無効にします。',
     protonVersionNone: 'なし',
     gpuFilter: 'GPU',

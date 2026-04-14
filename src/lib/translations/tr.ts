@@ -279,6 +279,7 @@ export const tr: TranslationTree = {
     previewHint: 'Başlatma komutunuzu oluşturmak için aşağıdaki seçenekleri değiştirin. Bölümler donanımınıza göre ön filtrelenmiştir. Toggle uygulamak için herhangi bir bölümü genişletin.',
     profileName: 'Profil Adı',
     profileNameHint: 'Bu yapılandırma için bir etiket (ör. "Yüksek Performans", "Uyumlu")',
+    profileNameRequired: 'A Profile Name is required before saving.',
     protonVersionToggleHint: 'Bu yapilandirma icin sabit bir Proton surumunu acar veya kapatir.',
     protonVersionNone: 'Yok',
     gpuFilter: 'GPU',

@@ -279,6 +279,7 @@ export const ptBR: TranslationTree = {
     previewHint: 'Ative as opções abaixo para montar seu comando de lançamento. As seções são pré-filtradas pelo seu hardware. Expanda qualquer seção para aplicar toggles.',
     profileName: 'Nome do Perfil',
     profileNameHint: 'Um rótulo para esta configuração (ex: "Alto Desempenho", "Compatível")',
+    profileNameRequired: 'A Profile Name is required before saving.',
     protonVersionToggleHint: 'Ativa ou desativa uma versao fixa do Proton para esta configuracao.',
     protonVersionNone: 'Nenhuma',
     gpuFilter: 'GPU',

@@ -303,6 +303,7 @@ export const ru: TranslationTree = {
     previewHint: 'Переключайте параметры ниже, чтобы собрать команду запуска. Разделы уже предварительно отфильтрованы под ваше оборудование. Разверните раздел, чтобы применить тумблеры.',
     profileName: 'Имя профиля',
     profileNameHint: 'Метка для этой конфигурации (например, «Высокая производительность», «Совместимость»)',
+    profileNameRequired: 'A Profile Name is required before saving.',
     protonVersionToggleHint: 'Включает или отключает закрепленную версию Proton для этой конфигурации.',
     protonVersionNone: 'Нет',
     gpuFilter: 'GPU',

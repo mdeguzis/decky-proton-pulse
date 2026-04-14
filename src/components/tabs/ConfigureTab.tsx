@@ -9,6 +9,7 @@ import {
   type ReportFetchDiagnostics,
 } from '../../lib/protondb';
 import { getUserVote, getVoteTotals, submitVote } from '../../lib/voting';
+import { getUserConfigs, type UserConfigRow } from '../../lib/userConfigs';
 import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
@@ -49,6 +50,63 @@ function filterLabel(tier: FilterTier): string {
   return tier === 'nvidia' ? 'NVIDIA' : tier === 'amd' ? 'AMD' : 'Intel';
 }
 const EDIT_STORAGE_PREFIX = 'edited-reports:';
+
+// ── Pulse user-report helpers ──────────────────────────────────────────────
+
+function pulseRowToCdnReport(row: UserConfigRow): CdnReport {
+  return {
+    appId:        String(row.app_id),
+    cpu:          row.cpu,
+    duration:     row.duration || 'unreported',
+    gpu:          row.gpu,
+    gpuDriver:    row.gpu_driver || '',
+    kernel:       row.kernel || '',
+    notes:        row.notes || '',
+    os:           row.os,
+    protonVersion: row.proton_version,
+    ram:          row.ram,
+    rating:       row.rating,
+    timestamp:    Math.floor(new Date(row.created_at).getTime() / 1000),
+    title:        row.title,
+  };
+}
+
+/** Normalise a proton version string for fuzzy comparison. */
+function normaliseVersion(v: string): string {
+  return v.toLowerCase().replace(/[\s\-_]/g, '').replace(/^ge/, '');
+}
+
+/**
+ * Insert Pulse report cards after the first CDN card whose proton version
+ * matches (exact) or near-matches (same major.minor prefix).  Falls back to
+ * prepending when no CDN match exists.
+ */
+function mergeWithPulse(
+  base: DisplayReportCard[],
+  pulse: DisplayReportCard[],
+): DisplayReportCard[] {
+  if (!pulse.length) return base;
+
+  const result = [...base];
+  for (const p of pulse) {
+    const normP = normaliseVersion(p.protonVersion);
+    // Prefer exact match, then prefix match (same major.minor).
+    const exactIdx  = result.findIndex(r => !r.isPulse && normaliseVersion(r.protonVersion) === normP);
+    const prefixIdx = exactIdx === -1
+      ? result.findIndex(r => !r.isPulse && (
+          normaliseVersion(r.protonVersion).startsWith(normP.slice(0, 6)) ||
+          normP.startsWith(normaliseVersion(r.protonVersion).slice(0, 6))
+        ))
+      : -1;
+    const insertAfter = exactIdx !== -1 ? exactIdx : prefixIdx;
+    if (insertAfter !== -1) {
+      result.splice(insertAfter + 1, 0, p);
+    } else {
+      result.unshift(p);   // no CDN match — show at top
+    }
+  }
+  return result;
+}
 
 export interface EditedReportEntry {
   id: string;
@@ -382,6 +440,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const extras = t().extras!;
   const [reports, setReports]   = useState<CdnReport[]>([]);
   const [editedReports, setEditedReports] = useState<EditedReportEntry[]>([]);
+  const [pulseReports, setPulseReports] = useState<UserConfigRow[]>([]);
   const [votes, setVotes]       = useState<Record<string, VoteTotals>>({});
   const [loading, setLoading]   = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -415,7 +474,19 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     editLabel: entry.label,
   }));
 
-  const scored: DisplayReportCard[] = [...editedDisplayReports, ...baseDisplayReports];
+  const pulseDisplayReports: DisplayReportCard[] = pulseReports.map(row => ({
+    ...scoreReport(pulseRowToCdnReport(row), scoreContext),
+    upvotes:    0,
+    downvotes:  0,
+    displayKey: `pulse:${row.id}`,
+    isPulse:    true,
+    pulseTitle: row.title,
+  }));
+
+  const scored: DisplayReportCard[] = mergeWithPulse(
+    [...editedDisplayReports, ...baseDisplayReports],
+    pulseDisplayReports,
+  );
 
   const buckets = bucketByGpuTier(scored as ScoredReport[]) as {
     nvidia: DisplayReportCard[];
@@ -460,6 +531,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     setLoading(true);
     setReports([]);
     setEditedReports(loadEditedReports(appId));
+    setPulseReports([]);
     setVotes({});
     setSelectedKey(null);
     setFocusedCardKey(null);
@@ -467,20 +539,26 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     setFilter('all');
     setReportDiagnostics(null);
 
-    void Promise.all([getProtonDBReportsWithDiagnostics(String(appId)), getVoteTotals(String(appId))])
-      .then(([reportResult, voteTotals]) => {
+    void Promise.all([
+      getProtonDBReportsWithDiagnostics(String(appId)),
+      getVoteTotals(String(appId)),
+      getUserConfigs(String(appId)),
+    ])
+      .then(([reportResult, voteTotals, pulseRows]) => {
         if (cancelled) return;
         const r = reportResult.reports;
         void logFrontendEvent('INFO', `Manage This Game: loaded (${Date.now() - loadT0}ms)`, {
           appId,
           appName,
           reportCount: r.length,
+          pulseCount: pulseRows.length,
           voteCount: Object.keys(voteTotals).length,
           durationMs: Date.now() - loadT0,
           source: reportResult.diagnostics.source,
         });
         setReports(r);
         setVotes(voteTotals);
+        setPulseReports(pulseRows);
         setReportDiagnostics(reportResult.diagnostics);
       })
       .catch((error) => {

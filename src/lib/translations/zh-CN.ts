@@ -279,6 +279,7 @@ export const zhCN: TranslationTree = {
     previewHint: '切换以下选项来构建启动命令。各部分已根据您的硬件预筛选。展开任意部分即可应用开关。',
     profileName: '配置名称',
     profileNameHint: '此配置的标签（例如"高性能"、"兼容模式"）',
+    profileNameRequired: 'A Profile Name is required before saving.',
     protonVersionToggleHint: '启用或禁用此配置固定的 Proton 版本。',
     protonVersionNone: '无',
     gpuFilter: 'GPU',

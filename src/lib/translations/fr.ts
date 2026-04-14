@@ -279,6 +279,7 @@ export const fr: TranslationTree = {
     previewHint: 'Activez les options ci-dessous pour construire votre commande de lancement. Les sections sont pré-filtrées selon votre matériel. Développez une section pour appliquer des bascules.',
     profileName: 'Nom du profil',
     profileNameHint: 'Un libellé pour cette configuration (ex. « Haute Performance », « Compatible »)',
+    profileNameRequired: 'A Profile Name is required before saving.',
     protonVersionToggleHint: 'Active ou desactive une version Proton epinglee pour cette configuration.',
     protonVersionNone: 'Aucune',
     gpuFilter: 'GPU',

@@ -279,6 +279,7 @@ export const de: TranslationTree = {
     previewHint: 'Optionen unten umschalten, um den Startbefehl zu erstellen. Abschnitte sind nach Hardware vorgefiltert. Erweitern Sie einen Abschnitt, um Schalter anzuwenden.',
     profileName: 'Profilname',
     profileNameHint: 'Eine Bezeichnung für diese Konfiguration (z.B. „Hohe Leistung", „Kompatibel")',
+    profileNameRequired: 'A Profile Name is required before saving.',
     protonVersionToggleHint: 'Aktiviert oder deaktiviert eine feste Proton-Version fuer diese Konfiguration.',
     protonVersionNone: 'Keine',
     gpuFilter: 'GPU',

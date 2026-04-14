@@ -455,6 +455,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     : { protonVersion: null, vars: {} as Record<string, string>, rawArgs: [] as string[], postCommandArgs: [] as string[] };
 
   const [profileName, setProfileName] = useState(existingConfig?.profileName ?? '');
+  const [profileNameTouched, setProfileNameTouched] = useState(false);
   const [protonVersion, setProtonVersion] = useState(parsed.protonVersion ?? '');
   const [enabledVars, setEnabledVars] = useState<Record<string, string>>(
     Object.fromEntries(
@@ -728,6 +729,11 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
 
   const handleApply = async () => {
     if (!appId) return;
+    if (!profileName.trim()) {
+      setProfileNameTouched(true);
+      toaster.toast({ title: 'Proton Pulse', body: t().configManager.profileNameRequired });
+      return;
+    }
     const finalLaunchOptions = preview;
     try {
       syncScopedCustomToggles(appId, customToggles);
@@ -936,9 +942,17 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           <div style={{ marginBottom: 10 }}>
             <TextField
               label={t().configManager.profileName}
-              description={t().configManager.profileNameHint}
+              description={
+                profileNameTouched && !profileName.trim()
+                  ? t().configManager.profileNameRequired
+                  : t().configManager.profileNameHint
+              }
               value={profileName}
-              onChange={(e) => setProfileName(e.target.value)}
+              style={profileNameTouched && !profileName.trim() ? { outline: '1px solid #ef4444' } : undefined}
+              onChange={(e) => {
+                setProfileName(e.target.value);
+                if (e.target.value.trim()) setProfileNameTouched(false);
+              }}
             />
           </div>
 

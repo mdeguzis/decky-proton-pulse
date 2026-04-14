@@ -279,6 +279,7 @@ export const ko: TranslationTree = {
     previewHint: '아래 옵션을 토글하여 실행 명령을 구성하세요. 섹션은 하드웨어에 따라 사전 필터링됩니다. 토글을 적용하려면 섹션을 펼치세요.',
     profileName: '프로필 이름',
     profileNameHint: '이 구성의 레이블 (예: "고성능", "호환 모드")',
+    profileNameRequired: 'A Profile Name is required before saving.',
     protonVersionToggleHint: '이 구성에 고정할 Proton 버전을 켜거나 끕니다.',
     protonVersionNone: '없음',
     gpuFilter: 'GPU',

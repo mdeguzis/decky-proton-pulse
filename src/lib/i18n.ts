@@ -311,6 +311,7 @@ export interface TranslationTree {
     previewHint: string;
     profileName: string;
     profileNameHint: string;
+    profileNameRequired: string;
     protonVersionToggleHint: string;
     protonVersionNone: string;
     gpuFilter: string;
@@ -771,6 +772,7 @@ export const en: TranslationTree = {
     previewHint: 'Toggle options below to build your launch command. The sections are already filtered to fit your hardware. Expand any section to apply toggles.',
     profileName: 'Profile Name',
     profileNameHint: 'Pick a short label for this configuration, like "High Performance" or "Compatible".',
+    profileNameRequired: 'A Profile Name is required before saving.',
     protonVersionToggleHint: 'Enable or disable a pinned Proton version for this configuration.',
     protonVersionNone: 'None',
     gpuFilter: 'GPU',
