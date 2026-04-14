@@ -13,6 +13,8 @@
 
 A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for Steam Deck that pulls [ProtonDB](https://www.protondb.com) reports for the game in front of you, scores them against your hardware, and lets you apply useful launch options without typing them by hand.
 
+Browse community reports, Pulse configs, and per-game compatibility data on the **[Proton Pulse site](https://mdeguzis.github.io/proton-pulse-data/)**.
+
 Coverage policy: overall Python and TypeScript coverage must stay at or above `90%`, and pull requests must keep changed-line coverage at `95%` or higher.
 
 ## Screenshots
@@ -141,6 +143,7 @@ Normal build and deploy commands sync that value into `package.json` and `pyproj
 
 ## Documentation
 
+* [Proton Pulse Site](https://mdeguzis.github.io/proton-pulse-data/) — browse community reports, Pulse configs, and per-game data
 * [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) — setup, build, deploy, testing, CEF debugging
 * [Architecture](https://github.com/mdeguzis/decky-proton-pulse/wiki/Architecture) — file-by-file code breakdown and ownership boundaries
 * [System Design](https://github.com/mdeguzis/decky-proton-pulse/wiki/System-Design) — end-to-end flow diagrams, data ownership, scoring model
