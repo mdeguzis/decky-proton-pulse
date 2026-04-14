@@ -131,6 +131,8 @@ export const es: TranslationTree = {
     experimental: 'Funciones experimentales',
     experimentalGamePageShortcut: 'Acceso directo en la página del juego',
     experimentalGamePageShortcutDescription: 'Muestra un acceso directo de Proton Pulse junto a los botones de acción de la página del juego. Es experimental y viene desactivado.',
+    gamePageBadge: 'ProtonDB badge on game page',
+    gamePageBadgeDescription: 'Show the ProtonDB compatibility tier badge on the game page.',
   },
   compatTools: {
     install: 'Instalar',

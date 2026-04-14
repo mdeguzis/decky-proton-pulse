@@ -131,12 +131,26 @@ export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion:
   const [submitting, setSubmitting] = useState(false);
   const [error,    setError]    = useState<string | null>(null);
 
+  // tracks which fields were invalid on the last submit attempt
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
+
   const ramStr = sysInfo?.ram_gb != null ? `${sysInfo.ram_gb} GB` : '';
 
   const handleSubmit = async () => {
-    if (!rating) { setError('Please select a rating.'); return; }
-    if (!proton.trim()) { setError('Proton version is required.'); return; }
-    if (!os) { setError('Please select your OS.'); return; }
+    const errs: Record<string, boolean> = {};
+    if (!rating)                       errs.rating   = true;
+    if (!proton.trim())                errs.proton   = true;
+    if (!os)                           errs.os       = true;
+    if (duration === 'unreported')     errs.duration = true;
+    if (notes.trim().length < 30)      errs.notes    = true;
+
+    if (Object.keys(errs).length) {
+      setFieldErrors(errs);
+      setError('Please fill in all required fields. Notes must be at least 30 characters.');
+      return;
+    }
+    setFieldErrors({});
+
     if (!sysInfo?.cpu || !sysInfo?.gpu) {
       setError('Hardware info (CPU/GPU) could not be detected. Cannot submit.');
       return;
@@ -159,12 +173,12 @@ export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion:
       gpuDriver:         sysInfo.driver_version ?? undefined,
       gpuVendor:         sysInfo.gpu_vendor ?? undefined,
       ram:               ramStr,
-      os,
+      os:                os as ValidOS,
       kernel:            sysInfo.kernel ?? undefined,
       protonVersion:     proton.trim(),
       duration,
-      rating,
-      notes:             notes.trim() || undefined,
+      rating:            rating as ProtonRating,
+      notes:             notes.trim(),
       source:            'user',
       vramMb:            sysInfo.vram_mb ?? null,
       cpuCores:          sysInfo.cpu_cores ?? null,
@@ -210,61 +224,61 @@ export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion:
           <HardwareTable sysInfo={sysInfo} />
 
           {/* Rating */}
-          <div>
+          <div style={fieldErrors.rating ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
               {t().nativeReport.rating} <span style={{ color: '#ef4444' }}>*</span>
             </div>
             <DropdownItem
               rgOptions={RATINGS.map(r => ({ data: r.data, label: r.label }))}
               selectedOption={rating || null}
-              onChange={(opt) => { setRating(opt.data as ProtonRating); setError(null); }}
+              onChange={(opt) => { setRating(opt.data as ProtonRating); setFieldErrors(p => ({ ...p, rating: false })); setError(null); }}
               label={t().nativeReport.rating}
             />
           </div>
 
           {/* Proton version */}
-          <div>
+          <div style={fieldErrors.proton ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
             <TextField
               label={`${t().nativeReport.protonVersion} *`}
               description='e.g. "Proton 10.0-3" or "GE-Proton10-1"'
               value={proton}
-              onChange={(e) => { setProton(e.target.value); setError(null); }}
+              onChange={(e) => { setProton(e.target.value); setFieldErrors(p => ({ ...p, proton: false })); setError(null); }}
             />
           </div>
 
           {/* OS */}
-          <div>
+          <div style={fieldErrors.os ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
               {t().nativeReport.os} <span style={{ color: '#ef4444' }}>*</span>
             </div>
             <DropdownItem
               rgOptions={VALID_OS.map(o => ({ data: o, label: o }))}
               selectedOption={os || null}
-              onChange={(opt) => { setOs(opt.data as ValidOS); setError(null); }}
+              onChange={(opt) => { setOs(opt.data as ValidOS); setFieldErrors(p => ({ ...p, os: false })); setError(null); }}
               label={t().nativeReport.os}
             />
           </div>
 
           {/* Duration */}
-          <div>
+          <div style={fieldErrors.duration ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
-              {t().nativeReport.duration}
+              {t().nativeReport.duration} <span style={{ color: '#ef4444' }}>*</span>
             </div>
             <DropdownItem
               rgOptions={DURATIONS.map(d => ({ data: d.data, label: d.label }))}
               selectedOption={duration}
-              onChange={(opt) => setDuration(opt.data as string)}
+              onChange={(opt) => { setDuration(opt.data as string); setFieldErrors(p => ({ ...p, duration: false })); }}
               label={t().nativeReport.duration}
             />
           </div>
 
           {/* Notes */}
-          <div>
+          <div style={fieldErrors.notes ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
             <TextField
-              label={t().nativeReport.notes}
+              label={`${t().nativeReport.notes} * (min 30 chars)`}
               description={t().nativeReport.notesHint}
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => { setNotes(e.target.value); setFieldErrors(p => ({ ...p, notes: false })); }}
             />
           </div>
 

@@ -131,6 +131,8 @@ export const ko: TranslationTree = {
     experimental: '실험 기능',
     experimentalGamePageShortcut: '게임 페이지 바로가기 버튼',
     experimentalGamePageShortcutDescription: '게임 페이지 동작 버튼 옆에 Proton Pulse 바로가기를 표시합니다. 실험 기능이며 기본값은 꺼짐입니다.',
+    gamePageBadge: 'ProtonDB badge on game page',
+    gamePageBadgeDescription: 'Show the ProtonDB compatibility tier badge on the game page.',
   },
   compatTools: {
     install: '설치',

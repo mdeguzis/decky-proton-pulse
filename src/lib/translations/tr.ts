@@ -131,6 +131,8 @@ export const tr: TranslationTree = {
     experimental: 'Deneysel',
     experimentalGamePageShortcut: 'Oyun sayfası kısayol düğmesi',
     experimentalGamePageShortcutDescription: 'Oyun sayfasındaki eylem düğmelerinin yanında Proton Pulse kısayolu gösterir. Deneyseldir ve varsayılan olarak kapalıdır.',
+    gamePageBadge: 'ProtonDB badge on game page',
+    gamePageBadgeDescription: 'Show the ProtonDB compatibility tier badge on the game page.',
   },
   compatTools: {
     install: 'Yükle',

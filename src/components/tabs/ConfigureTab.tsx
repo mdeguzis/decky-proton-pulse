@@ -339,6 +339,10 @@ function emptyScoreContext(): SystemInfo {
     kernel: null,
     distro: null,
     proton_custom: null,
+    vram_mb: null,
+    cpu_cores: null,
+    display_resolution: null,
+    steam_deck_model: null,
   };
 }
 

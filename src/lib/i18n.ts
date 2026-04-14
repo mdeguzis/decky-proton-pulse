@@ -163,6 +163,8 @@ export interface TranslationTree {
     experimental: string;
     experimentalGamePageShortcut: string;
     experimentalGamePageShortcutDescription: string;
+    gamePageBadge: string;
+    gamePageBadgeDescription: string;
   };
   compatTools: {
     install: string;
@@ -635,6 +637,8 @@ export const en: TranslationTree = {
     experimental: 'Experimental',
     experimentalGamePageShortcut: 'Game page shortcut button',
     experimentalGamePageShortcutDescription: 'Show a best-effort Proton Pulse shortcut next to the game page action buttons. Experimental and off by default.',
+    gamePageBadge: 'ProtonDB badge on game page',
+    gamePageBadgeDescription: 'Show the ProtonDB compatibility tier badge on the game page.',
   },
   compatTools: {
     install: 'Install',

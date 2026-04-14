@@ -155,6 +155,8 @@ export const ru: TranslationTree = {
     experimental: 'Экспериментально',
     experimentalGamePageShortcut: 'Кнопка на странице игры',
     experimentalGamePageShortcutDescription: 'Показывает ярлык Proton Pulse рядом с кнопками действий на странице игры. Экспериментальная функция, по умолчанию выключена.',
+    gamePageBadge: 'ProtonDB badge on game page',
+    gamePageBadgeDescription: 'Show the ProtonDB compatibility tier badge on the game page.',
   },
   compatTools: {
     install: 'Установить',

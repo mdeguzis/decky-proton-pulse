@@ -249,6 +249,7 @@ export function GeneralSettingsTab() {
   const [experimentalGamePageShortcutEnabled, setExperimentalGamePageShortcutEnabled] = useState(
     () => getSetting(EXPERIMENTAL_GAME_PAGE_SHORTCUT_KEY, false),
   );
+  const [badgeEnabled, setBadgeEnabled] = useState(() => getSetting('showGamePageBadge', true));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const languageRowRef = useRef<HTMLDivElement>(null);

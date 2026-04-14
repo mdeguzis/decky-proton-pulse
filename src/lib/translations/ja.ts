@@ -131,6 +131,8 @@ export const ja: TranslationTree = {
     experimental: '実験機能',
     experimentalGamePageShortcut: 'ゲームページのショートカットボタン',
     experimentalGamePageShortcutDescription: 'ゲームページのアクションボタンの横に Proton Pulse のショートカットを表示します。実験機能のため既定ではオフです。',
+    gamePageBadge: 'ProtonDB badge on game page',
+    gamePageBadgeDescription: 'Show the ProtonDB compatibility tier badge on the game page.',
   },
   compatTools: {
     install: 'インストール',
