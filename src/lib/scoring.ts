@@ -9,6 +9,7 @@
 // if the ranking feels off for certain edge cases.
 
 import type { CdnReport, ScoredReport, SystemInfo, TieredReports, GpuTier } from '../types';
+import type { ProtonRating } from '../types';
 
 // ─── Weights, edit these to tune ranking ──────────────────────────────────────
 export const WEIGHTS = {
@@ -40,6 +41,14 @@ const RATING_SCORES: Record<string, number> = {
   bronze: 0.4,
   borked: 0.0,
 };
+
+export function scoreToMatchTier(score: number): ProtonRating {
+  if (score >= 80) return 'platinum';
+  if (score >= 60) return 'gold';
+  if (score >= 40) return 'silver';
+  if (score >= 20) return 'bronze';
+  return 'borked';
+}
 
 const CUSTOM_PROTON_MARKERS = ['ge', 'cachyos', 'tkg', 'protonplus', 'experimental'];
 

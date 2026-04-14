@@ -158,14 +158,11 @@ export interface TranslationTree {
     notifications: string;
     notificationsDescription: string;
     general: string;
-    gamePageBadge: string;
-    gamePageBadgeDescription: string;
-    developerArea: string;
-    developerAreaDescription: string;
-    fetchUpdatesFromGitHub: string;
-    fetchUpdatesFromGitHubDescription: string;
-    releaseTagInstall: string;
-    noReleasesLoaded: string;
+    cloudPluginSettingsAutoSync: string;
+    cloudPluginSettingsAutoSyncDescription: string;
+    experimental: string;
+    experimentalGamePageShortcut: string;
+    experimentalGamePageShortcutDescription: string;
   };
   compatTools: {
     install: string;
@@ -413,6 +410,12 @@ export interface TranslationTree {
     importLocalDataDescription: () => string;
     importLocalDataConfirmTitle: () => string;
     importLocalDataConfirmDescription: (path: string) => string;
+    anonymousClientId: () => string;
+    anonymousClientIdDescription: () => string;
+    anonymousClientIdLoading: () => string;
+    copyAnonymousClientId: () => string;
+    anonymousClientIdCopied: () => string;
+    anonymousClientIdCopyFailed: () => string;
     backupExported: (path: string) => string;
     backupImported: (count: number) => string;
     backupPickerFailed: () => string;
@@ -423,6 +426,10 @@ export interface TranslationTree {
     manageCacheDescription: () => string;
     performance: () => string;
     installedCoverage: () => string;
+    prefetchStatus: () => string;
+    prefetchStatusWarming: (ready: number, total: number, remaining: number) => string;
+    prefetchStatusComplete: (ready: number, total: number) => string;
+    prefetchStatusCompleteWithMisses: (ready: number, total: number, misses: number) => string;
     localGames: () => string;
     fetchIssues: () => string;
     export: () => string;
@@ -611,14 +618,11 @@ export const en: TranslationTree = {
     notifications: 'Notifications',
     notificationsDescription: 'Show Proton Pulse toast notifications and sounds',
     general: 'General',
-    gamePageBadge: 'Game Page Badge',
-    gamePageBadgeDescription: 'Show a Proton Pulse icon on game library pages',
-    developerArea: 'Developer Area',
-    developerAreaDescription: 'Tools for plugin development and testing',
-    fetchUpdatesFromGitHub: 'Fetch updates from GitHub',
-    fetchUpdatesFromGitHubDescription: 'Check for new plugin releases on GitHub',
-    releaseTagInstall: 'Available Releases',
-    noReleasesLoaded: 'Press Refresh to load releases from GitHub.',
+    cloudPluginSettingsAutoSync: 'Auto-sync plugin settings to cloud',
+    cloudPluginSettingsAutoSyncDescription: 'Automatically back up Proton Pulse settings, preferences, and custom toggles when they change.',
+    experimental: 'Experimental',
+    experimentalGamePageShortcut: 'Game page shortcut button',
+    experimentalGamePageShortcutDescription: 'Show a best-effort Proton Pulse shortcut next to the game page action buttons. Experimental and off by default.',
   },
   compatTools: {
     install: 'Install',
@@ -875,6 +879,12 @@ export const en: TranslationTree = {
     importLocalDataDescription: () => 'Restore settings, saved configs, and custom toggles from a previous backup zip.',
     importLocalDataConfirmTitle: () => 'Import Local Data',
     importLocalDataConfirmDescription: (path) => `Import local Proton Pulse data from ${path}? This will replace your current saved settings, configs, and custom toggles.`,
+    anonymousClientId: () => 'Anonymous Client ID',
+    anonymousClientIdDescription: () => 'Cloud config and settings backups are tied to this anonymous Proton Pulse identity.',
+    anonymousClientIdLoading: () => 'Loading anonymous client ID...',
+    copyAnonymousClientId: () => 'Copy',
+    anonymousClientIdCopied: () => 'Anonymous client ID copied to clipboard.',
+    anonymousClientIdCopyFailed: () => 'Could not copy anonymous client ID.',
     backupExported: (path) => `Local backup exported to ${path}`,
     backupImported: (count) => `Imported ${count} local data entries. Proton Pulse will refresh to apply them.`,
     backupPickerFailed: () => 'Could not open the file picker. You can still choose a backup zip later.',
@@ -885,6 +895,10 @@ export const en: TranslationTree = {
     manageCacheDescription: () => 'View, refresh, or remove cached game data',
     performance: () => 'Performance',
     installedCoverage: () => 'Installed coverage',
+    prefetchStatus: () => 'Prefetch status',
+    prefetchStatusWarming: (ready, total, remaining) => `Warming installed games: ${ready}/${total} ready, ${remaining} remaining`,
+    prefetchStatusComplete: (ready, total) => `Prefetch complete: ${ready}/${total} installed games ready`,
+    prefetchStatusCompleteWithMisses: (ready, total, misses) => `Prefetch complete: ${ready}/${total} ready, ${misses} CDN misses`,
     localGames: () => 'Local games',
     fetchIssues: () => 'Fetch issues',
     export: () => 'Export',

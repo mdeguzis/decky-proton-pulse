@@ -43,7 +43,7 @@ from lib.compat_tools import (
 )
 from lib.plugin_logging import get_log_contents, log_frontend_event, sync_set_log_level
 from lib.plugin_utils import extract_archive_safely
-from lib.prefetch import prefetch_installed_games
+from lib.prefetch import prefetch_installed_games, get_installed_game_stats
 from lib.proton_ge import (
     clear_latest_metadata,
     finalize_extracted_compat_tool,
@@ -277,6 +277,10 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         """Fetch minimum system requirements from the Steam Store API."""
         from lib.game_requirements import get_game_requirements as _get_reqs
         return _get_reqs(app_id)
+
+    async def get_installed_game_stats(self) -> dict[str, Any]:
+        """Return backend manifest-based installed Steam game stats."""
+        return get_installed_game_stats()
 
     ################################################################
     # CDN Cache

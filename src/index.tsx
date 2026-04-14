@@ -45,12 +45,186 @@ const setLogLevelSafe = (level: string) =>
   callWithTimeout(() => setLogLevel(level), 'set_log_level', 5000);
 const getPluginVersionSafe = () =>
   callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000);
+const EXPERIMENTAL_GAME_PAGE_SHORTCUT_KEY = 'experimental-game-page-shortcut-enabled';
+const GAME_PAGE_SHORTCUT_ID = 'proton-pulse-game-page-shortcut';
+
+function isLibraryAppRoute(pathname: string): boolean {
+  return /\/(?:routes\/)?library\/app\/\d+/.test(pathname);
+}
 
 function extractLibraryAppId(pathname: string): number | null {
   const match = pathname.match(/\/(?:routes\/)?library\/app\/(\d+)/);
   if (!match) return null;
   const parsed = parseInt(match[1], 10);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function navigateToManageGame(appId: number | null, appName: string): void {
+  if (!appId) return;
+  rememberReturnPath(globalThis.location?.pathname);
+  const payload = { tab: 'manage-game' as const, appId, appName };
+  const pathname = globalThis.location?.pathname ?? '';
+  const alreadyOpen = pathname.includes('/proton-pulse');
+  if (alreadyOpen) {
+    dispatchNavigate(payload);
+    Router.CloseSideMenus();
+    return;
+  }
+
+  Router.CloseSideMenus();
+  try {
+    Navigation.Navigate('/proton-pulse');
+  } catch {
+    Router.Navigate('/proton-pulse');
+  }
+  window.setTimeout(() => {
+    dispatchNavigate(payload);
+  }, 100);
+  window.setTimeout(() => {
+    dispatchNavigate(payload);
+  }, 400);
+}
+
+function removeExperimentalGamePageShortcut(): void {
+  const existing = document.getElementById(GAME_PAGE_SHORTCUT_ID) as HTMLElement | null;
+  if (!existing) return;
+  void logFrontendEvent('DEBUG', 'Removing experimental game page shortcut button');
+  existing.remove();
+}
+
+function findExperimentalGamePageShortcutAnchor(): HTMLElement | null {
+  const buttons = [...document.querySelectorAll('button,[role="button"]')]
+    .filter((node): node is HTMLElement => node instanceof HTMLElement)
+    .filter((node) => node.offsetParent !== null);
+  const candidates = buttons
+    .map((node) => ({ node, rect: node.getBoundingClientRect() }))
+    .filter(({ rect }) => rect.width >= 56
+      && rect.width <= 108
+      && rect.height >= 56
+      && rect.height <= 108
+      && rect.right >= window.innerWidth - 260
+      && rect.top >= 300
+      && rect.top <= 560,
+    );
+  if (candidates.length < 2) return null;
+
+  const rows: Array<Array<{ node: HTMLElement; rect: DOMRect }>> = [];
+  for (const candidate of candidates.sort((a, b) => a.rect.top - b.rect.top)) {
+    const row = rows.find((group) => Math.abs(group[0].rect.top - candidate.rect.top) <= 18);
+    if (row) {
+      row.push(candidate);
+    } else {
+      rows.push([candidate]);
+    }
+  }
+
+  const bestRow = rows
+    .filter((group) => group.length >= 2)
+    .sort((a, b) => {
+      const aRight = Math.max(...a.map(({ rect }) => rect.right));
+      const bRight = Math.max(...b.map(({ rect }) => rect.right));
+      const rightBias = bRight - aRight;
+      if (rightBias !== 0) return rightBias;
+      return b.length - a.length;
+    })[0];
+  if (!bestRow) return null;
+
+  bestRow.sort((a, b) => a.rect.left - b.rect.left);
+  return bestRow[0]?.node ?? null;
+}
+
+function syncExperimentalGamePageShortcutButton(): void {
+  const pathname = globalThis.location?.pathname ?? '';
+  const enabled = getSetting(EXPERIMENTAL_GAME_PAGE_SHORTCUT_KEY, false);
+  void logFrontendEvent('DEBUG', 'Syncing experimental game page shortcut button', {
+    enabled,
+    pathname,
+    isLibraryAppRoute: isLibraryAppRoute(pathname),
+  });
+  if (!enabled || !isLibraryAppRoute(pathname)) {
+    removeExperimentalGamePageShortcut();
+    return;
+  }
+
+  const appId = extractLibraryAppId(pathname);
+  if (!appId) {
+    void logFrontendEvent('DEBUG', 'Experimental game page shortcut skipped: no appId from route', {
+      pathname,
+    });
+    removeExperimentalGamePageShortcut();
+    return;
+  }
+
+  const appName =
+    (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appId)?.display_name ?? '';
+  const anchor = findExperimentalGamePageShortcutAnchor();
+  if (!anchor?.parentElement) {
+    void logFrontendEvent('DEBUG', 'Experimental game page shortcut anchor not found', {
+      appId,
+      appName,
+      pathname,
+      visibleButtons: document.querySelectorAll('button,[role="button"]').length,
+    });
+    return;
+  }
+
+  void logFrontendEvent('DEBUG', 'Experimental game page shortcut anchor found', {
+    appId,
+    appName,
+    anchorTag: anchor.tagName,
+    anchorClassName: anchor.className,
+    anchorText: anchor.textContent?.trim()?.slice(0, 60) ?? '',
+  });
+
+  const existing = document.getElementById(GAME_PAGE_SHORTCUT_ID) as HTMLElement | null;
+  if (existing && existing.parentElement === anchor.parentElement) {
+    existing.onclick = () => navigateToManageGame(appId, appName);
+    existing.title = t().nav.manageThisGame;
+    existing.setAttribute('aria-label', t().nav.manageThisGame);
+    void logFrontendEvent('DEBUG', 'Experimental game page shortcut updated in place', {
+      appId,
+      appName,
+    });
+    return;
+  }
+
+  removeExperimentalGamePageShortcut();
+
+  const button = document.createElement('button');
+  button.id = GAME_PAGE_SHORTCUT_ID;
+  button.setAttribute('type', 'button');
+  button.title = t().nav.manageThisGame;
+  button.setAttribute('aria-label', t().nav.manageThisGame);
+  button.onclick = () => navigateToManageGame(appId, appName);
+  button.style.width = '72px';
+  button.style.height = '72px';
+  button.style.minWidth = '72px';
+  button.style.borderRadius = '10px';
+  button.style.border = 'none';
+  button.style.background = '#2f3540';
+  button.style.display = 'flex';
+  button.style.alignItems = 'center';
+  button.style.justifyContent = 'center';
+  button.style.cursor = 'pointer';
+  button.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,0.04)';
+  button.style.marginRight = '8px';
+  button.style.flex = '0 0 auto';
+  button.style.color = '#eef7ff';
+  button.innerHTML = `
+    <svg width="24" height="24" viewBox="0 0 64 64" aria-hidden="true" style="display:block;flex:0 0 auto">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="32,10 46,16 54,28 50,44 32,54 14,44 10,28 18,16" stroke-width="3"></polygon>
+        <polygon points="32,18 41,22 46,31 43,40 32,46 21,40 18,31 23,22" stroke-width="2.5" opacity="0.9"></polygon>
+        <circle cx="32" cy="32" r="7" stroke-width="2.5"></circle>
+        <path d="M32 32 L32 18 C37 19.5 41 23.5 42.5 28.5 C44 33.5 42 39 37.5 42.5" stroke-width="2.5"></path>
+      </g>
+    </svg>
+  `;
+  anchor.parentElement.insertBefore(button, anchor);
+  void logFrontendEvent('INFO', 'Experimental game page shortcut inserted', {
+    appId,
+    appName,
+  });
 }
 
 // ─── Sidebar panel ────────────────────────────────────────────────────────────
@@ -286,8 +460,11 @@ export default definePlugin(() => {
   const focusedGamePoll = setInterval(syncFocusedGameFromPath, 1000);
   const gamePagePatch = routerHook.addPatch('/library/app/:appid', (props: { appid?: string }) => {
     syncFocusedGameFromPath();
+    window.setTimeout(syncExperimentalGamePageShortcutButton, 50);
+    window.setTimeout(syncExperimentalGamePageShortcutButton, 400);
     return props;
   });
+  const gamePageShortcutPoll = setInterval(syncExperimentalGamePageShortcutButton, 1500);
   const menuPatch = patchGameContextMenu(LibraryContextMenu);
   const badgePatch = patchGamePageBadge();
 
@@ -318,6 +495,8 @@ export default definePlugin(() => {
       routerHook.removePatch('/library/app/:appid', gamePagePatch);
       routerHook.removePatch('/library/app/:appid', badgePatch);
       clearInterval(focusedGamePoll);
+      clearInterval(gamePageShortcutPoll);
+      removeExperimentalGamePageShortcut();
       menuPatch.unpatch();
       teardownScreenshotAutomation();
     },

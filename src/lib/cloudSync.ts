@@ -1,11 +1,20 @@
 // src/lib/cloudSync.ts
 import { logFrontendEvent } from './logger';
 import { getVoterId, restRequest } from './voting';
-import { getSetting, setSetting } from './settings';
+import { getSetting, setSetting, onSettingsChanged } from './settings';
 import { getTrackedConfigs, addTrackedConfig, onConfigSaved, type TrackedConfig } from './trackedConfigs';
+import {
+  applyPluginSettingsBackupPayload,
+  buildPluginSettingsBackupPayload,
+  type LocalDataBackupPayload,
+} from './localDataBackup';
 
 const AUTO_SYNC_KEY = 'cloud-auto-sync';
+const AUTO_SYNC_PLUGIN_SETTINGS_KEY = 'cloud-plugin-settings-auto-sync';
+const PLUGIN_ID = 'proton-pulse';
 let teardownAutoSyncListener: (() => void) | null = null;
+let teardownPluginSettingsListener: (() => void) | null = null;
+let pendingPluginSettingsPushTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
 
 export function isAutoSyncEnabled(): boolean {
   return getSetting<boolean>(AUTO_SYNC_KEY, true);
@@ -13,6 +22,14 @@ export function isAutoSyncEnabled(): boolean {
 
 export function setAutoSyncEnabled(enabled: boolean): void {
   setSetting(AUTO_SYNC_KEY, enabled);
+}
+
+export function isPluginSettingsAutoSyncEnabled(): boolean {
+  return getSetting<boolean>(AUTO_SYNC_PLUGIN_SETTINGS_KEY, false);
+}
+
+export function setPluginSettingsAutoSyncEnabled(enabled: boolean): void {
+  setSetting(AUTO_SYNC_PLUGIN_SETTINGS_KEY, enabled);
 }
 
 export async function pushConfig(config: TrackedConfig): Promise<boolean> {
@@ -68,6 +85,13 @@ export interface CloudConfigRow {
   updated_at: string;
 }
 
+export interface CloudPluginSettingsRow {
+  voter_id: string;
+  plugin_id: string;
+  payload: LocalDataBackupPayload;
+  updated_at: string;
+}
+
 export type SyncStatus = 'synced' | 'not-synced';
 
 export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
@@ -95,6 +119,76 @@ export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
   }
 }
 
+export async function pushPluginSettings(
+  payload: LocalDataBackupPayload = buildPluginSettingsBackupPayload(),
+): Promise<boolean> {
+  try {
+    const voterId = await getVoterId();
+    const { error } = await restRequest<null>('user_plugin_settings', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({
+        voter_id: voterId,
+        plugin_id: PLUGIN_ID,
+        payload,
+        updated_at: new Date().toISOString(),
+      }),
+    }, {
+      on_conflict: 'voter_id,plugin_id',
+    });
+
+    if (error) {
+      void logFrontendEvent('ERROR', 'Cloud sync: plugin settings push failed', { error });
+      return false;
+    }
+
+    void logFrontendEvent('INFO', 'Cloud sync: plugin settings pushed', {
+      entryCount: Object.keys(payload.entries ?? {}).length,
+    });
+    return true;
+  } catch (err) {
+    void logFrontendEvent('ERROR', 'Cloud sync: plugin settings push threw', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return false;
+  }
+}
+
+export async function fetchCloudPluginSettings(): Promise<CloudPluginSettingsRow | null> {
+  try {
+    const voterId = await getVoterId();
+    const { data, error } = await restRequest<CloudPluginSettingsRow[]>('user_plugin_settings', {
+      method: 'GET',
+      headers: { Range: '0-0' },
+    }, {
+      select: 'voter_id,plugin_id,payload,updated_at',
+      voter_id: `eq.${voterId}`,
+      plugin_id: `eq.${PLUGIN_ID}`,
+      limit: '1',
+    });
+
+    if (error || !data?.length) {
+      if (error) {
+        void logFrontendEvent('ERROR', 'Cloud sync: plugin settings fetch failed', { error });
+      }
+      return null;
+    }
+
+    return data[0];
+  } catch (err) {
+    void logFrontendEvent('ERROR', 'Cloud sync: plugin settings fetch threw', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
+}
+
+export async function restoreCloudPluginSettings(): Promise<number> {
+  const row = await fetchCloudPluginSettings();
+  if (!row?.payload) return 0;
+  return applyPluginSettingsBackupPayload(row.payload);
+}
+
 export async function checkHasCloudBackup(): Promise<boolean> {
   try {
     const voterId = await getVoterId();
@@ -112,6 +206,10 @@ export async function checkHasCloudBackup(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function checkHasCloudPluginSettingsBackup(): Promise<boolean> {
+  return (await fetchCloudPluginSettings()) !== null;
 }
 
 export function getCloudSyncStatus(
@@ -178,10 +276,26 @@ export function initCloudSync(): void {
     if (!isAutoSyncEnabled()) return;
     void pushConfig(config);
   });
+  teardownPluginSettingsListener = onSettingsChanged(() => {
+    if (!isPluginSettingsAutoSyncEnabled()) return;
+    if (pendingPluginSettingsPushTimer !== null) {
+      globalThis.clearTimeout(pendingPluginSettingsPushTimer);
+    }
+    pendingPluginSettingsPushTimer = globalThis.setTimeout(() => {
+      pendingPluginSettingsPushTimer = null;
+      void pushPluginSettings();
+    }, 500);
+  });
   void logFrontendEvent('INFO', 'Cloud sync: auto-sync listener registered');
 }
 
 export function teardownCloudSync(): void {
   teardownAutoSyncListener?.();
   teardownAutoSyncListener = null;
+  teardownPluginSettingsListener?.();
+  teardownPluginSettingsListener = null;
+  if (pendingPluginSettingsPushTimer !== null) {
+    globalThis.clearTimeout(pendingPluginSettingsPushTimer);
+    pendingPluginSettingsPushTimer = null;
+  }
 }

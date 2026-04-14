@@ -271,6 +271,32 @@ function effectiveAutoFilter(gpuVendor: GpuVendor | null): FilterTier {
   return 'all';
 }
 
+function emptyScoreContext(): SystemInfo {
+  return {
+    cpu: null,
+    ram_gb: null,
+    gpu: null,
+    gpu_vendor: null,
+    driver_version: null,
+    kernel: null,
+    distro: null,
+    proton_custom: null,
+  };
+}
+
+function buildScoreContextForFilter(sysInfo: SystemInfo | null, filter: FilterTier): SystemInfo {
+  const base = sysInfo ?? emptyScoreContext();
+  if (filter === 'all') return base;
+  if (base.gpu_vendor === filter) return base;
+
+  return {
+    ...base,
+    gpu_vendor: filter,
+    gpu: null,
+    driver_version: null,
+  };
+}
+
 function editStorageKey(appId: number): string {
   return `${EDIT_STORAGE_PREFIX}${appId}`;
 }
@@ -368,20 +394,10 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const gpuVendor = sysInfo?.gpu_vendor ?? null;
   const [filter, setFilter] = useState<FilterTier>('all');
 
-  const scoreContext = sysInfo ?? {
-    cpu: null,
-    ram_gb: null,
-    gpu: null,
-    gpu_vendor: null,
-    driver_version: null,
-    kernel: null,
-    distro: null,
-    proton_custom: null,
-    vram_mb: null,
-    cpu_cores: null,
-    display_resolution: null,
-    steam_deck_model: null,
-  };
+  const scoreContext = useMemo(
+    () => buildScoreContextForFilter(sysInfo, filter),
+    [sysInfo, filter],
+  );
 
   const baseDisplayReports: DisplayReportCard[] = reports.map(r => ({
     ...scoreReport(r, scoreContext),
@@ -1056,7 +1072,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                     report={r}
                     selected={selectedKey === r.displayKey}
                     focused={focusedCardKey === r.displayKey}
-                    systemGpuVendor={gpuVendor}
+                    systemGpuVendor={filter === 'all' ? gpuVendor : filter}
                     onFocus={(report) => {
                       setFocusedCardKey(report.displayKey);
                       setSelectedKey(report.displayKey);

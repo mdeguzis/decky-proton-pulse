@@ -3,7 +3,7 @@ import { ModalRoot, Focusable, DialogButton, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { t } from '../lib/i18n';
 import { toaster } from '../lib/notify';
-import { copyToClipboard } from '../lib/clipboard';
+import { logFrontendEvent } from '../lib/logger';
 
 const SCROLL_STEP = 120;
 
@@ -32,14 +32,76 @@ export function LogViewerModal({ logs, entryCount, closeModal }: Props) {
     }
   }, [logs]);
 
+  const copyLogsToClipboard = async (): Promise<void> => {
+    void logFrontendEvent('DEBUG', 'Attempting to copy logs to clipboard', {
+      entryCount,
+      logLength: logs.length,
+    });
+
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(logs);
+        void logFrontendEvent('INFO', 'Copied logs with navigator.clipboard.writeText', {
+          entryCount,
+          logLength: logs.length,
+        });
+        return;
+      } catch (error) {
+        void logFrontendEvent('WARNING', 'navigator.clipboard.writeText failed for logs', {
+          error: error instanceof Error ? error.message : String(error),
+          entryCount,
+          logLength: logs.length,
+        });
+      }
+    }
+
+    void logFrontendEvent('DEBUG', 'Falling back to document.execCommand for log copy', {
+      entryCount,
+      logLength: logs.length,
+    });
+
+    const textarea = document.createElement('textarea');
+    textarea.value = logs;
+    textarea.setAttribute('readonly', 'true');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '-9999px';
+    textarea.style.left = '-9999px';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+
+    try {
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      const copied = document.execCommand('copy');
+      if (!copied) {
+        throw new Error('document.execCommand returned false');
+      }
+      void logFrontendEvent('INFO', 'Copied logs with document.execCommand fallback', {
+        entryCount,
+        logLength: logs.length,
+      });
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  };
+
   const handleCopy = async () => {
     try {
-      const ok = await copyToClipboard(logs);
-      if (!ok) throw new Error('backend copy failed');
+      await copyLogsToClipboard();
       setCopied(true);
+      void logFrontendEvent('INFO', 'Log copy action completed successfully', {
+        entryCount,
+        logLength: logs.length,
+      });
       toaster.toast({ title: 'Proton Pulse', body: t().logs.copiedToClipboard });
       window.setTimeout(() => setCopied(false), 2500);
-    } catch {
+    } catch (error) {
+      void logFrontendEvent('ERROR', 'Failed to copy logs to clipboard', {
+        error: error instanceof Error ? error.message : String(error),
+        entryCount,
+        logLength: logs.length,
+      });
       toaster.toast({ title: 'Proton Pulse', body: t().logs.copyFailed });
     }
   };

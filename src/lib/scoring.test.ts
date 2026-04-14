@@ -1,6 +1,17 @@
 // src/lib/scoring.test.ts
 import { describe, it, expect } from 'vitest';
-import { scoreReport, bucketByGpuTier, parseNotesSentiment, parseProtonMajorVersion, getHardwareMatchPercent, getHardwareMatchBreakdown, scoreToRating, estimateVramGb, parseVramFromRequirements } from './scoring';
+import {
+  scoreReport,
+  bucketByGpuTier,
+  parseNotesSentiment,
+  parseProtonMajorVersion,
+  getHardwareMatchPercent,
+  getHardwareMatchBreakdown,
+  scoreToRating,
+  scoreToMatchTier,
+  estimateVramGb,
+  parseVramFromRequirements,
+} from './scoring';
 import type { CdnReport, SystemInfo } from '../types';
 
 const nvidiaSystem: SystemInfo = {
@@ -178,6 +189,16 @@ describe('scoreReport', () => {
     expect(scoreReport(matchProton, nvidiaSystem).score).toBeGreaterThan(
       scoreReport(diffProton, nvidiaSystem).score
     );
+  });
+});
+
+describe('scoreToMatchTier', () => {
+  it('maps strong scores to higher match tiers', () => {
+    expect(scoreToMatchTier(84)).toBe('platinum');
+    expect(scoreToMatchTier(67)).toBe('gold');
+    expect(scoreToMatchTier(47)).toBe('silver');
+    expect(scoreToMatchTier(29)).toBe('bronze');
+    expect(scoreToMatchTier(9)).toBe('borked');
   });
 });
 

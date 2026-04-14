@@ -420,7 +420,15 @@ reload:
 	@sleep 2
 	@if [ -n "$(DECK_IP)" ]; then \
 		echo "Reloading remote plugin_loader on $(DECK_USER)@$(DECK_IP)"; \
-		ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart plugin_loader"; \
+		if ssh -tt $(DECK_USER)@$(DECK_IP) "sudo -n systemctl restart plugin_loader"; then \
+			echo "Remote plugin_loader restarted."; \
+		else \
+			echo "Remote sudo is not passwordless for plugin_loader restart."; \
+			echo "Recommended Deck sudoers entry:"; \
+			echo "  $(DECK_USER) ALL=(root) NOPASSWD: /usr/bin/systemctl restart plugin_loader, /usr/bin/systemctl status plugin_loader"; \
+			echo "Or restart plugin_loader manually on the Deck."; \
+			exit 1; \
+		fi; \
 	elif systemctl list-unit-files plugin_loader.service >/dev/null 2>&1; then \
 		echo "Reloading local plugin_loader service"; \
 		if systemctl is-active --quiet plugin_loader.service 2>/dev/null || systemctl status plugin_loader.service >/dev/null 2>&1; then \

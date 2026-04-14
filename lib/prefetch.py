@@ -119,6 +119,15 @@ def discover_installed_games() -> list[dict[str, Any]]:
     )
 
 
+def get_installed_game_stats() -> dict[str, Any]:
+    """Return manifest-based installed Steam game stats for frontend diagnostics."""
+    games = discover_installed_games()
+    return {
+        "installed_steam_games": len(games),
+        "installed_steam_app_ids": [str(game["app_id"]) for game in games],
+    }
+
+
 # ── CDN fetch with backoff ───────────────────────────────────────────────────
 
 

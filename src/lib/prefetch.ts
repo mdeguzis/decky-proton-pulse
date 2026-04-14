@@ -10,6 +10,7 @@
 // is throttled so we dont hammer the CDN on startup.
 
 import { fetchNoCors } from '@decky/api';
+import { callable } from '@decky/api';
 import { logFrontendEvent } from './logger';
 import { setCache, getCachedAppIds, initCache } from './cache';
 import type { VoteTotals } from './cache';
@@ -38,6 +39,10 @@ const CONCURRENCY = 3;
 const APP_INDEX_URL = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/index.json';
 const YEAR_URL = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}/{year}.json';
 const SUMMARY_URL = 'https://www.protondb.com/api/v1/reports/summaries/{id}.json';
+const getInstalledGameStatsCallable = callable<[], {
+  installed_steam_games: number;
+  installed_steam_app_ids: string[];
+}>('get_installed_game_stats');
 
 const VALID_RATINGS = new Set<string>(['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending']);
 
@@ -81,7 +86,6 @@ function isInstalledGame(app: AppOverview): boolean {
   if (!app?.appid || app.appid <= 0) return false;
   if (app.installed === true) return true;
   if (app.bHasAnyLocalContent === true) return true;
-  if (typeof app.iInstallFolder === 'number' && app.iInstallFolder >= 0) return true;
   if (typeof app.strInstallFolder === 'string' && app.strInstallFolder.trim().length > 0) return true;
   return false;
 }
@@ -315,7 +319,33 @@ export async function runStartupPrefetch(): Promise<void> {
   try {
     initCache();
 
-    const games = getInstalledGames();
+    const frontendGames = getInstalledGames();
+    let orderedInstalledAppIds: string[] = [];
+
+    try {
+      const backendStats = await getInstalledGameStatsCallable();
+      orderedInstalledAppIds = Array.isArray(backendStats.installed_steam_app_ids)
+        ? backendStats.installed_steam_app_ids.map(String)
+        : [];
+      void logFrontendEvent('INFO', 'Using backend installed game list for prefetch', {
+        installed: backendStats.installed_steam_games ?? orderedInstalledAppIds.length,
+        appIds: orderedInstalledAppIds.slice(0, 5),
+      });
+    } catch (error) {
+      void logFrontendEvent('WARNING', 'Backend installed game stats unavailable for prefetch', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    const games = orderedInstalledAppIds.length
+      ? orderedInstalledAppIds
+        .map((appId) => frontendGames.find((game) => String(game.appid) === appId) ?? {
+          appid: Number.parseInt(appId, 10),
+          display_name: '',
+        })
+        .filter((game) => Number.isFinite(game.appid) && game.appid > 0)
+      : frontendGames;
+
     if (!games.length) {
       void logFrontendEvent('INFO', 'No installed games found for prefetch');
       batchSpan.end(true, { reason: 'no-games' });
@@ -323,8 +353,8 @@ export async function runStartupPrefetch(): Promise<void> {
       return;
     }
 
-    const recent = getRecentlyPlayed(games, RECENTLY_PLAYED_DAYS);
-    const ranked = rankPrefetchCandidates(games);
+    const recent = orderedInstalledAppIds.length ? [] : getRecentlyPlayed(games, RECENTLY_PLAYED_DAYS);
+    const ranked = orderedInstalledAppIds.length ? games : rankPrefetchCandidates(games);
     void logFrontendEvent('INFO', 'Prefetch candidate summary', {
       installed: games.length,
       recentlyPlayed: recent.length,

@@ -155,6 +155,38 @@ Normal build and deploy commands sync that value into `package.json` and `pyproj
 * [API Reference](https://github.com/mdeguzis/decky-proton-pulse/wiki/API-Reference) — Python callables and TypeScript interfaces
 * [ProtonDB Data Resolution](https://github.com/mdeguzis/decky-proton-pulse/wiki/ProtonDB-Data-Resolution) — app ID resolution, mirror misses, and live fallback
 
+## Troubleshooting
+
+### Connect To Steam CEF Remote Debugging
+
+If you need to inspect Deck UI patches, injected buttons, or console errors live on the Deck, you can enable Steam's CEF remote debugger and connect from your desktop browser.
+
+1. Enable the remote debugger on the Deck:
+
+```bash
+DECK_IP=192.168.1.x make cef-debug-enable
+```
+
+2. Open the debugger endpoint from your desktop browser:
+
+```text
+http://192.168.1.x:8081
+```
+
+3. If your browser does not auto-discover the targets, open:
+
+```text
+http://192.168.1.x:8081/json
+```
+
+That page lists the active Steam CEF targets and their DevTools URLs.
+
+Tips:
+
+* Keep `make get-logs` handy in another terminal so you can compare frontend console behavior with the plugin log.
+* If you are debugging a game page patch, open the game page first, then refresh the target list so the correct CEF view is visible.
+* Use the inspector console to confirm route changes, DOM anchor selection, and injected button state when UI patches do not show up where expected.
+
 ## License
 
 See [LICENSE](https://github.com/mdeguzis/decky-proton-pulse/blob/main/LICENSE).

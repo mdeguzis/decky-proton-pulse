@@ -4,18 +4,27 @@ import type { GamepadEvent } from '@decky/ui';
 import { callable, openFilePicker, FileSelectionType } from '@decky/api';
 import { useEffect, useRef, useState } from 'react';
 import { getSetting, setSetting } from '../../lib/settings';
-import { NOTIFICATIONS_ENABLED_KEY } from '../../lib/notify';
+import { NOTIFICATIONS_ENABLED_KEY, toaster } from '../../lib/notify';
 import { logFrontendEvent, callWithTimeout } from '../../lib/logger';
 import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
 import { getCacheTtlMs, setCacheTtlHours, getCacheStats, getCachedAppIds } from '../../lib/cache';
 import { getSummary, getPrefetchFailureSummary } from '../../lib/metrics';
-import { getInstalledGameStats } from '../../lib/prefetch';
 import { CacheManagerModalContent } from '../CacheManagerModal';
 import { exportLocalDataBackup, importLocalDataBackup } from '../../lib/localDataBackup';
-import { isAutoSyncEnabled, setAutoSyncEnabled } from '../../lib/cloudSync';
+import {
+  isAutoSyncEnabled,
+  setAutoSyncEnabled,
+  isPluginSettingsAutoSyncEnabled,
+  setPluginSettingsAutoSyncEnabled,
+} from '../../lib/cloudSync';
+import { getVoterId } from '../../lib/voting';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
+const getInstalledGameStatsCallable = callable<[], {
+  installed_steam_games: number;
+  installed_steam_app_ids: string[];
+}>('get_installed_game_stats');
 const setLogLevelSafe = (level: string) =>
   callWithTimeout(() => setLogLevel(level), 'set_log_level', 5000);
 
@@ -54,6 +63,7 @@ function scrollNearestScrollableAncestor(node: HTMLDivElement | null): void {
 }
 
 const ADVANCED_SETTINGS_KEY = 'advanced-settings-enabled';
+const EXPERIMENTAL_GAME_PAGE_SHORTCUT_KEY = 'experimental-game-page-shortcut-enabled';
 
 function formatCacheTtl(hours: number): string {
   if (hours < 24) return `${hours}h`;
@@ -82,13 +92,47 @@ function formatPrefetchReason(reason: string): string {
 function MetricsInfoBox() {
   const extras = t().extras!;
   const [stats, setStats] = useState<ReturnType<typeof getSummary> | null>(null);
+  const [backendInstalledStats, setBackendInstalledStats] = useState<{
+    installedSteamGames: number;
+    installedSteamAppIds: string[];
+  }>({ installedSteamGames: 0, installedSteamAppIds: [] });
   const cacheStats = getCacheStats();
 
   useEffect(() => {
     setStats(getSummary());
+    void getInstalledGameStatsCallable()
+      .then((result) => {
+        setBackendInstalledStats({
+          installedSteamGames: Math.max(0, result.installed_steam_games ?? 0),
+          installedSteamAppIds: Array.isArray(result.installed_steam_app_ids)
+            ? result.installed_steam_app_ids.map(String)
+            : [],
+        });
+      })
+      .catch((error) => {
+        void logFrontendEvent('WARNING', 'Failed to fetch backend installed game stats', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
   }, []);
 
-  const refresh = () => setStats(getSummary());
+  const refresh = () => {
+    setStats(getSummary());
+    void getInstalledGameStatsCallable()
+      .then((result) => {
+        setBackendInstalledStats({
+          installedSteamGames: Math.max(0, result.installed_steam_games ?? 0),
+          installedSteamAppIds: Array.isArray(result.installed_steam_app_ids)
+            ? result.installed_steam_app_ids.map(String)
+            : [],
+        });
+      })
+      .catch((error) => {
+        void logFrontendEvent('WARNING', 'Failed to refresh backend installed game stats', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+  };
 
   if (!stats) return null;
 
@@ -105,12 +149,31 @@ function MetricsInfoBox() {
     : extras.notAvailable();
   const topPrefetchFailure = Object.entries(prefetchFailures.byReason)
     .sort((a, b) => b[1] - a[1])[0] ?? null;
-  const installedStats = getInstalledGameStats();
   const cachedAppIds = getCachedAppIds();
-  const cachedInstalledGames = installedStats.installedSteamAppIds.filter((appId) => cachedAppIds.has(appId)).length;
-  const installedCoverage = installedStats.installedSteamGames > 0
-    ? `${((cachedInstalledGames / installedStats.installedSteamGames) * 100).toFixed(1)}%`
+  const cachedInstalledGames = backendInstalledStats.installedSteamAppIds.filter((appId) => cachedAppIds.has(appId)).length;
+  const installedRemaining = Math.max(backendInstalledStats.installedSteamGames - cachedInstalledGames, 0);
+  const installedCoverage = backendInstalledStats.installedSteamGames > 0
+    ? `${((cachedInstalledGames / backendInstalledStats.installedSteamGames) * 100).toFixed(1)}%`
     : extras.notAvailable();
+  const prefetchStatus =
+    backendInstalledStats.installedSteamGames <= 0
+      ? extras.notAvailable()
+      : installedRemaining > 0
+        ? extras.prefetchStatusWarming(
+            cachedInstalledGames,
+            backendInstalledStats.installedSteamGames,
+            installedRemaining,
+          )
+        : prefetchFailures.total > 0
+          ? extras.prefetchStatusCompleteWithMisses(
+              cachedInstalledGames,
+              backendInstalledStats.installedSteamGames,
+              prefetchFailures.total,
+            )
+          : extras.prefetchStatusComplete(
+              cachedInstalledGames,
+              backendInstalledStats.installedSteamGames,
+            );
 
   const infoStyle: React.CSSProperties = {
     background: '#0d1b2a',
@@ -145,7 +208,8 @@ function MetricsInfoBox() {
       <div><span style={labelStyle}>{extras.uptime()}</span>{upMin}m</div>
       <div><span style={labelStyle}>{extras.cacheHitRate()}</span>{hitRate} ({extras.hitsAndMisses(counters.cacheHits, counters.cacheMisses)})</div>
       <div><span style={labelStyle}>{extras.cachedGames()}</span>{cacheStats.size} / {cacheStats.maxSize}</div>
-      <div><span style={labelStyle}>{extras.installedCoverage()}</span>{installedCoverage} ({cachedInstalledGames} / {installedStats.installedSteamGames})</div>
+      <div><span style={labelStyle}>{extras.installedCoverage()}</span>{installedCoverage} ({cachedInstalledGames} / {backendInstalledStats.installedSteamGames})</div>
+      <div><span style={labelStyle}>{extras.prefetchStatus()}</span>{prefetchStatus}</div>
       <div><span style={labelStyle}>{extras.prefetched()}</span>{extras.gamesCount(counters.prefetchedGames)}</div>
       <div><span style={labelStyle}>{extras.totalFetches()}</span>{counters.totalFetches}{counters.fetchErrors > 0 ? extras.errorsSuffix(counters.fetchErrors) : ''}</div>
       <div><span style={labelStyle}>{extras.localGames()}</span>{extras.skippedCount(counters.localNonSteamGames)}</div>
@@ -178,8 +242,13 @@ export function GeneralSettingsTab() {
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
   const [cloudAutoSync, setCloudAutoSync] = useState(() => isAutoSyncEnabled());
-  const [badgeEnabled, setBadgeEnabled] = useState(() => getSetting('showGamePageBadge', false));
+  const [cloudPluginSettingsAutoSync, setCloudPluginSettingsAutoSync] = useState(
+    () => isPluginSettingsAutoSyncEnabled(),
+  );
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
+  const [experimentalGamePageShortcutEnabled, setExperimentalGamePageShortcutEnabled] = useState(
+    () => getSetting(EXPERIMENTAL_GAME_PAGE_SHORTCUT_KEY, false),
+  );
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const languageRowRef = useRef<HTMLDivElement>(null);
@@ -187,6 +256,7 @@ export function GeneralSettingsTab() {
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupStatusMessage, setBackupStatusMessage] = useState('');
   const [backupStatusTone, setBackupStatusTone] = useState<'neutral' | 'success' | 'error'>('neutral');
+  const [anonymousClientId, setAnonymousClientId] = useState<string | null>(null);
 
   useEffect(() => {
     void setLogLevelSafe(debugEnabled ? 'DEBUG' : 'INFO').catch((error) => {
@@ -195,6 +265,17 @@ export function GeneralSettingsTab() {
       });
     });
   }, [debugEnabled]);
+
+  useEffect(() => {
+    void getVoterId()
+      .then((value) => setAnonymousClientId(value))
+      .catch((error) => {
+        void logFrontendEvent('WARNING', 'Failed to resolve anonymous client id', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        setAnonymousClientId(null);
+      });
+  }, []);
 
   const handleDebugToggle = async (enabled: boolean) => {
     void logFrontendEvent('INFO', 'Debug logging toggle changed', {
@@ -306,6 +387,60 @@ export function GeneralSettingsTab() {
     }
   };
 
+  const handleCopyAnonymousClientId = async () => {
+    if (!anonymousClientId) return;
+    try {
+      void logFrontendEvent('DEBUG', 'Attempting to copy anonymous client ID', {
+        idLength: anonymousClientId.length,
+      });
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(anonymousClientId);
+          void logFrontendEvent('INFO', 'Copied anonymous client ID with navigator.clipboard.writeText', {
+            idLength: anonymousClientId.length,
+          });
+          toaster.toast({ title: 'Proton Pulse', body: extras.anonymousClientIdCopied() });
+          return;
+        } catch (error) {
+          void logFrontendEvent('WARNING', 'navigator.clipboard.writeText failed for anonymous client ID', {
+            error: error instanceof Error ? error.message : String(error),
+            idLength: anonymousClientId.length,
+          });
+        }
+      }
+
+      const textarea = document.createElement('textarea');
+      textarea.value = anonymousClientId;
+      textarea.setAttribute('readonly', 'true');
+      textarea.style.position = 'fixed';
+      textarea.style.top = '-9999px';
+      textarea.style.left = '-9999px';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      try {
+        textarea.focus();
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+        const copied = document.execCommand('copy');
+        if (!copied) {
+          throw new Error('document.execCommand returned false');
+        }
+        void logFrontendEvent('INFO', 'Copied anonymous client ID with document.execCommand fallback', {
+          idLength: anonymousClientId.length,
+        });
+      } finally {
+        document.body.removeChild(textarea);
+      }
+      toaster.toast({ title: 'Proton Pulse', body: extras.anonymousClientIdCopied() });
+    } catch (error) {
+      void logFrontendEvent('ERROR', 'Failed to copy anonymous client ID', {
+        error: error instanceof Error ? error.message : String(error),
+        idLength: anonymousClientId.length,
+      });
+      toaster.toast({ title: 'Proton Pulse', body: extras.anonymousClientIdCopyFailed() });
+    }
+  };
+
   return (
     <Focusable onGamepadDirection={handleRootDirection}>
       <div style={sectionStyle()}>
@@ -363,57 +498,19 @@ export function GeneralSettingsTab() {
             }}
           />
         </div>
-
-        {/* Backup & Restore — in normal section */}
-        <div ref={localDataSectionRef} style={{ marginTop: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 4, marginRight: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#c8dde8', marginLeft: 8 }}>
-              {extras.localDataSection()}
-            </div>
-            {backupStatusMessage && (
-              <div
-                style={{
-                  fontSize: 10,
-                  color:
-                    backupStatusTone === 'success'
-                      ? '#9dc4e8'
-                      : backupStatusTone === 'error'
-                        ? '#f3b3b3'
-                        : '#7a9bb5',
-                  textAlign: 'right',
-                  maxWidth: 360,
-                  lineHeight: 1.35,
-                }}
-              >
-                {backupStatusMessage}
-              </div>
-            )}
-          </div>
-          <div style={{ fontSize: 11, color: '#7a9bb5', margin: '0 8px 10px' }}>
-            {extras.localDataSectionDescription()}
-          </div>
-          <div style={{ ...focusClipRowStyle(), paddingBottom: 8 }}>
-            <DialogButton onClick={() => void handleExportLocalData()} disabled={backupBusy}>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>
-                {extras.backupLocalData()}
-              </div>
-              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
-                {extras.backupLocalDataDescription()}
-              </div>
-            </DialogButton>
-          </div>
-          <div style={focusClipRowStyle()}>
-            <DialogButton onClick={() => void handleImportLocalData()} disabled={backupBusy}>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>
-                {extras.importLocalData()}
-              </div>
-              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
-                {extras.importLocalDataDescription()}
-              </div>
-            </DialogButton>
-          </div>
-        </div>
-      </div>
+         <div style={focusClipRowStyle()}>
+           <ToggleField
+             label={t().settings.cloudPluginSettingsAutoSync}
+             description={t().settings.cloudPluginSettingsAutoSyncDescription}
+             checked={cloudPluginSettingsAutoSync}
+             onChange={(enabled) => {
+               setCloudPluginSettingsAutoSync(enabled);
+               setPluginSettingsAutoSyncEnabled(enabled);
+               void logFrontendEvent('INFO', 'Cloud plugin settings auto-sync toggled', { enabled });
+             }}
+           />
+         </div>
+       </div>
 
       {/* advanced settings toggle */}
       <div style={sectionStyle()}>
@@ -432,6 +529,26 @@ export function GeneralSettingsTab() {
       </div>
 
       {/* advanced section: cache management */}
+      {advancedEnabled && (
+        <div style={sectionStyle()}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
+            {t().settings.experimental}
+          </div>
+          <div style={focusClipRowStyle()}>
+            <ToggleField
+              label={t().settings.experimentalGamePageShortcut}
+              description={t().settings.experimentalGamePageShortcutDescription}
+              checked={experimentalGamePageShortcutEnabled}
+              onChange={(enabled) => {
+                setExperimentalGamePageShortcutEnabled(enabled);
+                setSetting(EXPERIMENTAL_GAME_PAGE_SHORTCUT_KEY, enabled);
+                void logFrontendEvent('INFO', 'Experimental game page shortcut toggled', { enabled });
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {advancedEnabled && (
         <div style={sectionStyle()}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
@@ -476,7 +593,94 @@ export function GeneralSettingsTab() {
         </div>
       )}
 
-      {/* advanced section: performance metrics */}
+      {advancedEnabled && (
+        <div ref={localDataSectionRef} style={sectionStyle()}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 4, marginRight: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff' }}>
+              {extras.localDataSection()}
+            </div>
+            {backupStatusMessage && (
+              <div
+                style={{
+                  fontSize: 10,
+                  color:
+                    backupStatusTone === 'success'
+                      ? '#9dc4e8'
+                      : backupStatusTone === 'error'
+                        ? '#f3b3b3'
+                        : '#7a9bb5',
+                  textAlign: 'right',
+                  maxWidth: 360,
+                  lineHeight: 1.35,
+                }}
+              >
+                {backupStatusMessage}
+              </div>
+            )}
+          </div>
+          <div style={{ fontSize: 11, color: '#7a9bb5', margin: '0 8px 10px' }}>
+            {extras.localDataSectionDescription()}
+          </div>
+          <div
+            style={{
+              margin: '0 8px 12px',
+              padding: '10px 12px',
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.03)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#eef7ff', minWidth: 0, flex: 1 }}>
+                {extras.anonymousClientId()}
+              </div>
+              <div style={{ width: 76, flexShrink: 0, overflow: 'hidden', borderRadius: 8 }}>
+                <DialogButton
+                  onClick={() => void handleCopyAnonymousClientId()}
+                  disabled={!anonymousClientId}
+                  style={{
+                    minWidth: 0,
+                    width: '100%',
+                    padding: '4px 8px',
+                    fontSize: 10,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {extras.copyAnonymousClientId()}
+                </DialogButton>
+              </div>
+            </div>
+            <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6, lineHeight: 1.4 }}>
+              {extras.anonymousClientIdDescription()}
+            </div>
+            <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#9dc4e8', wordBreak: 'break-all' }}>
+              {anonymousClientId ?? extras.anonymousClientIdLoading()}
+            </div>
+          </div>
+          <div style={{ ...focusClipRowStyle(), paddingBottom: 8 }}>
+            <DialogButton onClick={() => void handleExportLocalData()} disabled={backupBusy}>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>
+                {extras.backupLocalData()}
+              </div>
+              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+                {extras.backupLocalDataDescription()}
+              </div>
+            </DialogButton>
+          </div>
+          <div style={focusClipRowStyle()}>
+            <DialogButton onClick={() => void handleImportLocalData()} disabled={backupBusy}>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>
+                {extras.importLocalData()}
+              </div>
+              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+                {extras.importLocalDataDescription()}
+              </div>
+            </DialogButton>
+          </div>
+        </div>
+      )}
+
+       {/* advanced section: performance metrics */}
       {advancedEnabled && (
         <div style={sectionStyle()}>
           <MetricsInfoBox />

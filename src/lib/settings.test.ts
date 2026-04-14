@@ -1,6 +1,13 @@
 // src/lib/settings.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getSetting, setSetting } from './settings';
+import {
+  getSetting,
+  setSetting,
+  getAllPrefixedSettingsRaw,
+  replaceAllPrefixedSettingsRaw,
+  replacePrefixedSettingsSubsetRaw,
+  onSettingsChanged,
+} from './settings';
 
 const localStorageStore: Record<string, string> = {};
 
@@ -9,6 +16,8 @@ const localStorageMock = {
   setItem: (key: string, value: string) => { localStorageStore[key] = value; },
   removeItem: (key: string) => { delete localStorageStore[key]; },
   clear: () => { Object.keys(localStorageStore).forEach(k => delete localStorageStore[k]); },
+  key: (index: number) => Object.keys(localStorageStore)[index] ?? null,
+  get length() { return Object.keys(localStorageStore).length; },
 };
 
 vi.stubGlobal('localStorage', localStorageMock);
@@ -68,5 +77,59 @@ describe('setSetting', () => {
     setSetting('count', 1);
     setSetting('count', 2);
     expect(getSetting('count', 0)).toBe(2);
+  });
+
+  it('notifies listeners when a setting changes', () => {
+    const listener = vi.fn();
+    const unsubscribe = onSettingsChanged(listener);
+
+    setSetting('count', 2);
+
+    expect(listener).toHaveBeenCalledWith('count');
+    unsubscribe();
+  });
+});
+
+describe('prefixed raw helpers', () => {
+  it('exports all prefixed settings without the prefix', () => {
+    setSetting('count', 2);
+    setSetting('name', 'pulse');
+
+    expect(getAllPrefixedSettingsRaw()).toEqual({
+      count: '2',
+      name: '"pulse"',
+    });
+  });
+
+  it('replaces all prefixed settings and emits a bulk-change event', () => {
+    setSetting('count', 1);
+    localStorageMock.setItem('proton-pulse:stale', '"old"');
+    const listener = vi.fn();
+    const unsubscribe = onSettingsChanged(listener);
+
+    replaceAllPrefixedSettingsRaw({
+      fresh: '"new"',
+    });
+
+    expect(getAllPrefixedSettingsRaw()).toEqual({
+      fresh: '"new"',
+    });
+    expect(listener).toHaveBeenCalledWith(null);
+    unsubscribe();
+  });
+
+  it('replaces only the matching subset of prefixed settings', () => {
+    localStorageMock.setItem('proton-pulse:language', '"en"');
+    localStorageMock.setItem('proton-pulse:tracked-configs', '[{"appId":1}]');
+
+    replacePrefixedSettingsSubsetRaw(
+      {
+        language: '"fr"',
+      },
+      (key) => key === 'language',
+    );
+
+    expect(localStorageMock.getItem('proton-pulse:language')).toBe('"fr"');
+    expect(localStorageMock.getItem('proton-pulse:tracked-configs')).toBe('[{"appId":1}]');
   });
 });

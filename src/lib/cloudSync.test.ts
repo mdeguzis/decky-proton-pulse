@@ -11,9 +11,19 @@ vi.mock('./voting', () => ({
 
 vi.mock('./settings', () => {
   const store: Record<string, unknown> = {};
+  let listeners: Array<(key: string | null) => void> = [];
   return {
     getSetting: <T>(key: string, fallback: T): T => (store[key] as T) ?? fallback,
-    setSetting: (key: string, value: unknown) => { store[key] = value; },
+    setSetting: (key: string, value: unknown) => {
+      store[key] = value;
+      listeners.forEach((listener) => listener(key));
+    },
+    onSettingsChanged: (listener: (key: string | null) => void) => {
+      listeners.push(listener);
+      return () => {
+        listeners = listeners.filter((entry) => entry !== listener);
+      };
+    },
   };
 });
 
@@ -23,14 +33,27 @@ vi.mock('./trackedConfigs', () => ({
   onConfigSaved: vi.fn(),
 }));
 
+vi.mock('./localDataBackup', () => ({
+  buildPluginSettingsBackupPayload: vi.fn(() => ({
+    format: 'proton-pulse-local-backup',
+    version: 1,
+    exportedAt: '2026-04-13T00:00:00Z',
+    entries: { theme: '"dark"' },
+  })),
+  applyPluginSettingsBackupPayload: vi.fn(() => 1),
+}));
+
 import { restRequest } from './voting';
 import type { TrackedConfig } from './trackedConfigs';
 import { getTrackedConfigs, addTrackedConfig, onConfigSaved } from './trackedConfigs';
+import { applyPluginSettingsBackupPayload, buildPluginSettingsBackupPayload } from './localDataBackup';
 
 const mockRestRequest = vi.mocked(restRequest);
 const mockGetTrackedConfigs = vi.mocked(getTrackedConfigs);
 const mockAddTrackedConfig = vi.mocked(addTrackedConfig);
 const mockOnConfigSaved = vi.mocked(onConfigSaved);
+const mockBuildPluginSettingsBackupPayload = vi.mocked(buildPluginSettingsBackupPayload);
+const mockApplyPluginSettingsBackupPayload = vi.mocked(applyPluginSettingsBackupPayload);
 
 function makeConfig(overrides: Partial<TrackedConfig> = {}): TrackedConfig {
   return {
@@ -95,6 +118,75 @@ describe('pushConfig', () => {
 
     const { pushConfig } = await import('./cloudSync');
     expect(await pushConfig(makeConfig())).toBe(false);
+  });
+});
+
+describe('plugin settings cloud sync', () => {
+  it('upserts plugin settings using the local backup payload', async () => {
+    mockRestRequest.mockResolvedValueOnce({ data: null, error: null, status: 201 });
+
+    const { pushPluginSettings } = await import('./cloudSync');
+    const ok = await pushPluginSettings();
+
+    expect(ok).toBe(true);
+    expect(mockBuildPluginSettingsBackupPayload).toHaveBeenCalled();
+    const [path, init, query] = mockRestRequest.mock.calls[0];
+    if (!init) {
+      throw new Error('Expected request init to be defined');
+    }
+    expect(path).toBe('user_plugin_settings');
+    expect(query).toMatchObject({ on_conflict: 'voter_id,plugin_id' });
+    const body = JSON.parse(init.body as string);
+    expect(body.plugin_id).toBe('proton-pulse');
+    expect(body.payload.entries).toEqual({ theme: '"dark"' });
+  });
+
+  it('fetches plugin settings from Supabase', async () => {
+    mockRestRequest.mockResolvedValueOnce({
+      data: [{
+        voter_id: 'abc123voterId',
+        plugin_id: 'proton-pulse',
+        payload: {
+          format: 'proton-pulse-local-backup',
+          version: 1,
+          exportedAt: '2026-04-13T00:00:00Z',
+          entries: { theme: '"dark"' },
+        },
+        updated_at: '2026-04-13T00:00:00Z',
+      }],
+      error: null,
+      status: 200,
+    });
+
+    const { fetchCloudPluginSettings } = await import('./cloudSync');
+    const result = await fetchCloudPluginSettings();
+
+    expect(result?.plugin_id).toBe('proton-pulse');
+    expect(result?.payload.entries).toEqual({ theme: '"dark"' });
+  });
+
+  it('restores plugin settings from the cloud payload', async () => {
+    mockRestRequest.mockResolvedValueOnce({
+      data: [{
+        voter_id: 'abc123voterId',
+        plugin_id: 'proton-pulse',
+        payload: {
+          format: 'proton-pulse-local-backup',
+          version: 1,
+          exportedAt: '2026-04-13T00:00:00Z',
+          entries: { theme: '"dark"' },
+        },
+        updated_at: '2026-04-13T00:00:00Z',
+      }],
+      error: null,
+      status: 200,
+    });
+
+    const { restoreCloudPluginSettings } = await import('./cloudSync');
+    const restored = await restoreCloudPluginSettings();
+
+    expect(restored).toBe(1);
+    expect(mockApplyPluginSettingsBackupPayload).toHaveBeenCalled();
   });
 });
 
@@ -334,5 +426,40 @@ describe('cloud auto-sync lifecycle', () => {
     teardownCloudSync();
 
     expect(unsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('pushes plugin settings after settings change when enabled', async () => {
+    vi.useFakeTimers();
+    mockRestRequest.mockResolvedValue({ data: null, error: null, status: 201 });
+
+    const { initCloudSync, setPluginSettingsAutoSyncEnabled } = await import('./cloudSync');
+    const { setSetting } = await import('./settings');
+    setPluginSettingsAutoSyncEnabled(true);
+    initCloudSync();
+
+    setSetting('language', 'en');
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(mockRestRequest).toHaveBeenCalledWith(
+      'user_plugin_settings',
+      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({ on_conflict: 'voter_id,plugin_id' }),
+    );
+    vi.useRealTimers();
+  });
+
+  it('does not push plugin settings when auto-sync is disabled', async () => {
+    vi.useFakeTimers();
+
+    const { initCloudSync, setPluginSettingsAutoSyncEnabled } = await import('./cloudSync');
+    const { setSetting } = await import('./settings');
+    setPluginSettingsAutoSyncEnabled(false);
+    initCloudSync();
+
+    setSetting('language', 'en');
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(mockRestRequest).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });

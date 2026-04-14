@@ -361,6 +361,7 @@ def test_migration_hook_and_metadata_helpers(plugin: Plugin) -> None:
         patch("main.generate_system_info", return_value="blob"),
         patch("main.export_metrics_to_disk", return_value=True),
         patch("main.collect_system_info", return_value={"gpu": "amd"}),
+        patch("main.get_installed_game_stats", return_value={"installed_steam_games": 25, "installed_steam_app_ids": ["570"]}),
         patch("main.log_frontend_event", return_value=True),
     ):
         assert asyncio.run(plugin._migration()) is None
@@ -368,6 +369,10 @@ def test_migration_hook_and_metadata_helpers(plugin: Plugin) -> None:
         assert asyncio.run(plugin.get_protondb_systeminfo()) == "blob"
         assert asyncio.run(plugin.export_metrics("{}")) is True
         assert asyncio.run(plugin.get_system_info()) == {"gpu": "amd"}
+        assert asyncio.run(plugin.get_installed_game_stats()) == {
+            "installed_steam_games": 25,
+            "installed_steam_app_ids": ["570"],
+        }
         assert asyncio.run(plugin.log_frontend_event("info", "hello")) is True
 
 
