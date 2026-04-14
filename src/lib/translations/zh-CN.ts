@@ -311,6 +311,17 @@ export const zhCN: TranslationTree = {
       debug: '调试',
     },
   },
+  nativeReport: {
+    title: 'Submit Compatibility Report',
+    rating: 'Rating',
+    protonVersion: 'Proton Version',
+    os: 'Operating System',
+    duration: 'Play Time',
+    notes: 'Notes',
+    notesHint: 'Describe any issues, tweaks, or tips for running this game.',
+    submit: 'Submit Report',
+    submitted: 'Report submitted to Proton Pulse!',
+  },
   protondbSubmit: {
     title: '提交到 ProtonDB',
     instructions: '您的系统信息已按 ProtonDB 要求的格式生成。将其复制到剪贴板，然后在 ProtonDB 贡献表单要求系统信息时粘贴。',

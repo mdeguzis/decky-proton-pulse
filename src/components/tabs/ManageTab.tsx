@@ -8,9 +8,9 @@ import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } from '../../lib/screenshotAutomation';
 import { ConfigEditorModal } from '../ConfigEditorModal';
-import { ProtonDBSubmitModal } from '../ProtonDBSubmitModal';
+import { NativePulseReportModal } from '../NativePulseReportModal';
 import { getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
-import type { GpuVendor } from '../../types';
+import type { GpuVendor, SystemInfo } from '../../types';
 import {
   fetchCloudConfigs,
   getCloudSyncStatus,
@@ -25,6 +25,7 @@ interface Props {
   appId: number | null;
   appName: string;
   gpuVendor: GpuVendor | null;
+  sysInfo: SystemInfo | null;
 }
 
 const STEAM_HEADER_URL = (id: number) =>
@@ -41,7 +42,7 @@ function relativeTime(timestamp: number): string {
   return `${days}d`;
 }
 
-export function ManageTab({ appId, appName, gpuVendor }: Props) {
+export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   const extras = t().extras!;
   const [configs, setConfigs] = useState<TrackedConfig[]>([]);
   const [resolvedNames, setResolvedNames] = useState<Record<number, string>>({});
@@ -108,12 +109,13 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
     const targetAppId = action.appId ?? appId;
     if (!targetAppId) return;
     showModal(
-      <ProtonDBSubmitModal
+      <NativePulseReportModal
         appId={targetAppId}
         appName={action.appName || appName}
+        sysInfo={sysInfo}
       />,
     );
-  }), [appId, appName]);
+  }), [appId, appName, sysInfo]);
 
   // Resolve missing app names from Steam and backfill into stored config
   useEffect(() => {
@@ -174,14 +176,16 @@ export function ManageTab({ appId, appName, gpuVendor }: Props) {
 
   const handleSubmitReport = (config: TrackedConfig) => {
     if (isSteamShortcutApp(config.appId)) {
-      toaster.toast({
-        title: 'Proton Pulse',
-        body: extras.shortcutCannotSubmit(),
-      });
+      toaster.toast({ title: 'Proton Pulse', body: extras.shortcutCannotSubmit() });
       return;
     }
     showModal(
-      <ProtonDBSubmitModal appId={config.appId} appName={displayName(config)} />,
+      <NativePulseReportModal
+        appId={config.appId}
+        appName={displayName(config)}
+        sysInfo={sysInfo}
+        protonVersion={config.protonVersion}
+      />,
     );
   };
 

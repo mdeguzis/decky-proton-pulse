@@ -335,6 +335,17 @@ export const ru: TranslationTree = {
       debug: 'Отладка',
     },
   },
+  nativeReport: {
+    title: 'Submit Compatibility Report',
+    rating: 'Rating',
+    protonVersion: 'Proton Version',
+    os: 'Operating System',
+    duration: 'Play Time',
+    notes: 'Notes',
+    notesHint: 'Describe any issues, tweaks, or tips for running this game.',
+    submit: 'Submit Report',
+    submitted: 'Report submitted to Proton Pulse!',
+  },
   protondbSubmit: {
     title: 'Отправить на ProtonDB',
     instructions: 'Информация о вашей системе была сформирована в формате ProtonDB. Скопируйте её в буфер обмена и вставьте в форму ProtonDB, когда будет запрошена информация о системе.',

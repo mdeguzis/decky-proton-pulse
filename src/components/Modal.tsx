@@ -210,7 +210,7 @@ export function ProtonPulsePage() {
       title: t().nav.manageConfigurations,
       identifier: 'manage',
       route: 'manage',
-      content: <ManageTab appId={appId} appName={appName} gpuVendor={sysInfo?.gpu_vendor ?? null} />,
+      content: <ManageTab appId={appId} appName={appName} gpuVendor={sysInfo?.gpu_vendor ?? null} sysInfo={sysInfo} />,
     },
     {
       title: t().nav.compatibilityTools,

@@ -343,6 +343,17 @@ export interface TranslationTree {
       debug: string;
     };
   };
+  nativeReport: {
+    title: string;
+    rating: string;
+    protonVersion: string;
+    os: string;
+    duration: string;
+    notes: string;
+    notesHint: string;
+    submit: string;
+    submitted: string;
+  };
   protondbSubmit: {
     title: string;
     instructions: string;
@@ -803,6 +814,17 @@ export const en: TranslationTree = {
       compatibility: 'Compatibility',
       debug: 'Debug',
     },
+  },
+  nativeReport: {
+    title: 'Submit Compatibility Report',
+    rating: 'Rating',
+    protonVersion: 'Proton Version',
+    os: 'Operating System',
+    duration: 'Play Time',
+    notes: 'Notes',
+    notesHint: 'Describe any issues, tweaks, or tips for running this game.',
+    submit: 'Submit Report',
+    submitted: 'Report submitted to Proton Pulse!',
   },
   protondbSubmit: {
     title: 'Submit to ProtonDB',

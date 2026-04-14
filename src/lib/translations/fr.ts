@@ -311,6 +311,17 @@ export const fr: TranslationTree = {
       debug: 'Débogage',
     },
   },
+  nativeReport: {
+    title: 'Submit Compatibility Report',
+    rating: 'Rating',
+    protonVersion: 'Proton Version',
+    os: 'Operating System',
+    duration: 'Play Time',
+    notes: 'Notes',
+    notesHint: 'Describe any issues, tweaks, or tips for running this game.',
+    submit: 'Submit Report',
+    submitted: 'Report submitted to Proton Pulse!',
+  },
   protondbSubmit: {
     title: 'Soumettre à ProtonDB',
     instructions: "Vos informations système ont été générées au format attendu par ProtonDB. Copiez-les dans le presse-papiers, puis collez-les dans le formulaire ProtonDB lorsqu'on vous demande les informations système.",

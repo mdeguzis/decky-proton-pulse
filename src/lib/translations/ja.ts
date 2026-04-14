@@ -311,6 +311,17 @@ export const ja: TranslationTree = {
       debug: 'デバッグ',
     },
   },
+  nativeReport: {
+    title: 'Submit Compatibility Report',
+    rating: 'Rating',
+    protonVersion: 'Proton Version',
+    os: 'Operating System',
+    duration: 'Play Time',
+    notes: 'Notes',
+    notesHint: 'Describe any issues, tweaks, or tips for running this game.',
+    submit: 'Submit Report',
+    submitted: 'Report submitted to Proton Pulse!',
+  },
   protondbSubmit: {
     title: 'ProtonDB に送信',
     instructions: 'システム情報が ProtonDB の形式で生成されました。クリップボードにコピーして、ProtonDB の投稿フォームでシステム情報を求められた際に貼り付けてください。',

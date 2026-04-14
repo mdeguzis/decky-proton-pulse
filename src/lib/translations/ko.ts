@@ -311,6 +311,17 @@ export const ko: TranslationTree = {
       debug: '디버그',
     },
   },
+  nativeReport: {
+    title: 'Submit Compatibility Report',
+    rating: 'Rating',
+    protonVersion: 'Proton Version',
+    os: 'Operating System',
+    duration: 'Play Time',
+    notes: 'Notes',
+    notesHint: 'Describe any issues, tweaks, or tips for running this game.',
+    submit: 'Submit Report',
+    submitted: 'Report submitted to Proton Pulse!',
+  },
   protondbSubmit: {
     title: 'ProtonDB에 제출',
     instructions: '시스템 정보가 ProtonDB 형식으로 생성되었습니다. 클립보드에 복사한 후 ProtonDB 기여 양식에서 시스템 정보를 요청할 때 붙여넣으세요.',
