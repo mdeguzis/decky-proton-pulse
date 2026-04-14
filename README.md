@@ -13,7 +13,7 @@
 
 A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for Steam Deck that pulls [ProtonDB](https://www.protondb.com) reports for the game in front of you, scores them against your hardware, and lets you apply useful launch options without typing them by hand.
 
-Browse community reports, Pulse configs, and per-game compatibility data on the **[Proton Pulse site](https://mdeguzis.github.io/proton-pulse-data/)** — works on mobile with a collapsible left-side nav.
+Browse community reports, Pulse configs, and per-game compatibility data on the **[Proton Pulse site](https://mdeguzis.github.io/proton-pulse-data/)** - works on mobile with a collapsible left-side nav.
 
 Coverage policy: overall Python and TypeScript coverage must stay at or above `90%`, and pull requests must keep changed-line coverage at `95%` or higher.
 
@@ -58,19 +58,19 @@ You can also review, edit, or clear the options later from the sidebar.
 
 ## Features
 
-* **ProtonDB report fetching** — pulls from cached, mirrored, and live ProtonDB sources so the plugin still has something useful to show when one source comes up empty
-* **Native Pulse reports** — submit your own compatibility report directly from the plugin; hardware (CPU, GPU, RAM, VRAM, driver, kernel, OS, resolution) is captured automatically so you only need to pick a rating and Proton version
-* **Hardware-aware scoring** — ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier
-* **Launch option management** — apply, review, edit, and clear launch options directly from the Steam Deck UI
-* **Saved configurations** — keep reusable per-game setups with custom variables and a live launch preview
-* **Compatibility tool management** — browse, install, refresh, and manage Proton and GE versions without leaving the plugin
-* **Detailed report browsing** — open full report cards with filters, diagnostics, vote counts, and score breakdowns
-* **ProtonDB contribution helpers** — vote on reports and prep system info for ProtonDB submissions from inside the plugin
-* **ProtonDB badge** — shows the game's ProtonDB tier at a glance
-* **System detection** — detects CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions automatically
-* **Sidebar tools** — quick access to settings, logs, cache tools, and plugin controls from the Decky panel
-* **Translations** — interface support for 10 languages, with coverage tracked in generated build metrics
-* **Diagnostics and logging** — built-in logs, cache inspection, performance metrics, and backend troubleshooting support
+* **ProtonDB report fetching** - pulls from cached, mirrored, and live ProtonDB sources so the plugin still has something useful to show when one source comes up empty
+* **Native Pulse reports** - submit your own compatibility report directly from the plugin; hardware (CPU, GPU, RAM, VRAM, driver, kernel, OS, resolution) is captured automatically so you only need to pick a rating and Proton version
+* **Hardware-aware scoring** - ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier
+* **Launch option management** - apply, review, edit, and clear launch options directly from the Steam Deck UI
+* **Saved configurations** - keep reusable per-game setups with custom variables and a live launch preview
+* **Compatibility tool management** - browse, install, refresh, and manage Proton and GE versions without leaving the plugin
+* **Detailed report browsing** - open full report cards with filters, diagnostics, vote counts, and score breakdowns
+* **ProtonDB contribution helpers** - vote on reports and prep system info for ProtonDB submissions from inside the plugin
+* **ProtonDB badge** - shows the game's ProtonDB tier at a glance
+* **System detection** - detects CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions automatically
+* **Sidebar tools** - quick access to settings, logs, cache tools, and plugin controls from the Decky panel
+* **Translations** - interface support for 10 languages, with coverage tracked in generated build metrics
+* **Diagnostics and logging** - built-in logs, cache inspection, performance metrics, and backend troubleshooting support
 
 ## Translation Coverage
 
