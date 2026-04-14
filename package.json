@@ -23,7 +23,7 @@
     "steam-deck",
     "proton"
   ],
-  "author": "your-github-username",
+  "author": "mdeguzis",
   "license": "BSD-3-Clause",
   "devDependencies": {
     "@decky/rollup": "^1.0.2",

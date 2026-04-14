@@ -55,6 +55,16 @@ SCREENSHOT_MANIFEST ?= config/ui_screenshot_manifest.json
 SCREENSHOT_TARGET ?=
 PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 
+# On old-glibc systems (e.g. AL2 with glibc 2.26), official Node 20 binaries
+# require glibc >= 2.28.  When Linuxbrew's node@20 is present, prepend it to
+# PATH so every recipe shell picks it up automatically.
+BREW_NODE := /home/linuxbrew/.linuxbrew/opt/node@20/bin
+ifneq ($(wildcard $(BREW_NODE)/node),)
+  export PATH := $(BREW_NODE):$(PATH)
+  # Re-evaluate PNPM now that brew node is on PATH
+  PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
+endif
+
 .PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise deploy deploy-reload build-and-deploy clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release pre-release github-release github-pre-release \
@@ -222,39 +232,11 @@ test-py:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run --group dev python -m pytest tests/ -v
 
 ensure-mise:
-	@if [ -n "$(IS_TERMUX)" ]; then \
-		echo "Termux detected via PREFIX=$$PREFIX"; \
-		echo "Installing Termux base packages with pkg ..."; \
-		pkg update -y && pkg install -y bash ca-certificates curl git make nodejs-lts python openssh rsync unzip xz-utils; \
-		command -v pnpm >/dev/null 2>&1 || npm install -g pnpm; \
-		echo "Termux: skipping mise-managed runtimes and using pkg-installed Node/Python instead."; \
-		echo "Using pkg-installed toolchain: node=$$(node --version 2>/dev/null || echo missing), python=$$(python3 --version 2>/dev/null || echo missing)"; \
-		if ! command -v uv >/dev/null 2>&1; then \
-			echo "Installing uv via pip ..."; \
-			python -m pip install --user uv; \
-		fi; \
-		echo "uv=$$(uv --version 2>/dev/null || echo missing)"; \
-		exit 0; \
-	fi
-	@if command -v mise >/dev/null 2>&1; then \
-		echo "mise already installed: $$(command -v mise)"; \
-	else \
-		echo "Installing mise via https://mise.run ..."; \
-		curl https://mise.run | sh; \
-	fi
-	@MISE_BIN="$$(command -v mise 2>/dev/null || echo "$$HOME/.local/bin/mise")"; \
-	"$$MISE_BIN" --version
+	@bash scripts/setup-toolchain.sh
 
 setup: ensure-mise
 	@mkdir -p "$(UV_CACHE_DIR)"
 	@echo "Using UV_CACHE_DIR=$(UV_CACHE_DIR)"
-	@if [ -z "$(IS_TERMUX)" ] && [ -f mise.toml ]; then \
-		MISE_BIN="$$(command -v mise 2>/dev/null || echo "$$HOME/.local/bin/mise")"; \
-		"$$MISE_BIN" trust --yes mise.toml >/dev/null 2>&1 || "$$MISE_BIN" trust mise.toml; \
-		"$$MISE_BIN" install || echo "Warning: mise install failed (likely offline). Continuing with currently installed toolchain."; \
-	elif [ -z "$(IS_TERMUX)" ]; then \
-		echo "No mise.toml found; skipping mise toolchain install."; \
-	fi
 	$(PNPM) i
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv sync --group dev
 
