@@ -163,7 +163,7 @@ toml = [
 
 [[package]]
 name = "decky-proton-pulse"
-version = "0.8.5"
+version = "0.8.7"
 source = { virtual = "." }
 
 [package.dev-dependencies]

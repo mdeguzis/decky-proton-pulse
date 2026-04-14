@@ -349,12 +349,24 @@ export interface TranslationTree {
     title: string;
     rating: string;
     protonVersion: string;
+    protonVersionHint: string;
     os: string;
     duration: string;
     notes: string;
     notesHint: string;
     submit: string;
     submitted: string;
+    hardware: string;
+    ratingPlatinum: string;
+    ratingGold: string;
+    ratingSilver: string;
+    ratingBronze: string;
+    ratingBorked: string;
+    durationUnreported: string;
+    durationUnderOneHour: string;
+    durationOneToFour: string;
+    durationFourToTen: string;
+    durationOverTen: string;
   };
   protondbSubmit: {
     title: string;
@@ -823,12 +835,24 @@ export const en: TranslationTree = {
     title: 'Submit Compatibility Report',
     rating: 'Rating',
     protonVersion: 'Proton Version',
+    protonVersionHint: 'e.g. "Proton 10.0-3" or "GE-Proton10-1"',
     os: 'Operating System',
     duration: 'Play Time',
     notes: 'Notes',
     notesHint: 'Describe any issues, tweaks, or tips for running this game.',
     submit: 'Submit Report',
     submitted: 'Report submitted to Proton Pulse!',
+    hardware: 'Hardware',
+    ratingPlatinum: 'Platinum — Works perfectly out of the box',
+    ratingGold: 'Gold — Works with tweaks',
+    ratingSilver: 'Silver — Some issues, still playable',
+    ratingBronze: 'Bronze — Runs but with significant issues',
+    ratingBorked: 'Borked — Does not run',
+    durationUnreported: 'Not reported',
+    durationUnderOneHour: 'Under 1 hour',
+    durationOneToFour: '1 – 4 hours',
+    durationFourToTen: '4 – 10 hours',
+    durationOverTen: 'Over 10 hours',
   },
   protondbSubmit: {
     title: 'Submit to ProtonDB',

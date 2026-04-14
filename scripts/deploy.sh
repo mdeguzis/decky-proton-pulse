@@ -106,7 +106,7 @@ classify_plugin_worktree() {
         PLUGIN_VERSION_SYNC_STATUS+="${status_line}"$'\n'
         PLUGIN_GENERATED_STATUS+="${status_line}"$'\n'
         ;;
-      CHANGELOG.md|metrics/translation-coverage.json|metrics/translation-coverage.md|package.json|pyproject.toml|uv.lock)
+      CHANGELOG.md|VERSION|metrics/translation-coverage.json|metrics/translation-coverage.md|package.json|pyproject.toml|uv.lock)
         PLUGIN_GENERATED_STATUS+="${status_line}"$'\n'
         ;;
       *)
@@ -126,7 +126,7 @@ classify_plugin_worktree() {
 
 print_release_derived_diff() {
   local diff_output
-  diff_output="$(git diff --no-ext-diff --unified=3 -- CHANGELOG.md metrics/translation-coverage.json metrics/translation-coverage.md package.json pyproject.toml uv.lock || true)"
+  diff_output="$(git diff --no-ext-diff --unified=3 -- CHANGELOG.md VERSION metrics/translation-coverage.json metrics/translation-coverage.md package.json pyproject.toml uv.lock || true)"
   if [[ -z "$diff_output" ]]; then
     echo "  No diff available for release-derived files."
     return
@@ -196,7 +196,7 @@ auto_commit_release_derived_changes() {
   echo ""
   echo "Auto-updating release-derived files in plugin repo..."
   printf '%s' "$PLUGIN_GENERATED_STATUS" | sed 's/^/  /'
-  git add CHANGELOG.md metrics/translation-coverage.json metrics/translation-coverage.md package.json pyproject.toml uv.lock
+  git add CHANGELOG.md VERSION metrics/translation-coverage.json metrics/translation-coverage.md package.json pyproject.toml uv.lock
   if git diff --cached --quiet; then
     echo "No staged release-derived changes required."
     return
@@ -417,9 +417,44 @@ if [[ -n "$DECK_IP" ]]; then
   echo "Restart Decky Loader on your Deck to reload the plugin."
 fi
 
+validate_release_readiness() {
+  local remote_version pkg_version pyproject_version dirty
+  echo "Validating release readiness..."
+
+  # 1. VERSION must differ from origin/main
+  git fetch origin main --quiet 2>/dev/null || true
+  remote_version="$(git show origin/main:VERSION 2>/dev/null | tr -d '[:space:]')" || remote_version=""
+  if [[ -n "$remote_version" && "$VERSION" == "$remote_version" ]]; then
+    echo "ERROR: VERSION ($VERSION) has not been bumped vs origin/main ($remote_version)."
+    echo "Update the VERSION file before releasing."
+    exit 1
+  fi
+
+  # 2. package.json and pyproject.toml must match VERSION
+  pkg_version="$(node -p "require('./package.json').version" 2>/dev/null)" || pkg_version=""
+  pyproject_version="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml 2>/dev/null)" || pyproject_version=""
+  if [[ "$pkg_version" != "$VERSION" || "$pyproject_version" != "$VERSION" ]]; then
+    echo "ERROR: Version mismatch — VERSION=$VERSION, package.json=$pkg_version, pyproject.toml=$pyproject_version"
+    echo "Run a normal build (make build) to sync versions, then commit before releasing."
+    exit 1
+  fi
+
+  # 3. No uncommitted changes
+  dirty="$(git status --porcelain)"
+  if [[ -n "$dirty" ]]; then
+    echo -e "\nERROR: Uncommitted changes detected:"
+    printf '%s\n' "$dirty" | sed 's/^/  /'
+    echo "Commit or stash all changes before releasing."
+    exit 1
+  fi
+
+  echo "Release readiness: OK (VERSION=$VERSION, clean worktree, files in sync)"
+}
+
 # ─── GitHub Release ────────────────────────────────────────────────────────────
 
 if [[ -n "$GH_RELEASE" ]]; then
+  validate_release_readiness
   if ! is_truthy "$DRY_RUN"; then
     update_changelog_from_unpushed_commits
   fi

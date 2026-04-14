@@ -73,7 +73,7 @@ function HardwareTable({ sysInfo }: { sysInfo: SystemInfo | null }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#7a9bb5', marginBottom: 6 }}>
-        Hardware
+        {t().nativeReport.hardware}
       </div>
       <div style={{
         display: 'grid',
@@ -104,20 +104,20 @@ function HardwareTable({ sysInfo }: { sysInfo: SystemInfo | null }) {
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
-const RATINGS: { data: ProtonRating; label: string }[] = [
-  { data: 'platinum', label: 'Platinum — Works perfectly out of the box' },
-  { data: 'gold',     label: 'Gold — Works with tweaks' },
-  { data: 'silver',   label: 'Silver — Some issues, still playable' },
-  { data: 'bronze',   label: 'Bronze — Runs but with significant issues' },
-  { data: 'borked',   label: 'Borked — Does not run' },
+const getRatings = (): { data: ProtonRating; label: string }[] => [
+  { data: 'platinum', label: t().nativeReport.ratingPlatinum },
+  { data: 'gold',     label: t().nativeReport.ratingGold },
+  { data: 'silver',   label: t().nativeReport.ratingSilver },
+  { data: 'bronze',   label: t().nativeReport.ratingBronze },
+  { data: 'borked',   label: t().nativeReport.ratingBorked },
 ];
 
-const DURATIONS: { data: string; label: string }[] = [
-  { data: 'unreported',      label: 'Not reported' },
-  { data: 'underOneHour',    label: 'Under 1 hour' },
-  { data: 'oneToFourHours',  label: '1 – 4 hours' },
-  { data: 'fourToTenHours',  label: '4 – 10 hours' },
-  { data: 'overTenHours',    label: 'Over 10 hours' },
+const getDurations = (): { data: string; label: string }[] => [
+  { data: 'unreported',      label: t().nativeReport.durationUnreported },
+  { data: 'underOneHour',    label: t().nativeReport.durationUnderOneHour },
+  { data: 'oneToFourHours',  label: t().nativeReport.durationOneToFour },
+  { data: 'fourToTenHours',  label: t().nativeReport.durationFourToTen },
+  { data: 'overTenHours',    label: t().nativeReport.durationOverTen },
 ];
 
 export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion: initialProton = '', closeModal }: Props) {
@@ -229,7 +229,7 @@ export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion:
               {t().nativeReport.rating} <span style={{ color: '#ef4444' }}>*</span>
             </div>
             <DropdownItem
-              rgOptions={RATINGS.map(r => ({ data: r.data, label: r.label }))}
+              rgOptions={getRatings().map(r => ({ data: r.data, label: r.label }))}
               selectedOption={rating || null}
               onChange={(opt) => { setRating(opt.data as ProtonRating); setFieldErrors(p => ({ ...p, rating: false })); setError(null); }}
               label={t().nativeReport.rating}
@@ -240,7 +240,7 @@ export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion:
           <div style={fieldErrors.proton ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
             <TextField
               label={`${t().nativeReport.protonVersion} *`}
-              description='e.g. "Proton 10.0-3" or "GE-Proton10-1"'
+              description={t().nativeReport.protonVersionHint}
               value={proton}
               onChange={(e) => { setProton(e.target.value); setFieldErrors(p => ({ ...p, proton: false })); setError(null); }}
             />
@@ -265,7 +265,7 @@ export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion:
               {t().nativeReport.duration} <span style={{ color: '#ef4444' }}>*</span>
             </div>
             <DropdownItem
-              rgOptions={DURATIONS.map(d => ({ data: d.data, label: d.label }))}
+              rgOptions={getDurations().map(d => ({ data: d.data, label: d.label }))}
               selectedOption={duration}
               onChange={(opt) => { setDuration(opt.data as string); setFieldErrors(p => ({ ...p, duration: false })); }}
               label={t().nativeReport.duration}
