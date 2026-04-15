@@ -21,7 +21,7 @@
     "NixOS"
   ],
   "validGpuVendors": ["nvidia", "amd", "intel", "other"],
-  "validSources": ["user", "protondb", "protondb-local"],
+  "validSources": ["user", "web", "protondb", "protondb-local"],
   "protonVersionPattern": "^(Proton |GE-Proton|Proton-)\\d",
   "knownProtonVersions": [
     "Proton Experimental",

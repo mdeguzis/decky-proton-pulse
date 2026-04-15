@@ -40,7 +40,7 @@ const PROTON_VERSION_RE = /^(Proton |GE-Proton|Proton-)\d/;
 const RAM_RE = /^\d+ GB$/;
 
 const VALID_GPU_VENDORS = ['nvidia', 'amd', 'intel', 'other'] as const;
-const VALID_SOURCES = ['user', 'protondb', 'protondb-local'] as const;
+const VALID_SOURCES = ['user', 'web', 'protondb', 'protondb-local'] as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
