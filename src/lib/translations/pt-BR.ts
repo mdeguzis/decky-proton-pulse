@@ -303,6 +303,9 @@ export const ptBR: TranslationTree = {
     cloudRestoreAvailable: 'Backups na nuvem encontrados. Restaure-os em Configurações.',
     cloudAutoSync: 'Sincronizar configurações com a nuvem automaticamente',
     cloudAutoSyncDescription: 'Faz backup automático das suas configurações quando elas são salvas.',
+    uploadPreviewTitle: 'Config Upload Preview',
+    uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
+    uploadPreviewApply: 'Apply & Upload',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

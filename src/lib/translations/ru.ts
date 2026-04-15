@@ -327,6 +327,9 @@ export const ru: TranslationTree = {
     cloudRestoreAvailable: 'Найдены облачные резервные копии. Восстановите их в разделе конфигураций.',
     cloudAutoSync: 'Автосинхронизация конфигураций с облаком',
     cloudAutoSyncDescription: 'Автоматически создаёт резервные копии конфигураций при сохранении.',
+    uploadPreviewTitle: 'Config Upload Preview',
+    uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
+    uploadPreviewApply: 'Apply & Upload',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

@@ -23,6 +23,14 @@ export interface TrackedConfig {
   appliedAt: number;
   isEdited?: boolean;
   source?: ConfigSource;
+  // Hardware snapshot captured at apply time
+  cpu?: string | null;
+  gpu?: string | null;
+  gpuVendor?: string | null;
+  gpuDriver?: string | null;
+  ram?: string | null;
+  os?: string | null;
+  kernel?: string | null;
 }
 
 export function getTrackedConfigs(): TrackedConfig[] {

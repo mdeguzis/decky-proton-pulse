@@ -173,6 +173,18 @@ describe('normalizeLanguagePreference()', () => {
   });
 });
 
+// Recursively collect all leaf key paths (e.g. "configManager.toggleCategories.nvidia")
+// from a translation tree. Functions and strings are both leaf nodes.
+function collectLeafPaths(obj: unknown, prefix = ''): string[] {
+  if (!obj || typeof obj !== 'object') return [];
+  return Object.entries(obj as Record<string, unknown>).flatMap(([k, v]) => {
+    const path = prefix ? `${prefix}.${k}` : k;
+    if (typeof v === 'function' || typeof v === 'string') return [path];
+    if (typeof v === 'object' && v !== null) return collectLeafPaths(v, path);
+    return [path];
+  });
+}
+
 describe('translation completeness', () => {
   it('all registered languages have the same top-level keys as English', () => {
     const enTree = t();
@@ -183,10 +195,26 @@ describe('translation completeness', () => {
       setLanguage(lang);
       const tree = t();
       const keys = Object.keys(tree).sort();
-      expect(keys).toEqual(enKeys);
+      expect(keys, `${lang}: top-level section keys`).toEqual(enKeys);
     }
 
     setLanguage('auto');
+  });
+
+  it('all registered languages have the same deep leaf keys as English', () => {
+    const enTree = t();
+    const enLeaves = collectLeafPaths(enTree).sort();
+
+    for (const [langCode, langTree] of [
+      ['de', de], ['es', es], ['fr', fr], ['ja', ja],
+      ['ko', ko], ['pt-BR', ptBR], ['ru', ru], ['tr', tr], ['zh-CN', zhCN],
+    ] as const) {
+      const leaves = collectLeafPaths(langTree).sort();
+      const missing = enLeaves.filter(k => !leaves.includes(k));
+      const extra = leaves.filter(k => !enLeaves.includes(k));
+      expect(missing, `${langCode}: missing keys vs English`).toEqual([]);
+      expect(extra, `${langCode}: extra keys not in English`).toEqual([]);
+    }
   });
 });
 

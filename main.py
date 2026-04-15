@@ -89,6 +89,17 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
 
     async def _main(self) -> None:
         """Called by Decky when the plugin loads — our starting line."""
+        import traceback as _tb
+        try:
+            self._main_impl()
+        except Exception as _exc:  # pylint: disable=broad-except
+            decky.logger.error(
+                "Proton Pulse backend crashed during startup:\n"
+                + _tb.format_exc()
+            )
+            raise
+
+    def _main_impl(self) -> None:
         decky.logger.info("Proton Pulse backend starting")
         self._debug_handler = None
         self._debug_handler_ref = [None]

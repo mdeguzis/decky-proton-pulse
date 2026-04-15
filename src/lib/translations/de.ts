@@ -303,6 +303,9 @@ export const de: TranslationTree = {
     cloudRestoreAvailable: 'Cloud-Sicherungen gefunden. Stellen Sie sie unter Konfigurationen wieder her.',
     cloudAutoSync: 'Konfigurationen automatisch mit der Cloud synchronisieren',
     cloudAutoSyncDescription: 'Sichert Ihre Konfigurationen automatisch, wenn sie gespeichert werden.',
+    uploadPreviewTitle: 'Config Upload Preview',
+    uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
+    uploadPreviewApply: 'Apply & Upload',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

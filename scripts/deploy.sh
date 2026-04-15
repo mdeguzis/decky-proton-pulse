@@ -387,6 +387,11 @@ if [[ -d lib ]]; then
   rsync -a --exclude='__pycache__' lib/ "${STAGING_DIR}/${PLUGIN_NAME}/lib/"
 fi
 
+# Normalise permissions so Decky Loader can read all files regardless of
+# how restrictive the developer's local umask is.
+find "${STAGING_DIR}/${PLUGIN_NAME}" -type f -exec chmod 644 {} +
+find "${STAGING_DIR}/${PLUGIN_NAME}" -type d -exec chmod 755 {} +
+
 (cd "$STAGING_DIR" && zip -r "$ZIP_NAME" "$PLUGIN_NAME")
 mv "${STAGING_DIR}/${ZIP_NAME}" .
 

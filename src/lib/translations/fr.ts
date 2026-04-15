@@ -303,6 +303,9 @@ export const fr: TranslationTree = {
     cloudRestoreAvailable: 'Des sauvegardes cloud ont été trouvées. Restaurez-les depuis Configurations.',
     cloudAutoSync: 'Synchroniser automatiquement les configurations vers le cloud',
     cloudAutoSyncDescription: 'Sauvegarde automatiquement vos configurations lorsqu’elles sont enregistrées.',
+    uploadPreviewTitle: 'Config Upload Preview',
+    uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
+    uploadPreviewApply: 'Apply & Upload',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

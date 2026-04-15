@@ -25,12 +25,16 @@ import {
   type CustomToggleValueType,
   type StoredCustomToggle,
 } from '../lib/customToggles';
-import { logFrontendEvent } from '../lib/logger';
+import { logFrontendEvent, callWithTimeout } from '../lib/logger';
 import { t } from '../lib/i18n';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
-import type { GpuVendor } from '../types';
+import type { GpuVendor, SystemInfo } from '../types';
 import { buildVersionOptions, VersionOptionLabel, type VersionOption } from './EditReportModal';
 import { resolveLaunchOptionsWithPrompt } from './LaunchOptionConflictModal';
+import { callable } from '@decky/api';
+
+const getSystemInfo = callable<[], SystemInfo>('get_system_info');
+const getSystemInfoSafe = () => callWithTimeout(() => getSystemInfo(), 'get_system_info');
 
 interface Props {
   appId: number | null;
@@ -446,6 +450,135 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
   );
 }
 
+// ─── Upload Preview Modal ──────────────────────────────────────────────────────
+
+interface UploadPreviewProps {
+  appName: string;
+  profileName: string;
+  protonVersion: string;
+  launchOptions: string;
+  enabledVars: Record<string, string>;
+  systemInfo: SystemInfo | null;
+  loadingSystemInfo: boolean;
+  onConfirm: () => void;
+  closeModal?: () => void;
+}
+
+function UploadPreviewModal({
+  appName, profileName, protonVersion, launchOptions, enabledVars, systemInfo, loadingSystemInfo, onConfirm, closeModal,
+}: UploadPreviewProps) {
+  const cancelRef = useRef<HTMLElement | null>(null);
+  const confirmRef = useRef<HTMLElement | null>(null);
+  const na = (v: string | number | null | undefined) =>
+    v != null && v !== '' ? String(v) : 'Not available';
+
+  const rows: [string, string][] = [
+    ['Game', appName],
+    ['Profile', profileName || '(unnamed)'],
+    ['Proton', protonVersion || 'None'],
+    ['Launch options', launchOptions || '(none)'],
+    ...Object.entries(enabledVars).map(([k, v]) => [k, v] as [string, string]),
+    ['GPU', na(systemInfo?.gpu)],
+    ['GPU Driver', na(systemInfo?.driver_version)],
+    ['CPU', na(systemInfo?.cpu)],
+    ['RAM', systemInfo?.ram_gb != null ? `${systemInfo.ram_gb} GB` : 'Not available'],
+    ['OS', na(systemInfo?.distro)],
+    ['Kernel', na(systemInfo?.kernel)],
+  ];
+
+  return (
+    <ModalRoot onCancel={closeModal}>
+      <div
+        style={{
+          padding: 16,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          width: 'min(620px, calc(100vw - 72px))',
+          maxWidth: 'calc(100vw - 72px)',
+          height: 'calc(100vh - 96px)',
+          maxHeight: 'calc(100vh - 96px)',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ flexShrink: 0, fontSize: 16, fontWeight: 700, color: '#e8f4ff' }}>{t().configManager.uploadPreviewTitle}</div>
+        <div style={{ flexShrink: 0, fontSize: 11, color: '#7a9bb5' }}>
+          {t().configManager.uploadPreviewHint}
+        </div>
+
+        {/* scrollable rows — Focusable enables gamepad d-pad scroll */}
+        <Focusable
+          style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}
+        >
+          {loadingSystemInfo ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
+              <SteamSpinner style={{ width: 16, height: 16 }} />
+              <span style={{ fontSize: 11, color: '#7a9bb5' }}>Detecting hardware...</span>
+            </div>
+          ) : (
+            rows.map(([label, value]) => (
+              <div
+                key={label}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  padding: '5px 0',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                <span style={{ fontSize: 11, color: '#7a9bb5', flexShrink: 0, minWidth: 110 }}>{label}</span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: value === 'Not available' ? '#4a6a85' : '#cfe2f4',
+                    textAlign: 'right',
+                    wordBreak: 'break-all',
+                    fontFamily: label === 'Launch options' || label.startsWith('PROTON') ? 'monospace' : 'inherit',
+                  }}
+                >
+                  {value}
+                </span>
+              </div>
+            ))
+          )}
+        </Focusable>
+
+        <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
+          <DialogButton
+            ref={(node) => { cancelRef.current = node; }}
+            onClick={closeModal}
+            onGamepadDirection={(evt) => {
+              if (evt.detail.button === GamepadButton.DIR_RIGHT) {
+                evt.preventDefault();
+                confirmRef.current?.focus();
+              }
+            }}
+            style={{ background: '#555', minWidth: 90 }}
+          >
+            {t().common.cancel}
+          </DialogButton>
+          <DialogButton
+            ref={(node) => { confirmRef.current = node; }}
+            onClick={() => { onConfirm(); closeModal?.(); }}
+            disabled={loadingSystemInfo}
+            onGamepadDirection={(evt) => {
+              if (evt.detail.button === GamepadButton.DIR_LEFT) {
+                evt.preventDefault();
+                cancelRef.current?.focus();
+              }
+            }}
+            style={{ minWidth: 90 }}
+          >
+            {loadingSystemInfo ? t().common.loading : t().configManager.uploadPreviewApply}
+          </DialogButton>
+        </div>
+      </div>
+    </ModalRoot>
+  );
+}
+
 export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, onSave, closeModal }: Props) {
   const extras = t().extras!;
   const isShortcut = appId ? isSteamShortcutApp(appId) : false;
@@ -560,6 +693,8 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     })();
     return new Set(initialToggles.filter((toggle) => parsedKeys.has(toggle.key || toggle.value)).map((toggle) => toggle.id));
   });
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+  const [loadingSystemInfo, setLoadingSystemInfo] = useState(true);
   const [versionOptions, setVersionOptions] = useState<VersionOption[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(true);
   const [installing, setInstalling] = useState<string | null>(null);
@@ -569,6 +704,15 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   const [gpuFilter, setGpuFilter] = useState<GpuFilter>(
     gpuVendor && gpuVendor !== 'other' ? gpuVendor : 'all',
   );
+
+  // load hardware info for hardware preview
+  useEffect(() => {
+    setLoadingSystemInfo(true);
+    getSystemInfoSafe()
+      .then((info) => { if (info) setSystemInfo(info); })
+      .catch(() => { /* system info unavailable, leave null */ })
+      .finally(() => setLoadingSystemInfo(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // load available proton versions for the dropdown
   useEffect(() => {
@@ -727,6 +871,40 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     });
   };
 
+  const doApply = async (resolvedLaunchOptions: string) => {
+    if (!appId) return;
+    try {
+      await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
+      addTrackedConfig({
+        appId,
+        appName,
+        profileName: profileName.trim(),
+        protonVersion: protonVersion || '',
+        launchOptions: resolvedLaunchOptions,
+        enabledVars: allVars,
+        appliedAt: Date.now(),
+        isEdited: !!existingConfig,
+        cpu: systemInfo?.cpu ?? null,
+        gpu: systemInfo?.gpu ?? null,
+        gpuVendor: systemInfo?.gpu_vendor ?? null,
+        gpuDriver: systemInfo?.driver_version ?? null,
+        ram: systemInfo?.ram_gb != null ? `${systemInfo.ram_gb} GB` : null,
+        os: systemInfo?.distro ?? null,
+        kernel: systemInfo?.kernel ?? null,
+      });
+      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions });
+      toaster.toast({ title: 'Proton Pulse', body: t().toast.savedToProtonPulse });
+      onSave();
+      closeModal?.();
+    } catch (e) {
+      void logFrontendEvent('ERROR', 'Config editor apply failed', {
+        appId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.applyFailed(e instanceof Error ? e.message : String(e)) });
+    }
+  };
+
   const handleApply = async () => {
     if (!appId) return;
     if (!profileName.trim()) {
@@ -748,21 +926,18 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         return;
       }
 
-      await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
-      addTrackedConfig({
-        appId,
-        appName,
-        profileName: profileName.trim(),
-        protonVersion: protonVersion || '',
-        launchOptions: resolvedLaunchOptions,
-        enabledVars: allVars,
-        appliedAt: Date.now(),
-        isEdited: !!existingConfig,
-      });
-      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions });
-      toaster.toast({ title: 'Proton Pulse', body: resolvedLaunchOptions });
-      onSave();
-      closeModal?.();
+      showModal(
+        <UploadPreviewModal
+          appName={appName}
+          profileName={profileName.trim()}
+          protonVersion={protonVersion || ''}
+          launchOptions={resolvedLaunchOptions}
+          enabledVars={allVars}
+          systemInfo={systemInfo}
+          loadingSystemInfo={loadingSystemInfo}
+          onConfirm={() => void doApply(resolvedLaunchOptions)}
+        />,
+      );
     } catch (e) {
       void logFrontendEvent('ERROR', 'Config editor apply failed', {
         appId,

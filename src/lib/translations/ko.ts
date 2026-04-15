@@ -303,6 +303,9 @@ export const ko: TranslationTree = {
     cloudRestoreAvailable: '클라우드 백업을 찾았습니다. 구성 관리에서 복원하세요.',
     cloudAutoSync: '구성을 클라우드에 자동 동기화',
     cloudAutoSyncDescription: '구성을 저장할 때 자동으로 백업합니다.',
+    uploadPreviewTitle: 'Config Upload Preview',
+    uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
+    uploadPreviewApply: 'Apply & Upload',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

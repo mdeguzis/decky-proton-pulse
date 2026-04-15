@@ -335,6 +335,9 @@ export interface TranslationTree {
     cloudRestoreAvailable: string;
     cloudAutoSync: string;
     cloudAutoSyncDescription: string;
+    uploadPreviewTitle: string;
+    uploadPreviewHint: string;
+    uploadPreviewApply: string;
     toggleCategories: {
       nvidia: string;
       amd: string;
@@ -821,6 +824,9 @@ export const en: TranslationTree = {
     cloudRestoreAvailable: 'Cloud backups found. Restore them from Configurations.',
     cloudAutoSync: 'Auto-sync configs to cloud',
     cloudAutoSyncDescription: 'Automatically back up your configurations when they are saved.',
+    uploadPreviewTitle: 'Config Upload Preview',
+    uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
+    uploadPreviewApply: 'Apply & Upload',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

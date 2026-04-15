@@ -303,6 +303,9 @@ export const ja: TranslationTree = {
     cloudRestoreAvailable: 'クラウドバックアップが見つかりました。構成一覧から復元できます。',
     cloudAutoSync: '構成をクラウドへ自動同期',
     cloudAutoSyncDescription: '構成を保存したときに自動でバックアップします。',
+    uploadPreviewTitle: 'Config Upload Preview',
+    uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
+    uploadPreviewApply: 'Apply & Upload',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
