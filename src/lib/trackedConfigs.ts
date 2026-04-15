@@ -31,6 +31,8 @@ export interface TrackedConfig {
   ram?: string | null;
   os?: string | null;
   kernel?: string | null;
+  // Game source
+  isNonSteam?: boolean;
 }
 
 export function getTrackedConfigs(): TrackedConfig[] {

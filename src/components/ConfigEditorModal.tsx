@@ -891,6 +891,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         ram: systemInfo?.ram_gb != null ? `${systemInfo.ram_gb} GB` : null,
         os: systemInfo?.distro ?? null,
         kernel: systemInfo?.kernel ?? null,
+        isNonSteam: isSteamShortcutApp(appId),
       });
       void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions });
       toaster.toast({ title: 'Proton Pulse', body: t().toast.savedToProtonPulse });
