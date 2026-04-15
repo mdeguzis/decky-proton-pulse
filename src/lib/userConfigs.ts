@@ -265,3 +265,29 @@ export async function getMyConfig(appId: string): Promise<UserConfigRow | null> 
 }
 
 export { VALID_OS, VALID_RATINGS, VALID_GPU_VENDORS, VALID_SOURCES };
+
+// ─── Owner delete (RLS via x-client-id header) ───────────────────────────────
+
+export async function deleteMyReport(appId: string): Promise<{ ok: boolean; error?: string }> {
+  const clientId = await getVoterId();
+  void logFrontendEvent('INFO', 'Deleting own report from Supabase', { appId });
+  try {
+    const { error } = await restRequest<null>('user_configs', {
+      method: 'DELETE',
+      headers: { 'x-client-id': clientId },
+    }, {
+      client_id: `eq.${clientId}`,
+      app_id: `eq.${appId}`,
+    });
+    if (error) {
+      void logFrontendEvent('ERROR', 'Report delete failed', { appId, error });
+      return { ok: false, error };
+    }
+    void logFrontendEvent('INFO', 'Report deleted', { appId });
+    return { ok: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    void logFrontendEvent('ERROR', 'Report delete threw', { appId, error: msg });
+    return { ok: false, error: msg };
+  }
+}

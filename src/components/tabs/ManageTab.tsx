@@ -20,6 +20,7 @@ import {
   type CloudConfigRow,
   type SyncStatus,
 } from '../../lib/cloudSync';
+import { deleteMyReport } from '../../lib/userConfigs';
 
 interface Props {
   appId: number | null;
@@ -162,6 +163,25 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
     );
   };
 
+  const handleDeleteFromSupabase = (config: TrackedConfig) => {
+    showModal(
+      <ConfirmModal
+        strTitle="Delete Supabase Report"
+        strDescription={`Delete your submitted report for ${displayName(config)} from Supabase? This cannot be undone.`}
+        strOKButtonText="Delete Report"
+        onOK={() => {
+          void deleteMyReport(String(config.appId)).then((result) => {
+            toaster.toast({
+              title: 'Proton Pulse',
+              body: result.ok ? 'Report deleted from Supabase' : `Delete failed: ${result.error}`,
+            });
+          });
+        }}
+        onCancel={() => {}}
+      />,
+    );
+  };
+
   const handleEdit = (config: TrackedConfig) => {
     showModal(
       <ConfigEditorModal
@@ -290,6 +310,9 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         ) : null}
         <MenuItem onClick={() => handleDelete(config)}>
           {t().configManager.deleteAction}
+        </MenuItem>
+        <MenuItem onClick={() => handleDeleteFromSupabase(config)}>
+          Delete Report from Supabase
         </MenuItem>
       </Menu>,
       e.currentTarget ?? window,
