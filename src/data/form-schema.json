@@ -1,0 +1,23 @@
+{
+  "_source": "https://github.com/mdeguzis/decky-proton-pulse/blob/main/src/lib/userConfigs.ts",
+  "_note": "Canonical form schema for Pulse report submissions. Consumed by proton-pulse-data web app at build time.",
+  "validRatings": ["platinum", "gold", "silver", "bronze", "borked"],
+  "validOs": [
+    "SteamOS 3.0", "SteamOS 3.5", "SteamOS 3.6",
+    "Ubuntu 22.04", "Ubuntu 24.04",
+    "Fedora 40", "Fedora 41",
+    "Arch Linux",
+    "Linux Mint 22",
+    "Nobara 40", "Nobara 41",
+    "Pop!_OS 22.04",
+    "Manjaro",
+    "openSUSE Tumbleweed",
+    "Debian 12",
+    "ChimeraOS",
+    "Bazzite"
+  ],
+  "validGpuVendors": ["nvidia", "amd", "intel", "other"],
+  "validSources": ["user", "protondb", "protondb-local"],
+  "protonVersionPattern": "^(Proton |GE-Proton|Proton-)\\d",
+  "ramPattern": "^\\d+ GB$"
+}

@@ -1,0 +1,56 @@
+{
+  "_source": "https://github.com/mdeguzis/decky-proton-pulse/blob/main/src/lib/scoring.ts",
+  "_note": "Keep in sync with decky-proton-pulse scoring.ts WEIGHTS and algorithm",
+  "weights": {
+    "BASE_MAX": 60,
+    "RECENCY_RECENT": 15,
+    "RECENCY_MID": 5,
+    "RECENCY_OLD": -5,
+    "CUSTOM_PROTON": 10,
+    "GPU_MATCH": 1.0,
+    "GPU_MISMATCH": 0.5,
+    "GPU_UNKNOWN": 0.75,
+    "GPU_DRIVER_EXACT": 1.3,
+    "GPU_DRIVER_CLOSE": 1.1,
+    "OS_EXACT": 1.08,
+    "OS_FAMILY_MATCH": 1.04,
+    "KERNEL_EXACT": 1.12,
+    "KERNEL_PATCH_CLOSE": 1.08,
+    "KERNEL_MINOR_CLOSE": 1.04,
+    "BORKED_DECAY_DAYS": 365,
+    "NOTES_MAX": 10,
+    "PROTON_MATCH": 8,
+    "PROTON_CLOSE": 4
+  },
+  "ratingScores": {
+    "platinum": 1.0,
+    "gold": 0.8,
+    "silver": 0.6,
+    "bronze": 0.4,
+    "borked": 0.0
+  },
+  "scoreTiers": {
+    "platinum": 80,
+    "gold": 60,
+    "silver": 40,
+    "bronze": 20
+  },
+  "customProtonMarkers": ["ge", "cachyos", "tkg", "protonplus", "experimental"],
+  "osFamilies": {
+    "steamos": ["steamos", "holoiso", "chimeraos"],
+    "arch": ["arch", "cachyos", "endeavouros", "manjaro", "garuda"],
+    "fedora": ["fedora", "bazzite", "nobara"],
+    "ubuntu": ["ubuntu", "pop", "mint", "elementary"],
+    "debian": ["debian"],
+    "nixos": ["nixos"]
+  },
+  "negativeKeywords": [
+    "crash", "broken", "freeze", "black screen", "hang", "softlock",
+    "corrupted", "doesn't work", "unplayable", "won't launch"
+  ],
+  "positiveKeywords": [
+    "perfect", "flawless", "works great", "no issues", "out of the box",
+    "excellent", "runs perfectly", "zero issues", "works flawlessly"
+  ],
+  "formula": "(rating + recency + customProton + protonMatch) * gpuMult * osMult * kernelMult + notesSentiment"
+}
