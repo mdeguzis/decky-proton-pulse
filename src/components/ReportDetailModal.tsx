@@ -1191,21 +1191,27 @@ export function ReportDetailModal({
               </div>
             </div>
 
-            {/* Rating badge */}
-            <span
-              style={{
-                background: ratingColor,
-                color: '#111',
-                borderRadius: 999,
-                padding: '2px 9px',
-                fontWeight: 700,
-                fontSize: 10,
-                textTransform: 'uppercase',
-                flexShrink: 0,
-              }}
-            >
-              {strings.ratings[report.rating]}
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
+              {/* Rating badge */}
+              <span
+                style={{
+                  background: ratingColor,
+                  color: '#111',
+                  borderRadius: 999,
+                  padding: '2px 9px',
+                  fontWeight: 700,
+                  fontSize: 10,
+                  textTransform: 'uppercase',
+                }}
+              >
+                {strings.ratings[report.rating]}
+              </span>
+              {report.reportId != null && (
+                <span style={{ fontSize: 9, color: '#5a7a9a', fontFamily: 'monospace' }}>
+                  #{report.reportId}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Proton version line + availability status */}

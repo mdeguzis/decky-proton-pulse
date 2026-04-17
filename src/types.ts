@@ -52,6 +52,7 @@ export interface CdnReport {
   rating: ProtonRating;
   timestamp: number;
   title: string;
+  reportId?: number | null;
 }
 
 // ─── Scoring ──────────────────────────────────────────────────────────────────

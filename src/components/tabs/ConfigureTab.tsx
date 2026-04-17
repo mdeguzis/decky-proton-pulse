@@ -68,6 +68,7 @@ function pulseRowToCdnReport(row: UserConfigRow): CdnReport {
     rating:       row.rating,
     timestamp:    Math.floor(new Date(row.created_at).getTime() / 1000),
     title:        row.title,
+    reportId:     row.id ?? null,
   };
 }
 
