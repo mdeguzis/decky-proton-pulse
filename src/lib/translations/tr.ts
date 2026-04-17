@@ -303,9 +303,9 @@ export const tr: TranslationTree = {
     cloudRestoreAvailable: 'Bulut yedekleri bulundu. Bunları Yapılandırmalar bölümünden geri yükleyin.',
     cloudAutoSync: 'Yapılandırmaları otomatik olarak bulutla senkronize et',
     cloudAutoSyncDescription: 'Yapılandırmalarınız kaydedildiğinde otomatik olarak yedekler.',
-    uploadPreviewTitle: 'Config Upload Preview',
-    uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
-    uploadPreviewApply: 'Apply & Upload',
+    uploadPreviewTitle: 'Yapılandırma Yükleme Önizlemesi',
+    uploadPreviewHint: 'Kaydedilecek ve bulutla eşitlenecek içeriği inceleyin.',
+    uploadPreviewApply: 'Uygula ve Yükle',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',

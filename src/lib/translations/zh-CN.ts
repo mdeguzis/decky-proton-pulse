@@ -303,9 +303,9 @@ export const zhCN: TranslationTree = {
     cloudRestoreAvailable: '发现云端备份。可在“配置管理”中恢复。',
     cloudAutoSync: '自动将配置同步到云端',
     cloudAutoSyncDescription: '保存配置时自动备份到云端。',
-    uploadPreviewTitle: 'Config Upload Preview',
-    uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
-    uploadPreviewApply: 'Apply & Upload',
+    uploadPreviewTitle: '配置上传预览',
+    uploadPreviewHint: '查看将要保存并同步到云端的内容。',
+    uploadPreviewApply: '应用并上传',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
