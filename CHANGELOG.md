@@ -8,7 +8,15 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v0.8.8
 
-- No unreleased changes yet.
+- feat: add scoring-info.json and form-schema.json as shared build artifacts
+- feat: add knownProtonVersions to shared form-schema.json
+- feat: add owner-delete for Supabase reports via x-client-id RLS policy
+- feat: add 'web' as valid source for website report submissions
+- feat: capture and store isNonSteam flag on config apply
+- fix: hardware capture not syncing to site
+- refactor: use distro prefix patterns for validOs instead of exact versions
+- i18n: add translations for upload preview UI strings across all locales
+- ci: upgrade to Node.js 24 for GitHub Actions runners
 
 ## v0.8.2
 
