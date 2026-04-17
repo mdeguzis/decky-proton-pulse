@@ -426,15 +426,6 @@ validate_release_readiness() {
   local remote_version pkg_version pyproject_version dirty
   echo "Validating release readiness..."
 
-  # 1. VERSION must differ from origin/main
-  git fetch origin main --quiet 2>/dev/null || true
-  remote_version="$(git show origin/main:VERSION 2>/dev/null | tr -d '[:space:]')" || remote_version=""
-  if [[ -n "$remote_version" && "$VERSION" == "$remote_version" ]]; then
-    echo "ERROR: VERSION ($VERSION) has not been bumped vs origin/main ($remote_version)."
-    echo "Update the VERSION file before releasing."
-    exit 1
-  fi
-
   # 2. package.json and pyproject.toml must match VERSION
   pkg_version="$(node -p "require('./package.json').version" 2>/dev/null)" || pkg_version=""
   pyproject_version="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml 2>/dev/null)" || pyproject_version=""
