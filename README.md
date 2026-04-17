@@ -10,6 +10,7 @@
 
 [![Python Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/python-coverage.json&cacheSeconds=300)](https://mdeguzis.github.io/decky-proton-pulse/)
 [![TypeScript Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/ts-coverage.json&cacheSeconds=300)](https://mdeguzis.github.io/decky-proton-pulse/)
+[![Pulse Reports](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/proton-pulse-data/badges/pulse-reports.json&cacheSeconds=3600)](https://mdeguzis.github.io/proton-pulse-data/)
 
 A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for Steam Deck that pulls [ProtonDB](https://www.protondb.com) reports for the game in front of you, scores them against your hardware, and lets you apply useful launch options without typing them by hand.
 
