@@ -4,7 +4,11 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- feat: release new tag
+- No unreleased changes yet.
+
+## v0.8.8
+
+- No unreleased changes yet.
 
 ## v0.8.2
 
