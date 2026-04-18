@@ -28,6 +28,7 @@ import { t } from '../../lib/i18n';
 import { isSteamShortcutApp } from '../../lib/steamApps';
 import { addTrackedConfig } from '../../lib/trackedConfigs';
 import { parseLaunchOptions } from '../../lib/launchVars';
+import { computePulseTier, type PulseTierResult } from '../../lib/pulseTier';
 
 interface Props {
   appId: number | null;
@@ -273,15 +274,18 @@ function GameSummaryHeader({
   appName,
   reportsCount,
   protondbTier,
+  pulseTier,
 }: {
   appId: number;
   appName: string;
   reportsCount?: number;
   protondbTier?: string | null;
+  pulseTier?: PulseTierResult | null;
 }) {
   const extras = t().extras!;
   const isShortcut = isSteamShortcutApp(appId);
   const tierColor = protondbTier ? (RATING_COLORS[protondbTier] ?? '#888') : null;
+  const pulseTierColor = pulseTier && pulseTier.count > 0 ? (RATING_COLORS[pulseTier.tier] ?? '#888') : null;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
       <img
@@ -299,6 +303,30 @@ function GameSummaryHeader({
             : `${extras.appIdLabel(appId)}${typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}`}
         </div>
       </div>
+      {pulseTierColor && pulseTier && pulseTier.count > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+          <span style={{ fontSize: 9, color: '#7a9bb5', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Pulse
+          </span>
+          <span
+            style={{
+              background: pulseTierColor,
+              color: '#111',
+              borderRadius: 999,
+              padding: '3px 10px',
+              fontWeight: 700,
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}
+          >
+            {(t().ratings as Record<string, string>)[pulseTier.tier] ?? pulseTier.tier}
+          </span>
+          <span style={{ fontSize: 9, color: '#7a9bb5', marginTop: 2 }}>
+            {pulseTier.count} report{pulseTier.count !== 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
       {tierColor && protondbTier && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
           <span style={{ fontSize: 9, color: '#7a9bb5', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -487,6 +515,8 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     isPulse:    true,
     pulseTitle: row.title,
   }));
+
+  const pulseTier = useMemo(() => computePulseTier(pulseReports), [pulseReports]);
 
   const scored: DisplayReportCard[] = mergeWithPulse(
     [...editedDisplayReports, ...baseDisplayReports],
@@ -1042,7 +1072,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} protondbTier={reportDiagnostics?.liveSummaryTier ?? null} />
+      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} protondbTier={reportDiagnostics?.liveSummaryTier ?? null} pulseTier={pulseTier} />
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
           <SteamSpinner />
