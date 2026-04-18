@@ -10,12 +10,132 @@ from __future__ import annotations
 import glob
 import os
 import subprocess
+import sys
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 from .compat_tools import extract_version_parts, list_installed_compatibility_tools
 from .plugin_utils import system_command_env
 from .proton_ge import read_latest_metadata
+
+
+# ── Windows helpers ────────────────────────────────────────────────────────────
+
+def _ps(expression: str) -> str | None:
+    """Run a PowerShell expression and return stripped stdout, or None on error."""
+    try:
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", expression],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+        out = result.stdout.strip()
+        return out if out else None
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return None
+
+
+def _wmic(path: str, get: str) -> str | None:
+    """WMIC fallback — returns first non-empty value field."""
+    try:
+        result = subprocess.run(
+            ["wmic", path, "get", get, "/value"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+        for line in result.stdout.splitlines():
+            if "=" in line:
+                val = line.split("=", 1)[1].strip()
+                if val:
+                    return val
+    except (FileNotFoundError, subprocess.SubprocessError):
+        pass
+    return None
+
+
+def read_cpu_windows() -> str | None:
+    return (
+        _ps("(Get-CimInstance Win32_Processor | Select-Object -First 1).Name")
+        or _wmic("cpu", "Name")
+    )
+
+
+def read_cpu_cores_windows() -> int | None:
+    raw = (
+        _ps("(Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors")
+        or _wmic("computersystem", "NumberOfLogicalProcessors")
+    )
+    try:
+        return int(raw) if raw else None
+    except ValueError:
+        return None
+
+
+def read_ram_gb_windows() -> int | None:
+    raw = _ps(
+        "((Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB)"
+    )
+    if raw:
+        try:
+            return round(float(raw))
+        except ValueError:
+            pass
+    # WMIC fallback: sum capacity fields in bytes
+    try:
+        result = subprocess.run(
+            ["wmic", "memorychip", "get", "Capacity", "/value"],
+            capture_output=True, text=True, timeout=10, check=False,
+        )
+        total = sum(
+            int(line.split("=", 1)[1].strip())
+            for line in result.stdout.splitlines()
+            if "=" in line and line.split("=", 1)[1].strip().isdigit()
+        )
+        return round(total / 1024 ** 3) if total else None
+    except (FileNotFoundError, subprocess.SubprocessError, ValueError):
+        return None
+
+
+def read_gpu_windows() -> tuple[str | None, str | None]:
+    name = (
+        _ps("(Get-CimInstance Win32_VideoController | Select-Object -First 1).Name")
+        or _wmic("path win32_VideoController", "Name")
+    )
+    if not name:
+        return None, None
+    return name, detect_gpu_vendor(name)
+
+
+def read_vram_mb_windows() -> int | None:
+    raw = _ps(
+        "(Get-CimInstance Win32_VideoController | Select-Object -First 1).AdapterRAM"
+    )
+    if not raw:
+        raw = _wmic("path win32_VideoController", "AdapterRAM")
+    try:
+        bytes_val = int(raw) if raw else 0
+        return round(bytes_val / 1024 / 1024) if bytes_val > 0 else None
+    except ValueError:
+        return None
+
+
+def read_driver_version_windows() -> str | None:
+    return (
+        _ps("(Get-CimInstance Win32_VideoController | Select-Object -First 1).DriverVersion")
+        or _wmic("path win32_VideoController", "DriverVersion")
+    )
+
+
+def read_distro_windows() -> str | None:
+    return (
+        _ps("(Get-CimInstance Win32_OperatingSystem).Caption")
+        or _wmic("os", "Caption")
+    )
+
+
+def read_kernel_windows() -> str | None:
+    return (
+        _ps("(Get-CimInstance Win32_OperatingSystem).Version")
+        or _wmic("os", "Version")
+    )
 
 
 def read_cpu() -> str | None:
@@ -265,7 +385,8 @@ def collect_system_info() -> dict[str, object]:
     """Detect hardware and OS info for the frontend.
 
     Each field is read on its own so a single failing detector doesn't
-    take the whole thing down.
+    take the whole thing down.  Dispatches to Windows-specific readers
+    when running on win32.
     """
     info: dict[str, object] = {
         "cpu": None,
@@ -281,25 +402,42 @@ def collect_system_info() -> dict[str, object]:
         "display_resolution": None,
         "steam_deck_model": None,
     }
-    for field, fn in (
-        ("cpu", read_cpu),
-        ("ram_gb", read_ram_gb),
-        ("kernel", read_kernel),
-        ("distro", read_distro),
-        ("driver_version", read_driver_version),
-        ("proton_custom", read_custom_proton),
-        ("vram_mb", read_vram_mb),
-        ("cpu_cores", read_cpu_cores),
-        ("display_resolution", read_display_resolution),
-        ("steam_deck_model", read_steam_deck_model),
-    ):
+
+    is_windows = sys.platform == "win32"
+
+    scalar_readers: list[tuple[str, object]] = (
+        [
+            ("cpu",            read_cpu_windows),
+            ("ram_gb",         read_ram_gb_windows),
+            ("kernel",         read_kernel_windows),
+            ("distro",         read_distro_windows),
+            ("driver_version", read_driver_version_windows),
+            ("vram_mb",        read_vram_mb_windows),
+            ("cpu_cores",      read_cpu_cores_windows),
+        ]
+        if is_windows else
+        [
+            ("cpu",            read_cpu),
+            ("ram_gb",         read_ram_gb),
+            ("kernel",         read_kernel),
+            ("distro",         read_distro),
+            ("driver_version", read_driver_version),
+            ("proton_custom",  read_custom_proton),
+            ("vram_mb",        read_vram_mb),
+            ("cpu_cores",      read_cpu_cores),
+            ("display_resolution", read_display_resolution),
+            ("steam_deck_model",   read_steam_deck_model),
+        ]
+    )
+
+    for field, fn in scalar_readers:
         try:
-            info[field] = fn()
+            info[field] = fn()  # type: ignore[operator]
         except (OSError, subprocess.SubprocessError, ValueError) as e:
             decky.logger.warning(f"System detection failed for {field}: {e}")
 
     try:
-        gpu, vendor = read_gpu()
+        gpu, vendor = read_gpu_windows() if is_windows else read_gpu()
         info["gpu"] = gpu
         info["gpu_vendor"] = vendor
     except (OSError, subprocess.SubprocessError) as e:
