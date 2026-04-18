@@ -68,3 +68,27 @@ describe('getSteamId', () => {
     expect(getSteamId()).toBeNull();
   });
 });
+
+describe('generateLabel', () => {
+  it('combines os name and stripped gpu model', async () => {
+    const { generateLabel } = await import('./userSystems');
+    const blob = [
+      'Operating System Version:',
+      '    "Arch Linux" (64 bit)',
+      'Video Card:',
+      '    Driver:  NVIDIA Corporation NVIDIA GeForce RTX 4070',
+    ].join('\n');
+    expect(generateLabel(blob)).toBe('Arch Linux · GeForce RTX 4070');
+  });
+
+  it('falls back to "Unknown" when fields are missing', async () => {
+    const { generateLabel } = await import('./userSystems');
+    expect(generateLabel('blah blah')).toBe('Unknown system');
+  });
+
+  it('uses only os when gpu is missing', async () => {
+    const { generateLabel } = await import('./userSystems');
+    const blob = 'Operating System Version:\n    "SteamOS 3.6" (64 bit)';
+    expect(generateLabel(blob)).toBe('SteamOS 3.6');
+  });
+});
