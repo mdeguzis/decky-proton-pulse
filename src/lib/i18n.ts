@@ -516,6 +516,26 @@ export interface TranslationTree {
     diagnosticsReportIndexPending: () => string;
     diagnosticsLiveSummary: (status: string, total?: number, tier?: string) => string;
     diagnosticsLiveSummaryPending: () => string;
+    // My Hardware modal
+    myHardwareTitle: () => string;
+    myHardwareSubtitle: () => string;
+    myHardwareCopy: () => string;
+    myHardwareCopied: () => string;
+    myHardwareCopyFailed: () => string;
+    myHardwareLoading: () => string;
+    myHardwareLoadFailed: (err: string) => string;
+    // My Hardware section in Settings
+    myHardwareSection: () => string;
+    myHardwareSectionDescription: () => string;
+    myHardwareView: () => string;
+    myHardwareViewDescription: () => string;
+    myHardwareUpload: () => string;
+    myHardwareUploadDescription: () => string;
+    myHardwareUploadSuccess: () => string;
+    myHardwareUploadFailed: (err: string) => string;
+    myHardwareUploadNoSteam: () => string;
+    myHardwareOpenProfile: () => string;
+    myHardwareOpenProfileDescription: () => string;
   };
 }
 
@@ -1017,6 +1037,26 @@ export const en: TranslationTree = {
         ? `Live ProtonDB summary: ${status} · ${total} reports · ${tier} tier`
         : `Live ProtonDB summary: ${status}`,
     diagnosticsLiveSummaryPending: () => 'Live ProtonDB summary: pending',
+    // My Hardware modal
+    myHardwareTitle: () => 'My Hardware',
+    myHardwareSubtitle: () => 'ProtonDB-compatible system info generated from your Steam client',
+    myHardwareCopy: () => 'Copy',
+    myHardwareCopied: () => 'Copied',
+    myHardwareCopyFailed: () => 'Failed to copy system info',
+    myHardwareLoading: () => 'Loading system info...',
+    myHardwareLoadFailed: (err) => `Could not load system info: ${err}`,
+    // My Hardware section in Settings
+    myHardwareSection: () => 'My Hardware',
+    myHardwareSectionDescription: () => 'View your system info, upload it to Pulse, or open your web profile to manage defaults and multiple systems.',
+    myHardwareView: () => 'View my hardware',
+    myHardwareViewDescription: () => 'Scrollable view of the full ProtonDB-style system info blob',
+    myHardwareUpload: () => 'Upload to Pulse',
+    myHardwareUploadDescription: () => 'Sync this system to your Pulse profile so the web app can pre-fill reports',
+    myHardwareUploadSuccess: () => 'Uploaded to Pulse',
+    myHardwareUploadFailed: (err) => `Upload failed: ${err}`,
+    myHardwareUploadNoSteam: () => 'Sign in to Steam first, then try again',
+    myHardwareOpenProfile: () => 'Open my profile',
+    myHardwareOpenProfileDescription: () => 'Open your Pulse profile on the web to manage systems and defaults',
   },
 };
 
