@@ -9,6 +9,7 @@
     "src/components/LogViewer.tsx",
     "src/components/LogViewerModal.tsx",
     "src/components/Modal.tsx",
+    "src/components/MyHardwareModal.tsx",
     "src/components/NativePulseReportModal.tsx",
     "src/components/ProtonDBSubmitModal.tsx",
     "src/components/ReportCard.tsx",
@@ -41,7 +42,21 @@
     },
     {
       "file": "src/components/tabs/ConfigureTab.tsx",
-      "line": 304,
+      "line": 309,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Pulse"
+    },
+    {
+      "file": "src/components/tabs/ConfigureTab.tsx",
+      "line": 326,
+      "column": 31,
+      "kind": "jsx",
+      "text": "report"
+    },
+    {
+      "file": "src/components/tabs/ConfigureTab.tsx",
+      "line": 333,
       "column": 13,
       "kind": "jsx",
       "text": "ProtonDB"

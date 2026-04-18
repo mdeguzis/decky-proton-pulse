@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 90,
-  "totalKeys": 440,
+  "totalKeys": 459,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 440,
-      "total": 440,
+      "translated": 459,
+      "total": 459,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -16,8 +16,8 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 439,
-      "total": 440,
+      "translated": 458,
+      "total": 459,
       "coveragePercent": 99.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
@@ -28,8 +28,8 @@
     {
       "code": "es",
       "name": "Español",
-      "translated": 439,
-      "total": 440,
+      "translated": 458,
+      "total": 459,
       "coveragePercent": 99.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
@@ -40,8 +40,8 @@
     {
       "code": "fr",
       "name": "Français",
-      "translated": 440,
-      "total": 440,
+      "translated": 459,
+      "total": 459,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -50,8 +50,8 @@
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 440,
-      "total": 440,
+      "translated": 459,
+      "total": 459,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -60,8 +60,8 @@
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 440,
-      "total": 440,
+      "translated": 459,
+      "total": 459,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -70,8 +70,8 @@
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 439,
-      "total": 440,
+      "translated": 458,
+      "total": 459,
       "coveragePercent": 99.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
@@ -82,8 +82,8 @@
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 440,
-      "total": 440,
+      "translated": 459,
+      "total": 459,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -92,8 +92,8 @@
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 440,
-      "total": 440,
+      "translated": 459,
+      "total": 459,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -102,8 +102,8 @@
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 440,
-      "total": 440,
+      "translated": 459,
+      "total": 459,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],

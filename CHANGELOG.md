@@ -4,7 +4,12 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- No unreleased changes yet.
+- task6: add i18n strings for My Hardware settings and modal
+- task5: add MyHardwareModal for viewing and copying system info
+- task4: add uploadSystem with two-step upsert to preserve web edits
+- task3: generate label from os and gpu in sysinfo blob
+- task2: add device id and steam id helpers for hardware sync
+- task1: add user_systems table migration and apply helper
 
 ## v0.8.8
 

@@ -41,13 +41,11 @@ describe('getSteamId', () => {
   });
 
   afterEach(() => {
-    // @ts-expect-error - test shim
-    delete globalThis.SteamClient;
+    delete (globalThis as any).SteamClient;
   });
 
   it('returns the string steam id from SteamClient', async () => {
-    // @ts-expect-error - test shim
-    globalThis.SteamClient = {
+    (globalThis as any).SteamClient = {
       User: { GetCurrentUser: () => ({ strSteamID: '76561198000000000' }) },
     };
     const { getSteamId } = await import('./userSystems');
@@ -60,8 +58,7 @@ describe('getSteamId', () => {
   });
 
   it('returns null when GetCurrentUser throws', async () => {
-    // @ts-expect-error - test shim
-    globalThis.SteamClient = {
+    (globalThis as any).SteamClient = {
       User: { GetCurrentUser: () => { throw new Error('boom'); } },
     };
     const { getSteamId } = await import('./userSystems');
@@ -100,8 +97,7 @@ describe('uploadSystem', () => {
     vi.stubGlobal('localStorage', localStorageMock);
     localStorage.clear();
     localStorage.setItem('proton-pulse:device-id', 'dev-1');
-    // @ts-expect-error - test shim
-    globalThis.SteamClient = {
+    (globalThis as any).SteamClient = {
       User: { GetCurrentUser: () => ({ strSteamID: '76561198000000000' }) },
     };
     vi.stubGlobal('fetch', vi.fn());
@@ -109,8 +105,7 @@ describe('uploadSystem', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    // @ts-expect-error - test shim
-    delete globalThis.SteamClient;
+    delete (globalThis as any).SteamClient;
   });
 
   it('returns ok:false when not signed in to Steam', async () => {
