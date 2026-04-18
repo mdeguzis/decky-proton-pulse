@@ -538,20 +538,30 @@ export function GeneralSettingsTab() {
         <div style={{ ...focusClipRowStyle(), paddingBottom: 6 }}>
           <DialogButton
             onClick={async () => {
-              if (!getSteamId()) {
+              void logFrontendEvent('INFO', 'My Hardware upload clicked');
+              const steamId = getSteamId();
+              if (!steamId) {
+                void logFrontendEvent('WARNING', 'My Hardware upload blocked: no Steam id');
                 toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadNoSteam() });
                 return;
               }
               try {
                 const info = await getProtonDBSystemInfoCall();
+                void logFrontendEvent('DEBUG', 'My Hardware upload starting', {
+                  steamIdPrefix: steamId.slice(0, 8),
+                  infoBytes: info?.length ?? 0,
+                });
                 const result = await uploadSystem(info);
                 if (result.ok) {
+                  void logFrontendEvent('INFO', 'My Hardware upload succeeded');
                   toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadSuccess() });
                 } else {
+                  void logFrontendEvent('ERROR', 'My Hardware upload failed', { error: result.error });
                   toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadFailed(result.error) });
                 }
               } catch (e) {
                 const msg = e instanceof Error ? e.message : String(e);
+                void logFrontendEvent('ERROR', 'My Hardware upload threw', { error: msg });
                 toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadFailed(msg) });
               }
             }}
