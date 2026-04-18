@@ -30,7 +30,6 @@
     "@decky/ui": "^4.11.0",
     "vitest": "^2.1.0",
     "@vitest/coverage-v8": "^2.1.0",
-    "@rollup/rollup-linux-x64-musl": "^4.53.3",
     "@types/react": "19.1.1",
     "@types/react-dom": "19.1.1",
     "@types/webpack": "^5.28.5",

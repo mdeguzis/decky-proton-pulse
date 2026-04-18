@@ -7,6 +7,9 @@
 | Arch Linux | [![Arch Linux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml) |
 | Bazzite | [![Bazzite Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-bazzite.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-bazzite.yml) |
 | Termux | [![Termux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml) |
+| Windows toolchain | [![Windows Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml) |
+
+Windows CI currently validates that the repo toolchain can install and build on a GitHub-hosted Windows runner. It is not a claim that the Decky plugin runtime or hardware-detection backend is fully supported on Windows.
 
 [![Python Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/python-coverage.json&cacheSeconds=300)](https://mdeguzis.github.io/decky-proton-pulse/)
 [![TypeScript Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/ts-coverage.json&cacheSeconds=300)](https://mdeguzis.github.io/decky-proton-pulse/)

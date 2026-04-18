@@ -6,6 +6,22 @@ on:
       workflow_name:
         required: true
         type: string
+      runs_on:
+        required: false
+        type: string
+        default: ubuntu-latest
+      run_shell:
+        required: false
+        type: string
+        default: bash
+      build_cmd:
+        required: false
+        type: string
+        default: make build
+      enforce_diff_coverage:
+        required: false
+        type: boolean
+        default: true
       bootstrap_cmd:
         required: false
         type: string
@@ -37,7 +53,7 @@ jobs:
   build-host:
     if: ${{ inputs.container_image == '' }}
     name: ${{ inputs.workflow_name }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
 
     steps:
       - name: Check out repository
@@ -57,6 +73,7 @@ jobs:
           cache: pnpm
 
       - name: Install frontend dependencies
+        shell: ${{ inputs.run_shell }}
         run: pnpm install --frozen-lockfile
 
       - name: Set up Python
@@ -68,21 +85,25 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Sync Python dependencies
+        shell: ${{ inputs.run_shell }}
         run: uv sync --group dev
 
       - name: Build
-        run: make build
+        shell: ${{ inputs.run_shell }}
+        run: ${{ inputs.build_cmd }}
 
       - name: Fetch base branch for diff coverage
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' && inputs.enforce_diff_coverage }}
+        shell: ${{ inputs.run_shell }}
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
 
       - name: Enforce diff coverage
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' && inputs.enforce_diff_coverage }}
         env:
           DIFF_COVERAGE_BASE: origin/${{ github.base_ref }}
+        shell: ${{ inputs.run_shell }}
         run: pnpm run coverage:diff
 
   build-container:
@@ -95,6 +116,7 @@ jobs:
     steps:
       - name: Install system packages
         if: ${{ inputs.install_cmd != '' }}
+        shell: ${{ inputs.run_shell }}
         run: ${{ inputs.install_cmd }}
 
       - name: Check out repository
@@ -117,6 +139,7 @@ jobs:
 
       - name: Install frontend dependencies
         if: ${{ inputs.bootstrap_cmd == '' }}
+        shell: ${{ inputs.run_shell }}
         run: pnpm install --frozen-lockfile
 
       - name: Set up Python
@@ -131,28 +154,33 @@ jobs:
 
       - name: Sync Python dependencies
         if: ${{ inputs.bootstrap_cmd == '' }}
+        shell: ${{ inputs.run_shell }}
         run: uv sync --group dev
 
       - name: Bootstrap native container toolchain
         if: ${{ inputs.bootstrap_cmd != '' }}
+        shell: ${{ inputs.run_shell }}
         run: ${{ inputs.bootstrap_cmd }}
 
       - name: Build
         env:
           UV_CACHE_DIR: ${{ inputs.uv_cache_dir }}
           UV_PYTHON_PREFERENCE: ${{ inputs.uv_python_preference }}
-        run: make build
+        shell: ${{ inputs.run_shell }}
+        run: ${{ inputs.build_cmd }}
 
       - name: Fetch base branch for diff coverage
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' && inputs.enforce_diff_coverage }}
+        shell: ${{ inputs.run_shell }}
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
 
       - name: Enforce diff coverage
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ github.event_name == 'pull_request' && inputs.enforce_diff_coverage }}
         env:
           DIFF_COVERAGE_BASE: origin/${{ github.base_ref }}
           UV_CACHE_DIR: ${{ inputs.uv_cache_dir }}
           UV_PYTHON_PREFERENCE: ${{ inputs.uv_python_preference }}
+        shell: ${{ inputs.run_shell }}
         run: pnpm run coverage:diff
