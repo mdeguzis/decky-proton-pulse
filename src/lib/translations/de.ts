@@ -513,5 +513,7 @@ export const de: TranslationTree = {
     myHardwareUploadNoSteam: () => 'Melde dich zuerst bei Steam an, dann versuch es erneut',
     myHardwareOpenProfile: () => 'Mein Profil öffnen',
     myHardwareOpenProfileDescription: () => 'Dein Pulse-Profil im Web öffnen, um Systeme und Standardgerät zu verwalten',
+    publishToPulse: () => 'In Pulse veröffentlichen',
+    publishToPulseFailed: (err) => `Veröffentlichung fehlgeschlagen: ${err}`,
   },
 };

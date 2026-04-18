@@ -536,6 +536,8 @@ export interface TranslationTree {
     myHardwareUploadNoSteam: () => string;
     myHardwareOpenProfile: () => string;
     myHardwareOpenProfileDescription: () => string;
+    publishToPulse: () => string;
+    publishToPulseFailed: (err: string) => string;
   };
 }
 
@@ -1057,6 +1059,8 @@ export const en: TranslationTree = {
     myHardwareUploadNoSteam: () => 'Sign in to Steam first, then try again',
     myHardwareOpenProfile: () => 'Open my profile',
     myHardwareOpenProfileDescription: () => 'Open your Pulse profile on the web to manage systems and defaults',
+    publishToPulse: () => 'Publish to Pulse',
+    publishToPulseFailed: (err) => `Publish failed: ${err}`,
   },
 };
 

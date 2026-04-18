@@ -27,6 +27,8 @@ import {
 } from '../lib/customToggles';
 import { logFrontendEvent, callWithTimeout } from '../lib/logger';
 import { t } from '../lib/i18n';
+import { bucketPlaytimeMinutes, getMyAccumulatedMinutes } from '../lib/playtime';
+import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
 import type { GpuVendor, SystemInfo } from '../types';
 import { buildVersionOptions, VersionOptionLabel, type VersionOption } from './EditReportModal';
@@ -907,6 +909,35 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     }
   };
 
+  // Open the Native Pulse report modal with current editor state pre-filled.
+  // Duration is pulled from the local playtime tracker so the user doesn't
+  // have to pick a bucket manually — totally transparent
+  const handlePublish = async () => {
+    if (!appId) return;
+    if (isSteamShortcutApp(appId)) {
+      toaster.toast({ title: 'Proton Pulse', body: extras.shortcutCannotSubmit() });
+      return;
+    }
+    if (!protonVersion) {
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.applyFailed('Proton version is required') });
+      return;
+    }
+    void logFrontendEvent('INFO', 'Publish to Pulse clicked', { appId, appName });
+    const minutes = await getMyAccumulatedMinutes(appId);
+    const autoDuration = bucketPlaytimeMinutes(minutes);
+    void logFrontendEvent('DEBUG', 'Publish auto-duration resolved', { appId, minutes, autoDuration });
+    showModal(
+      <NativePulseReportModal
+        appId={appId}
+        appName={appName}
+        sysInfo={systemInfo}
+        protonVersion={protonVersion}
+        autoDuration={autoDuration}
+        launchOptions={preview}
+      />,
+    );
+  };
+
   const handleApply = async () => {
     if (!appId) return;
     if (!profileName.trim()) {
@@ -1053,6 +1084,13 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               style={{ minWidth: 80, padding: '6px 16px', fontSize: 12 }}
             >
               {t().common.apply}
+            </DialogButton>
+            <DialogButton
+              onClick={() => { void handlePublish(); }}
+              disabled={!appId}
+              style={{ minWidth: 140, padding: '6px 16px', fontSize: 12 }}
+            >
+              {extras.publishToPulse()}
             </DialogButton>
             <DialogButton
               onClick={openCustomToggleModal}

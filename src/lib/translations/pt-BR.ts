@@ -513,5 +513,7 @@ export const ptBR: TranslationTree = {
     myHardwareUploadNoSteam: () => 'Entre na Steam primeiro e tente de novo',
     myHardwareOpenProfile: () => 'Abrir meu perfil',
     myHardwareOpenProfileDescription: () => 'Abre seu perfil Pulse na web para gerenciar sistemas e o padrão',
+    publishToPulse: () => 'Publicar no Pulse',
+    publishToPulseFailed: (err) => `Falha ao publicar: ${err}`,
   },
 };

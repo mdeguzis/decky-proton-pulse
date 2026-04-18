@@ -15,6 +15,10 @@ interface Props {
   appName: string;
   sysInfo: SystemInfo | null;
   protonVersion?: string;
+  // Duration bucket auto-detected from the local playtime tracker. When
+  // passed, the dropdown is hidden and the value goes along silently
+  autoDuration?: string;
+  launchOptions?: string;
   closeModal?: () => void;
 }
 
@@ -120,16 +124,23 @@ const getDurations = (): { data: string; label: string }[] => [
   { data: 'overTenHours',    label: t().nativeReport.durationOverTen },
 ];
 
-export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion: initialProton = '', closeModal }: Props) {
+export function NativePulseReportModal({
+  appId, appName, sysInfo,
+  protonVersion: initialProton = '',
+  autoDuration, launchOptions: initialLaunchOptions = '',
+  closeModal,
+}: Props) {
   const isShortcut = isSteamShortcutApp(appId);
 
   const [rating,   setRating]   = useState<ProtonRating | ''>('');
   const [proton,   setProton]   = useState(initialProton);
-  const [duration, setDuration] = useState('unreported');
+  // When autoDuration is provided we hide the picker and trust the tracker
+  const [duration, setDuration] = useState(autoDuration || 'unreported');
   const [notes,    setNotes]    = useState('');
   const [os,       setOs]       = useState<ValidOS | ''>(mapDistroToValidOS(sysInfo?.distro ?? null));
   const [submitting, setSubmitting] = useState(false);
   const [error,    setError]    = useState<string | null>(null);
+  const autoDurationActive = !!autoDuration;
 
   // tracks which fields were invalid on the last submit attempt
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
@@ -141,12 +152,14 @@ export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion:
     if (!rating)                       errs.rating   = true;
     if (!proton.trim())                errs.proton   = true;
     if (!os)                           errs.os       = true;
-    if (duration === 'unreported')     errs.duration = true;
-    if (notes.trim().length < 30)      errs.notes    = true;
+    // Duration is tracked automatically, so only flag it when the user is
+    // driving the picker themselves (no autoDuration was supplied)
+    if (!autoDurationActive && duration === 'unreported') errs.duration = true;
+    if (notes.trim().length < 40)      errs.notes    = true;
 
     if (Object.keys(errs).length) {
       setFieldErrors(errs);
-      setError('Please fill in all required fields. Notes must be at least 30 characters.');
+      setError('Please fill in all required fields. Notes must be at least 40 characters.');
       return;
     }
     setFieldErrors({});
@@ -179,6 +192,7 @@ export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion:
       duration,
       rating:            rating as ProtonRating,
       notes:             notes.trim(),
+      launchOptions:     initialLaunchOptions || undefined,
       source:            'user',
       vramMb:            sysInfo.vram_mb ?? null,
       cpuCores:          sysInfo.cpu_cores ?? null,
@@ -259,23 +273,25 @@ export function NativePulseReportModal({ appId, appName, sysInfo, protonVersion:
             />
           </div>
 
-          {/* Duration */}
-          <div style={fieldErrors.duration ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
-              {t().nativeReport.duration} <span style={{ color: '#ef4444' }}>*</span>
+          {/* Duration — hidden when auto-detected from the playtime tracker */}
+          {!autoDurationActive && (
+            <div style={fieldErrors.duration ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
+                {t().nativeReport.duration} <span style={{ color: '#ef4444' }}>*</span>
+              </div>
+              <DropdownItem
+                rgOptions={getDurations().map(d => ({ data: d.data, label: d.label }))}
+                selectedOption={duration}
+                onChange={(opt) => { setDuration(opt.data as string); setFieldErrors(p => ({ ...p, duration: false })); }}
+                label={t().nativeReport.duration}
+              />
             </div>
-            <DropdownItem
-              rgOptions={getDurations().map(d => ({ data: d.data, label: d.label }))}
-              selectedOption={duration}
-              onChange={(opt) => { setDuration(opt.data as string); setFieldErrors(p => ({ ...p, duration: false })); }}
-              label={t().nativeReport.duration}
-            />
-          </div>
+          )}
 
           {/* Notes */}
           <div style={fieldErrors.notes ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
             <TextField
-              label={`${t().nativeReport.notes} * (min 30 chars)`}
+              label={`${t().nativeReport.notes} * (min 40 chars)`}
               description={t().nativeReport.notesHint}
               value={notes}
               onChange={(e) => { setNotes(e.target.value); setFieldErrors(p => ({ ...p, notes: false })); }}

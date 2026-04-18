@@ -244,3 +244,36 @@ export async function getConfigPlaytimeTotals(
     return {};
   }
 }
+
+// Total minutes THIS user has logged for a given app across all their sessions.
+// Lets the publish flow auto-fill the duration bucket without prompting.
+export async function getMyAccumulatedMinutes(appId: string | number): Promise<number> {
+  try {
+    const voterId = await getVoterId();
+    const { data, error } = await restRequest<{ duration_minutes: number }[]>('config_playtime', {
+      method: 'GET',
+    }, {
+      select: 'duration_minutes',
+      voter_id: `eq.${voterId}`,
+      app_id: `eq.${appId}`,
+    });
+    if (error || !data) return 0;
+    return data.reduce((sum, r) => sum + (r.duration_minutes || 0), 0);
+  } catch (err) {
+    void logFrontendEvent('ERROR', 'Failed to fetch my accumulated playtime', {
+      appId, error: err instanceof Error ? err.message : String(err),
+    });
+    return 0;
+  }
+}
+
+// Map raw minutes into the duration enum the web form expects. Buckets
+// match NativePulseReportModal: underOneHour / oneToFourHours /
+// fourToTenHours / overTenHours, or 'unreported' for zero playtime
+export function bucketPlaytimeMinutes(minutes: number): string {
+  if (!Number.isFinite(minutes) || minutes <= 0) return 'unreported';
+  if (minutes < 60)       return 'underOneHour';
+  if (minutes < 4 * 60)   return 'oneToFourHours';
+  if (minutes < 10 * 60)  return 'fourToTenHours';
+  return 'overTenHours';
+}

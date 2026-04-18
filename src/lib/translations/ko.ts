@@ -513,5 +513,7 @@ export const ko: TranslationTree = {
     myHardwareUploadNoSteam: () => '먼저 Steam에 로그인한 후 다시 시도하세요',
     myHardwareOpenProfile: () => '내 프로필 열기',
     myHardwareOpenProfileDescription: () => '웹에서 Pulse 프로필을 열어 시스템과 기본값을 관리합니다',
+    publishToPulse: () => 'Pulse에 게시',
+    publishToPulseFailed: (err) => `게시 실패: ${err}`,
   },
 };

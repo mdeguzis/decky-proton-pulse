@@ -537,5 +537,7 @@ export const ru: TranslationTree = {
     myHardwareUploadNoSteam: () => 'Сначала войдите в Steam, затем попробуйте снова',
     myHardwareOpenProfile: () => 'Открыть мой профиль',
     myHardwareOpenProfileDescription: () => 'Откройте профиль Pulse в вебе, чтобы управлять системами и настройками по умолчанию',
+    publishToPulse: () => 'Опубликовать в Pulse',
+    publishToPulseFailed: (err) => `Ошибка публикации: ${err}`,
   },
 };

@@ -513,5 +513,7 @@ export const ja: TranslationTree = {
     myHardwareUploadNoSteam: () => 'まず Steam にサインインしてから、もう一度お試しください',
     myHardwareOpenProfile: () => 'プロフィールを開く',
     myHardwareOpenProfileDescription: () => 'ウェブで Pulse プロフィールを開き、システムとデフォルトを管理します',
+    publishToPulse: () => 'Pulseに公開',
+    publishToPulseFailed: (err) => `公開に失敗しました: ${err}`,
   },
 };

@@ -513,5 +513,7 @@ export const zhCN: TranslationTree = {
     myHardwareUploadNoSteam: () => '请先登录 Steam,然后重试',
     myHardwareOpenProfile: () => '打开我的资料',
     myHardwareOpenProfileDescription: () => '在网页端打开 Pulse 个人资料以管理系统和默认设置',
+    publishToPulse: () => '发布到 Pulse',
+    publishToPulseFailed: (err) => `发布失败:${err}`,
   },
 };

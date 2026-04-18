@@ -513,5 +513,7 @@ export const tr: TranslationTree = {
     myHardwareUploadNoSteam: () => "Önce Steam'e giriş yap, sonra tekrar dene",
     myHardwareOpenProfile: () => 'Profilimi aç',
     myHardwareOpenProfileDescription: () => "Sistemleri ve varsayılanları yönetmek için web'de Pulse profilini aç",
+    publishToPulse: () => "Pulse'ta yayımla",
+    publishToPulseFailed: (err) => `Yayımlama başarısız: ${err}`,
   },
 };
