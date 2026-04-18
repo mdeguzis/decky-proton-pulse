@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TS_SUMMARY_PATH = path.join(ROOT, 'coverage', 'ts', 'coverage-summary.json');
 const PY_SUMMARY_PATH = path.join(ROOT, 'coverage', 'python', 'coverage.json');
 const OUTPUT_DIR = path.join(ROOT, 'coverage', 'site', 'badges');

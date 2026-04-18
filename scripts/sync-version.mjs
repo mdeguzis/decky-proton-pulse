@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptDir, '..');
 const versionPath = path.join(repoRoot, 'VERSION');
 const packageJsonPath = path.join(repoRoot, 'package.json');
 const pyprojectPath = path.join(repoRoot, 'pyproject.toml');
