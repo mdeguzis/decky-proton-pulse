@@ -48,3 +48,98 @@ export function generateLabel(sysinfoText: string): string {
   if (gpu) return gpu;
   return 'Unknown system';
 }
+
+const SUPABASE_URL = 'https://ilsgdshkaocrmibwdezk.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_3Oqhm4JneafJNQw9BuUaxw_L9qZa-5V';
+const SUPABASE_REST_URL = `${SUPABASE_URL}/rest/v1`;
+
+function supabaseHeaders(extra: Record<string, string> = {}): HeadersInit {
+  return {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+    ...extra,
+  };
+}
+
+export type UploadResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+// Uploads the plugin's hardware row. Two-step to preserve web-edited label:
+//  1. GET to check if the row exists
+//  2a. row missing  -> POST with label + is_default (if first system for user)
+//  2b. row present  -> PATCH only sysinfo_text + updated_at
+export async function uploadSystem(sysinfoText: string): Promise<UploadResult> {
+  const steamId = getSteamId();
+  if (!steamId) return { ok: false, error: 'Not signed in to Steam' };
+  const deviceId = getDeviceId();
+
+  try {
+    const existingUrl =
+      `${SUPABASE_REST_URL}/user_systems?steam_id=eq.${encodeURIComponent(steamId)}` +
+      `&device_id=eq.${encodeURIComponent(deviceId)}&select=device_id`;
+    const existingRes = await fetch(existingUrl, { headers: supabaseHeaders() });
+    if (!existingRes.ok) {
+      return { ok: false, error: `Lookup failed: HTTP ${existingRes.status}` };
+    }
+    const existing = (await existingRes.json()) as unknown[];
+
+    if (existing.length === 0) {
+      // first upload for this device -> insert. Check if this is the first
+      // system overall for the steam id so we can mark it default
+      const anyUrl =
+        `${SUPABASE_REST_URL}/user_systems?steam_id=eq.${encodeURIComponent(steamId)}&select=device_id`;
+      const anyRes = await fetch(anyUrl, { headers: supabaseHeaders() });
+      const anyRows = anyRes.ok ? ((await anyRes.json()) as unknown[]) : [];
+      const isFirst = anyRows.length === 0;
+
+      const body = {
+        steam_id: steamId,
+        device_id: deviceId,
+        label: generateLabel(sysinfoText),
+        sysinfo_text: sysinfoText,
+        is_default: isFirst,
+        updated_at: new Date().toISOString(),
+      };
+      const postRes = await fetch(
+        `${SUPABASE_REST_URL}/user_systems?on_conflict=steam_id,device_id`,
+        {
+          method: 'POST',
+          headers: supabaseHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' }),
+          body: JSON.stringify(body),
+        },
+      );
+      if (!postRes.ok) {
+        const err = await postRes.json().catch(() => ({}));
+        return { ok: false, error: (err as any).message || `HTTP ${postRes.status}` };
+      }
+      void logFrontendEvent('INFO', 'Inserted new user_systems row', { isFirst });
+      return { ok: true };
+    }
+
+    // row exists -> patch only mutable fields owned by the plugin
+    const body = {
+      sysinfo_text: sysinfoText,
+      updated_at: new Date().toISOString(),
+    };
+    const patchRes = await fetch(
+      `${SUPABASE_REST_URL}/user_systems?steam_id=eq.${encodeURIComponent(steamId)}` +
+      `&device_id=eq.${encodeURIComponent(deviceId)}`,
+      {
+        method: 'PATCH',
+        headers: supabaseHeaders({ Prefer: 'return=minimal' }),
+        body: JSON.stringify(body),
+      },
+    );
+    if (!patchRes.ok) {
+      const err = await patchRes.json().catch(() => ({}));
+      return { ok: false, error: (err as any).message || `HTTP ${patchRes.status}` };
+    }
+    void logFrontendEvent('INFO', 'Updated existing user_systems row');
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
+}
