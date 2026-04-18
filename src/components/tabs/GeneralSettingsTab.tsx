@@ -1,5 +1,5 @@
 // src/components/tabs/GeneralSettingsTab.tsx
-import { DropdownItem, Focusable, GamepadButton, ToggleField, SliderField, DialogButton, ConfirmModal, showModal } from '@decky/ui';
+import { DropdownItem, Focusable, GamepadButton, ToggleField, SliderField, DialogButton, ConfirmModal, showModal, Navigation } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { callable, openFilePicker, FileSelectionType } from '@decky/api';
 import { useEffect, useRef, useState } from 'react';
@@ -11,6 +11,8 @@ import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomat
 import { getCacheTtlMs, setCacheTtlHours, getCacheStats, getCachedAppIds } from '../../lib/cache';
 import { getSummary, getPrefetchFailureSummary } from '../../lib/metrics';
 import { CacheManagerModalContent } from '../CacheManagerModal';
+import { MyHardwareModal } from '../MyHardwareModal';
+import { uploadSystem, getSteamId } from '../../lib/userSystems';
 import { exportLocalDataBackup, importLocalDataBackup } from '../../lib/localDataBackup';
 import {
   isAutoSyncEnabled,
@@ -25,6 +27,7 @@ const getInstalledGameStatsCallable = callable<[], {
   installed_steam_games: number;
   installed_steam_app_ids: string[];
 }>('get_installed_game_stats');
+const getProtonDBSystemInfoCall = callable<[], string>('get_protondb_systeminfo');
 const setLogLevelSafe = (level: string) =>
   callWithTimeout(() => setLogLevel(level), 'set_log_level', 5000);
 
@@ -512,6 +515,65 @@ export function GeneralSettingsTab() {
            />
          </div>
        </div>
+
+      {/* My Hardware */}
+      <div style={sectionStyle()}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 4 }}>
+          {extras.myHardwareSection()}
+        </div>
+        <div style={{ fontSize: 11, color: '#7a9bb5', margin: '0 8px 10px' }}>
+          {extras.myHardwareSectionDescription()}
+        </div>
+        <div style={{ ...focusClipRowStyle(), paddingBottom: 6 }}>
+          <DialogButton
+            onClick={() => {
+              showModal(<MyHardwareModal />);
+            }}
+            style={{ padding: '8px 16px' }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareView()}</div>
+            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.myHardwareViewDescription()}</div>
+          </DialogButton>
+        </div>
+        <div style={{ ...focusClipRowStyle(), paddingBottom: 6 }}>
+          <DialogButton
+            onClick={async () => {
+              if (!getSteamId()) {
+                toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadNoSteam() });
+                return;
+              }
+              try {
+                const info = await getProtonDBSystemInfoCall();
+                const result = await uploadSystem(info);
+                if (result.ok) {
+                  toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadSuccess() });
+                } else {
+                  toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadFailed(result.error) });
+                }
+              } catch (e) {
+                const msg = e instanceof Error ? e.message : String(e);
+                toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadFailed(msg) });
+              }
+            }}
+            style={{ padding: '8px 16px' }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareUpload()}</div>
+            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.myHardwareUploadDescription()}</div>
+          </DialogButton>
+        </div>
+        <div style={focusClipRowStyle()}>
+          <DialogButton
+            onClick={() => {
+              Navigation.NavigateToExternalWeb('https://mdeguzis.github.io/proton-pulse-data/profile.html');
+              void logFrontendEvent('INFO', 'Opened Pulse web profile from settings');
+            }}
+            style={{ padding: '8px 16px' }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareOpenProfile()}</div>
+            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.myHardwareOpenProfileDescription()}</div>
+          </DialogButton>
+        </div>
+      </div>
 
       {/* advanced settings toggle */}
       <div style={sectionStyle()}>
