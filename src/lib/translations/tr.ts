@@ -164,6 +164,7 @@ export const tr: TranslationTree = {
     noCompatTools: 'Yüklü uyumluluk aracı bulunamadı. Bunun yerine gerekli sürüm kullanılacak.',
     applyFailed: (msg) => `Uygulama başarısız: ${msg}`,
     voteSubmitted: 'Oy gönderildi! Sayım ~60 saniyede güncellenir.',
+    voteRemoved: 'Oy kaldırıldı',
     voteFailed: 'Oy başarısız. Token değerini ve repo/actions izinlerini kontrol edin.',
     requiredProtonVersion: 'Gerekli Proton Sürümü',
     requiresVersion: (v) => `Bu profil yapılandırması ${v} gerektiriyor, ancak şu anda yüklü değil.`,

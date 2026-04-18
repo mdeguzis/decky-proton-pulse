@@ -164,6 +164,7 @@ export const ja: TranslationTree = {
     noCompatTools: 'インストール済みの互換性ツールが見つかりません。代わりに必要なバージョンを使用します。',
     applyFailed: (msg) => `適用に失敗しました: ${msg}`,
     voteSubmitted: '投票が送信されました！カウントは約 60 秒後に更新されます。',
+    voteRemoved: '投票を取り消しました',
     voteFailed: '投票に失敗しました。トークンの値とそのリポジトリ/Actions 権限を確認してください。',
     requiredProtonVersion: '必要な Proton バージョン',
     requiresVersion: (v) => `このプロファイル設定には ${v} が必要ですが、現在インストールされていません。`,

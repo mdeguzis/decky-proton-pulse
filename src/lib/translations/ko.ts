@@ -164,6 +164,7 @@ export const ko: TranslationTree = {
     noCompatTools: '설치된 호환성 도구를 사용할 수 없습니다. 대신 필요한 버전을 사용합니다.',
     applyFailed: (msg) => `적용 실패: ${msg}`,
     voteSubmitted: '투표가 제출되었습니다! 카운트는 약 60초 후에 업데이트됩니다.',
+    voteRemoved: '투표가 취소되었습니다',
     voteFailed: '투표에 실패했습니다. 토큰 값과 저장소/Actions 권한을 확인하세요.',
     requiredProtonVersion: '필요한 Proton 버전',
     requiresVersion: (v) => `이 프로필 설정에는 ${v}이(가) 필요하지만 현재 설치되어 있지 않습니다.`,

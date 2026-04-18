@@ -8,7 +8,7 @@ import {
   getProtonDBReportsWithDiagnostics,
   type ReportFetchDiagnostics,
 } from '../../lib/protondb';
-import { getUserVote, getVoteTotals, submitVote } from '../../lib/voting';
+import { getUserVote, getVoteTotals, submitVote, deleteVote } from '../../lib/voting';
 import { getUserConfigs, type UserConfigRow } from '../../lib/userConfigs';
 import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
@@ -903,7 +903,19 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
     const previousVote = await getUserVote(String(appId), key);
     if (previousVote === 1) {
-      toaster.toast({ title: 'Proton Pulse', body: t().extras!.alreadyUpvoted() });
+      const ok = await deleteVote(String(appId), key);
+      if (ok) {
+        setVotes(prev => ({
+          ...prev,
+          [key]: {
+            upvotes: Math.max(0, (prev[key]?.upvotes ?? 0) - 1),
+            downvotes: prev[key]?.downvotes ?? 0,
+          },
+        }));
+        toaster.toast({ title: 'Proton Pulse', body: t().configure.voteRemoved });
+        return true;
+      }
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
       return false;
     }
     const ok = await submitVote(String(appId), key, 1);
@@ -929,7 +941,19 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
     const previousVote = await getUserVote(String(appId), key);
     if (previousVote === -1) {
-      toaster.toast({ title: 'Proton Pulse', body: t().extras!.alreadyDownvoted() });
+      const ok = await deleteVote(String(appId), key);
+      if (ok) {
+        setVotes(prev => ({
+          ...prev,
+          [key]: {
+            upvotes: prev[key]?.upvotes ?? 0,
+            downvotes: Math.max(0, (prev[key]?.downvotes ?? 0) - 1),
+          },
+        }));
+        toaster.toast({ title: 'Proton Pulse', body: t().configure.voteRemoved });
+        return true;
+      }
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.voteFailed });
       return false;
     }
     const ok = await submitVote(String(appId), key, -1);

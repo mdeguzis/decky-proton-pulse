@@ -164,6 +164,7 @@ export const fr: TranslationTree = {
     noCompatTools: "Aucun outil de compatibilité installé n'était disponible. Utilisation de la version requise à la place.",
     applyFailed: (msg) => `Échec de l'application : ${msg}`,
     voteSubmitted: 'Vote soumis ! Le décompte se met à jour en ~60s.',
+    voteRemoved: 'Vote retiré',
     voteFailed: 'Échec du vote. Vérifiez la valeur du token et ses permissions repo/actions.',
     requiredProtonVersion: 'Version de Proton requise',
     requiresVersion: (v) => `Cette configuration de profil nécessite ${v}, mais elle n'est pas actuellement installée.`,

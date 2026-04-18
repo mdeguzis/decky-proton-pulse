@@ -170,6 +170,26 @@ export async function getVoterId(): Promise<string> {
   return cachedVoterId;
 }
 
+export async function deleteVote(
+  appId: string,
+  reportKey: string,
+): Promise<boolean> {
+  try {
+    const voterId = await getVoterId();
+    const { error } = await restRequest<null>('report_votes', {
+      method: 'DELETE',
+      headers: { Prefer: 'return=minimal' },
+    }, {
+      voter_id: `eq.${voterId}`,
+      app_id: `eq.${appId}`,
+      report_key: `eq.${reportKey}`,
+    });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 export async function submitVote(
   appId: string,
   reportKey: string,

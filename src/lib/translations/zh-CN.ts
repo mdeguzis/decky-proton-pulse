@@ -164,6 +164,7 @@ export const zhCN: TranslationTree = {
     noCompatTools: '没有可用的已安装兼容性工具。将改为使用所需版本。',
     applyFailed: (msg) => `应用失败：${msg}`,
     voteSubmitted: '投票已提交！计数将在约 60 秒内更新。',
+    voteRemoved: '投票已撤销',
     voteFailed: '投票失败。请检查令牌值及其仓库/Actions 权限。',
     requiredProtonVersion: '所需 Proton 版本',
     requiresVersion: (v) => `此配置文件需要 ${v}，但当前未安装。`,

@@ -164,6 +164,7 @@ export const ptBR: TranslationTree = {
     noCompatTools: 'Nenhuma ferramenta de compatibilidade instalada estava disponível. Usando a versão necessária como alternativa.',
     applyFailed: (msg) => `Falha ao aplicar: ${msg}`,
     voteSubmitted: 'Voto enviado! A contagem atualiza em ~60s.',
+    voteRemoved: 'Voto removido',
     voteFailed: 'Falha no voto. Verifique o valor do token e suas permissões de repo/actions.',
     requiredProtonVersion: 'Versão do Proton Necessária',
     requiresVersion: (v) => `Esta configuração de perfil requer ${v}, mas não está instalada no momento.`,

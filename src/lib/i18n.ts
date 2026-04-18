@@ -196,6 +196,7 @@ export interface TranslationTree {
     noCompatTools: string;
     applyFailed: (msg: string) => string;
     voteSubmitted: string;
+    voteRemoved: string;
     voteFailed: string;
     requiredProtonVersion: string;
     requiresVersion: (version: string) => string;
@@ -685,6 +686,7 @@ export const en: TranslationTree = {
     noCompatTools: 'No compatibility tools are available',
     applyFailed: (msg) => `Could not apply launch options: ${msg}`,
     voteSubmitted: 'Vote sent',
+    voteRemoved: 'Vote removed',
     voteFailed: 'Could not send vote',
     requiredProtonVersion: 'Required Proton Version',
     requiresVersion: (v) => `This profile needs ${v}, but it is not installed right now.`,

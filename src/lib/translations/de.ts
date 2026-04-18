@@ -164,6 +164,7 @@ export const de: TranslationTree = {
     noCompatTools: 'Keine installierten Kompatibilitätswerkzeuge verfügbar. Stattdessen wird die erforderliche Version verwendet.',
     applyFailed: (msg) => `Anwenden fehlgeschlagen: ${msg}`,
     voteSubmitted: 'Stimme abgegeben! Zähler aktualisiert sich in ~60s.',
+    voteRemoved: 'Stimme entfernt',
     voteFailed: 'Abstimmung fehlgeschlagen. Überprüfen Sie den Token-Wert und seine Repo-/Actions-Berechtigungen.',
     requiredProtonVersion: 'Erforderliche Proton-Version',
     requiresVersion: (v) => `Diese Profilkonfiguration erfordert ${v}, ist aber derzeit nicht installiert.`,
