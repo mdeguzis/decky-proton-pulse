@@ -21,6 +21,7 @@ import {
   type SyncStatus,
 } from '../../lib/cloudSync';
 import { deleteMyReport } from '../../lib/userConfigs';
+import { bucketPlaytimeMinutes, getMyAccumulatedMinutes } from '../../lib/playtime';
 
 interface Props {
   appId: number | null;
@@ -194,17 +195,26 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
     );
   };
 
-  const handleSubmitReport = (config: TrackedConfig) => {
+  const handleSubmitReport = async (config: TrackedConfig) => {
     if (isSteamShortcutApp(config.appId)) {
       toaster.toast({ title: 'Proton Pulse', body: extras.shortcutCannotSubmit() });
       return;
     }
+    // Compute playtime bucket from per-user accumulated minutes so the modal
+    // can hide the duration picker entirely (it's transparent to the user)
+    const minutes = await getMyAccumulatedMinutes(config.appId);
+    const autoDuration = bucketPlaytimeMinutes(minutes);
+    void logFrontendEvent('DEBUG', 'Submit report auto-duration resolved', {
+      appId: config.appId, minutes, autoDuration,
+    });
     showModal(
       <NativePulseReportModal
         appId={config.appId}
         appName={displayName(config)}
         sysInfo={sysInfo}
         protonVersion={config.protonVersion}
+        autoDuration={autoDuration}
+        launchOptions={config.launchOptions}
       />,
     );
   };
@@ -304,7 +314,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           {t().configManager.restoreFromCloud}
         </MenuItem>
         {!isShortcut ? (
-          <MenuItem onClick={() => handleSubmitReport(config)}>
+          <MenuItem onClick={() => { void handleSubmitReport(config); }}>
             {t().protondbSubmit.submitToProtonDB}
           </MenuItem>
         ) : null}
