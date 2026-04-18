@@ -28,7 +28,7 @@ from .plugin_utils import system_command_env
 from .steam_paths import find_steam_root
 
 # GitHub Pages CDN that hosts the per-game ProtonDB report data
-CDN_BASE = "https://mdeguzis.github.io/proton-pulse-data/data"
+CDN_BASE = "https://www.proton-pulse.com/data"
 MAX_RETRIES = 3
 INITIAL_BACKOFF = 2  # seconds — doubles on each retry
 

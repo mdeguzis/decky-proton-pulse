@@ -542,7 +542,7 @@ def test_put_cached_cdn_updates_cache_metadata(plugin: Plugin) -> None:
         assert asyncio.run(plugin.put_cached_cdn("730", "index.json", {"reports": 3})) is True
 
     set_meta_mock.assert_called_once_with(
-        "https://mdeguzis.github.io/proton-pulse-data/data/730/index.json"
+        "https://www.proton-pulse.com/data/730/index.json"
     )
 
 

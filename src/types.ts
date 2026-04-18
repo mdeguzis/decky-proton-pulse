@@ -35,7 +35,7 @@ export interface ProtonDBSummary {
 
 // ─── CDN Report ───────────────────────────────────────────────────────────────
 // Shape served by the Proton Pulse CDN year files under
-// https://mdeguzis.github.io/proton-pulse-data/data/{appId}/{year}.json
+// https://www.proton-pulse.com/data/{appId}/{year}.json
 // rating is normalized to lowercase at fetch time ("Silver" -> "silver")
 
 export interface CdnReport {

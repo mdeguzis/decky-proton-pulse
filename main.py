@@ -300,7 +300,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     async def get_cached_cdn(self, app_id: str, filename: str) -> dict[str, Any]:
         """Return cached CDN data if it's still fresh, otherwise ``{"data": null}``."""
         # Rebuild the full CDN URL so we can check the freshness metadata
-        url = f"https://mdeguzis.github.io/proton-pulse-data/data/{app_id}/{filename}"
+        url = f"https://www.proton-pulse.com/data/{app_id}/{filename}"
         if is_fresh(url):
             data = read_cached(app_id, filename)
             if data is not None:
@@ -314,7 +314,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         try:
             write_cached(app_id, filename, data)
             from lib.cdn_cache import set_meta  # pylint: disable=import-outside-toplevel
-            url = f"https://mdeguzis.github.io/proton-pulse-data/data/{app_id}/{filename}"
+            url = f"https://www.proton-pulse.com/data/{app_id}/{filename}"
             # Bump the metadata timestamp so is_fresh() treats this entry as valid
             set_meta(url)
             decky.logger.debug(f"put_cached_cdn: stored {app_id}/{filename}")

@@ -574,7 +574,7 @@ export function GeneralSettingsTab() {
         <div style={focusClipRowStyle()}>
           <DialogButton
             onClick={() => {
-              Navigation.NavigateToExternalWeb('https://mdeguzis.github.io/proton-pulse-data/profile.html');
+              Navigation.NavigateToExternalWeb('https://www.proton-pulse.com/profile.html');
               void logFrontendEvent('INFO', 'Opened Pulse web profile from settings');
             }}
             style={{ padding: '8px 16px' }}

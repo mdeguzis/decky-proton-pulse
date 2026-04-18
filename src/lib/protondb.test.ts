@@ -154,10 +154,10 @@ describe('getProtonDBReports', () => {
       .mockResolvedValueOnce(makeResponse(200, fakeCdnRaw));
     await getProtonDBReports('730');
     expect(mockFetch).toHaveBeenNthCalledWith(1,
-      'https://mdeguzis.github.io/proton-pulse-data/data/730/index.json'
+      'https://www.proton-pulse.com/data/730/index.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(2,
-      'https://mdeguzis.github.io/proton-pulse-data/data/730/2023.json'
+      'https://www.proton-pulse.com/data/730/2023.json'
     );
   });
 
@@ -208,7 +208,7 @@ describe('getProtonDBReports', () => {
     expect(result.diagnostics.liveSummaryStatus).toBe(200);
     expect(result.diagnostics.liveSummaryTotal).toBe(fakeSummary.total);
     expect(mockFetch).toHaveBeenNthCalledWith(1,
-      'https://mdeguzis.github.io/proton-pulse-data/data/1145350/index.json'
+      'https://www.proton-pulse.com/data/1145350/index.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(2,
       'https://www.protondb.com/data/counts.json'
@@ -241,7 +241,7 @@ describe('getProtonDBReports', () => {
       notes: 'Runs great on Deck',
     });
     expect(mockFetch).toHaveBeenNthCalledWith(1,
-      'https://mdeguzis.github.io/proton-pulse-data/data/2358720/index.json'
+      'https://www.proton-pulse.com/data/2358720/index.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(2,
       'https://www.protondb.com/data/counts.json'
@@ -284,10 +284,10 @@ describe('getProtonDBReports', () => {
     expect(result.diagnostics.source).toBe('live-summary');
     expect(result.reports).toHaveLength(0);
     expect(mockFetch).toHaveBeenNthCalledWith(1,
-      'https://mdeguzis.github.io/proton-pulse-data/data/2561580/index.json'
+      'https://www.proton-pulse.com/data/2561580/index.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(2,
-      'https://mdeguzis.github.io/proton-pulse-data/data/2561580/2023.json'
+      'https://www.proton-pulse.com/data/2561580/2023.json'
     );
     expect(mockFetch).toHaveBeenNthCalledWith(3,
       'https://www.protondb.com/data/counts.json'

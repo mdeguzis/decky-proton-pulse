@@ -19,9 +19,9 @@ import { startDetailedSpan, countFetch } from "./metrics";
 const SUMMARY_URL =
   "https://www.protondb.com/api/v1/reports/summaries/{id}.json";
 const APP_INDEX_URL =
-  "https://mdeguzis.github.io/proton-pulse-data/data/{id}/index.json";
+  "https://www.proton-pulse.com/data/{id}/index.json";
 const YEAR_URL =
-  "https://mdeguzis.github.io/proton-pulse-data/data/{id}/{year}.json";
+  "https://www.proton-pulse.com/data/{id}/{year}.json";
 const LIVE_COUNTS_URL = "https://www.protondb.com/data/counts.json";
 const LIVE_REPORTS_URL =
   "https://www.protondb.com/data/reports/{device}/app/{hash}.json";

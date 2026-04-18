@@ -149,7 +149,7 @@ data/{appId}.json  (one file per game, minified, sorted newest-first)
 index.json         (metadata: updated timestamp, game count)
         │
         ▼  force-push to orphan gh-pages branch
-https://mdeguzis.github.io/proton-pulse-data/data/{appId}.json
+https://www.proton-pulse.com/data/{appId}.json
         │
         ▼  fetchNoCors in plugin
 ConfigureTab → scoring → GPU-bucketed report cards
@@ -178,7 +178,7 @@ Games with fewer than 3 reports are excluded (`MIN_REPORTS = 3` in the script).
 
 ## Plugin Integration (TODO)
 
-Once the data repo is live at `https://mdeguzis.github.io/proton-pulse-data/`,
+Once the data repo is live at `https://www.proton-pulse.com/`,
 update `src/lib/protondb.ts`:
 
 ```typescript
@@ -186,7 +186,7 @@ update `src/lib/protondb.ts`:
 const REPORTS_URL = 'https://www.protondb.com/api/v1/reports/app/{id}';
 
 // With:
-const REPORTS_URL = 'https://mdeguzis.github.io/proton-pulse-data/data/{id}.json';
+const REPORTS_URL = 'https://www.proton-pulse.com/data/{id}.json';
 ```
 
 The response is already a plain JSON array — no other changes needed in
