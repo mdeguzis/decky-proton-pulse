@@ -884,6 +884,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         enabledVars: allVars,
         appliedAt: Date.now(),
         isEdited: !!existingConfig,
+        source: existingConfig?.source,
         cpu: systemInfo?.cpu ?? null,
         gpu: systemInfo?.gpu ?? null,
         gpuVendor: systemInfo?.gpu_vendor ?? null,
