@@ -36,7 +36,12 @@ const VALID_OS = [
   'Bazzite',
 ] as const;
 
-const PROTON_VERSION_RE = /^(Proton |GE-Proton|Proton-)\d/;
+// Accepts numbered builds ("Proton 10.0-3", "Proton-10.0-3", "GE-Proton10-1")
+// plus Steam's named branches ("Proton - Experimental", "Proton Experimental",
+// "Proton - Hotfix", "Proton - Next"). Steam pre-fills the Experimental branch
+// with the " - " separator so that shape has to validate or the plugin submit
+// silently rejects whatever Steam handed us
+const PROTON_VERSION_RE = /^(Proton |GE-Proton|Proton-)(\d|-?\s*(Experimental|Hotfix|Next)\b)/i;
 const RAM_RE = /^\d+ GB$/;
 
 const VALID_GPU_VENDORS = ['nvidia', 'amd', 'intel', 'other'] as const;

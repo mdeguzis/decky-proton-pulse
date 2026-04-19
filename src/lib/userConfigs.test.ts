@@ -77,6 +77,17 @@ describe('validateUserConfig', () => {
     expect(validateUserConfig({ ...validInput(), protonVersion: 'GE-Proton9-20' })).toBeNull();
   });
 
+  // Steam pre-fills "Proton - Experimental" for the experimental branch, and
+  // also ships Hotfix / Next branches without a numeric version. Make sure the
+  // validator accepts the named branches on top of numbered builds
+  it('accepts named Proton branches (Experimental, Hotfix, Next)', async () => {
+    const { validateUserConfig } = await import('./userConfigs');
+    expect(validateUserConfig({ ...validInput(), protonVersion: 'Proton - Experimental' })).toBeNull();
+    expect(validateUserConfig({ ...validInput(), protonVersion: 'Proton Experimental'   })).toBeNull();
+    expect(validateUserConfig({ ...validInput(), protonVersion: 'Proton - Hotfix'       })).toBeNull();
+    expect(validateUserConfig({ ...validInput(), protonVersion: 'Proton - Next'         })).toBeNull();
+  });
+
   it('rejects bad ram format', async () => {
     const { validateUserConfig } = await import('./userConfigs');
     expect(validateUserConfig({ ...validInput(), ram: '16GB' })).toMatch(/ram/i);
