@@ -140,7 +140,10 @@ export function NativePulseReportModal({
   const [os,       setOs]       = useState<ValidOS | ''>(mapDistroToValidOS(sysInfo?.distro ?? null));
   const [submitting, setSubmitting] = useState(false);
   const [error,    setError]    = useState<string | null>(null);
-  const autoDurationActive = !!autoDuration;
+  // Only treat auto-duration as active when the tracker gave us a real bucket.
+  // 'unreported' comes back when playtime is 0, in which case the user still
+  // needs to pick something themselves — don't hide the picker on them
+  const autoDurationActive = !!autoDuration && autoDuration !== 'unreported';
 
   // tracks which fields were invalid on the last submit attempt
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
@@ -155,11 +158,11 @@ export function NativePulseReportModal({
     // Duration is tracked automatically, so only flag it when the user is
     // driving the picker themselves (no autoDuration was supplied)
     if (!autoDurationActive && duration === 'unreported') errs.duration = true;
-    if (notes.trim().length < 40)      errs.notes    = true;
+    if (notes.trim().length < 10)      errs.notes    = true;
 
     if (Object.keys(errs).length) {
       setFieldErrors(errs);
-      setError('Please fill in all required fields. Notes must be at least 40 characters.');
+      setError('Please fill in all required fields. Notes must be at least 10 characters.');
       return;
     }
     setFieldErrors({});
@@ -248,6 +251,9 @@ export function NativePulseReportModal({
               onChange={(opt) => { setRating(opt.data as ProtonRating); setFieldErrors(p => ({ ...p, rating: false })); setError(null); }}
               label={t().nativeReport.rating}
             />
+            <div style={{ fontSize: 10, color: '#7a9bb5', marginTop: 4, lineHeight: 1.4 }}>
+              Choose this yourself based on your actual experience. Proton Pulse only auto-fills hardware and play time.
+            </div>
           </div>
 
           {/* Proton version */}
@@ -271,6 +277,9 @@ export function NativePulseReportModal({
               onChange={(opt) => { setOs(opt.data as ValidOS); setFieldErrors(p => ({ ...p, os: false })); setError(null); }}
               label={t().nativeReport.os}
             />
+            <div style={{ fontSize: 10, color: '#7a9bb5', marginTop: 4, lineHeight: 1.4 }}>
+              Automatically detected from your system. Change it only if the pre-fill got it wrong.
+            </div>
           </div>
 
           {/* Duration — hidden when auto-detected from the playtime tracker */}
@@ -291,20 +300,21 @@ export function NativePulseReportModal({
           {/* Notes */}
           <div style={fieldErrors.notes ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
             <TextField
-              label={`${t().nativeReport.notes} * (min 40 chars)`}
+              label={`${t().nativeReport.notes} * (min 10 chars)`}
               description={t().nativeReport.notesHint}
               value={notes}
               onChange={(e) => { setNotes(e.target.value); setFieldErrors(p => ({ ...p, notes: false })); }}
             />
           </div>
-
-          {/* Error */}
-          {error && (
-            <div style={{ fontSize: 11, color: '#ef4444', padding: '6px 10px', background: 'rgba(239,68,68,0.1)', borderRadius: 4 }}>
-              {error}
-            </div>
-          )}
         </Focusable>
+
+        {/* Error — pinned above the action buttons so it's always visible even
+             when the scrollable content above is not in view */}
+        {error && (
+          <div style={{ fontSize: 11, color: '#ef4444', padding: '6px 10px', marginTop: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 4 }}>
+            {error}
+          </div>
+        )}
 
         {/* Actions */}
         <Focusable style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
