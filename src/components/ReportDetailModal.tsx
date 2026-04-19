@@ -804,12 +804,12 @@ function UploadDestinationModal({
   closeModal,
   onUploadToProtonDB,
   onUploadToProtonPulse,
-  protonPulseDisabled,
+  uploadsDisabled,
 }: {
   closeModal?: () => void;
   onUploadToProtonDB: () => void;
   onUploadToProtonPulse: () => void;
-  protonPulseDisabled: boolean;
+  uploadsDisabled: boolean;
 }) {
   return (
     <ModalRoot onCancel={closeModal}>
@@ -817,13 +817,18 @@ function UploadDestinationModal({
         <div style={{ fontSize: 16, fontWeight: 700, color: '#e8f4ff' }}>
           {t().detail.uploadDestinationTitle}
         </div>
-        <DialogButton onClick={onUploadToProtonDB}>
+        {uploadsDisabled && (
+          <div style={{ fontSize: 11, color: '#d4a843', marginBottom: 2 }}>
+            {t().detail.uploadRequiresEdit}
+          </div>
+        )}
+        <DialogButton onClick={onUploadToProtonDB} disabled={uploadsDisabled}>
           {t().detail.uploadToProtonDB}
         </DialogButton>
-        <DialogButton onClick={onUploadToProtonPulse} disabled={protonPulseDisabled}>
+        <DialogButton onClick={onUploadToProtonPulse} disabled={uploadsDisabled}>
           {t().detail.uploadToProtonPulse}
         </DialogButton>
-        <DialogButton onClick={closeModal} style={{ background: '#555' }}>
+        <DialogButton onClick={closeModal}>
           {t().common.cancel}
         </DialogButton>
       </div>
@@ -1047,10 +1052,9 @@ export function ReportDetailModal({
   };
 
   const handleUploadToProtonPulse = () => {
-    if (report.isEdited) {
-      toaster.toast({ title: 'Proton Pulse', body: t().toast.alreadyInProtonPulse });
-      return;
-    }
+    // Saving an edit always updates the stored Proton Pulse entry. If the
+    // user re-opens an already-edited report and clicks upload again, they
+    // presumably want their latest tweaks persisted, not a "nothing to do" toast
     onSaveEdit(buildEditedReportEntry(report));
     toaster.toast({ title: 'Proton Pulse', body: t().toast.savedToProtonPulse });
   };
@@ -1060,7 +1064,7 @@ export function ReportDetailModal({
       <UploadDestinationModal
         onUploadToProtonDB={handleUploadToProtonDB}
         onUploadToProtonPulse={handleUploadToProtonPulse}
-        protonPulseDisabled={Boolean(report.isEdited)}
+        uploadsDisabled={!report.isEdited}
       />,
     );
   };

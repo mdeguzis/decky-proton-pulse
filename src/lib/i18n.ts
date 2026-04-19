@@ -102,6 +102,7 @@ export interface TranslationTree {
     uploadDestinationTitle: string;
     uploadToProtonDB: string;
     uploadToProtonPulse: string;
+    uploadRequiresEdit: string;
     upvote: string;
     clear: string;
     hardwareComparisonTitle: string;
@@ -320,6 +321,7 @@ export interface TranslationTree {
     gpuFilter: string;
     synced: string;
     notSynced: string;
+    cloudStatusLabel: string;
     uploadToCloud: string;
     uploadingToCloud: string;
     cloudUploadSuccess: string;
@@ -614,6 +616,7 @@ export const en: TranslationTree = {
     uploadDestinationTitle: 'Choose Upload Destination',
     uploadToProtonDB: 'Upload to ProtonDB',
     uploadToProtonPulse: 'Upload to Proton Pulse',
+    uploadRequiresEdit: 'Tap Edit first to make this your own report, then upload',
     upvote: 'Upvote',
     clear: 'Clear',
     hardwareComparisonTitle: 'Hardware Comparison',
@@ -832,6 +835,7 @@ export const en: TranslationTree = {
     gpuFilter: 'GPU',
     synced: 'Synced',
     notSynced: 'Not synced',
+    cloudStatusLabel: 'Cloud',
     uploadToCloud: 'Upload to Cloud',
     uploadingToCloud: 'Uploading...',
     cloudUploadSuccess: 'Config uploaded to cloud',

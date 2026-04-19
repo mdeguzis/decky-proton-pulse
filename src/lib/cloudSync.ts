@@ -16,6 +16,32 @@ let teardownAutoSyncListener: (() => void) | null = null;
 let teardownPluginSettingsListener: (() => void) | null = null;
 let pendingPluginSettingsPushTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
 
+// Fires every time pushConfig finishes. Components that display sync state
+// (ManageTab badges, the "..." context menu) subscribe so their view refreshes
+// the moment an auto-sync push completes, instead of waiting for remount.
+// The `source` lets subscribers distinguish a manual Upload (which already
+// shows its own toast) from a background auto-sync (which is silent until it fails)
+export type CloudPushSource = 'manual' | 'auto';
+export interface CloudPushResult {
+  appId: number;
+  ok: boolean;
+  source: CloudPushSource;
+  error?: string;
+}
+type CloudPushCallback = (result: CloudPushResult) => void;
+const cloudPushCallbacks: Set<CloudPushCallback> = new Set();
+
+export function onCloudConfigPushed(cb: CloudPushCallback): () => void {
+  cloudPushCallbacks.add(cb);
+  return () => { cloudPushCallbacks.delete(cb); };
+}
+
+function notifyCloudConfigPushed(result: CloudPushResult): void {
+  for (const cb of cloudPushCallbacks) {
+    try { cb(result); } catch { /* don't let a bad subscriber block future pushes */ }
+  }
+}
+
 export function isAutoSyncEnabled(): boolean {
   return getSetting<boolean>(AUTO_SYNC_KEY, true);
 }
@@ -32,11 +58,14 @@ export function setPluginSettingsAutoSyncEnabled(enabled: boolean): void {
   setSetting(AUTO_SYNC_PLUGIN_SETTINGS_KEY, enabled);
 }
 
-export async function pushConfig(config: TrackedConfig): Promise<boolean> {
+export async function pushConfig(
+  config: TrackedConfig,
+  source: CloudPushSource = 'manual',
+): Promise<boolean> {
   try {
     const voterId = await getVoterId();
     void logFrontendEvent('DEBUG', 'Cloud sync: pushing config', {
-      appId: config.appId, voterIdPrefix: voterId.slice(0, 8),
+      appId: config.appId, voterIdPrefix: voterId.slice(0, 8), source,
     });
 
     const { error } = await restRequest<null>('user_proton_configs', {
@@ -55,18 +84,21 @@ export async function pushConfig(config: TrackedConfig): Promise<boolean> {
 
     if (error) {
       void logFrontendEvent('ERROR', 'Cloud sync: push failed', {
-        appId: config.appId, error,
+        appId: config.appId, error, source,
       });
+      notifyCloudConfigPushed({ appId: config.appId, ok: false, source, error: String(error) });
       return false;
     }
 
-    void logFrontendEvent('INFO', 'Cloud sync: config pushed', { appId: config.appId });
+    void logFrontendEvent('INFO', 'Cloud sync: config pushed', { appId: config.appId, source });
+    notifyCloudConfigPushed({ appId: config.appId, ok: true, source });
     return true;
   } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
     void logFrontendEvent('ERROR', 'Cloud sync: push threw', {
-      appId: config.appId,
-      error: err instanceof Error ? err.message : String(err),
+      appId: config.appId, error: errMsg, source,
     });
+    notifyCloudConfigPushed({ appId: config.appId, ok: false, source, error: errMsg });
     return false;
   }
 }
@@ -274,7 +306,7 @@ export function initCloudSync(): void {
   if (teardownAutoSyncListener) return;
   teardownAutoSyncListener = onConfigSaved((config) => {
     if (!isAutoSyncEnabled()) return;
-    void pushConfig(config);
+    void pushConfig(config, 'auto');
   });
   teardownPluginSettingsListener = onSettingsChanged(() => {
     if (!isPluginSettingsAutoSyncEnabled()) return;

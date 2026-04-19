@@ -121,6 +121,52 @@ describe('pushConfig', () => {
   });
 });
 
+describe('onCloudConfigPushed', () => {
+  it('notifies subscribers on successful manual push with source=manual', async () => {
+    mockRestRequest.mockResolvedValueOnce({ data: null, error: null, status: 201 });
+
+    const { pushConfig, onCloudConfigPushed } = await import('./cloudSync');
+    const spy = vi.fn();
+    const unsub = onCloudConfigPushed(spy);
+
+    await pushConfig(makeConfig({ appId: 777 }));
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith({ appId: 777, ok: true, source: 'manual' });
+    unsub();
+  });
+
+  it('tags auto-sync pushes with source=auto so the global listener can toast failures without doubling up manual toasts', async () => {
+    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'boom', status: 500 });
+
+    const { pushConfig, onCloudConfigPushed } = await import('./cloudSync');
+    const spy = vi.fn();
+    const unsub = onCloudConfigPushed(spy);
+
+    await pushConfig(makeConfig({ appId: 42 }), 'auto');
+
+    expect(spy).toHaveBeenCalledWith({
+      appId: 42, ok: false, source: 'auto', error: 'boom',
+    });
+    unsub();
+  });
+
+  it('unsubscribe stops further callbacks', async () => {
+    mockRestRequest.mockResolvedValue({ data: null, error: null, status: 201 });
+
+    const { pushConfig, onCloudConfigPushed } = await import('./cloudSync');
+    const spy = vi.fn();
+    const unsub = onCloudConfigPushed(spy);
+
+    await pushConfig(makeConfig({ appId: 1 }));
+    unsub();
+    await pushConfig(makeConfig({ appId: 2 }));
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ appId: 1 }));
+  });
+});
+
 describe('plugin settings cloud sync', () => {
   it('upserts plugin settings using the local backup payload', async () => {
     mockRestRequest.mockResolvedValueOnce({ data: null, error: null, status: 201 });

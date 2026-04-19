@@ -32,7 +32,12 @@ import { runStartupPrefetch } from './lib/prefetch';
 import { startAutoFlush, stopAutoFlush, flushMetricsToDisk } from './lib/metrics';
 import { getProtonGeManagerState, installProtonGe } from './lib/compatTools';
 import { startSessionTracking, stopSessionTracking } from './lib/playtime';
-import { initCloudSync, teardownCloudSync, checkHasCloudBackup } from './lib/cloudSync';
+import {
+  initCloudSync,
+  teardownCloudSync,
+  checkHasCloudBackup,
+  onCloudConfigPushed,
+} from './lib/cloudSync';
 import { getTrackedConfigs } from './lib/trackedConfigs';
 import { toaster } from './lib/notify';
 import { patchGamePageBadge } from './patches/gamePageBadge';
@@ -375,6 +380,18 @@ export default definePlugin(() => {
   initCache();
   initCloudSync();
   startAutoFlush();
+
+  // Auto-sync is silent on success, but the user has no way to know it failed
+  // otherwise. Toast failed auto-pushes here at the plugin level so it works
+  // regardless of which tab (if any) is open. Manual pushes already show their
+  // own toasts from the ManageTab, so skip source='manual'
+  const unsubCloudPush = onCloudConfigPushed((result) => {
+    if (result.source !== 'auto' || result.ok) return;
+    toaster.toast({
+      title: 'Proton Pulse',
+      body: t().configManager.cloudSyncFailed(result.error ?? 'push failed'),
+    });
+  });
   void (async () => {
     try {
       if (getTrackedConfigs().length > 0) return;
@@ -483,6 +500,7 @@ export default definePlugin(() => {
     onDismount() {
       console.log('Proton Pulse unloading');
       void logFrontendEvent('INFO', 'Plugin frontend unloading');
+      unsubCloudPush();
       teardownCloudSync();
       // finalize any active playtime session before shutdown
       stopSessionTracking();

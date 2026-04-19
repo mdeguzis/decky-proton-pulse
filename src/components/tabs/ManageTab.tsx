@@ -17,6 +17,7 @@ import {
   restoreCloudConfigs,
   pushAllConfigs,
   pushConfig,
+  onCloudConfigPushed,
   type CloudConfigRow,
   type SyncStatus,
 } from '../../lib/cloudSync';
@@ -67,6 +68,13 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   useEffect(() => {
     void refreshCloud();
   }, []);
+
+  // Auto-sync fires pushConfig off in the background when a config is saved.
+  // Without this, the SYNCED badge stays stale until the tab remounts - even though
+  // the push actually succeeded on the server side
+  useEffect(() => onCloudConfigPushed((result) => {
+    if (result.ok) void refreshCloud();
+  }), []);
 
   useEffect(() => registerScreenshotAutomationHandler('manage-configurations/config-editor', async (action: ScreenshotAutomationAction) => {
     showModal(
@@ -153,30 +161,26 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         strDescription={t().configManager.deleteConfirm(displayName(config))}
         strOKButtonText={t().configManager.deleteAction}
         onOK={() => {
+          // Delete everywhere in one shot: wipe launch options, drop the
+          // tracked config, and remove any submitted report from the cloud.
+          // deleteMyReport is a no-op if nothing was ever submitted, so
+          // this is safe even for configs that never hit Proton Pulse
           void logFrontendEvent('INFO', 'Deleting tracked config', { appId: config.appId, appName: config.appName });
           SteamClient.Apps.SetAppLaunchOptions(config.appId, '');
           removeTrackedConfig(config.appId);
           refresh();
+          void deleteMyReport(String(config.appId))
+            .then((result) => {
+              if (!result.ok) {
+                void logFrontendEvent('WARNING', 'Supabase report delete failed during full delete', {
+                  appId: config.appId, error: result.error,
+                });
+              }
+              // refresh cloud state so the synced badge clears right away
+              return refreshCloud();
+            })
+            .catch(() => {});
           toaster.toast({ title: 'Proton Pulse', body: t().toast.cleared });
-        }}
-        onCancel={() => {}}
-      />,
-    );
-  };
-
-  const handleDeleteFromSupabase = (config: TrackedConfig) => {
-    showModal(
-      <ConfirmModal
-        strTitle="Delete Supabase Report"
-        strDescription={`Delete your submitted report for ${displayName(config)} from Supabase? This cannot be undone.`}
-        strOKButtonText="Delete Report"
-        onOK={() => {
-          void deleteMyReport(String(config.appId)).then((result) => {
-            toaster.toast({
-              title: 'Proton Pulse',
-              body: result.ok ? 'Report deleted from Supabase' : `Delete failed: ${result.error}`,
-            });
-          });
         }}
         onCancel={() => {}}
       />,
@@ -303,8 +307,21 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
 
   const openActionsMenu = (config: TrackedConfig, e: MouseEvent) => {
     const isShortcut = isSteamShortcutApp(config.appId);
+    const menuSyncStatus: SyncStatus = cloudLoading
+      ? 'not-synced'
+      : getCloudSyncStatus(config.appId, cloudConfigs);
+    const syncLabel = cloudLoading
+      ? t().configManager.syncingCloud
+      : (menuSyncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced);
     showContextMenu(
       <Menu label={displayName(config)}>
+        {/* Informational header, disabled so it's not focusable but the
+            user can still see whether this config is on the cloud */}
+        <MenuItem disabled onSelected={() => {}}>
+          <span style={{ color: menuSyncStatus === 'synced' ? '#4caf50' : '#f59e0b' }}>
+            {`${t().configManager.cloudStatusLabel}: ${syncLabel}`}
+          </span>
+        </MenuItem>
         <MenuItem onClick={() => handleEdit(config)}>
           {t().common.edit}
         </MenuItem>
@@ -316,14 +333,11 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         </MenuItem>
         {!isShortcut ? (
           <MenuItem onClick={() => { void handleSubmitReport(config); }}>
-            {t().protondbSubmit.submitToProtonDB}
+            {t().detail.uploadToProtonPulse}
           </MenuItem>
         ) : null}
         <MenuItem onClick={() => handleDelete(config)}>
           {t().configManager.deleteAction}
-        </MenuItem>
-        <MenuItem onClick={() => handleDeleteFromSupabase(config)}>
-          Delete Report from Supabase
         </MenuItem>
       </Menu>,
       e.currentTarget ?? window,
