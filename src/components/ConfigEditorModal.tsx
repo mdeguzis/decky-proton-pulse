@@ -99,6 +99,75 @@ function buildCustomToggleId(item: Pick<StoredCustomToggle, 'scope' | 'appId' | 
   return `${item.scope}:${item.appId ?? 'global'}:${item.valueType}:${payload}`;
 }
 
+function buildToggleStateFromParsedLaunchOptions(
+  parsed: ReturnType<typeof parseLaunchOptions>,
+  appId: number | null,
+  catalogKeys: Set<string>,
+) {
+  const stored = getScopedCustomToggles(appId);
+  const storedKeys = new Set(stored.map((toggle) => `${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
+  const inferredScope: CustomToggleScope = appId !== null ? 'game' : 'global';
+
+  const parsedCustoms = Object.entries(parsed.vars)
+    .filter(([key]) => !catalogKeys.has(key))
+    .map(([key, value]) => ({
+      id: buildCustomToggleId({
+        scope: inferredScope,
+        appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+        key,
+        value,
+        valueType: inferCustomToggleValueType(value),
+      }),
+      title: key,
+      key,
+      scope: inferredScope,
+      appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+      valueType: inferCustomToggleValueType(value),
+      value,
+    } satisfies StoredCustomToggle))
+    .filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
+
+  const parsedArgs = [...parsed.rawArgs, ...parsed.postCommandArgs]
+    .map((value) => {
+      const valueType = parsed.postCommandArgs.includes(value) ? 'toggle' : inferCustomToggleValueType(value);
+      return {
+        id: buildCustomToggleId({
+          scope: inferredScope,
+          appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+          key: '',
+          value,
+          valueType,
+        }),
+        title: value,
+        key: '',
+        scope: inferredScope,
+        appId: inferredScope === 'game' ? appId ?? undefined : undefined,
+        valueType,
+        value,
+      } satisfies StoredCustomToggle;
+    })
+    .filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
+
+  const customToggles = [...stored, ...parsedCustoms, ...parsedArgs];
+  const enabledCustomToggleIds = new Set(
+    customToggles
+      .filter((toggle) => {
+        if (toggle.key.trim()) return Object.prototype.hasOwnProperty.call(parsed.vars, toggle.key);
+        return parsed.rawArgs.includes(toggle.value) || parsed.postCommandArgs.includes(toggle.value);
+      })
+      .map((toggle) => toggle.id),
+  );
+
+  return {
+    protonVersion: parsed.protonVersion ?? '',
+    enabledVars: Object.fromEntries(
+      Object.entries(parsed.vars).filter(([key]) => catalogKeys.has(key)),
+    ),
+    customToggles,
+    enabledCustomToggleIds,
+  };
+}
+
 interface CustomToggleManagerModalProps {
   appId: number | null;
   toggles: StoredCustomToggle[];
@@ -588,113 +657,14 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   const parsed = existingConfig
     ? parseLaunchOptions(existingConfig.launchOptions)
     : { protonVersion: null, vars: {} as Record<string, string>, rawArgs: [] as string[], postCommandArgs: [] as string[] };
+  const initialParsedState = buildToggleStateFromParsedLaunchOptions(parsed, appId, catalogKeys);
 
   const [profileName, setProfileName] = useState(existingConfig?.profileName ?? '');
   const [profileNameTouched, setProfileNameTouched] = useState(false);
-  const [protonVersion, setProtonVersion] = useState(parsed.protonVersion ?? '');
-  const [enabledVars, setEnabledVars] = useState<Record<string, string>>(
-    Object.fromEntries(
-      Object.entries(parsed.vars).filter(([key]) => catalogKeys.has(key)),
-    ),
-  );
-  const [customToggles, setCustomToggles] = useState<StoredCustomToggle[]>(() => {
-    const stored = getScopedCustomToggles(appId);
-    const storedKeys = new Set(stored.map((toggle) => `${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
-    const parsedCustoms = Object.entries(parsed.vars)
-      .filter(([key]) => !catalogKeys.has(key))
-      .map(([key, value]) => {
-        const inferredScope: CustomToggleScope = appId !== null ? 'game' : 'global';
-        return {
-          id: buildCustomToggleId({
-            scope: inferredScope,
-            appId: inferredScope === 'game' ? appId ?? undefined : undefined,
-            key,
-            value,
-            valueType: inferCustomToggleValueType(value),
-          }),
-          title: key,
-          key,
-          scope: inferredScope,
-          appId: inferredScope === 'game' ? appId ?? undefined : undefined,
-          valueType: inferCustomToggleValueType(value),
-          value,
-        } satisfies StoredCustomToggle;
-      })
-      .filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
-    const parsedArgs = [...parsed.rawArgs, ...parsed.postCommandArgs].map((value) => {
-      const inferredScope: CustomToggleScope = appId !== null ? 'game' : 'global';
-      const valueType = parsed.postCommandArgs.includes(value) ? 'toggle' : inferCustomToggleValueType(value);
-      return {
-        id: buildCustomToggleId({
-          scope: inferredScope,
-          appId: inferredScope === 'game' ? appId ?? undefined : undefined,
-          key: '',
-          value,
-          valueType,
-        }),
-        title: value,
-        key: '',
-        scope: inferredScope,
-        appId: inferredScope === 'game' ? appId ?? undefined : undefined,
-        valueType,
-        value,
-      } satisfies StoredCustomToggle;
-    }).filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
-    return [...stored, ...parsedCustoms, ...parsedArgs];
-  });
-  const [enabledCustomToggleIds, setEnabledCustomToggleIds] = useState<Set<string>>(() => {
-    const parsedKeys = new Set([
-      ...Object.keys(parsed.vars).filter((key) => !catalogKeys.has(key)),
-      ...parsed.rawArgs,
-      ...parsed.postCommandArgs,
-    ]);
-    const initialToggles = (() => {
-      const stored = getScopedCustomToggles(appId);
-      const storedKeys = new Set(stored.map((toggle) => `${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
-      const parsedCustoms = Object.entries(parsed.vars)
-        .filter(([key]) => !catalogKeys.has(key))
-        .map(([key, value]) => {
-          const inferredScope: CustomToggleScope = appId !== null ? 'game' : 'global';
-          return {
-            id: buildCustomToggleId({
-              scope: inferredScope,
-              appId: inferredScope === 'game' ? appId ?? undefined : undefined,
-              key,
-              value,
-              valueType: inferCustomToggleValueType(value),
-            }),
-            title: key,
-            key,
-            scope: inferredScope,
-            appId: inferredScope === 'game' ? appId ?? undefined : undefined,
-            valueType: inferCustomToggleValueType(value),
-            value,
-          } satisfies StoredCustomToggle;
-        })
-        .filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
-      const parsedArgs = [...parsed.rawArgs, ...parsed.postCommandArgs].map((value) => {
-        const inferredScope: CustomToggleScope = appId !== null ? 'game' : 'global';
-        const valueType = parsed.postCommandArgs.includes(value) ? 'toggle' : inferCustomToggleValueType(value);
-        return {
-          id: buildCustomToggleId({
-            scope: inferredScope,
-            appId: inferredScope === 'game' ? appId ?? undefined : undefined,
-            key: '',
-            value,
-            valueType,
-          }),
-          title: value,
-          key: '',
-          scope: inferredScope,
-          appId: inferredScope === 'game' ? appId ?? undefined : undefined,
-          valueType,
-          value,
-        } satisfies StoredCustomToggle;
-      }).filter((toggle) => !storedKeys.has(`${toggle.scope}:${toggle.appId ?? 'global'}:${toggle.key}:${toggle.value}`));
-      return [...stored, ...parsedCustoms, ...parsedArgs];
-    })();
-    return new Set(initialToggles.filter((toggle) => parsedKeys.has(toggle.key || toggle.value)).map((toggle) => toggle.id));
-  });
+  const [protonVersion, setProtonVersion] = useState(initialParsedState.protonVersion);
+  const [enabledVars, setEnabledVars] = useState<Record<string, string>>(initialParsedState.enabledVars);
+  const [customToggles, setCustomToggles] = useState<StoredCustomToggle[]>(initialParsedState.customToggles);
+  const [enabledCustomToggleIds, setEnabledCustomToggleIds] = useState<Set<string>>(initialParsedState.enabledCustomToggleIds);
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [loadingSystemInfo, setLoadingSystemInfo] = useState(true);
   const [versionOptions, setVersionOptions] = useState<VersionOption[]>([]);
@@ -715,6 +685,38 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       .catch(() => { /* system info unavailable, leave null */ })
       .finally(() => setLoadingSystemInfo(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // New configs should start from the game's current Steam launch options
+  // when available, so the editor reflects what the user is already running
+  useEffect(() => {
+    if (existingConfig || !appId) return;
+    void getSteamAppDetails(appId)
+      .then((result) => {
+        const currentLaunchOptions = getLaunchOptionsFromDetails(result.details);
+        if (!currentLaunchOptions.trim()) return;
+        const currentParsed = parseLaunchOptions(currentLaunchOptions);
+        const parsedState = buildToggleStateFromParsedLaunchOptions(currentParsed, appId, catalogKeys);
+        if (currentParsed.protonVersion) {
+          setProtonVersion((prev) => prev || currentParsed.protonVersion || '');
+        }
+        setEnabledVars((prev) => (Object.keys(prev).length ? prev : parsedState.enabledVars));
+        setCustomToggles((prev) => (prev.length ? prev : parsedState.customToggles));
+        setEnabledCustomToggleIds((prev) => (prev.size ? prev : parsedState.enabledCustomToggleIds));
+        void logFrontendEvent('DEBUG', 'Config editor prefilled from current Steam launch options', {
+          appId,
+          hasProtonVersion: !!currentParsed.protonVersion,
+          varCount: Object.keys(currentParsed.vars).length,
+          rawArgCount: currentParsed.rawArgs.length,
+          postArgCount: currentParsed.postCommandArgs.length,
+        });
+      })
+      .catch((error) => {
+        void logFrontendEvent('WARNING', 'Failed to prefill config editor from current Steam launch options', {
+          appId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+  }, [existingConfig, appId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // load available proton versions for the dropdown
   useEffect(() => {
