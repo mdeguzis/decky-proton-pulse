@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 90,
-  "totalKeys": 459,
+  "totalKeys": 463,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 459,
-      "total": 459,
+      "translated": 463,
+      "total": 463,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -16,11 +16,12 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 458,
-      "total": 459,
-      "coveragePercent": 99.8,
+      "translated": 461,
+      "total": 463,
+      "coveragePercent": 99.6,
       "missingKeys": [],
       "sameAsEnglishKeys": [
+        "configManager.cloudStatusLabel",
         "nativeReport.hardware"
       ],
       "typeMismatches": []
@@ -28,8 +29,8 @@
     {
       "code": "es",
       "name": "Español",
-      "translated": 458,
-      "total": 459,
+      "translated": 462,
+      "total": 463,
       "coveragePercent": 99.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
@@ -40,18 +41,20 @@
     {
       "code": "fr",
       "name": "Français",
-      "translated": 459,
-      "total": 459,
-      "coveragePercent": 100,
+      "translated": 462,
+      "total": 463,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configManager.cloudStatusLabel"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 459,
-      "total": 459,
+      "translated": 463,
+      "total": 463,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -60,8 +63,8 @@
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 459,
-      "total": 459,
+      "translated": 463,
+      "total": 463,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -70,8 +73,8 @@
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 458,
-      "total": 459,
+      "translated": 462,
+      "total": 463,
       "coveragePercent": 99.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
@@ -82,8 +85,8 @@
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 459,
-      "total": 459,
+      "translated": 463,
+      "total": 463,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -92,8 +95,8 @@
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 459,
-      "total": 459,
+      "translated": 463,
+      "total": 463,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -102,8 +105,8 @@
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 459,
-      "total": 459,
+      "translated": 463,
+      "total": 463,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],

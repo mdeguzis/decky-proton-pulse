@@ -28,10 +28,24 @@
   "findings": [
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 517,
+      "line": 588,
       "column": 64,
       "kind": "jsx",
       "text": "Detecting hardware..."
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 255,
+      "column": 15,
+      "kind": "jsx",
+      "text": "Choose this yourself based on your actual experience. Proton Pulse only auto-fills hardware and play time."
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 281,
+      "column": 15,
+      "kind": "jsx",
+      "text": "Automatically detected from your system. Change it only if the pre-fill got it wrong."
     },
     {
       "file": "src/components/ReportCard.tsx",
@@ -60,13 +74,6 @@
       "column": 13,
       "kind": "jsx",
       "text": "ProtonDB"
-    },
-    {
-      "file": "src/components/tabs/ManageTab.tsx",
-      "line": 315,
-      "column": 11,
-      "kind": "jsx",
-      "text": "Delete Report from Supabase"
     }
   ]
 }
