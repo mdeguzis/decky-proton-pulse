@@ -18,7 +18,7 @@ ifneq ($(wildcard $(HOME)/.deckip),)
   DECK_IP ?= $(shell cat $(HOME)/.deckip)
 endif
 
-DECK_IP   ?=
+DECK_IP   ?= steamdeck
 DECK_USER ?= deck
 
 # DECK_IP=local is a shortcut to force local mode

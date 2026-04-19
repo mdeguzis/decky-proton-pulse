@@ -81,3 +81,23 @@ export function getLaunchOptionsFromDetails(details: any): string {
   if (!details || typeof details !== 'object') return '';
   return typeof details.strLaunchOptions === 'string' ? details.strLaunchOptions : '';
 }
+
+// Lifetime playtime in minutes as Steam knows it for this account.
+// Matches the "PLAY TIME" value shown on the Steam library page for the game.
+// Returns 0 when the overview isn't available or the field is missing
+export function getSteamPlaytimeForeverMinutes(appId: number): number {
+  const overview = getSteamAppOverview(appId);
+  if (!overview) return 0;
+  // Steam's overview object exposes lifetime playtime in a handful of shapes
+  // depending on client version, so check the common ones
+  const candidates = [
+    overview.minutes_playtime_forever,
+    overview.nPlaytimeForever,
+    overview.minutesPlaytimeForever,
+  ];
+  for (const v of candidates) {
+    const n = typeof v === 'number' ? v : Number(v);
+    if (Number.isFinite(n) && n > 0) return Math.round(n);
+  }
+  return 0;
+}

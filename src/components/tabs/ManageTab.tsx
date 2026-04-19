@@ -21,7 +21,7 @@ import {
   type SyncStatus,
 } from '../../lib/cloudSync';
 import { deleteMyReport } from '../../lib/userConfigs';
-import { bucketPlaytimeMinutes, getMyAccumulatedMinutes } from '../../lib/playtime';
+import { bucketPlaytimeMinutes, getEffectivePlaytimeMinutes } from '../../lib/playtime';
 
 interface Props {
   appId: number | null;
@@ -200,12 +200,13 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
       toaster.toast({ title: 'Proton Pulse', body: extras.shortcutCannotSubmit() });
       return;
     }
-    // Compute playtime bucket from per-user accumulated minutes so the modal
-    // can hide the duration picker entirely (it's transparent to the user)
-    const minutes = await getMyAccumulatedMinutes(config.appId);
+    // Compute playtime bucket from whichever is higher: the plugin's tracked
+    // minutes or Steam's lifetime playtime for this app. Using the max means
+    // games played before the plugin was installed still auto-fill the picker
+    const { minutes, trackedMinutes, steamMinutes } = await getEffectivePlaytimeMinutes(config.appId);
     const autoDuration = bucketPlaytimeMinutes(minutes);
     void logFrontendEvent('DEBUG', 'Submit report auto-duration resolved', {
-      appId: config.appId, minutes, autoDuration,
+      appId: config.appId, minutes, trackedMinutes, steamMinutes, autoDuration,
     });
     showModal(
       <NativePulseReportModal

@@ -13,12 +13,18 @@ vi.mock('./trackedConfigs', () => ({
   getTrackedConfig: vi.fn(),
 }));
 
+vi.mock('./steamApps', () => ({
+  getSteamPlaytimeForeverMinutes: vi.fn().mockReturnValue(0),
+}));
+
 import { getVoterId, restRequest } from './voting';
 import { getTrackedConfig } from './trackedConfigs';
+import { getSteamPlaytimeForeverMinutes } from './steamApps';
 
 const mockGetVoterId = vi.mocked(getVoterId);
 const mockRestRequest = vi.mocked(restRequest);
 const mockGetTrackedConfig = vi.mocked(getTrackedConfig);
+const mockGetSteamPlaytimeForeverMinutes = vi.mocked(getSteamPlaytimeForeverMinutes);
 
 const realDateNow = Date.now;
 
@@ -50,6 +56,8 @@ describe('playtime', () => {
     mockGetVoterId.mockResolvedValue('abc123voterId');
     mockGetTrackedConfig.mockReturnValue(null);
     mockRestRequest.mockReset();
+    mockGetSteamPlaytimeForeverMinutes.mockReset();
+    mockGetSteamPlaytimeForeverMinutes.mockReturnValue(0);
     (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
       GameSessions: {
         GetRunningApps: vi.fn().mockReturnValue([]),
@@ -413,5 +421,55 @@ describe('playtime', () => {
 
     stopSessionTracking();
     await flushAsyncWork();
+  });
+
+  describe('getEffectivePlaytimeMinutes', () => {
+    it('returns the max of plugin-tracked and Steam lifetime minutes', async () => {
+      mockRestRequest.mockResolvedValueOnce({
+        data: [{ duration_minutes: 5 }, { duration_minutes: 2 }],
+        error: null,
+        status: 200,
+      });
+      mockGetSteamPlaytimeForeverMinutes.mockReturnValue(56);
+
+      const { getEffectivePlaytimeMinutes } = await import('./playtime');
+      const result = await getEffectivePlaytimeMinutes(1_284_410);
+
+      expect(mockGetSteamPlaytimeForeverMinutes).toHaveBeenCalledWith(1_284_410);
+      expect(result).toEqual({ minutes: 56, trackedMinutes: 7, steamMinutes: 56 });
+    });
+
+    it('prefers tracked minutes when Steam reports a smaller number', async () => {
+      mockRestRequest.mockResolvedValueOnce({
+        data: [{ duration_minutes: 120 }],
+        error: null,
+        status: 200,
+      });
+      mockGetSteamPlaytimeForeverMinutes.mockReturnValue(45);
+
+      const { getEffectivePlaytimeMinutes } = await import('./playtime');
+      const result = await getEffectivePlaytimeMinutes('900');
+
+      expect(result).toEqual({ minutes: 120, trackedMinutes: 120, steamMinutes: 45 });
+    });
+
+    it('returns zeros when tracked fails and Steam has no data', async () => {
+      mockRestRequest.mockResolvedValueOnce({ data: null, error: 'boom', status: 500 });
+      mockGetSteamPlaytimeForeverMinutes.mockReturnValue(0);
+
+      const { getEffectivePlaytimeMinutes } = await import('./playtime');
+      const result = await getEffectivePlaytimeMinutes(42);
+
+      expect(result).toEqual({ minutes: 0, trackedMinutes: 0, steamMinutes: 0 });
+    });
+
+    it('skips the Steam lookup when appId is not a positive number', async () => {
+      mockRestRequest.mockResolvedValueOnce({ data: [], error: null, status: 200 });
+      const { getEffectivePlaytimeMinutes } = await import('./playtime');
+      const result = await getEffectivePlaytimeMinutes('not-a-number');
+
+      expect(mockGetSteamPlaytimeForeverMinutes).not.toHaveBeenCalled();
+      expect(result).toEqual({ minutes: 0, trackedMinutes: 0, steamMinutes: 0 });
+    });
   });
 });

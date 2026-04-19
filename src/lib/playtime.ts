@@ -8,6 +8,7 @@ import { getVoterId, restRequest } from './voting';
 import { getTrackedConfig } from './trackedConfigs';
 import type { TrackedConfig } from './trackedConfigs';
 import { logFrontendEvent } from './logger';
+import { getSteamPlaytimeForeverMinutes } from './steamApps';
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -265,6 +266,30 @@ export async function getMyAccumulatedMinutes(appId: string | number): Promise<n
     });
     return 0;
   }
+}
+
+// Best-effort playtime for the duration picker. The plugin's own tracker only
+// knows about sessions it observed, so for a game the user played before
+// installing Proton Pulse we'd show 0. Steam's lifetime playtime (the "PLAY
+// TIME" number on the library page) covers everything, so take the max of
+// the two so the duration bucket auto-fills even on the first report.
+export interface EffectivePlaytime {
+  minutes: number;
+  trackedMinutes: number;   // what config_playtime has for this user+app
+  steamMinutes: number;     // Steam's minutes_playtime_forever
+}
+
+export async function getEffectivePlaytimeMinutes(appId: string | number): Promise<EffectivePlaytime> {
+  const numericAppId = typeof appId === 'number' ? appId : Number(appId);
+  const trackedMinutes = await getMyAccumulatedMinutes(appId);
+  const steamMinutes = Number.isFinite(numericAppId) && numericAppId > 0
+    ? getSteamPlaytimeForeverMinutes(numericAppId)
+    : 0;
+  return {
+    minutes: Math.max(trackedMinutes, steamMinutes),
+    trackedMinutes,
+    steamMinutes,
+  };
 }
 
 // Map raw minutes into the duration enum the web form expects. Buckets
