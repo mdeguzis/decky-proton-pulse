@@ -217,6 +217,32 @@ def _read_gpu_from_lspci() -> tuple[str, str]:
     return "Unknown", "Unknown"
 
 
+def _read_gpu_name_from_lspci() -> str:
+    """Best-effort human-readable GPU name without needing a GL context.
+
+    On the Deck in game mode, glxinfo fails (no X11) so the Driver: line
+    in the sysinfo output comes out as 'Unknown'. Fall back to lspci -nn,
+    which prints something like:
+        04:00.0 VGA compatible controller [0300]: Advanced Micro Devices,
+            Inc. [AMD/ATI] Rembrandt [Radeon 680M] [1002:1681] (rev c8)
+    Strip the leading bus address and device-class prefix, and drop the
+    trailing [vendor:device] ID block and (rev ..) suffix so what's left
+    is the name a human would recognize.
+    """
+    raw = _run(["lspci", "-nn", "-d", "::0300"])
+    if not raw:
+        return ""
+    # First VGA device on the bus is what we want
+    line = raw.splitlines()[0] if raw else ""
+    # Strip "bb:dd.f VGA compatible controller [0300]: " prefix
+    m = re.search(r"\[0300\]:\s*(.+)", line)
+    name = m.group(1) if m else line
+    # Drop the trailing [1002:163f] id and (rev c1) suffix
+    name = re.sub(r"\s*\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\]\s*", " ", name)
+    name = re.sub(r"\s*\(rev\s+[0-9a-fA-F]+\)\s*", "", name)
+    return name.strip()
+
+
 def _read_display_info() -> dict[str, str]:
     """Gather display resolution, refresh rate, monitor count, etc.
 
@@ -366,6 +392,15 @@ def generate_system_info(home: str | None = None) -> str:
     display = _read_display_info()
     disk = _read_disk_info()
 
+    # In game mode glxinfo has no X display and returns "Unknown". Fall back
+    # to the lspci name so reports submitted from the Deck don't all look
+    # like they're running on a mystery GPU
+    gpu_renderer = glx["renderer"]
+    if gpu_renderer == "Unknown":
+        lspci_name = _read_gpu_name_from_lspci()
+        if lspci_name:
+            gpu_renderer = lspci_name
+
     # Steam reports CPU family/model/stepping as hex, so convert them
     cpu_family = cpu.get("cpu_family", "0")
     cpu_model = cpu.get("model", "0")
@@ -433,7 +468,7 @@ Operating System Version:
     Steam Runtime Version:  {_read_steam_runtime(home)}
 
 Video Card:
-    Driver:  {glx["renderer"]}
+    Driver:  {gpu_renderer}
     Driver Version:  {glx["version_long"]}
     OpenGL Version: {glx["version_short"]}
     Desktop Color Depth: {display["color_depth"]} bits per pixel
