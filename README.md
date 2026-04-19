@@ -17,6 +17,8 @@ Windows CI currently validates that the repo toolchain can install and build on 
 
 A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for Steam Deck that pulls [ProtonDB](https://www.protondb.com) reports for the game in front of you, scores them against your hardware, and lets you apply useful launch options without typing them by hand.
 
+> Website: **<https://www.proton-pulse.com/>** — the companion web app now lives on its own domain. If you had the old `mdeguzis.github.io/proton-pulse-data/*` URLs bookmarked, please update them. The plugin itself already points at the new host.
+
 Browse community reports, Pulse configs, and per-game compatibility data on the **[Proton Pulse site](https://www.proton-pulse.com/)** - works on mobile with a collapsible left-side nav.
 
 Coverage policy: overall Python and TypeScript coverage must stay at or above `90%`, and pull requests must keep changed-line coverage at `95%` or higher.
@@ -78,9 +80,9 @@ Proton Pulse supports 10 languages. Translation coverage is measured during buil
 | Language | Code | Coverage | Status |
 |---|---|---|---|
 | English | en | 100.0% (canonical) | canonical |
-| Deutsch | de | 99.8% | pass |
+| Deutsch | de | 99.6% | pass |
 | Español | es | 99.8% | pass |
-| Français | fr | 100.0% | pass |
+| Français | fr | 99.8% | pass |
 | 日本語 | ja | 100.0% | pass |
 | 한국어 | ko | 100.0% | pass |
 | Português (BR) | pt-BR | 99.8% | pass |
