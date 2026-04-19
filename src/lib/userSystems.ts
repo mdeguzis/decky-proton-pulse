@@ -18,28 +18,88 @@ export function getDeviceId(): string {
   return fresh;
 }
 
-export function getSteamId(): string | null {
+// Try several known Steam client internals to find the current user's id.
+// The preferred SteamClient.User.GetCurrentUser() path can silently return
+// an empty object on some builds, so we also check the long-standing App and
+// loginStore globals as a fallback. See:
+// https://github.com/SteamDeckHomebrew/decky-loader/issues/ (various reports)
+function tryGetSteamIdFromAnySource(): { id: string | null; source: string } {
+  const g = globalThis as any;
+
   try {
-    // SteamClient is a global injected by Steam's client. Typing is loose here.
-    const user = (globalThis as any).SteamClient?.User?.GetCurrentUser?.();
-    const sid = user?.strSteamID;
-    return typeof sid === 'string' && sid.length > 0 ? sid : null;
-  } catch {
-    return null;
+    const user = g.SteamClient?.User?.GetCurrentUser?.();
+    if (typeof user?.strSteamID === 'string' && user.strSteamID.length > 0) {
+      return { id: user.strSteamID, source: 'SteamClient.User.GetCurrentUser' };
+    }
+  } catch { /* fall through */ }
+
+  try {
+    const sid = g.App?.m_CurrentUser?.strSteamID;
+    if (typeof sid === 'string' && sid.length > 0) {
+      return { id: sid, source: 'App.m_CurrentUser' };
+    }
+  } catch { /* fall through */ }
+
+  try {
+    // loginStore is exposed by the Steam frontend, non-null after login
+    const sid = g.loginStore?.m_strCurrentLoginSteamID
+      ?? g.loginStore?.m_strAccountName; // last resort, account name is unique too
+    if (typeof sid === 'string' && sid.length > 0) {
+      return { id: String(sid), source: 'loginStore' };
+    }
+  } catch { /* fall through */ }
+
+  return { id: null, source: 'none' };
+}
+
+export function getSteamId(): string | null {
+  const { id, source } = tryGetSteamIdFromAnySource();
+  if (id) {
+    void logFrontendEvent('DEBUG', 'Resolved Steam id', { source, idPrefix: id.slice(0, 8) });
+    return id;
   }
+  // log enough shape info to diagnose future "no Steam id" warnings
+  const g = globalThis as any;
+  void logFrontendEvent('WARNING', 'Could not resolve Steam id from any source', {
+    hasSteamClient: !!g.SteamClient,
+    hasSteamClientUser: !!g.SteamClient?.User,
+    hasGetCurrentUser: typeof g.SteamClient?.User?.GetCurrentUser === 'function',
+    currentUserKeys: (() => {
+      try {
+        return Object.keys(g.SteamClient?.User?.GetCurrentUser?.() ?? {});
+      } catch { return ['<threw>']; }
+    })(),
+    hasApp: !!g.App,
+    hasAppCurrentUser: !!g.App?.m_CurrentUser,
+    hasLoginStore: !!g.loginStore,
+  });
+  return null;
 }
 
 // Build a short "OS · GPU" label from Steam's system info blob. Best-effort,
 // whatever we can't parse we just leave out. The web profile lets users edit
 // this inline so parsing doesn't have to be perfect
 export function generateLabel(sysinfoText: string): string {
-  const osMatch = sysinfoText.match(/Operating System Version:[\s\S]{0,80}?"([^"]+)"/i);
-  const os = osMatch ? osMatch[1].replace(/\s*\([^)]*\)\s*/g, '').trim() : '';
+  // "Operating System Version:" is a header. The actual name sits on
+  // the next line. Windows Steam quotes it ("Arch Linux"), the Linux
+  // plugin writes it unquoted with some indent. \s*\n\s* eats the
+  // newline plus any indent so (.+) grabs just the value line.
+  let os = '';
+  const osMatch = sysinfoText.match(/Operating System Version:\s*\n\s*(.+)/i);
+  if (osMatch) {
+    // strip trailing "(64 bit)" / "(build ...)" first so any wrapping
+    // quotes end up at the actual end of the string, then drop them
+    os = osMatch[1].trim()
+      .replace(/\s*\([^)]*\)\s*/g, '')
+      .replace(/^"(.*)"$/, '$1')
+      .trim();
+  }
 
   // Steam prints "Driver:  NVIDIA Corporation NVIDIA GeForce RTX 4070"
   // drop the corp/vendor prefix so the label stays short
   const gpuMatch = sysinfoText.match(/(?:^|\n)\s*Driver:\s*(.+)/i);
   let gpu = gpuMatch ? gpuMatch[1].trim() : '';
+  if (/^unknown$/i.test(gpu)) gpu = ''; // backend places this when it can't probe
   gpu = gpu.replace(/^(NVIDIA Corporation|Advanced Micro Devices.*?Inc\.|AMD|Intel Corporation|Intel)\s+/i, '');
   gpu = gpu.replace(/^NVIDIA\s+/i, ''); // "NVIDIA GeForce" -> "GeForce"
 

@@ -88,6 +88,35 @@ describe('generateLabel', () => {
     const blob = 'Operating System Version:\n    "SteamOS 3.6" (64 bit)';
     expect(generateLabel(blob)).toBe('SteamOS 3.6');
   });
+
+  // The Deck plugin writes the OS line without the wrapping quotes that
+  // Windows Steam uses. This is the format produced by our Python
+  // generate_system_info() — keep both shapes supported
+  it('handles the plugin-generated unquoted os line', async () => {
+    const { generateLabel } = await import('./userSystems');
+    const blob = [
+      'Operating System Version:',
+      '    SteamOS Holo 3.7 (64 bit)',
+      '    Kernel Name:  Linux',
+      'Video Card:',
+      '    Driver:  AMD Custom GPU 0405',
+    ].join('\n');
+    expect(generateLabel(blob)).toBe('SteamOS Holo 3.7 · Custom GPU 0405');
+  });
+
+  // When glxinfo can't probe in game mode the backend can still end up
+  // with a literal "Unknown" in the Driver line. Treat that as "no gpu"
+  // so the label falls through to OS-only instead of "· Unknown"
+  it('ignores a literal "Unknown" driver line', async () => {
+    const { generateLabel } = await import('./userSystems');
+    const blob = [
+      'Operating System Version:',
+      '    SteamOS Holo 3.7 (64 bit)',
+      'Video Card:',
+      '    Driver:  Unknown',
+    ].join('\n');
+    expect(generateLabel(blob)).toBe('SteamOS Holo 3.7');
+  });
 });
 
 describe('uploadSystem', () => {
