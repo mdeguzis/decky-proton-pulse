@@ -7,6 +7,8 @@ REMOTE_PLUGIN_DIR="${REMOTE_PLUGIN_DIR:-/home/deck/homebrew/plugins/decky-proton
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SUDOERS_TEMPLATE="${REPO_ROOT}/config/remote-dev-sudoers.template"
+REMOTE_SUDOERS_PATH="/etc/sudoers.d/zz-proton-pulse-remote-dev"
+LEGACY_SUDOERS_PATH="/etc/sudoers.d/proton-pulse-remote-dev"
 
 if [[ -z "${DECK_IP}" ]]; then
   echo "setup_remote_dev.sh requires DECK_IP."
@@ -33,8 +35,9 @@ ssh -tt "${DECK_USER}@${DECK_IP}" "\
   mkdir -p ~/.steam/steam && \
   touch ~/.steam/steam/.cef-enable-remote-debugging && \
   printf '[Service]\nEnvironment=LIVE_RELOAD=1\n' > /tmp/proton-pulse-live-reload.conf && \
-  sudo install -m 440 /tmp/proton-pulse-remote-dev/remote-dev.sudoers /etc/sudoers.d/proton-pulse-remote-dev && \
-  sudo visudo -cf /etc/sudoers.d/proton-pulse-remote-dev && \
+  sudo rm -f ${LEGACY_SUDOERS_PATH} && \
+  sudo install -m 440 /tmp/proton-pulse-remote-dev/remote-dev.sudoers ${REMOTE_SUDOERS_PATH} && \
+  sudo visudo -cf ${REMOTE_SUDOERS_PATH} && \
   sudo mkdir -p /etc/systemd/system/plugin_loader.service.d && \
   sudo install -D -m 644 /tmp/proton-pulse-live-reload.conf /etc/systemd/system/plugin_loader.service.d/live-reload.conf && \
   sudo systemctl daemon-reload && \

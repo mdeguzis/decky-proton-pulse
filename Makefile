@@ -352,10 +352,23 @@ define show_mode
 	fi
 endef
 
+REMOTE_SSH = ssh $(DECK_USER)@$(DECK_IP)
+REMOTE_SSH_TTY = ssh -tt $(DECK_USER)@$(DECK_IP)
+
+define remote_setup_hint
+	echo "Run: make setup-remote-dev DECK_IP=$(DECK_IP)"; \
+	exit 1;
+endef
+
+define remote_sudo_failure
+	echo "Remote sudo is not passwordless for $(1)."; \
+	$(call remote_setup_hint)
+endef
+
 logs:
 	$(call show_mode)
 	@if [ -n "$(DECK_IP)" ]; then \
-		ssh $(DECK_USER)@$(DECK_IP) "tail -f ~/homebrew/logs/decky-proton-pulse/plugin.log"; \
+		$(REMOTE_SSH) "tail -f ~/homebrew/logs/decky-proton-pulse/plugin.log"; \
 	else \
 		tail -f $$HOME/homebrew/logs/decky-proton-pulse/plugin.log; \
 	fi
@@ -416,7 +429,7 @@ reload:
 	@sleep 2
 	@if [ -n "$(DECK_IP)" ]; then \
 		echo "Reloading remote plugin_loader on $(DECK_USER)@$(DECK_IP)"; \
-		if ssh -tt $(DECK_USER)@$(DECK_IP) "sudo -n systemctl restart plugin_loader"; then \
+		if $(REMOTE_SSH_TTY) "sudo -n /usr/bin/systemctl restart plugin_loader"; then \
 			echo "Remote plugin_loader restarted."; \
 		else \
 			echo "Remote sudo is not passwordless for plugin_loader restart."; \
@@ -452,7 +465,7 @@ reload-local:
 
 logs-loader:
 	@if [ -n "$(DECK_IP)" ]; then \
-		ssh $(DECK_USER)@$(DECK_IP) "journalctl -u plugin_loader -f"; \
+		$(REMOTE_SSH) "journalctl -u plugin_loader -f"; \
 	else \
 		journalctl -u plugin_loader -f; \
 	fi
@@ -465,12 +478,12 @@ setup-remote-dev:
 # or use chrome://inspect → Configure → add $(DECK_IP):8081
 cef-debug-enable:
 	@if [ -n "$(DECK_IP)" ]; then \
-		ssh $(DECK_USER)@$(DECK_IP) "touch ~/.steam/steam/.cef-enable-remote-debugging"; \
-		if ssh -tt $(DECK_USER)@$(DECK_IP) "sudo -n systemctl restart steam"; then \
+		$(REMOTE_SSH) "touch ~/.steam/steam/.cef-enable-remote-debugging"; \
+		if $(REMOTE_SSH) "ss -ltn | grep -q ':8081'"; then \
 			echo "CEF debugging enabled. Connect at http://$(DECK_IP):8081 in a Chromium browser."; \
 		else \
-			echo "Remote sudo is not passwordless for restarting steam."; \
-			echo "Run: make setup-remote-dev DECK_IP=$(DECK_IP)"; \
+			echo "CEF debug marker written, but port 8081 is not listening yet."; \
+			echo "Steam may need to be restarted manually from Game Mode or Desktop Mode."; \
 			exit 1; \
 		fi; \
 	else \
@@ -487,17 +500,15 @@ cef-debug-enable:
 # triggers an automatic frontend reload (close the plugin panel first, then deploy).
 live-reload-enable:
 	@if [ -n "$(DECK_IP)" ]; then \
-		ssh $(DECK_USER)@$(DECK_IP) "printf '[Service]\nEnvironment=LIVE_RELOAD=1\n' > /tmp/proton-pulse-live-reload.conf"; \
-		if ssh -tt $(DECK_USER)@$(DECK_IP) \
+		$(REMOTE_SSH) "printf '[Service]\nEnvironment=LIVE_RELOAD=1\n' > /tmp/proton-pulse-live-reload.conf"; \
+		if $(REMOTE_SSH_TTY) \
 		  "sudo -n mkdir -p /etc/systemd/system/plugin_loader.service.d && \
 		   sudo -n install -D -m 644 /tmp/proton-pulse-live-reload.conf /etc/systemd/system/plugin_loader.service.d/live-reload.conf && \
-		   sudo -n systemctl daemon-reload && \
-		   sudo -n systemctl restart plugin_loader"; then \
+		   sudo -n /usr/bin/systemctl daemon-reload && \
+		   sudo -n /usr/bin/systemctl restart plugin_loader"; then \
 			echo "Live reload enabled. Close the plugin panel, then: make deploy && (plugin auto-reloads)"; \
 		else \
-			echo "Remote sudo is not passwordless for live reload setup."; \
-			echo "Run: make setup-remote-dev DECK_IP=$(DECK_IP)"; \
-			exit 1; \
+			$(call remote_sudo_failure,live reload setup) \
 		fi; \
 	else \
 		if systemctl daemon-reload >/dev/null 2>&1; then \
