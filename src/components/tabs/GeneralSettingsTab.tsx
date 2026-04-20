@@ -12,7 +12,7 @@ import { getCacheTtlMs, setCacheTtlHours, getCacheStats, getCachedAppIds } from 
 import { getSummary, getPrefetchFailureSummary } from '../../lib/metrics';
 import { CacheManagerModalContent } from '../CacheManagerModal';
 import { MyHardwareModal } from '../MyHardwareModal';
-import { uploadSystem, getSteamId } from '../../lib/userSystems';
+import { uploadSystem } from '../../lib/userSystems';
 import { exportLocalDataBackup, importLocalDataBackup } from '../../lib/localDataBackup';
 import {
   isAutoSyncEnabled,
@@ -672,16 +672,9 @@ export function GeneralSettingsTab() {
           <DialogButton
             onClick={async () => {
               void logFrontendEvent('INFO', 'My Hardware upload clicked');
-              const steamId = getSteamId();
-              if (!steamId) {
-                void logFrontendEvent('WARNING', 'My Hardware upload blocked: no Steam id');
-                toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadNoSteam() });
-                return;
-              }
               try {
                 const info = await getProtonDBSystemInfoCall();
                 void logFrontendEvent('DEBUG', 'My Hardware upload starting', {
-                  steamIdPrefix: steamId.slice(0, 8),
                   infoBytes: info?.length ?? 0,
                 });
                 const result = await uploadSystem(info);

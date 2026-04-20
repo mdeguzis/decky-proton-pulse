@@ -1,11 +1,15 @@
-// src/lib/userSystems.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getLinkedProtonPulseUserId } from './protonPulseAccount';
 
 vi.mock('./logger', () => ({
   logFrontendEvent: vi.fn(),
 }));
 
-// vitest env is node for this repo, so stub localStorage the same way voting.test.ts does
+vi.mock('./protonPulseAccount', () => ({
+  getInstallationId: vi.fn(() => 'install-123'),
+  getLinkedProtonPulseUserId: vi.fn(() => 'pp-user-1'),
+}));
+
 const lsStore: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => lsStore[key] ?? null,
@@ -35,63 +39,6 @@ describe('getDeviceId', () => {
   });
 });
 
-describe('getSteamId', () => {
-  beforeEach(() => {
-    vi.resetModules();
-  });
-
-  afterEach(() => {
-    delete (globalThis as any).SteamClient;
-    delete (globalThis as any).App;
-    delete (globalThis as any).loginStore;
-  });
-
-  it('returns the string steam id from SteamClient', async () => {
-    (globalThis as any).SteamClient = {
-      User: { GetCurrentUser: () => ({ strSteamID: '76561198000000000' }) },
-    };
-    const { getSteamId } = await import('./userSystems');
-    expect(getSteamId()).toBe('76561198000000000');
-  });
-
-  it('returns null when SteamClient is missing', async () => {
-    const { getSteamId } = await import('./userSystems');
-    expect(getSteamId()).toBeNull();
-  });
-
-  it('returns null when GetCurrentUser throws', async () => {
-    (globalThis as any).SteamClient = {
-      User: { GetCurrentUser: () => { throw new Error('boom'); } },
-    };
-    const { getSteamId } = await import('./userSystems');
-    expect(getSteamId()).toBeNull();
-  });
-
-  it('falls back to App.m_CurrentUser when SteamClient has no usable id', async () => {
-    (globalThis as any).SteamClient = {
-      User: { GetCurrentUser: () => ({}) },
-    };
-    (globalThis as any).App = {
-      m_CurrentUser: { strSteamID: '76561198000000001' },
-    };
-
-    const { getSteamId } = await import('./userSystems');
-    expect(getSteamId()).toBe('76561198000000001');
-  });
-
-  it('does not fall back to loginStore account name when no steam id source is available', async () => {
-    (globalThis as any).SteamClient = {
-      User: { GetCurrentUser: () => ({}) },
-    };
-    (globalThis as any).loginStore = {
-      m_strAccountName: 'deck-user',
-    };
-
-    const { getSteamId } = await import('./userSystems');
-    expect(getSteamId()).toBeNull();
-  });
-});
-
 describe('generateLabel', () => {
   it('combines os name and stripped gpu model', async () => {
     const { generateLabel } = await import('./userSystems');
@@ -109,8 +56,6 @@ describe('generateLabel', () => {
     expect(generateLabel('blah blah')).toBe('Uploaded system');
   });
 
-  // Pure Valve board match — sometimes the sysinfo blob has Manufacturer/Model
-  // but glxinfo and /proc/cpuinfo both fail, so we've got nothing else to go on.
   it('names a Steam Deck OLED by board model (Galileo)', async () => {
     const { generateLabel } = await import('./userSystems');
     const blob = [
@@ -131,8 +76,6 @@ describe('generateLabel', () => {
     expect(generateLabel(blob)).toBe('Steam Deck LCD');
   });
 
-  // VanGogh is the APU codename — game-mode reports frequently have it even
-  // when glxinfo came back Unknown
   it('names a Deck from the VanGogh chipset in the text', async () => {
     const { generateLabel } = await import('./userSystems');
     const blob = [
@@ -146,15 +89,8 @@ describe('generateLabel', () => {
     expect(generateLabel(blob)).toBe('Steam Deck');
   });
 
-  // If OS parsed but GPU is totally missing we still want some hardware hint in
-  // the label so two uploaded systems don't look identical. Build {os}-{vendor}
-  // -{gpu_model} from whatever sticks, skipping empty bits so there's no stray
-  // dash floating around.
   it('uses {os}-{vendor}-{gpu_model} as a final fallback when shape is weird', async () => {
     const { generateLabel } = await import('./userSystems');
-    // No "Operating System Version:" header, just a loose Driver line with a
-    // recognizable AMD card. Falls through the "os && gpu" branch because
-    // os is empty, and lands in the dash-joined fallback
     const blob = 'Driver:  Advanced Micro Devices, Inc. Radeon RX 7900 XT';
     expect(generateLabel(blob)).toBe('AMD-Radeon RX 7900 XT');
   });
@@ -165,9 +101,6 @@ describe('generateLabel', () => {
     expect(generateLabel(blob)).toBe('SteamOS 3.6');
   });
 
-  // The Deck plugin writes the OS line without the wrapping quotes that
-  // Windows Steam uses. This is the format produced by our Python
-  // generate_system_info() — keep both shapes supported
   it('handles the plugin-generated unquoted os line', async () => {
     const { generateLabel } = await import('./userSystems');
     const blob = [
@@ -180,9 +113,6 @@ describe('generateLabel', () => {
     expect(generateLabel(blob)).toBe('SteamOS Holo 3.7 · Custom GPU 0405');
   });
 
-  // When glxinfo can't probe in game mode the backend can still end up
-  // with a literal "Unknown" in the Driver line. Treat that as "no gpu"
-  // so the label falls through to OS-only instead of "· Unknown"
   it('ignores a literal "Unknown" driver line', async () => {
     const { generateLabel } = await import('./userSystems');
     const blob = [
@@ -197,38 +127,28 @@ describe('generateLabel', () => {
 
 describe('uploadSystem', () => {
   beforeEach(() => {
-    // vi.unstubAllGlobals in afterEach strips the top-level localStorage stub,
-    // so re-stub it here for each test in this block
     vi.stubGlobal('localStorage', localStorageMock);
     localStorage.clear();
     localStorage.setItem('proton-pulse:device-id', 'dev-1');
-    (globalThis as any).SteamClient = {
-      User: { GetCurrentUser: () => ({ strSteamID: '76561198000000000' }) },
-    };
     vi.stubGlobal('fetch', vi.fn());
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    delete (globalThis as any).SteamClient;
   });
 
-  it('returns ok:false when not signed in to Steam', async () => {
-    // @ts-expect-error - test shim
-    delete globalThis.SteamClient;
+  it('returns ok:false when no Proton Pulse account is linked', async () => {
+    vi.mocked(getLinkedProtonPulseUserId).mockReturnValueOnce(null);
     const { uploadSystem } = await import('./userSystems');
     const result = await uploadSystem('irrelevant blob');
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toMatch(/not signed in/i);
+    if (!result.ok) expect(result.error).toMatch(/link your proton pulse account/i);
   });
 
   it('POSTs a new row when GET finds nothing', async () => {
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
-    // First GET: check if our (steam_id, device_id) row exists -> nope
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => [] });
-    // Second GET: any rows for this steam_id? -> nope, so is_default=true
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => [] });
-    // POST
     fetchMock.mockResolvedValueOnce({ ok: true, status: 201 });
     const { uploadSystem } = await import('./userSystems');
     const result = await uploadSystem('Operating System Version:\n    "Arch Linux" (64 bit)');
@@ -236,13 +156,14 @@ describe('uploadSystem', () => {
     const postCall = fetchMock.mock.calls[2];
     expect(postCall[0]).toMatch(/user_systems\?on_conflict=/);
     const body = JSON.parse(postCall[1].body);
-    expect(body.steam_id).toBe('76561198000000000');
+    expect(body.proton_pulse_user_id).toBe('pp-user-1');
+    expect(body.installation_id).toBe('install-123');
     expect(body.device_id).toBe('dev-1');
     expect(body.label).toBe('Arch Linux');
-    expect(body.is_default).toBe(true); // first row for this steam id
+    expect(body.is_default).toBe(true);
   });
 
-  it('PATCHes only sysinfo_text when the row exists', async () => {
+  it('PATCHes only mutable linked-account fields when the row exists', async () => {
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     fetchMock.mockResolvedValueOnce({
       ok: true,
@@ -253,10 +174,11 @@ describe('uploadSystem', () => {
     const result = await uploadSystem('blah');
     expect(result.ok).toBe(true);
     const patchCall = fetchMock.mock.calls[1];
-    expect(patchCall[0]).toMatch(/steam_id=eq\.76561198000000000&device_id=eq\.dev-1/);
+    expect(patchCall[0]).toMatch(/proton_pulse_user_id=eq\.pp-user-1&device_id=eq\.dev-1/);
     expect(patchCall[1].method).toBe('PATCH');
     const body = JSON.parse(patchCall[1].body);
     expect(body.sysinfo_text).toBe('blah');
+    expect(body.installation_id).toBe('install-123');
     expect(body.label).toBeUndefined();
     expect(body.is_default).toBeUndefined();
   });
@@ -276,7 +198,6 @@ describe('uploadSystem', () => {
 
   it('returns ok:false with the server message when PATCH fails', async () => {
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
-    // GET finds the row -> code takes the PATCH branch
     fetchMock.mockResolvedValueOnce({
       ok: true, json: async () => [{ device_id: 'dev-1' }],
     });

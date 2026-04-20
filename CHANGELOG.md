@@ -4,7 +4,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Stop deriving plugin identity from Steam account names
+- Add Proton Pulse account linking flow to Decky
 
 ## v0.8.8
 
