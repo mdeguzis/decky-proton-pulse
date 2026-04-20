@@ -39,6 +39,20 @@ describe('getInstallationId', () => {
   });
 });
 
+describe('getInstallationSecret', () => {
+  it('generates and persists an installation secret', async () => {
+    const { getInstallationSecret } = await import('./protonPulseAccount');
+    expect(getInstallationSecret()).toBe('install-uuid-1234');
+    expect(localStorage.getItem('proton-pulse:installation-secret')).toBe('install-uuid-1234');
+  });
+
+  it('reuses an existing installation secret', async () => {
+    localStorage.setItem('proton-pulse:installation-secret', 'existing-secret');
+    const { getInstallationSecret } = await import('./protonPulseAccount');
+    expect(getInstallationSecret()).toBe('existing-secret');
+  });
+});
+
 describe('startPluginLink', () => {
   it('posts the installation id and caches the linked user when returned', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
@@ -51,9 +65,31 @@ describe('startPluginLink', () => {
     const status = await startPluginLink();
 
     const [, init] = fetchMock.mock.calls[0] ?? [];
-    expect(JSON.parse(String(init?.body))).toEqual({ installationId: 'install-uuid-1234' });
+    expect(JSON.parse(String(init?.body))).toEqual({
+      installationId: 'install-uuid-1234',
+      installationSecret: 'install-uuid-1234',
+    });
     expect(status.linked).toBe(true);
     expect(localStorage.getItem('proton-pulse:linked-proton-pulse-user-id')).toBe('pp-user-77');
+  });
+});
+
+describe('fetchPluginLinkStatus', () => {
+  it('posts the installation proof when checking status', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      linked: false,
+      linkCode: null,
+      linkCodeExpiresAt: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const { fetchPluginLinkStatus } = await import('./protonPulseAccount');
+    await fetchPluginLinkStatus();
+
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    expect(JSON.parse(String(init?.body))).toEqual({
+      installationId: 'install-uuid-1234',
+      installationSecret: 'install-uuid-1234',
+    });
   });
 });
 

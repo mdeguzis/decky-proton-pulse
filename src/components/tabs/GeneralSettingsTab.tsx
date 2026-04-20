@@ -501,7 +501,7 @@ export function GeneralSettingsTab() {
       toaster.toast({ title: 'Proton Pulse', body: extras.protonPulseLinkFailed(message) });
       return;
     }
-    const url = new URL('https://www.proton-pulse.com/profile.html');
+    const url = new URL('https://www.proton-pulse.com/profile.html#linked-plugins-section');
     if (code) {
       url.searchParams.set('pluginLinkCode', code);
     }

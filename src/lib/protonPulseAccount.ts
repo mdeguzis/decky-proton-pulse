@@ -4,6 +4,7 @@ const SUPABASE_URL = 'https://ilsgdshkaocrmibwdezk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_3Oqhm4JneafJNQw9BuUaxw_L9qZa-5V';
 const FUNCTIONS_BASE_URL = `${SUPABASE_URL}/functions/v1`;
 const INSTALLATION_ID_KEY = 'proton-pulse:installation-id';
+const INSTALLATION_SECRET_KEY = 'proton-pulse:installation-secret';
 const LINKED_USER_ID_KEY = 'proton-pulse:linked-proton-pulse-user-id';
 
 export interface PluginLinkStatus {
@@ -74,18 +75,37 @@ export function getInstallationId(): string {
   return fresh;
 }
 
+export function getInstallationSecret(): string {
+  const existing = localStorage.getItem(INSTALLATION_SECRET_KEY);
+  if (existing) return existing;
+  const fresh = crypto.randomUUID();
+  localStorage.setItem(INSTALLATION_SECRET_KEY, fresh);
+  void logFrontendEvent('INFO', 'Generated Proton Pulse installation secret', {
+    secretPrefix: fresh.slice(0, 8),
+  });
+  return fresh;
+}
+
 export function getLinkedProtonPulseUserId(): string | null {
   return localStorage.getItem(LINKED_USER_ID_KEY);
 }
 
 export async function fetchPluginLinkStatus(): Promise<PluginLinkStatus> {
   const installationId = getInstallationId();
-  const payload = await callFunction<Partial<PluginLinkStatus>>('plugin-link-status', { installationId });
+  const installationSecret = getInstallationSecret();
+  const payload = await callFunction<Partial<PluginLinkStatus>>('plugin-link-status', {
+    installationId,
+    installationSecret,
+  });
   return normalizeStatus({ installationId, ...payload });
 }
 
 export async function startPluginLink(): Promise<PluginLinkStatus> {
   const installationId = getInstallationId();
-  const payload = await callFunction<Partial<PluginLinkStatus>>('plugin-link-start', { installationId });
+  const installationSecret = getInstallationSecret();
+  const payload = await callFunction<Partial<PluginLinkStatus>>('plugin-link-start', {
+    installationId,
+    installationSecret,
+  });
   return normalizeStatus({ installationId, ...payload });
 }
