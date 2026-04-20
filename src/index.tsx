@@ -52,6 +52,18 @@ const getPluginVersionSafe = () =>
   callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000);
 const EXPERIMENTAL_GAME_PAGE_SHORTCUT_KEY = 'experimental-game-page-shortcut-enabled';
 const GAME_PAGE_SHORTCUT_ID = 'proton-pulse-game-page-shortcut';
+const experimentalGamePageShortcutLogState: Record<string, string> = {};
+
+function logExperimentalGamePageShortcutState(
+  slot: string,
+  message: string,
+  context: Record<string, string | number | boolean>,
+): void {
+  const state = JSON.stringify(context);
+  if (experimentalGamePageShortcutLogState[slot] === state) return;
+  experimentalGamePageShortcutLogState[slot] = state;
+  void logFrontendEvent('DEBUG', message, context);
+}
 
 function isLibraryAppRoute(pathname: string): boolean {
   return /\/(?:routes\/)?library\/app\/\d+/.test(pathname);
@@ -141,19 +153,20 @@ function findExperimentalGamePageShortcutAnchor(): HTMLElement | null {
 function syncExperimentalGamePageShortcutButton(): void {
   const pathname = globalThis.location?.pathname ?? '';
   const enabled = getSetting(EXPERIMENTAL_GAME_PAGE_SHORTCUT_KEY, false);
-  void logFrontendEvent('DEBUG', 'Syncing experimental game page shortcut button', {
+  const libraryAppRoute = isLibraryAppRoute(pathname);
+  logExperimentalGamePageShortcutState('sync', 'Syncing experimental game page shortcut button', {
     enabled,
     pathname,
-    isLibraryAppRoute: isLibraryAppRoute(pathname),
+    isLibraryAppRoute: libraryAppRoute,
   });
-  if (!enabled || !isLibraryAppRoute(pathname)) {
+  if (!enabled || !libraryAppRoute) {
     removeExperimentalGamePageShortcut();
     return;
   }
 
   const appId = extractLibraryAppId(pathname);
   if (!appId) {
-    void logFrontendEvent('DEBUG', 'Experimental game page shortcut skipped: no appId from route', {
+    logExperimentalGamePageShortcutState('missing-app-id', 'Experimental game page shortcut skipped: no appId from route', {
       pathname,
     });
     removeExperimentalGamePageShortcut();
@@ -164,7 +177,7 @@ function syncExperimentalGamePageShortcutButton(): void {
     (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appId)?.display_name ?? '';
   const anchor = findExperimentalGamePageShortcutAnchor();
   if (!anchor?.parentElement) {
-    void logFrontendEvent('DEBUG', 'Experimental game page shortcut anchor not found', {
+    logExperimentalGamePageShortcutState('anchor-missing', 'Experimental game page shortcut anchor not found', {
       appId,
       appName,
       pathname,
@@ -173,11 +186,11 @@ function syncExperimentalGamePageShortcutButton(): void {
     return;
   }
 
-  void logFrontendEvent('DEBUG', 'Experimental game page shortcut anchor found', {
+  logExperimentalGamePageShortcutState('anchor-found', 'Experimental game page shortcut anchor found', {
     appId,
     appName,
     anchorTag: anchor.tagName,
-    anchorClassName: anchor.className,
+    anchorClassName: String(anchor.className),
     anchorText: anchor.textContent?.trim()?.slice(0, 60) ?? '',
   });
 
@@ -186,7 +199,7 @@ function syncExperimentalGamePageShortcutButton(): void {
     existing.onclick = () => navigateToManageGame(appId, appName);
     existing.title = t().nav.manageThisGame;
     existing.setAttribute('aria-label', t().nav.manageThisGame);
-    void logFrontendEvent('DEBUG', 'Experimental game page shortcut updated in place', {
+    logExperimentalGamePageShortcutState('updated-in-place', 'Experimental game page shortcut updated in place', {
       appId,
       appName,
     });

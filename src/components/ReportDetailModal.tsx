@@ -28,6 +28,7 @@ import { checkProtonVersionAvailability } from '../lib/compatTools';
 import { logFrontendEvent } from '../lib/logger';
 import { getUserVote } from '../lib/voting';
 import { t } from '../lib/i18n';
+import { getReportSourceLabel } from '../lib/reportSource';
 import { registerScreenshotAutomationHandler } from '../lib/screenshotAutomation';
 
 const STEAM_HEADER_URL = (id: number) =>
@@ -863,6 +864,7 @@ export function ReportDetailModal({
 }: ReportDetailModalProps) {
   const strings = t();
   const extras = strings.extras!;
+  const sourceLabel = getReportSourceLabel(report, strings.detail);
   const isShortcut = isSteamShortcutApp(appId);
   const [applying, setApplying] = useState(false);
   const [voting, setVoting] = useState(false);
@@ -1246,6 +1248,19 @@ export function ReportDetailModal({
                 {t().detail.protonVersion}: {statusEntry.label}
               </span>
             )}
+            <span
+              style={{
+                background: '#4a6a8a',
+                color: '#fff',
+                borderRadius: 999,
+                padding: '1px 7px',
+                fontWeight: 700,
+                fontSize: 9,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t().detail.source}: {sourceLabel}
+            </span>
             {versionStatus === 'loading' && (
               <span style={{ fontSize: 9, color: '#7a9bb5' }}>{t().detail.checking}</span>
             )}
@@ -1452,6 +1467,7 @@ export function ReportDetailModal({
             </InfoSection>
 
             <InfoSection title={t().detail.report}>
+              <InfoRow label={t().detail.source} value={sourceLabel} />
               <InfoRow label={t().reports.confidence} value={`${confScore}/10`} />
               <InfoRow label={t().detail.gpuTier} value={report.gpuTier.toUpperCase()} />
               <InfoRow label={t().reports.votes} value={`+${localUpvotes} / -${localDownvotes}`} />

@@ -97,6 +97,20 @@ describe('t() -- English strings by default', () => {
   it('returns common.loading = "Loading..."', () => {
     expect(t().common.loading).toBe('Loading...');
   });
+
+  it('returns detail.source strings for report origin labels', () => {
+    expect(t().detail.source).toBe('Source');
+    expect(t().detail.sourceProtondb).toBe('ProtonDB');
+    expect(t().detail.sourceProtondbEdited).toBe('ProtonDB (edited)');
+    expect(t().detail.sourceProtonPulse).toBe('Proton Pulse');
+  });
+
+  it('returns config filter labels for report source filtering', () => {
+    expect(t().configManager.configFilter).toBe('Config');
+    expect(t().configManager.configTypePulse).toBe('Pulse');
+    expect(t().configManager.configTypeProtondb).toBe('ProtonDB');
+    expect(t().configManager.configTypeProtondbEdited).toBe('ProtonDB (edited)');
+  });
 });
 
 describe('t() -- rating strings', () => {

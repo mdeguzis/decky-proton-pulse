@@ -127,6 +127,10 @@ export interface TranslationTree {
     match: string;
     systemComparison: string;
     gpuTier: string;
+    source: string;
+    sourceProtondb: string;
+    sourceProtondbEdited: string;
+    sourceProtonPulse: string;
     edited: string;
     customVariant: string;
     protonVersion: string;
@@ -322,6 +326,10 @@ export interface TranslationTree {
     protonVersionToggleHint: string;
     protonVersionNone: string;
     gpuFilter: string;
+    configFilter: string;
+    configTypePulse: string;
+    configTypeProtondb: string;
+    configTypeProtondbEdited: string;
     synced: string;
     notSynced: string;
     cloudStatusLabel: string;
@@ -647,6 +655,10 @@ export const en: TranslationTree = {
     match: 'Match',
     systemComparison: 'System Comparison',
     gpuTier: 'GPU Tier',
+    source: 'Source',
+    sourceProtondb: 'ProtonDB',
+    sourceProtondbEdited: 'ProtonDB (edited)',
+    sourceProtonPulse: 'Proton Pulse',
     edited: 'Edited',
     customVariant: 'Custom Variant',
     protonVersion: 'Proton Version',
@@ -842,6 +854,10 @@ export const en: TranslationTree = {
     protonVersionToggleHint: 'Enable or disable a pinned Proton version for this configuration.',
     protonVersionNone: 'None',
     gpuFilter: 'GPU',
+    configFilter: 'Config',
+    configTypePulse: 'Pulse',
+    configTypeProtondb: 'ProtonDB',
+    configTypeProtondbEdited: 'ProtonDB (edited)',
     synced: 'Synced',
     notSynced: 'Not synced',
     cloudStatusLabel: 'Cloud',

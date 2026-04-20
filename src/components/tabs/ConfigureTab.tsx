@@ -29,6 +29,7 @@ import { isSteamShortcutApp } from '../../lib/steamApps';
 import { addTrackedConfig } from '../../lib/trackedConfigs';
 import { parseLaunchOptions } from '../../lib/launchVars';
 import { computePulseTier, type PulseTierResult } from '../../lib/pulseTier';
+import { matchesConfigFilter, type ConfigFilter } from '../../lib/reportFilters';
 
 interface Props {
   appId: number | null;
@@ -44,11 +45,28 @@ const STEAM_HEADER_URL = (id: number) =>
 const reportKey = (r: CdnReport) => `${r.timestamp}_${r.protonVersion}`;
 
 const FILTER_ORDER: FilterTier[] = ['nvidia', 'amd', 'intel', 'other', 'all'];
+const CONFIG_FILTER_ORDER: ConfigFilter[] = ['all', 'pulse', 'protondb', 'protondb-edited'];
 function filterLabel(tier: FilterTier): string {
   const extras = t().extras!;
   if (tier === 'all') return extras.all();
   if (tier === 'other') return extras.other();
   return tier === 'nvidia' ? 'NVIDIA' : tier === 'amd' ? 'AMD' : 'Intel';
+}
+
+function gpuFilterOptionLabel(tier: FilterTier, count: number): string {
+  return `${filterLabel(tier)} (${count})`;
+}
+
+function configFilterLabel(filter: ConfigFilter): string {
+  const strings = t();
+  if (filter === 'all') return strings.extras!.all();
+  if (filter === 'pulse') return 'Proton Pulse';
+  if (filter === 'protondb') return strings.configManager.configTypeProtondb;
+  return strings.configManager.configTypeProtondbEdited;
+}
+
+function configFilterOptionLabel(filter: ConfigFilter, count: number): string {
+  return `${configFilterLabel(filter)} (${count})`;
 }
 const EDIT_STORAGE_PREFIX = 'edited-reports:';
 
@@ -482,6 +500,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const [filterTouched, setFilterTouched] = useState(false);
   const [reportDiagnostics, setReportDiagnostics] = useState<ReportFetchDiagnostics | null>(null);
   const [currentLaunchOptions, setCurrentLaunchOptions] = useState('');
+  const [configFilter, setConfigFilter] = useState<ConfigFilter>('all');
 
   const gpuVendor = sysInfo?.gpu_vendor ?? null;
   const [filter, setFilter] = useState<FilterTier>('all');
@@ -536,10 +555,27 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     filter === 'intel' || filter === 'other' ? buckets.other :
                                                buckets.other;
 
+  const gpuFilterCounts = useMemo(() => ({
+    all: scored.length,
+    nvidia: buckets.nvidia.length,
+    amd: buckets.amd.length,
+    intel: buckets.other.length,
+    other: buckets.other.length,
+  }), [scored, buckets]);
+
+  const configFilterCounts = useMemo(() => ({
+    all: visibleReports.length,
+    pulse: visibleReports.filter((report) => matchesConfigFilter(report, 'pulse')).length,
+    protondb: visibleReports.filter((report) => matchesConfigFilter(report, 'protondb')).length,
+    'protondb-edited': visibleReports.filter((report) => matchesConfigFilter(report, 'protondb-edited')).length,
+  }), [visibleReports]);
+
+  const configFilteredReports = visibleReports.filter((report) => matchesConfigFilter(report, configFilter));
+
   const sortedReports =
     sortMode === 'votes'
-      ? [...visibleReports].sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes))
-      : visibleReports;
+      ? [...configFilteredReports].sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes))
+      : configFilteredReports;
 
   useEffect(() => {
     if (!appId) {
@@ -551,6 +587,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       setFocusedCardKey(null);
       setFilterTouched(false);
       setFilter('all');
+      setConfigFilter('all');
       setReportDiagnostics(null);
       return;
     }
@@ -572,6 +609,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     setFocusedCardKey(null);
     setFilterTouched(false);
     setFilter('all');
+    setConfigFilter('all');
     setReportDiagnostics(null);
 
     void Promise.all([
@@ -659,6 +697,15 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     void logFrontendEvent('DEBUG', 'Changed report filter', { appId, previousFilter: filter, nextFilter });
     setFilterTouched(true);
     setFilter(nextFilter);
+  };
+
+  const setConfigFilterMode = (nextFilter: ConfigFilter) => {
+    void logFrontendEvent('DEBUG', 'Changed report config filter', {
+      appId,
+      previousFilter: configFilter,
+      nextFilter,
+    });
+    setConfigFilter(nextFilter);
   };
 
   const setSortPreference = (nextSortMode: SortMode) => {
@@ -1133,12 +1180,23 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
           onGamepadDirection={handleRootDirection}
           style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}
         >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginBottom: 4,
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#7a9bb5', whiteSpace: 'nowrap', textAlign: 'right' }}>
+              {t().common.shown(sortedReports.length)}
+            </div>
+          </div>
           {/* flow-children="horizontal" makes dpad left/right move between the dropdowns */}
           <Focusable
             flow-children="horizontal"
             style={{
-              display: 'grid',
-              gridTemplateColumns: '92px auto minmax(0, 220px) auto minmax(0, 170px) auto',
+              display: 'flex',
+              justifyContent: 'flex-end',
               alignItems: 'center',
               gap: 10,
               marginBottom: 8,
@@ -1147,26 +1205,12 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             }}
           >
             <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '0 4px 0 0',
-                color: '#f4fbff',
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: 0.35,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span>{t().common.filters}</span>
-            </div>
-            <div
               style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
             >
               {t().common.sort}
             </div>
             <Dropdown
+              strDefaultLabel={t().reports.bestMatch}
               rgOptions={[
                 { data: 'score', label: t().reports.bestMatch },
                 { data: 'votes', label: t().reports.mostVotes },
@@ -1180,16 +1224,28 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
               {t().configManager.gpuFilter}
             </div>
             <Dropdown
+              strDefaultLabel={gpuFilterOptionLabel(filter, gpuFilterCounts[filter])}
               rgOptions={FILTER_ORDER.map((tier) => ({
                 data: tier,
-                label: filterLabel(tier),
+                label: gpuFilterOptionLabel(tier, gpuFilterCounts[tier]),
               }))}
               selectedOption={filter}
               onChange={(opt) => setFilterMode(opt.data as FilterTier)}
             />
-            <div style={{ fontSize: 11, color: '#7a9bb5', whiteSpace: 'nowrap', textAlign: 'right' }}>
-              {t().common.shown(sortedReports.length)}
+            <div
+              style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
+            >
+              {t().configManager.configFilter}
             </div>
+            <Dropdown
+              strDefaultLabel={configFilterOptionLabel(configFilter, configFilterCounts[configFilter])}
+              rgOptions={CONFIG_FILTER_ORDER.map((value) => ({
+                data: value,
+                label: configFilterOptionLabel(value, configFilterCounts[value]),
+              }))}
+              selectedOption={configFilter}
+              onChange={(opt) => setConfigFilterMode(opt.data as ConfigFilter)}
+            />
           </Focusable>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
             <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
