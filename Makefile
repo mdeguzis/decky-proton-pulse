@@ -65,7 +65,7 @@ ifneq ($(wildcard $(BREW_NODE)/node),)
   PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 endif
 
-.PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise deploy deploy-reload build-and-deploy clean \
+.PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise deploy deploy-local deploy-reload deploy-reload-local build-and-deploy build-and-deploy-local clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release pre-release github-release github-pre-release \
         capture-project-screenshots \
@@ -106,8 +106,11 @@ help:
 	@printf "  %-27s %s\n" "setup-termux-ssh" "Install and start sshd on Termux (port 8022)"
 	@printf "  %-27s %s\n" "" "Sets password, generates host keys, prints connect instructions"
 	@printf "  %-27s %s\n" "deploy" "Build and deploy to Steam Deck (requires DECK_IP)"
+	@printf "  %-27s %s\n" "deploy-local" "Force a local deploy without using DECK_IP/default remote host"
 	@printf "  %-27s %s\n" "deploy-reload" "Build, deploy, then restart plugin_loader (requires DECK_IP)"
+	@printf "  %-27s %s\n" "deploy-reload-local" "Force a local deploy, then local plugin_loader restart"
 	@printf "  %-27s %s\n" "build-and-deploy" "Clean, test, build, and deploy (requires DECK_IP)"
+	@printf "  %-27s %s\n" "build-and-deploy-local" "Force a local clean/test/build/deploy flow"
 	@printf "  %-27s %s\n" "package" "Build and create the local release zip for the current VERSION"
 	@printf "  %-27s %s\n" "release" "Build, package, and prepare a GitHub release using CHANGELOG.md notes"
 	@printf "  %-27s %s\n" "" "Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
@@ -297,10 +300,19 @@ setup-termux-ssh:
 deploy: build
 	bash scripts/deploy.sh --skip-build --target $(TARGET) $(if $(DECK_IP),--deck-ip $(DECK_IP),) --deck-user $(DECK_USER)
 
+deploy-local:
+	@$(MAKE) deploy DECK_IP=local
+
 deploy-reload: deploy reload
+
+deploy-reload-local:
+	@$(MAKE) deploy-reload DECK_IP=local
 
 build-and-deploy: clean test build
 	bash scripts/deploy.sh --skip-build --target $(TARGET) $(if $(DECK_IP),--deck-ip $(DECK_IP),) --deck-user $(DECK_USER)
+
+build-and-deploy-local:
+	@$(MAKE) build-and-deploy DECK_IP=local
 
 package: build
 	bash scripts/deploy.sh --skip-build
