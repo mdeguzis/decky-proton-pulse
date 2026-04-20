@@ -18,7 +18,7 @@ ifneq ($(wildcard $(HOME)/.deckip),)
   DECK_IP ?= $(shell cat $(HOME)/.deckip)
 endif
 
-DECK_IP   ?= steamdeck
+DECK_IP   ?=
 DECK_USER ?= deck
 
 # DECK_IP=local is a shortcut to force local mode
@@ -26,7 +26,7 @@ ifeq ($(DECK_IP),local)
   override DECK_IP :=
 endif
 
-DECK_HOST ?= $(if $(DECK_IP),$(DECK_IP),steamdeck)
+DECK_HOST ?= $(DECK_IP)
 TARGET    ?= stable
 DRY_RUN ?= true
 IS_TERMUX := $(if $(findstring com.termux,$(PREFIX)),1,)
