@@ -458,30 +458,7 @@ logs-loader:
 	fi
 
 setup-remote-dev:
-	@if [ -z "$(DECK_IP)" ]; then \
-		echo "setup-remote-dev requires DECK_IP (or ~/.deckip)."; \
-		exit 1; \
-	fi
-	@REMOTE_PLUGIN_DIR="/home/deck/homebrew/plugins/decky-proton-pulse"; \
-	SUDOERS_TMP="$$(mktemp)"; \
-	sed -e "s|@DECK_USER@|$(DECK_USER)|g" \
-	    -e "s|@REMOTE_PLUGIN_DIR@|$$REMOTE_PLUGIN_DIR|g" \
-	    config/remote-dev-sudoers.template > "$$SUDOERS_TMP"; \
-	ssh $(DECK_USER)@$(DECK_IP) "mkdir -p /tmp/proton-pulse-remote-dev"; \
-	scp "$$SUDOERS_TMP" $(DECK_USER)@$(DECK_IP):/tmp/proton-pulse-remote-dev/remote-dev.sudoers >/dev/null; \
-	rm -f "$$SUDOERS_TMP"; \
-	ssh -tt $(DECK_USER)@$(DECK_IP) "\
-		mkdir -p ~/.steam/steam && \
-		touch ~/.steam/steam/.cef-enable-remote-debugging && \
-		printf '[Service]\nEnvironment=LIVE_RELOAD=1\n' > /tmp/proton-pulse-live-reload.conf && \
-		sudo install -m 440 /tmp/proton-pulse-remote-dev/remote-dev.sudoers /etc/sudoers.d/proton-pulse-remote-dev && \
-		sudo visudo -cf /etc/sudoers.d/proton-pulse-remote-dev && \
-		sudo mkdir -p /etc/systemd/system/plugin_loader.service.d && \
-		sudo install -D -m 644 /tmp/proton-pulse-live-reload.conf /etc/systemd/system/plugin_loader.service.d/live-reload.conf && \
-		sudo systemctl daemon-reload && \
-		sudo systemctl restart plugin_loader"; \
-	echo "Remote Deck dev helpers configured on $(DECK_USER)@$(DECK_IP)."; \
-	echo "Passwordless sudo should now work for deploy/reload helpers and cef-debug-enable."
+	@DECK_IP="$(DECK_IP)" DECK_USER="$(DECK_USER)" bash scripts/setup_remote_dev.sh
 
 # Enable remote CEF debugging so React DevTools can connect.
 # After running: open http://$(DECK_IP):8081 in a Chromium browser on your dev machine,
