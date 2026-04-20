@@ -65,7 +65,7 @@ ifneq ($(wildcard $(BREW_NODE)/node),)
   PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 endif
 
-.PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise deploy deploy-local deploy-reload deploy-reload-local build-and-deploy build-and-deploy-local clean \
+.PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise setup-remote-dev deploy deploy-local deploy-reload deploy-reload-local build-and-deploy build-and-deploy-local clean \
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release pre-release github-release github-pre-release \
         capture-project-screenshots \
@@ -105,6 +105,7 @@ help:
 	@printf "  %-27s %s\n" "" "Termux: uses pkg for base tools and keeps uv cache out of /tmp"
 	@printf "  %-27s %s\n" "setup-termux-ssh" "Install and start sshd on Termux (port 8022)"
 	@printf "  %-27s %s\n" "" "Sets password, generates host keys, prints connect instructions"
+	@printf "  %-27s %s\n" "setup-remote-dev" "Bootstrap Deck sudoers + CEF/live-reload helpers over SSH"
 	@printf "  %-27s %s\n" "deploy" "Build and deploy to Steam Deck (requires DECK_IP)"
 	@printf "  %-27s %s\n" "deploy-local" "Force a local deploy without using DECK_IP/default remote host"
 	@printf "  %-27s %s\n" "deploy-reload" "Build, deploy, then restart plugin_loader (requires DECK_IP)"
@@ -456,14 +457,45 @@ logs-loader:
 		journalctl -u plugin_loader -f; \
 	fi
 
+setup-remote-dev:
+	@if [ -z "$(DECK_IP)" ]; then \
+		echo "setup-remote-dev requires DECK_IP (or ~/.deckip)."; \
+		exit 1; \
+	fi
+	@REMOTE_PLUGIN_DIR="/home/deck/homebrew/plugins/decky-proton-pulse"; \
+	SUDOERS_TMP="$$(mktemp)"; \
+	sed -e "s|@DECK_USER@|$(DECK_USER)|g" \
+	    -e "s|@REMOTE_PLUGIN_DIR@|$$REMOTE_PLUGIN_DIR|g" \
+	    config/remote-dev-sudoers.template > "$$SUDOERS_TMP"; \
+	ssh $(DECK_USER)@$(DECK_IP) "mkdir -p /tmp/proton-pulse-remote-dev"; \
+	scp "$$SUDOERS_TMP" $(DECK_USER)@$(DECK_IP):/tmp/proton-pulse-remote-dev/remote-dev.sudoers >/dev/null; \
+	rm -f "$$SUDOERS_TMP"; \
+	ssh -tt $(DECK_USER)@$(DECK_IP) "\
+		mkdir -p ~/.steam/steam && \
+		touch ~/.steam/steam/.cef-enable-remote-debugging && \
+		printf '[Service]\nEnvironment=LIVE_RELOAD=1\n' > /tmp/proton-pulse-live-reload.conf && \
+		sudo install -m 440 /tmp/proton-pulse-remote-dev/remote-dev.sudoers /etc/sudoers.d/proton-pulse-remote-dev && \
+		sudo visudo -cf /etc/sudoers.d/proton-pulse-remote-dev && \
+		sudo mkdir -p /etc/systemd/system/plugin_loader.service.d && \
+		sudo install -D -m 644 /tmp/proton-pulse-live-reload.conf /etc/systemd/system/plugin_loader.service.d/live-reload.conf && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart plugin_loader"; \
+	echo "Remote Deck dev helpers configured on $(DECK_USER)@$(DECK_IP)."; \
+	echo "Passwordless sudo should now work for deploy/reload helpers and cef-debug-enable."
+
 # Enable remote CEF debugging so React DevTools can connect.
 # After running: open http://$(DECK_IP):8081 in a Chromium browser on your dev machine,
 # or use chrome://inspect → Configure → add $(DECK_IP):8081
 cef-debug-enable:
 	@if [ -n "$(DECK_IP)" ]; then \
 		ssh $(DECK_USER)@$(DECK_IP) "touch ~/.steam/steam/.cef-enable-remote-debugging"; \
-		ssh -tt $(DECK_USER)@$(DECK_IP) "sudo systemctl restart steam"; \
-		echo "CEF debugging enabled. Connect at http://$(DECK_IP):8081 in a Chromium browser."; \
+		if ssh -tt $(DECK_USER)@$(DECK_IP) "sudo -n systemctl restart steam"; then \
+			echo "CEF debugging enabled. Connect at http://$(DECK_IP):8081 in a Chromium browser."; \
+		else \
+			echo "Remote sudo is not passwordless for restarting steam."; \
+			echo "Run: make setup-remote-dev DECK_IP=$(DECK_IP)"; \
+			exit 1; \
+		fi; \
 	else \
 		touch $$HOME/.steam/steam/.cef-enable-remote-debugging; \
 		if systemctl restart steam >/dev/null 2>&1; then \
@@ -478,12 +510,18 @@ cef-debug-enable:
 # triggers an automatic frontend reload (close the plugin panel first, then deploy).
 live-reload-enable:
 	@if [ -n "$(DECK_IP)" ]; then \
-		ssh -tt $(DECK_USER)@$(DECK_IP) \
-		  "sudo mkdir -p /etc/systemd/system/plugin_loader.service.d && \
-		   echo -e '[Service]\nEnvironment=LIVE_RELOAD=1' | \
-		   sudo tee /etc/systemd/system/plugin_loader.service.d/live-reload.conf > /dev/null && \
-		   sudo systemctl daemon-reload && \
-		   sudo systemctl restart plugin_loader"; \
+		ssh $(DECK_USER)@$(DECK_IP) "printf '[Service]\nEnvironment=LIVE_RELOAD=1\n' > /tmp/proton-pulse-live-reload.conf"; \
+		if ssh -tt $(DECK_USER)@$(DECK_IP) \
+		  "sudo -n mkdir -p /etc/systemd/system/plugin_loader.service.d && \
+		   sudo -n install -D -m 644 /tmp/proton-pulse-live-reload.conf /etc/systemd/system/plugin_loader.service.d/live-reload.conf && \
+		   sudo -n systemctl daemon-reload && \
+		   sudo -n systemctl restart plugin_loader"; then \
+			echo "Live reload enabled. Close the plugin panel, then: make deploy && (plugin auto-reloads)"; \
+		else \
+			echo "Remote sudo is not passwordless for live reload setup."; \
+			echo "Run: make setup-remote-dev DECK_IP=$(DECK_IP)"; \
+			exit 1; \
+		fi; \
 	else \
 		if systemctl daemon-reload >/dev/null 2>&1; then \
 			sudo mkdir -p /etc/systemd/system/plugin_loader.service.d; \
@@ -497,4 +535,6 @@ live-reload-enable:
 			sudo systemctl restart plugin_loader; \
 		fi; \
 	fi
-	@echo "Live reload enabled. Close the plugin panel, then: make deploy && (plugin auto-reloads)"
+	@if [ -z "$(DECK_IP)" ]; then \
+		echo "Live reload enabled. Close the plugin panel, then: make deploy && (plugin auto-reloads)"; \
+	fi

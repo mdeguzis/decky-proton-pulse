@@ -1,0 +1,1 @@
+@DECK_USER@ ALL=(root) NOPASSWD: /usr/bin/mkdir -p @REMOTE_PLUGIN_DIR@, /usr/bin/rsync, /usr/bin/systemctl restart plugin_loader, /usr/bin/systemctl status plugin_loader, /usr/bin/systemctl daemon-reload, /usr/bin/systemctl restart steam, /usr/bin/install -D -m 644 /tmp/proton-pulse-live-reload.conf /etc/systemd/system/plugin_loader.service.d/live-reload.conf
