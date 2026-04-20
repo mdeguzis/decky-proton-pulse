@@ -5,7 +5,7 @@ const SUPABASE_URL = 'https://ilsgdshkaocrmibwdezk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_3Oqhm4JneafJNQw9BuUaxw_L9qZa-5V';
 const SUPABASE_REST_URL = `${SUPABASE_URL}/rest/v1`;
 
-const SALT_KEY = 'proton-pulse-voter-salt';
+const VOTER_ID_KEY = 'proton-pulse-voter-id';
 const VOTE_COOLDOWN_MS = 3000;
 
 type VoteRow = {
@@ -131,40 +131,22 @@ export function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function getSalt(): string {
-  let salt = localStorage.getItem(SALT_KEY);
-  if (!salt) {
-    const bytes = new Uint8Array(32);
-    crypto.getRandomValues(bytes);
-    salt = bytesToHex(bytes);
-    localStorage.setItem(SALT_KEY, salt);
-    void logFrontendEvent('INFO', 'Generated new voter salt');
-  }
-  return salt;
-}
-
-function getSteamUsername(): string {
-  try {
-    const user = (SteamClient as any).User?.GetCurrentUser?.();
-    return user?.strAccountName ?? 'unknown';
-  } catch {
-    return 'unknown';
-  }
-}
-
 export async function getVoterId(): Promise<string> {
   if (cachedVoterId) {
     return cachedVoterId;
   }
 
-  const salt = getSalt();
-  const username = getSteamUsername();
-  const data = new TextEncoder().encode(username + salt);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  cachedVoterId = bytesToHex(new Uint8Array(hashBuffer));
+  let voterId = localStorage.getItem(VOTER_ID_KEY);
+  if (!voterId) {
+    voterId = crypto.randomUUID();
+    localStorage.setItem(VOTER_ID_KEY, voterId);
+    void logFrontendEvent('INFO', 'Generated new local voter id', {
+      idPrefix: voterId.slice(0, 8),
+    });
+  }
+  cachedVoterId = voterId;
 
   void logFrontendEvent('DEBUG', 'Voter ID computed', {
-    usernameLength: username.length,
     idPrefix: cachedVoterId.slice(0, 8),
   });
   return cachedVoterId;

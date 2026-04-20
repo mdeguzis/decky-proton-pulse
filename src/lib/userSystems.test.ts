@@ -79,7 +79,7 @@ describe('getSteamId', () => {
     expect(getSteamId()).toBe('76561198000000001');
   });
 
-  it('falls back to loginStore account name when no steam id source is available', async () => {
+  it('does not fall back to loginStore account name when no steam id source is available', async () => {
     (globalThis as any).SteamClient = {
       User: { GetCurrentUser: () => ({}) },
     };
@@ -88,7 +88,7 @@ describe('getSteamId', () => {
     };
 
     const { getSteamId } = await import('./userSystems');
-    expect(getSteamId()).toBe('deck-user');
+    expect(getSteamId()).toBeNull();
   });
 });
 

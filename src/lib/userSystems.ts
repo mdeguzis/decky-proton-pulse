@@ -42,8 +42,7 @@ function tryGetSteamIdFromAnySource(): { id: string | null; source: string } {
 
   try {
     // loginStore is exposed by the Steam frontend, non-null after login
-    const sid = g.loginStore?.m_strCurrentLoginSteamID
-      ?? g.loginStore?.m_strAccountName; // last resort, account name is unique too
+    const sid = g.loginStore?.m_strCurrentLoginSteamID;
     if (typeof sid === 'string' && sid.length > 0) {
       return { id: String(sid), source: 'loginStore' };
     }

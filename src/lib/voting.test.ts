@@ -23,13 +23,9 @@ vi.stubGlobal('crypto', {
     }
     return buf;
   },
+  randomUUID: vi.fn(() => '123e4567-e89b-12d3-a456-426614174000'),
   subtle: {
     digest: vi.fn().mockResolvedValue(new Uint8Array(32).fill(0xab).buffer),
-  },
-});
-vi.stubGlobal('SteamClient', {
-  User: {
-    GetCurrentUser: () => ({ strAccountName: 'testuser' }),
   },
 });
 
@@ -60,25 +56,19 @@ describe('bytesToHex', () => {
 });
 
 describe('getVoterId', () => {
-  it('returns a stable 64-char hex string', async () => {
+  it('returns a stable local UUID string', async () => {
     const { getVoterId } = await import('./voting');
     const first = await getVoterId();
     const second = await getVoterId();
-    expect(first).toHaveLength(64);
-    expect(first).toMatch(/^[0-9a-f]{64}$/);
+    expect(first).toBe('123e4567-e89b-12d3-a456-426614174000');
     expect(second).toBe(first);
   });
 
-  it('falls back to unknown when Steam user lookup throws', async () => {
-    vi.stubGlobal('SteamClient', {
-      User: {
-        GetCurrentUser: () => { throw new Error('no steam'); },
-      },
-    });
-
+  it('reuses a previously stored voter id', async () => {
+    localStorage.setItem('proton-pulse-voter-id', 'existing-voter-id');
     const { getVoterId } = await import('./voting');
     const voterId = await getVoterId();
-    expect(voterId).toHaveLength(64);
+    expect(voterId).toBe('existing-voter-id');
   });
 });
 
@@ -290,6 +280,7 @@ describe('deleteVote', () => {
         for (let i = 0; i < buf.length; i++) buf[i] = (i % 255) + 1;
         return buf;
       },
+      randomUUID: vi.fn(() => '123e4567-e89b-12d3-a456-426614174000'),
       subtle: {
         digest: vi.fn().mockResolvedValue(new Uint8Array(32).fill(0xab).buffer),
       },
@@ -322,7 +313,8 @@ describe('deleteVote', () => {
 
   it('returns false when the voter lookup throws', async () => {
     vi.stubGlobal('crypto', {
-      getRandomValues: () => { throw new Error('no crypto'); },
+      randomUUID: () => { throw new Error('no crypto'); },
+      getRandomValues: vi.fn(),
       subtle: { digest: vi.fn() },
     });
 
