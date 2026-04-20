@@ -22,6 +22,7 @@ import {
 } from '../../lib/cloudSync';
 import { getVoterId } from '../../lib/voting';
 import { fetchPluginLinkStatus, getInstallationId, startPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
+import { buildPluginLinkProfileUrl } from '../../lib/protonPulseLinkUrl';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getInstalledGameStatsCallable = callable<[], {
@@ -501,11 +502,7 @@ export function GeneralSettingsTab() {
       toaster.toast({ title: 'Proton Pulse', body: extras.protonPulseLinkFailed(message) });
       return;
     }
-    const url = new URL('https://www.proton-pulse.com/profile.html#linked-plugins-section');
-    if (code) {
-      url.searchParams.set('pluginLinkCode', code);
-    }
-    Navigation.NavigateToExternalWeb(url.toString());
+    Navigation.NavigateToExternalWeb(buildPluginLinkProfileUrl(code));
     void logFrontendEvent('INFO', 'Opened Proton Pulse profile for plugin linking', {
       hasCode: !!code,
     });
