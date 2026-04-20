@@ -76,6 +76,7 @@ export interface TranslationTree {
   reports: {
     found: (count: number) => string;
     communityReports: (count: number) => string;
+    countShort: (count: number) => string;
     noReports: string;
     confidence: string;
     votes: string;
@@ -92,6 +93,8 @@ export interface TranslationTree {
     navigateToGame: string;
     hardwareUnavailable: string;
     editedBadge: string;
+    pulseBadge: string;
+    protondbBadge: string;
     originalNotesInDetail: string;
     gpuMismatchBadgeHint: (gpuTier: string) => string;
   };
@@ -341,6 +344,7 @@ export interface TranslationTree {
     uploadPreviewTitle: string;
     uploadPreviewHint: string;
     uploadPreviewApply: string;
+    detectingHardware: string;
     toggleCategories: {
       nvidia: string;
       amd: string;
@@ -354,9 +358,11 @@ export interface TranslationTree {
   nativeReport: {
     title: string;
     rating: string;
+    ratingManualHint: string;
     protonVersion: string;
     protonVersionHint: string;
     os: string;
+    osAutoDetectedHint: string;
     duration: string;
     notes: string;
     notesHint: string;
@@ -590,6 +596,7 @@ export const en: TranslationTree = {
   reports: {
     found: (n) => n === 1 ? '1 report found' : `${n} reports found`,
     communityReports: (n) => n === 1 ? '1 community report' : `${n} community reports`,
+    countShort: (n) => n === 1 ? '1 report' : `${n} reports`,
     noReports: 'No reports found',
     confidence: 'Confidence',
     votes: 'Votes',
@@ -606,6 +613,8 @@ export const en: TranslationTree = {
     navigateToGame: 'Navigate to a game first.',
     hardwareUnavailable: 'Hardware details are unavailable',
     editedBadge: 'Edited*',
+    pulseBadge: 'Pulse',
+    protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Open the full report to read the original note.',
     gpuMismatchBadgeHint: (gpuTier) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
@@ -855,6 +864,7 @@ export const en: TranslationTree = {
     uploadPreviewTitle: 'Config Upload Preview',
     uploadPreviewHint: 'Review what will be saved and synced to the cloud.',
     uploadPreviewApply: 'Apply & Upload',
+    detectingHardware: 'Detecting hardware...',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
@@ -868,9 +878,11 @@ export const en: TranslationTree = {
   nativeReport: {
     title: 'Submit Compatibility Report',
     rating: 'Rating',
+    ratingManualHint: 'Choose this yourself based on your actual experience. Proton Pulse only auto-fills hardware and play time.',
     protonVersion: 'Proton Version',
     protonVersionHint: 'e.g. "Proton 10.0-3" or "GE-Proton10-1"',
     os: 'Operating System',
+    osAutoDetectedHint: 'Automatically detected from your system. Change it only if the pre-fill got it wrong.',
     duration: 'Play Time',
     notes: 'Notes',
     notesHint: 'Describe any issues, tweaks, or tips for running this game.',

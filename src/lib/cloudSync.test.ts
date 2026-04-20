@@ -211,6 +211,15 @@ describe('plugin settings cloud sync', () => {
     expect(result?.payload.entries).toEqual({ theme: '"dark"' });
   });
 
+  it('returns null when fetching plugin settings throws', async () => {
+    mockRestRequest.mockRejectedValueOnce('offline');
+
+    const { fetchCloudPluginSettings } = await import('./cloudSync');
+    const result = await fetchCloudPluginSettings();
+
+    expect(result).toBeNull();
+  });
+
   it('restores plugin settings from the cloud payload', async () => {
     mockRestRequest.mockResolvedValueOnce({
       data: [{
@@ -233,6 +242,30 @@ describe('plugin settings cloud sync', () => {
 
     expect(restored).toBe(1);
     expect(mockApplyPluginSettingsBackupPayload).toHaveBeenCalled();
+  });
+
+  it('reports whether plugin settings cloud backup exists', async () => {
+    mockRestRequest
+      .mockResolvedValueOnce({
+        data: [{
+          voter_id: 'abc123voterId',
+          plugin_id: 'proton-pulse',
+          payload: {
+            format: 'proton-pulse-local-backup',
+            version: 1,
+            exportedAt: '2026-04-13T00:00:00Z',
+            entries: { theme: '"dark"' },
+          },
+          updated_at: '2026-04-13T00:00:00Z',
+        }],
+        error: null,
+        status: 200,
+      })
+      .mockResolvedValueOnce({ data: null, error: 'boom', status: 500 });
+
+    const { checkHasCloudPluginSettingsBackup } = await import('./cloudSync');
+    await expect(checkHasCloudPluginSettingsBackup()).resolves.toBe(true);
+    await expect(checkHasCloudPluginSettingsBackup()).resolves.toBe(false);
   });
 });
 
@@ -491,6 +524,42 @@ describe('cloud auto-sync lifecycle', () => {
       expect.objectContaining({ method: 'POST' }),
       expect.objectContaining({ on_conflict: 'voter_id,plugin_id' }),
     );
+    vi.useRealTimers();
+  });
+
+  it('resets the pending plugin settings timer when changes arrive back-to-back', async () => {
+    vi.useFakeTimers();
+    mockRestRequest.mockResolvedValue({ data: null, error: null, status: 201 });
+
+    const { initCloudSync, setPluginSettingsAutoSyncEnabled } = await import('./cloudSync');
+    const { setSetting } = await import('./settings');
+    setPluginSettingsAutoSyncEnabled(true);
+    initCloudSync();
+
+    setSetting('language', 'en');
+    await vi.advanceTimersByTimeAsync(300);
+    setSetting('language', 'de');
+    await vi.advanceTimersByTimeAsync(499);
+    expect(mockRestRequest).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(mockRestRequest).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it('clears the pending plugin settings timer during teardown', async () => {
+    vi.useFakeTimers();
+
+    const { initCloudSync, teardownCloudSync, setPluginSettingsAutoSyncEnabled } = await import('./cloudSync');
+    const { setSetting } = await import('./settings');
+    setPluginSettingsAutoSyncEnabled(true);
+    initCloudSync();
+
+    setSetting('language', 'en');
+    teardownCloudSync();
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(mockRestRequest).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
 

@@ -44,6 +44,7 @@ export const zhCN: TranslationTree = {
   reports: {
     found: (n) => `找到 ${n} 条报告`,
     communityReports: (n) => `${n} 条社区报告`,
+    countShort: (n) => `${n}份报告`,
     noReports: '未找到报告',
     confidence: '可信度',
     votes: '投票',
@@ -60,6 +61,8 @@ export const zhCN: TranslationTree = {
     navigateToGame: '请先导航至某个游戏。',
     hardwareUnavailable: '硬件信息不可用',
     editedBadge: '已编辑*',
+    pulseBadge: 'Pulse 评级',
+    protondbBadge: 'ProtonDB',
     originalNotesInDetail: '打开完整报告以查看原始备注。',
     gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
@@ -309,6 +312,7 @@ export const zhCN: TranslationTree = {
     uploadPreviewTitle: '配置上传预览',
     uploadPreviewHint: '查看将要保存并同步到云端的内容。',
     uploadPreviewApply: '应用并上传',
+    detectingHardware: '正在检测硬件...',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
@@ -322,9 +326,11 @@ export const zhCN: TranslationTree = {
   nativeReport: {
     title: '提交兼容性报告',
     rating: '评分',
+    ratingManualHint: '请根据你的实际体验自行选择。Proton Pulse 只会自动填充硬件和游玩时间。',
     protonVersion: 'Proton 版本',
     protonVersionHint: '例如 "Proton 10.0-3" 或 "GE-Proton10-1"',
     os: '操作系统',
+    osAutoDetectedHint: '已从你的系统自动检测。只有在预填内容有误时才需要修改。',
     duration: '游戏时长',
     notes: '备注',
     notesHint: '描述运行此游戏时遇到的问题、调整或技巧。',

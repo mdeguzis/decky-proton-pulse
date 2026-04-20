@@ -280,3 +280,53 @@ describe('isVoteCooldownActive', () => {
     expect(isVoteCooldownActive()).toBe(false);
   });
 });
+
+describe('deleteVote', () => {
+  // earlier tests may have replaced crypto.subtle.digest with a thrower — put
+  // the working stub back before each delete test so getVoterId resolves
+  beforeEach(() => {
+    vi.stubGlobal('crypto', {
+      getRandomValues: (buf: Uint8Array) => {
+        for (let i = 0; i < buf.length; i++) buf[i] = (i % 255) + 1;
+        return buf;
+      },
+      subtle: {
+        digest: vi.fn().mockResolvedValue(new Uint8Array(32).fill(0xab).buffer),
+      },
+    });
+  });
+
+  it('sends a DELETE scoped to voter/app/report and returns true on success', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const { deleteVote } = await import('./voting');
+    await expect(deleteVote('123', 'report-1')).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toContain('/report_votes?');
+    expect(url).toContain('voter_id=eq.');
+    expect(url).toContain('app_id=eq.123');
+    expect(url).toContain('report_key=eq.report-1');
+    expect(init?.method).toBe('DELETE');
+    expect((init?.headers as Record<string, string>).Prefer).toBe('return=minimal');
+  });
+
+  it('returns false when the DELETE returns a server error', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ message: 'forbidden' }, { status: 403 }),
+    );
+
+    const { deleteVote } = await import('./voting');
+    await expect(deleteVote('123', 'report-1')).resolves.toBe(false);
+  });
+
+  it('returns false when the voter lookup throws', async () => {
+    vi.stubGlobal('crypto', {
+      getRandomValues: () => { throw new Error('no crypto'); },
+      subtle: { digest: vi.fn() },
+    });
+
+    const { deleteVote } = await import('./voting');
+    await expect(deleteVote('123', 'report-1')).resolves.toBe(false);
+  });
+});

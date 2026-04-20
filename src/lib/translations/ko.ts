@@ -44,6 +44,7 @@ export const ko: TranslationTree = {
   reports: {
     found: (n) => `보고서 ${n}개 발견`,
     communityReports: (n) => `커뮤니티 보고서 ${n}개`,
+    countShort: (n) => n === 1 ? '보고서 1개' : `보고서 ${n}개`,
     noReports: '보고서를 찾을 수 없습니다',
     confidence: '신뢰도',
     votes: '투표',
@@ -60,6 +61,8 @@ export const ko: TranslationTree = {
     navigateToGame: '먼저 게임으로 이동하세요.',
     hardwareUnavailable: '하드웨어 정보를 사용할 수 없습니다',
     editedBadge: '편집됨*',
+    pulseBadge: 'Pulse 등급',
+    protondbBadge: 'ProtonDB',
     originalNotesInDetail: '원문 메모는 전체 보고서에서 확인할 수 있습니다.',
     gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
@@ -309,6 +312,7 @@ export const ko: TranslationTree = {
     uploadPreviewTitle: '구성 업로드 미리보기',
     uploadPreviewHint: '저장되고 클라우드와 동기화될 내용을 검토합니다.',
     uploadPreviewApply: '적용 및 업로드',
+    detectingHardware: '하드웨어 감지 중...',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
@@ -322,9 +326,11 @@ export const ko: TranslationTree = {
   nativeReport: {
     title: '호환성 보고서 제출',
     rating: '평가',
+    ratingManualHint: '이 항목은 실제 경험을 바탕으로 직접 선택해 주세요. Proton Pulse는 하드웨어와 플레이 시간만 자동으로 채웁니다.',
     protonVersion: 'Proton 버전',
     protonVersionHint: '예: "Proton 10.0-3" 또는 "GE-Proton10-1"',
     os: '운영 체제',
+    osAutoDetectedHint: '시스템에서 자동으로 감지되었습니다. 미리 채워진 값이 잘못된 경우에만 변경하세요.',
     duration: '플레이 시간',
     notes: '메모',
     notesHint: '이 게임 실행 시 문제, 조정 사항 또는 팁을 설명하세요.',

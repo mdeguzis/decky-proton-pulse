@@ -6,6 +6,7 @@ import asyncio
 import logging
 import os
 import pathlib
+import subprocess
 import sys
 import threading
 import zipfile
@@ -357,12 +358,16 @@ def test_plugin_lifecycle_hooks_manage_background_threads(plugin: Plugin) -> Non
 
 
 def test_migration_hook_and_metadata_helpers(plugin: Plugin) -> None:
+    class _ImmediateLoop:
+        def run_in_executor(self, _executor: object, _fn: object) -> object:
+            return asyncio.sleep(0, result={"gpu": "amd"})
+
     with (
         patch("main.generate_system_info", return_value="blob"),
         patch("main.export_metrics_to_disk", return_value=True),
-        patch("main.collect_system_info", return_value={"gpu": "amd"}),
         patch("main.get_installed_game_stats", return_value={"installed_steam_games": 25, "installed_steam_app_ids": ["570"]}),
         patch("main.log_frontend_event", return_value=True),
+        patch("asyncio.get_event_loop", return_value=_ImmediateLoop()),
     ):
         assert asyncio.run(plugin._migration()) is None
         assert asyncio.run(plugin.get_plugin_version()) == "0.0.0-test"
@@ -380,6 +385,51 @@ def test_get_protondb_systeminfo_reports_errors(plugin: Plugin) -> None:
     with patch("main.generate_system_info", side_effect=ValueError("broken")):
         result = asyncio.run(plugin.get_protondb_systeminfo())
     assert result == "Error generating system info: broken"
+
+
+def test_main_logs_and_reraises_startup_crashes(plugin: Plugin) -> None:
+    with patch.object(plugin, "_main_impl", side_effect=RuntimeError("boom")), patch.object(
+        decky.logger, "error"
+    ) as error_mock:
+        with pytest.raises(RuntimeError, match="boom"):
+            asyncio.run(plugin._main())
+
+    error_mock.assert_called_once()
+
+
+def test_copy_to_clipboard_prefers_first_available_tool_and_falls_back(plugin: Plugin) -> None:
+    with patch("main.shutil.which", side_effect=lambda cmd: "/usr/bin/wl-copy" if cmd == "wl-copy" else None), patch(
+        "main.subprocess.run"
+    ) as run_mock:
+        assert asyncio.run(plugin.copy_to_clipboard("hello")) is True
+    run_mock.assert_called_once_with(["wl-copy", "--"], input="hello", check=True, timeout=5)
+
+    which_calls = []
+
+    def fake_which(cmd: str) -> str | None:
+        which_calls.append(cmd)
+        return "/usr/bin/xclip" if cmd == "xclip" else "/usr/bin/wl-copy"
+
+    with patch("main.shutil.which", side_effect=fake_which), patch(
+        "main.subprocess.run",
+        side_effect=[subprocess.SubprocessError("wl-copy failed"), None],
+    ) as run_mock:
+        assert asyncio.run(plugin.copy_to_clipboard("hello")) is True
+
+    assert which_calls == ["wl-copy", "xclip"]
+    assert run_mock.call_count == 2
+
+
+def test_copy_to_clipboard_returns_false_when_no_tool_exists(plugin: Plugin) -> None:
+    with patch("main.shutil.which", return_value=None):
+        assert asyncio.run(plugin.copy_to_clipboard("hello")) is False
+
+
+def test_get_game_requirements_wrapper(plugin: Plugin) -> None:
+    with patch("lib.game_requirements.get_game_requirements", return_value={"min_ram_gb": 16}) as get_requirements:
+        assert asyncio.run(plugin.get_game_requirements("730")) == {"min_ram_gb": 16}
+
+    get_requirements.assert_called_once_with("730")
 
 
 def test_export_local_data_backup_rejects_invalid_json(plugin: Plugin) -> None:

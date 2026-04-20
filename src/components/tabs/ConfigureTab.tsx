@@ -306,7 +306,7 @@ function GameSummaryHeader({
       {pulseTierColor && pulseTier && pulseTier.count > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
           <span style={{ fontSize: 9, color: '#7a9bb5', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Pulse
+            {t().reports.pulseBadge}
           </span>
           <span
             style={{
@@ -323,14 +323,14 @@ function GameSummaryHeader({
             {(t().ratings as Record<string, string>)[pulseTier.tier] ?? pulseTier.tier}
           </span>
           <span style={{ fontSize: 9, color: '#7a9bb5', marginTop: 2 }}>
-            {pulseTier.count} report{pulseTier.count !== 1 ? 's' : ''}
+            {t().reports.countShort(pulseTier.count)}
           </span>
         </div>
       )}
       {tierColor && protondbTier && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
           <span style={{ fontSize: 9, color: '#7a9bb5', marginBottom: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            ProtonDB
+            {t().reports.protondbBadge}
           </span>
           <span
             style={{

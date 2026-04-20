@@ -19,8 +19,8 @@ export default defineConfig({
         'src/lib/screenshotAutomation.ts',
       ],
       thresholds: {
-        lines: 90,
-        statements: 90,
+        lines: 98,
+        statements: 98,
       },
     },
   },

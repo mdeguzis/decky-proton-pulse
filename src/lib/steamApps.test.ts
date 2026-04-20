@@ -12,6 +12,7 @@ import {
   getLaunchOptionsFromDetails,
   getSteamAppDetails,
   getSteamAppOverview,
+  getSteamPlaytimeForeverMinutes,
   isSteamShortcutApp,
 } from './steamApps';
 
@@ -167,5 +168,40 @@ describe('steamApps helpers', () => {
     expect(getLaunchOptionsFromDetails({ strLaunchOptions: 'DXVK=1 %command%' })).toBe('DXVK=1 %command%');
     expect(getLaunchOptionsFromDetails({})).toBe('');
     expect(getLaunchOptionsFromDetails(null)).toBe('');
+  });
+
+  describe('getSteamPlaytimeForeverMinutes', () => {
+    it('returns 0 when SteamClient is unavailable', () => {
+      (globalThis as any).SteamClient = {};
+      expect(getSteamPlaytimeForeverMinutes(620)).toBe(0);
+    });
+
+    it('reads minutes_playtime_forever when present', () => {
+      (globalThis as any).SteamClient = {
+        Apps: { GetAppOverviewByAppID: () => ({ minutes_playtime_forever: 423 }) },
+      };
+      expect(getSteamPlaytimeForeverMinutes(620)).toBe(423);
+    });
+
+    it('falls back to nPlaytimeForever on older client builds', () => {
+      (globalThis as any).SteamClient = {
+        Apps: { GetAppOverviewByAppID: () => ({ nPlaytimeForever: 90 }) },
+      };
+      expect(getSteamPlaytimeForeverMinutes(620)).toBe(90);
+    });
+
+    it('coerces string-typed minutes and rounds', () => {
+      (globalThis as any).SteamClient = {
+        Apps: { GetAppOverviewByAppID: () => ({ minutesPlaytimeForever: '12.7' }) },
+      };
+      expect(getSteamPlaytimeForeverMinutes(620)).toBe(13);
+    });
+
+    it('returns 0 when all candidate fields are missing or non-positive', () => {
+      (globalThis as any).SteamClient = {
+        Apps: { GetAppOverviewByAppID: () => ({ minutes_playtime_forever: 0, nPlaytimeForever: -5 }) },
+      };
+      expect(getSteamPlaytimeForeverMinutes(620)).toBe(0);
+    });
   });
 });

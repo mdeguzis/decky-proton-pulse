@@ -424,6 +424,16 @@ describe('playtime', () => {
   });
 
   describe('getEffectivePlaytimeMinutes', () => {
+    it('returns zero tracked minutes when fetching accumulated playtime throws', async () => {
+      mockRestRequest.mockRejectedValueOnce('offline');
+      mockGetSteamPlaytimeForeverMinutes.mockReturnValue(12);
+
+      const { getEffectivePlaytimeMinutes } = await import('./playtime');
+      const result = await getEffectivePlaytimeMinutes(321);
+
+      expect(result).toEqual({ minutes: 12, trackedMinutes: 0, steamMinutes: 12 });
+    });
+
     it('returns the max of plugin-tracked and Steam lifetime minutes', async () => {
       mockRestRequest.mockResolvedValueOnce({
         data: [{ duration_minutes: 5 }, { duration_minutes: 2 }],
@@ -470,6 +480,36 @@ describe('playtime', () => {
 
       expect(mockGetSteamPlaytimeForeverMinutes).not.toHaveBeenCalled();
       expect(result).toEqual({ minutes: 0, trackedMinutes: 0, steamMinutes: 0 });
+    });
+  });
+
+  describe('bucketPlaytimeMinutes', () => {
+    it('maps non-positive and non-finite values to unreported', async () => {
+      const { bucketPlaytimeMinutes } = await import('./playtime');
+      expect(bucketPlaytimeMinutes(0)).toBe('unreported');
+      expect(bucketPlaytimeMinutes(Number.NaN)).toBe('unreported');
+    });
+
+    it('maps sub-hour sessions to underOneHour', async () => {
+      const { bucketPlaytimeMinutes } = await import('./playtime');
+      expect(bucketPlaytimeMinutes(59)).toBe('underOneHour');
+    });
+
+    it('maps 1-4 hour sessions to oneToFourHours', async () => {
+      const { bucketPlaytimeMinutes } = await import('./playtime');
+      expect(bucketPlaytimeMinutes(60)).toBe('oneToFourHours');
+      expect(bucketPlaytimeMinutes(239)).toBe('oneToFourHours');
+    });
+
+    it('maps 4-10 hour sessions to fourToTenHours', async () => {
+      const { bucketPlaytimeMinutes } = await import('./playtime');
+      expect(bucketPlaytimeMinutes(240)).toBe('fourToTenHours');
+      expect(bucketPlaytimeMinutes(599)).toBe('fourToTenHours');
+    });
+
+    it('maps 10+ hour sessions to overTenHours', async () => {
+      const { bucketPlaytimeMinutes } = await import('./playtime');
+      expect(bucketPlaytimeMinutes(600)).toBe('overTenHours');
     });
   });
 });

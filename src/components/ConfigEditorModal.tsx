@@ -585,7 +585,7 @@ function UploadPreviewModal({
           {loadingSystemInfo ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
               <SteamSpinner style={{ width: 16, height: 16 }} />
-              <span style={{ fontSize: 11, color: '#7a9bb5' }}>Detecting hardware...</span>
+              <span style={{ fontSize: 11, color: '#7a9bb5' }}>{t().configManager.detectingHardware}</span>
             </div>
           ) : (
             rows.map(([label, value]) => (

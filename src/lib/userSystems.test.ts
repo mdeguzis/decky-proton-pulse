@@ -42,6 +42,8 @@ describe('getSteamId', () => {
 
   afterEach(() => {
     delete (globalThis as any).SteamClient;
+    delete (globalThis as any).App;
+    delete (globalThis as any).loginStore;
   });
 
   it('returns the string steam id from SteamClient', async () => {
@@ -63,6 +65,30 @@ describe('getSteamId', () => {
     };
     const { getSteamId } = await import('./userSystems');
     expect(getSteamId()).toBeNull();
+  });
+
+  it('falls back to App.m_CurrentUser when SteamClient has no usable id', async () => {
+    (globalThis as any).SteamClient = {
+      User: { GetCurrentUser: () => ({}) },
+    };
+    (globalThis as any).App = {
+      m_CurrentUser: { strSteamID: '76561198000000001' },
+    };
+
+    const { getSteamId } = await import('./userSystems');
+    expect(getSteamId()).toBe('76561198000000001');
+  });
+
+  it('falls back to loginStore account name when no steam id source is available', async () => {
+    (globalThis as any).SteamClient = {
+      User: { GetCurrentUser: () => ({}) },
+    };
+    (globalThis as any).loginStore = {
+      m_strAccountName: 'deck-user',
+    };
+
+    const { getSteamId } = await import('./userSystems');
+    expect(getSteamId()).toBe('deck-user');
   });
 });
 
@@ -246,5 +272,52 @@ describe('uploadSystem', () => {
     const result = await uploadSystem('blob');
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toMatch(/db down|500/);
+  });
+
+  it('returns ok:false with the server message when PATCH fails', async () => {
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    // GET finds the row -> code takes the PATCH branch
+    fetchMock.mockResolvedValueOnce({
+      ok: true, json: async () => [{ device_id: 'dev-1' }],
+    });
+    fetchMock.mockResolvedValueOnce({
+      ok: false, status: 409, json: async () => ({ message: 'conflict on is_default' }),
+    });
+    const { uploadSystem } = await import('./userSystems');
+    const result = await uploadSystem('blob');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/conflict on is_default/);
+  });
+
+  it('falls back to HTTP <status> when PATCH error body is not json', async () => {
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValueOnce({
+      ok: true, json: async () => [{ device_id: 'dev-1' }],
+    });
+    fetchMock.mockResolvedValueOnce({
+      ok: false, status: 418, json: async () => { throw new Error('not json'); },
+    });
+    const { uploadSystem } = await import('./userSystems');
+    const result = await uploadSystem('blob');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/HTTP 418/);
+  });
+
+  it('returns ok:false when the initial lookup throws', async () => {
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    fetchMock.mockRejectedValueOnce(new Error('offline'));
+    const { uploadSystem } = await import('./userSystems');
+    const result = await uploadSystem('blob');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/offline/);
+  });
+
+  it('returns ok:false when the lookup response is not ok', async () => {
+    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 500, json: async () => [] });
+    const { uploadSystem } = await import('./userSystems');
+    const result = await uploadSystem('blob');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/Lookup failed: HTTP 500/);
   });
 });

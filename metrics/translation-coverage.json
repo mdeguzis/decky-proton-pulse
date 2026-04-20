@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 90,
-  "totalKeys": 463,
+  "totalKeys": 469,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 463,
-      "total": 463,
+      "translated": 469,
+      "total": 469,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -16,45 +16,38 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 461,
-      "total": 463,
-      "coveragePercent": 99.6,
+      "translated": 469,
+      "total": 469,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "configManager.cloudStatusLabel",
-        "nativeReport.hardware"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
-      "translated": 462,
-      "total": 463,
-      "coveragePercent": 99.8,
+      "translated": 469,
+      "total": 469,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "nativeReport.hardware"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
-      "translated": 462,
-      "total": 463,
-      "coveragePercent": 99.8,
+      "translated": 469,
+      "total": 469,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "configManager.cloudStatusLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 463,
-      "total": 463,
+      "translated": 469,
+      "total": 469,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -63,8 +56,8 @@
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 463,
-      "total": 463,
+      "translated": 469,
+      "total": 469,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -73,20 +66,18 @@
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 462,
-      "total": 463,
-      "coveragePercent": 99.8,
+      "translated": 469,
+      "total": 469,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "nativeReport.hardware"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 463,
-      "total": 463,
+      "translated": 469,
+      "total": 469,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -95,8 +86,8 @@
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 463,
-      "total": 463,
+      "translated": 469,
+      "total": 469,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -105,8 +96,8 @@
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 463,
-      "total": 463,
+      "translated": 469,
+      "total": 469,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],

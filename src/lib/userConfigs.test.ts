@@ -306,3 +306,39 @@ describe('submitUserConfig fetch throws', () => {
     expect(result.error).toContain('connection refused');
   });
 });
+
+describe('deleteMyReport', () => {
+  it('sends a DELETE with x-client-id and returns ok on 204', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const { deleteMyReport } = await import('./userConfigs');
+    const result = await deleteMyReport('620');
+
+    expect(result.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toContain('/user_configs?');
+    expect(url).toContain('client_id=eq.');
+    expect(url).toContain('app_id=eq.620');
+    expect(init?.method).toBe('DELETE');
+    expect((init?.headers as Record<string, string>)['x-client-id']).toBe('deadbeef'.repeat(8));
+  });
+
+  it('returns the backend error when the DELETE fails', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'row not found' }, { status: 404 }));
+
+    const { deleteMyReport } = await import('./userConfigs');
+    const result = await deleteMyReport('620');
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/row not found/);
+  });
+
+  it('returns the thrown message when fetch itself throws', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('socket closed'));
+
+    const { deleteMyReport } = await import('./userConfigs');
+    const result = await deleteMyReport('620');
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/socket closed/);
+  });
+});

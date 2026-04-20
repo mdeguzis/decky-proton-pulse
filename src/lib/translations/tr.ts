@@ -44,6 +44,7 @@ export const tr: TranslationTree = {
   reports: {
     found: (n) => `${n} rapor bulundu`,
     communityReports: (n) => `${n} topluluk raporu`,
+    countShort: (n) => n === 1 ? '1 rapor' : `${n} rapor`,
     noReports: 'Rapor bulunamadı',
     confidence: 'Güven',
     votes: 'Oylar',
@@ -60,6 +61,8 @@ export const tr: TranslationTree = {
     navigateToGame: 'Önce bir oyuna gidin.',
     hardwareUnavailable: 'Donanım bilgileri kullanılamıyor',
     editedBadge: 'Düzenlendi*',
+    pulseBadge: 'Pulse düzeyi',
+    protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Orijinal notu okumak için tam raporu açın.',
     gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
@@ -309,6 +312,7 @@ export const tr: TranslationTree = {
     uploadPreviewTitle: 'Yapılandırma Yükleme Önizlemesi',
     uploadPreviewHint: 'Kaydedilecek ve bulutla eşitlenecek içeriği inceleyin.',
     uploadPreviewApply: 'Uygula ve Yükle',
+    detectingHardware: 'Donanım algılanıyor...',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
@@ -322,9 +326,11 @@ export const tr: TranslationTree = {
   nativeReport: {
     title: 'Uyumluluk raporu gönder',
     rating: 'Değerlendirme',
+    ratingManualHint: 'Bunu gerçek deneyiminize göre kendiniz seçin. Proton Pulse yalnızca donanımı ve oyun süresini otomatik doldurur.',
     protonVersion: 'Proton Sürümü',
     protonVersionHint: 'ör. "Proton 10.0-3" veya "GE-Proton10-1"',
     os: 'İşletim Sistemi',
+    osAutoDetectedHint: 'Sisteminizden otomatik olarak algılandı. Yalnızca ön doldurma yanlışsa değiştirin.',
     duration: 'Oynama Süresi',
     notes: 'Notlar',
     notesHint: 'Bu oyunu çalıştırırken karşılaşılan sorunları, ayarları veya ipuçlarını açıklayın.',

@@ -68,6 +68,13 @@ export const ru: TranslationTree = {
       if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return `${n} отчёта сообщества`;
       return `${n} отчётов сообщества`;
     },
+    countShort: (n) => {
+      const mod10 = n % 10;
+      const mod100 = n % 100;
+      if (mod10 === 1 && mod100 !== 11) return `${n} отчёт`;
+      if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return `${n} отчёта`;
+      return `${n} отчётов`;
+    },
     noReports: 'Отчёты не найдены',
     confidence: 'Достоверность',
     votes: 'Голоса',
@@ -84,6 +91,8 @@ export const ru: TranslationTree = {
     navigateToGame: 'Сначала перейдите к игре.',
     hardwareUnavailable: 'Сведения об оборудовании недоступны',
     editedBadge: 'Изменено*',
+    pulseBadge: 'Рейтинг Pulse',
+    protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Откройте полный отчёт, чтобы прочитать исходную заметку.',
     gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
@@ -333,6 +342,7 @@ export const ru: TranslationTree = {
     uploadPreviewTitle: 'Предпросмотр загрузки конфигурации',
     uploadPreviewHint: 'Проверьте, что будет сохранено и синхронизировано с облаком.',
     uploadPreviewApply: 'Применить и загрузить',
+    detectingHardware: 'Определение оборудования...',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
@@ -346,9 +356,11 @@ export const ru: TranslationTree = {
   nativeReport: {
     title: 'Отправить отчёт о совместимости',
     rating: 'Оценка',
+    ratingManualHint: 'Выберите это сами на основе своего реального опыта. Proton Pulse автоматически заполняет только оборудование и время игры.',
     protonVersion: 'Версия Proton',
     protonVersionHint: 'напр. «Proton 10.0-3» или «GE-Proton10-1»',
     os: 'Операционная система',
+    osAutoDetectedHint: 'Автоматически определено из вашей системы. Меняйте это только если автозаполнение ошиблось.',
     duration: 'Время игры',
     notes: 'Заметки',
     notesHint: 'Опишите проблемы, настройки или советы по запуску этой игры.',

@@ -44,6 +44,7 @@ export const ja: TranslationTree = {
   reports: {
     found: (n) => `${n} 件のレポートが見つかりました`,
     communityReports: (n) => `コミュニティレポート ${n} 件`,
+    countShort: (n) => `${n}件のレポート`,
     noReports: 'レポートが見つかりません',
     confidence: '信頼度',
     votes: '投票',
@@ -60,6 +61,8 @@ export const ja: TranslationTree = {
     navigateToGame: '最初にゲームに移動してください。',
     hardwareUnavailable: 'ハードウェア情報を取得できません',
     editedBadge: '編集済*',
+    pulseBadge: 'Pulse評価',
+    protondbBadge: 'ProtonDB',
     originalNotesInDetail: '元のメモは詳細レポートで確認できます。',
     gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
   },
@@ -309,6 +312,7 @@ export const ja: TranslationTree = {
     uploadPreviewTitle: '設定アップロードのプレビュー',
     uploadPreviewHint: '保存されてクラウドに同期される内容を確認します。',
     uploadPreviewApply: '適用してアップロード',
+    detectingHardware: 'ハードウェアを検出中...',
     toggleCategories: {
       nvidia: 'NVIDIA',
       amd: 'AMD',
@@ -322,9 +326,11 @@ export const ja: TranslationTree = {
   nativeReport: {
     title: '互換性レポートを送信',
     rating: '評価',
+    ratingManualHint: 'これは実際の体験に基づいて自分で選んでください。Proton Pulse が自動入力するのはハードウェアとプレイ時間だけです。',
     protonVersion: 'Protonバージョン',
     protonVersionHint: '例: 「Proton 10.0-3」または「GE-Proton10-1」',
     os: 'オペレーティングシステム',
+    osAutoDetectedHint: 'システムから自動検出されました。事前入力が間違っている場合のみ変更してください。',
     duration: 'プレイ時間',
     notes: 'メモ',
     notesHint: 'このゲームの問題、調整、ヒントを記述してください。',

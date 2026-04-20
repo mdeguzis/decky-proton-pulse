@@ -43,18 +43,21 @@ function main() {
     },
   ];
 
-  console.log("\nCoverage Summary");
-  console.log(
-    `${pad("Language", 12)} ${pad("Coverage", 10)} ${pad("Minimum", 8)} Status`,
-  );
-  console.log(
-    `${pad("--------", 12)} ${pad("--------", 10)} ${pad("-------", 8)} ------`,
-  );
+  const header = `${pad("Language", 12)} ${pad("Coverage", 10)} ${pad("Minimum", 8)} Status`;
+  const divider = `${pad("--------", 12)} ${pad("--------", 10)} ${pad("-------", 8)} ------`;
+  const border = "=".repeat(Math.max(header.length, divider.length, 54));
+
+  console.log(`\n${border}`);
+  console.log("Coverage Summary");
+  console.log(border);
+  console.log(header);
+  console.log(divider);
   for (const row of rows) {
     console.log(
       `${pad(row.language, 12)} ${pad(formatPercent(row.coverage), 10)} ${pad(formatPercent(MIN_COVERAGE), 8)} ${statusFor(row.coverage)}`,
     );
   }
+  console.log(border);
 }
 console.log("\n");
 

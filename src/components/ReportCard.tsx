@@ -95,7 +95,7 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
                   letterSpacing: 0.3,
                 }}
               >
-                ⚡ Pulse
+                {`⚡ ${t().reports.pulseBadge}`}
               </span>
               {report.pulseTitle ? (
                 <span style={{ marginLeft: 8, fontSize: 10, color: '#7ec8f0' }}>

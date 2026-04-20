@@ -252,7 +252,7 @@ export function NativePulseReportModal({
               label={t().nativeReport.rating}
             />
             <div style={{ fontSize: 10, color: '#7a9bb5', marginTop: 4, lineHeight: 1.4 }}>
-              Choose this yourself based on your actual experience. Proton Pulse only auto-fills hardware and play time.
+              {t().nativeReport.ratingManualHint}
             </div>
           </div>
 
@@ -278,7 +278,7 @@ export function NativePulseReportModal({
               label={t().nativeReport.os}
             />
             <div style={{ fontSize: 10, color: '#7a9bb5', marginTop: 4, lineHeight: 1.4 }}>
-              Automatically detected from your system. Change it only if the pre-fill got it wrong.
+              {t().nativeReport.osAutoDetectedHint}
             </div>
           </div>
 

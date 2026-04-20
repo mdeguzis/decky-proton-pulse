@@ -102,6 +102,17 @@ describe('timing spans', () => {
     end(); // should not double-record
     expect(getRawEntries()).toHaveLength(1);
   });
+
+  it('overwrites the oldest entries once the ring buffer is full', () => {
+    for (let i = 0; i < 2001; i++) {
+      startSpan('cache-read', `entry-${i}`)();
+    }
+
+    const entries = getRawEntries();
+    expect(entries).toHaveLength(2000);
+    expect(entries.some((entry) => entry.label === 'entry-0')).toBe(false);
+    expect(entries.some((entry) => entry.label === 'entry-2000')).toBe(true);
+  });
 });
 
 describe('getSummary', () => {
