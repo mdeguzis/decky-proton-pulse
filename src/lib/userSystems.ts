@@ -76,37 +76,83 @@ export function getSteamId(): string | null {
   return null;
 }
 
-// Build a short "OS · GPU" label from Steam's system info blob. Best-effort,
-// whatever we can't parse we just leave out. The web profile lets users edit
-// this inline so parsing doesn't have to be perfect
+// Treat the literal string "Unknown" as "we couldn't probe this", matching what
+// protondb_systeminfo.py writes when a fallback hit. An all-whitespace or bracket
+// wrapper like "[Unknown]" slips through here on purpose, the web-side parser
+// still cleans those up before they reach the UI.
+function dropUnknown(s: string): string {
+  return /^unknown$/i.test(s.trim()) ? '' : s.trim();
+}
+
+// Pull Manufacturer/Model off the "Computer Information:" block so a Steam Deck
+// (Valve Jupiter = LCD, Valve Galileo = OLED) doesn't need a GPU match to get a
+// nice label. Falls through to '' if either field is missing.
+function parseComputerInfo(text: string): { manufacturer: string; model: string } {
+  const m = text.match(/Manufacturer:\s*(.+)/i);
+  const mo = text.match(/Model:\s*(.+)/i);
+  return {
+    manufacturer: dropUnknown(m ? m[1] : ''),
+    model: dropUnknown(mo ? mo[1] : ''),
+  };
+}
+
+function guessGpuVendor(gpu: string): string {
+  const s = gpu.toLowerCase();
+  if (/(nvidia|geforce|quadro)/.test(s)) return 'NVIDIA';
+  if (/(amd|radeon|rdna|vega|vangogh|\brx\s*\d)/.test(s)) return 'AMD';
+  if (/(intel|arc\b|iris|uhd|\bxe\b)/.test(s)) return 'Intel';
+  return '';
+}
+
+// Build a short label from Steam's system info blob. Priority order:
+//   1) Steam Deck (Valve Jupiter/Galileo, or VanGogh/AMD Custom APU 0405 in the text)
+//   2) "{os} · {gpu}" when both parsed cleanly
+//   3) "{os}-{vendor}-{gpu}" fallback so a label always carries enough hints
+//      to tell two uploaded systems apart
+//   4) 'Uploaded system' as last resort
+//
+// The web profile lets users rename this inline, so parsing doesn't have to
+// be perfect — we just don't want to leave them staring at "Unknown"
 export function generateLabel(sysinfoText: string): string {
-  // "Operating System Version:" is a header. The actual name sits on
-  // the next line. Windows Steam quotes it ("Arch Linux"), the Linux
-  // plugin writes it unquoted with some indent. \s*\n\s* eats the
-  // newline plus any indent so (.+) grabs just the value line.
+  // OS name lives on the line after the "Operating System Version:" header.
+  // Windows Steam quotes it ("Arch Linux"), the Linux plugin writes it
+  // unquoted with some indent. \s*\n\s* eats the newline plus any indent.
   let os = '';
   const osMatch = sysinfoText.match(/Operating System Version:\s*\n\s*(.+)/i);
   if (osMatch) {
     // strip trailing "(64 bit)" / "(build ...)" first so any wrapping
-    // quotes end up at the actual end of the string, then drop them
-    os = osMatch[1].trim()
+    // quotes end up at the actual end of the string, then peel those off
+    os = dropUnknown(osMatch[1]
       .replace(/\s*\([^)]*\)\s*/g, '')
-      .replace(/^"(.*)"$/, '$1')
-      .trim();
+      .replace(/^"(.*)"$/, '$1'));
   }
 
   // Steam prints "Driver:  NVIDIA Corporation NVIDIA GeForce RTX 4070"
   // drop the corp/vendor prefix so the label stays short
   const gpuMatch = sysinfoText.match(/(?:^|\n)\s*Driver:\s*(.+)/i);
-  let gpu = gpuMatch ? gpuMatch[1].trim() : '';
-  if (/^unknown$/i.test(gpu)) gpu = ''; // backend places this when it can't probe
-  gpu = gpu.replace(/^(NVIDIA Corporation|Advanced Micro Devices.*?Inc\.|AMD|Intel Corporation|Intel)\s+/i, '');
-  gpu = gpu.replace(/^NVIDIA\s+/i, ''); // "NVIDIA GeForce" -> "GeForce"
+  let gpu = dropUnknown(gpuMatch ? gpuMatch[1] : '');
+  gpu = gpu
+    .replace(/^(NVIDIA Corporation|Advanced Micro Devices.*?Inc\.|AMD|Intel Corporation|Intel)\s+/i, '')
+    .replace(/^NVIDIA\s+/i, ''); // "NVIDIA GeForce" -> "GeForce"
+
+  // Deck detection first — saves every Deck upload from looking generic
+  const { manufacturer, model } = parseComputerInfo(sysinfoText);
+  const deckByBoard = /^valve$/i.test(manufacturer) && /^(jupiter|galileo)$/i.test(model);
+  const deckByChips = /vangogh|amd custom apu 0405/i.test(sysinfoText);
+  if (deckByBoard || deckByChips) {
+    if (/galileo/i.test(model)) return 'Steam Deck OLED';
+    if (/jupiter/i.test(model)) return 'Steam Deck LCD';
+    return 'Steam Deck';
+  }
 
   if (os && gpu) return `${os} · ${gpu}`;
-  if (os) return os;
-  if (gpu) return gpu;
-  return 'Unknown system';
+
+  // Nothing pretty to show — build {os}-{vendor}-{gpu_model} from whatever we
+  // do have. Skip empty segments so we never end up with stray dashes.
+  const vendor = guessGpuVendor(gpu);
+  const parts = [os, vendor, gpu].filter(Boolean);
+  if (parts.length) return parts.join('-');
+  return 'Uploaded system';
 }
 
 const SUPABASE_URL = 'https://ilsgdshkaocrmibwdezk.supabase.co';

@@ -78,9 +78,59 @@ describe('generateLabel', () => {
     expect(generateLabel(blob)).toBe('Arch Linux · GeForce RTX 4070');
   });
 
-  it('falls back to "Unknown" when fields are missing', async () => {
+  it('falls back to "Uploaded system" when absolutely nothing parses', async () => {
     const { generateLabel } = await import('./userSystems');
-    expect(generateLabel('blah blah')).toBe('Unknown system');
+    expect(generateLabel('blah blah')).toBe('Uploaded system');
+  });
+
+  // Pure Valve board match — sometimes the sysinfo blob has Manufacturer/Model
+  // but glxinfo and /proc/cpuinfo both fail, so we've got nothing else to go on.
+  it('names a Steam Deck OLED by board model (Galileo)', async () => {
+    const { generateLabel } = await import('./userSystems');
+    const blob = [
+      'Computer Information:',
+      '    Manufacturer:  Valve',
+      '    Model:  Galileo',
+    ].join('\n');
+    expect(generateLabel(blob)).toBe('Steam Deck OLED');
+  });
+
+  it('names a Steam Deck LCD by board model (Jupiter)', async () => {
+    const { generateLabel } = await import('./userSystems');
+    const blob = [
+      'Computer Information:',
+      '    Manufacturer:  Valve',
+      '    Model:  Jupiter',
+    ].join('\n');
+    expect(generateLabel(blob)).toBe('Steam Deck LCD');
+  });
+
+  // VanGogh is the APU codename — game-mode reports frequently have it even
+  // when glxinfo came back Unknown
+  it('names a Deck from the VanGogh chipset in the text', async () => {
+    const { generateLabel } = await import('./userSystems');
+    const blob = [
+      'Processor Information:',
+      '    CPU Brand:  AMD Custom APU 0405',
+      'Operating System Version:',
+      '    Unknown',
+      'Video Card:',
+      '    Driver:  Unknown',
+    ].join('\n');
+    expect(generateLabel(blob)).toBe('Steam Deck');
+  });
+
+  // If OS parsed but GPU is totally missing we still want some hardware hint in
+  // the label so two uploaded systems don't look identical. Build {os}-{vendor}
+  // -{gpu_model} from whatever sticks, skipping empty bits so there's no stray
+  // dash floating around.
+  it('uses {os}-{vendor}-{gpu_model} as a final fallback when shape is weird', async () => {
+    const { generateLabel } = await import('./userSystems');
+    // No "Operating System Version:" header, just a loose Driver line with a
+    // recognizable AMD card. Falls through the "os && gpu" branch because
+    // os is empty, and lands in the dash-joined fallback
+    const blob = 'Driver:  Advanced Micro Devices, Inc. Radeon RX 7900 XT';
+    expect(generateLabel(blob)).toBe('AMD-Radeon RX 7900 XT');
   });
 
   it('uses only os when gpu is missing', async () => {
