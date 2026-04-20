@@ -69,7 +69,7 @@ endif
         logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release pre-release github-release github-pre-release \
         capture-project-screenshots \
-        fetch-protondb check-protondb-data logs-loader reload cef-debug-enable live-reload-enable
+        fetch-protondb check-protondb-data logs-loader reload reload-local cef-debug-enable live-reload-enable
 
 default: build
 
@@ -148,6 +148,7 @@ help:
 	@printf "  %-27s %s\n" "" "Optional: APP_ID=1145350 make check-protondb-data"
 	@printf "  %-27s %s\n" "logs-loader" "Follow plugin_loader journal in real time"
 	@printf "  %-27s %s\n" "reload" "Restart plugin_loader locally, or on the Deck when DECK_IP is set"
+	@printf "  %-27s %s\n" "reload-local" "Force a local plugin_loader restart without using DECK_IP/default remote host"
 	@printf "  %-27s %s\n" "cef-debug-enable" "Enable remote CEF debugging (React DevTools on port 8081)"
 	@printf "  %-27s %s\n" "live-reload-enable" "Configure LIVE_RELOAD=1 on plugin_loader service"
 
@@ -432,6 +433,9 @@ reload:
 		echo "Use make reload DECK_IP=192.168.1.x for a remote Deck reload."; \
 		exit 1; \
 	fi
+
+reload-local:
+	@$(MAKE) reload DECK_IP=local
 
 logs-loader:
 	@if [ -n "$(DECK_IP)" ]; then \
