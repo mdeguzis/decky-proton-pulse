@@ -4,6 +4,7 @@
 
 import { logFrontendEvent } from './logger';
 import { getVoterId } from './voting';
+import { getInstallationId, getLinkedProtonPulseUserId } from './protonPulseAccount';
 import type { ProtonRating } from '../types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -178,6 +179,8 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
   }
 
   const clientId = await getVoterId();
+  const installationId = getInstallationId();
+  const protonPulseUserId = getLinkedProtonPulseUserId();
   void logFrontendEvent('INFO', 'Submitting user config', { appId: input.appId });
 
   try {
@@ -186,6 +189,8 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
       headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify({
         client_id: clientId,
+        proton_pulse_user_id: protonPulseUserId,
+        installation_id: installationId,
         app_id: input.appId,
         title: input.title,
         cpu: input.cpu,

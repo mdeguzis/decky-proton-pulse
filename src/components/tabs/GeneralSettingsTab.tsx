@@ -21,6 +21,7 @@ import {
   setPluginSettingsAutoSyncEnabled,
 } from '../../lib/cloudSync';
 import { getVoterId } from '../../lib/voting';
+import { fetchPluginLinkStatus, getInstallationId, startPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getInstalledGameStatsCallable = callable<[], {
@@ -261,6 +262,8 @@ export function GeneralSettingsTab() {
   const [backupStatusMessage, setBackupStatusMessage] = useState('');
   const [backupStatusTone, setBackupStatusTone] = useState<'neutral' | 'success' | 'error'>('neutral');
   const [anonymousClientId, setAnonymousClientId] = useState<string | null>(null);
+  const [pluginLinkStatus, setPluginLinkStatus] = useState<PluginLinkStatus | null>(null);
+  const [pluginLinkBusy, setPluginLinkBusy] = useState(false);
 
   useEffect(() => {
     void setLogLevelSafe(debugEnabled ? 'DEBUG' : 'INFO').catch((error) => {
@@ -280,6 +283,27 @@ export function GeneralSettingsTab() {
         setAnonymousClientId(null);
       });
   }, []);
+
+  useEffect(() => {
+    void fetchPluginLinkStatus()
+      .then(setPluginLinkStatus)
+      .catch((error) => {
+        void logFrontendEvent('WARNING', 'Failed to fetch Proton Pulse link status', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        setPluginLinkStatus(null);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (pluginLinkStatus?.linked || !pluginLinkStatus?.linkCode) return;
+    const timer = window.setInterval(() => {
+      void fetchPluginLinkStatus()
+        .then(setPluginLinkStatus)
+        .catch(() => {});
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [pluginLinkStatus?.linked, pluginLinkStatus?.linkCode]);
 
   const handleDebugToggle = async (enabled: boolean) => {
     void logFrontendEvent('INFO', 'Debug logging toggle changed', {
@@ -445,6 +469,58 @@ export function GeneralSettingsTab() {
     }
   };
 
+  const handleGeneratePluginLinkCode = async () => {
+    setPluginLinkBusy(true);
+    try {
+      const status = await startPluginLink();
+      setPluginLinkStatus(status);
+      if (status.linked) {
+        toaster.toast({ title: 'Proton Pulse', body: extras.protonPulseAccountLinked() });
+      } else if (status.linkCode) {
+        toaster.toast({ title: 'Proton Pulse', body: extras.protonPulseLinkCodeReady(status.linkCode) });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void logFrontendEvent('ERROR', 'Failed to start Proton Pulse link flow', { error: message });
+      toaster.toast({ title: 'Proton Pulse', body: extras.protonPulseLinkFailed(message) });
+    } finally {
+      setPluginLinkBusy(false);
+    }
+  };
+
+  const handleOpenProfileForLinking = async () => {
+    let code = pluginLinkStatus?.linkCode ?? null;
+    try {
+      if (!pluginLinkStatus?.linked && !code) {
+        const status = await startPluginLink();
+        setPluginLinkStatus(status);
+        code = status.linkCode;
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toaster.toast({ title: 'Proton Pulse', body: extras.protonPulseLinkFailed(message) });
+      return;
+    }
+    const url = new URL('https://www.proton-pulse.com/profile.html');
+    if (code) {
+      url.searchParams.set('pluginLinkCode', code);
+    }
+    Navigation.NavigateToExternalWeb(url.toString());
+    void logFrontendEvent('INFO', 'Opened Proton Pulse profile for plugin linking', {
+      hasCode: !!code,
+    });
+  };
+
+  const linkStatusLine = pluginLinkStatus?.linked
+    ? extras.protonPulseAccountLinked()
+    : extras.protonPulseAccountNotLinked();
+  const linkCodeLine = pluginLinkStatus?.linkCode
+    ? extras.protonPulseLinkCodeReady(pluginLinkStatus.linkCode)
+    : '';
+  const linkExpiresLine = pluginLinkStatus?.linkCodeExpiresAt
+    ? extras.protonPulseLinkCodeExpires(new Date(pluginLinkStatus.linkCodeExpiresAt).toLocaleTimeString())
+    : '';
+
   return (
     <Focusable onGamepadDirection={handleRootDirection}>
       <div style={sectionStyle()}>
@@ -517,6 +593,63 @@ export function GeneralSettingsTab() {
        </div>
 
       {/* My Hardware */}
+      <div style={sectionStyle()}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 4 }}>
+          {extras.protonPulseAccountSection()}
+        </div>
+        <div style={{ fontSize: 11, color: '#7a9bb5', margin: '0 8px 10px' }}>
+          {extras.protonPulseAccountSectionDescription()}
+        </div>
+        <div
+          style={{
+            margin: '0 8px 12px',
+            padding: '10px 12px',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.03)',
+          }}
+        >
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#eef7ff', marginBottom: 6 }}>
+            {linkStatusLine}
+          </div>
+          <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 4, lineHeight: 1.4 }}>
+            {extras.protonPulseInstallationId()}
+          </div>
+          <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#9dc4e8', wordBreak: 'break-all', marginBottom: 6 }}>
+            {getInstallationId()}
+          </div>
+          {!!linkCodeLine && (
+            <div style={{ fontSize: 11, color: '#eef7ff', marginBottom: 4 }}>
+              {linkCodeLine}
+            </div>
+          )}
+          {!!linkExpiresLine && (
+            <div style={{ fontSize: 10, color: '#7a9bb5' }}>
+              {linkExpiresLine}
+            </div>
+          )}
+        </div>
+        <div style={{ ...focusClipRowStyle(), paddingBottom: 6 }}>
+          <DialogButton
+            onClick={() => void handleGeneratePluginLinkCode()}
+            disabled={pluginLinkBusy}
+            style={{ padding: '8px 16px' }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseGenerateLinkCode()}</div>
+            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.protonPulseGenerateLinkCodeDescription()}</div>
+          </DialogButton>
+        </div>
+        <div style={focusClipRowStyle()}>
+          <DialogButton
+            onClick={() => void handleOpenProfileForLinking()}
+            style={{ padding: '8px 16px' }}
+          >
+            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseOpenLinkPage()}</div>
+            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.protonPulseOpenLinkPageDescription()}</div>
+          </DialogButton>
+        </div>
+      </div>
+
       <div style={sectionStyle()}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 4 }}>
           {extras.myHardwareSection()}

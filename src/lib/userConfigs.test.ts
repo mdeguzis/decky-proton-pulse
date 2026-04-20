@@ -8,6 +8,11 @@ vi.mock('./voting', () => ({
   getVoterId: vi.fn().mockResolvedValue('deadbeef'.repeat(8)),
 }));
 
+vi.mock('./protonPulseAccount', () => ({
+  getInstallationId: vi.fn(() => 'install-123'),
+  getLinkedProtonPulseUserId: vi.fn(() => 'pp-user-9'),
+}));
+
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
 
@@ -125,6 +130,8 @@ describe('submitUserConfig', () => {
     const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
     expect(body).toMatchObject({
       client_id: 'deadbeef'.repeat(8),
+      proton_pulse_user_id: 'pp-user-9',
+      installation_id: 'install-123',
       app_id: '20',
       rating: 'gold',
       os: 'SteamOS 3.6',
