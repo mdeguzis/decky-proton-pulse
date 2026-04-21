@@ -54,6 +54,18 @@ Getting Proton launch options right usually means opening ProtonDB, reading a pi
 
 You can also review, edit, or clear the options later from the sidebar.
 
+## Optional Proton Pulse Account Link
+
+Linking the Decky plugin to a Proton Pulse account is optional. The plugin works without it for local report browsing, scoring, and launch-option management.
+
+- **On the website:** Steam login is only the sign-in method for your Proton Pulse account.
+- **In the Decky plugin:** linking uses a Proton Pulse install ID plus a short link code.
+- **Privacy boundary:** the plugin does not upload Steam profile names or Steam usernames, and Steam auth is not used as the plugin identity.
+
+After linking, uploads from that Decky install can show up as yours on the website, and the website can manage synced systems and reports for the same Proton Pulse user.
+
+![Proton Pulse account linking in Decky settings](docs/assets/proton-pulse-account-linking.png)
+
 ## Features
 
 * **ProtonDB report fetching** - pulls from cached, mirrored, and live ProtonDB sources so the plugin still has something useful to show when one source comes up empty
