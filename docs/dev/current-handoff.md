@@ -56,6 +56,7 @@ Use it to track what is working, what still needs on-device testing, and what cl
   - `cdn`
   - `live-summary`
 - Confirm the CDN and live-summary logs are visible in the plugin Logs tab after deploy.
+- For Deck web-view debugging, use `docs/dev/cef-debugging.md`.
 
 ## UI / UX Polish Still Open
 

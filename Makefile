@@ -66,7 +66,7 @@ ifneq ($(wildcard $(BREW_NODE)/node),)
 endif
 
 .PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise setup-remote-dev deploy deploy-local deploy-reload deploy-reload-local build-and-deploy build-and-deploy-local clean \
-        logs get-logs take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
+        logs get-logs get-cef-capture take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release pre-release github-release github-pre-release \
         capture-project-screenshots \
         fetch-protondb check-protondb-data logs-loader reload reload-local cef-debug-enable live-reload-enable
@@ -127,6 +127,7 @@ help:
 	@echo "On-device debugging (require DECK_IP):"
 	@printf "  %-27s %s\n" "logs" "Follow plugin app log in real time"
 	@printf "  %-27s %s\n" "get-logs" "Sync plugin logs from the Steam Deck into the project root"
+	@printf "  %-27s %s\n" "get-cef-capture" "Save a local CEF debug snapshot pack from port 8081"
 	@printf "  %-27s %s\n" "take-screenshot" "Capture the current Steam UI into ../screenshots/"
 	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_BASE=my-name make take-screenshot"
 	@printf "  %-27s %s\n" "" "Optional catalog metadata: SCREENSHOT_GROUP=manage-game SCREENSHOT_KEY=default"
@@ -382,6 +383,11 @@ get-logs:
 		rsync -rav $$HOME/homebrew/logs/decky-proton-pulse/ ../logs/; \
 	fi
 	@cd ../logs && ls -1t *.log 2>/dev/null | grep -v '^plugin-debug\.log$$' | tail -n +20 | xargs -r rm -f
+
+get-cef-capture:
+	$(call show_mode)
+	@mkdir -p ../cef-captures
+	@python3 scripts/get_cef_capture.py $(if $(DECK_IP),--deck-ip $(DECK_IP),) --output-dir ../cef-captures
 
 take-screenshot:
 	@echo "Capturing the current Steam UI via CEF remote debugging..."
