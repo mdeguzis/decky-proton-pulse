@@ -144,7 +144,7 @@ Normal build and deploy commands sync that value into `package.json` and `pyproj
 ### Requirements
 
 * Steam Deck with [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) installed
-* Node.js v16.14+ and pnpm v9 (for building from source)
+* Node.js 24 and pnpm v9+ (for building from source)
 * Python 3.x with [uv](https://github.com/astral-sh/uv)
 
 ## Documentation
@@ -156,6 +156,7 @@ Normal build and deploy commands sync that value into `package.json` and `pyproj
 * [Scoring Algorithm](https://github.com/mdeguzis/decky-proton-pulse/wiki/Scoring-Algorithm) — how reports are weighted and ranked
 * [API Reference](https://github.com/mdeguzis/decky-proton-pulse/wiki/API-Reference) — Python callables and TypeScript interfaces
 * [ProtonDB Data Resolution](https://github.com/mdeguzis/decky-proton-pulse/wiki/ProtonDB-Data-Resolution) — app ID resolution, mirror misses, and live fallback
+* [Local dev notes](docs/dev/toolchain-and-ci.md) — Node 24, CI, remote Deck helpers, and CEF captures
 
 ## Troubleshooting
 
