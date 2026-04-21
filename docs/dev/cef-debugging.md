@@ -125,6 +125,27 @@ During the Proton Pulse account-link investigation on 2026-04-20:
 
 That pattern suggests the captured traffic was from the Steam shell itself, not the Proton Pulse external linking page. When this happens, keep DevTools open on `Steam Big Picture Mode`, clear Network, trigger the Deck flow again, and confirm the page actually loads in the inspected target before drawing conclusions from the HAR.
 
+## Screenshot Limitation
+
+CEF remote debugging is still very useful for external Deck browser pages, but do not assume it can reliably capture screenshots for them the same way it does for Steam's internal UI surfaces.
+
+What still works well:
+
+- listing live CEF targets
+- reading page DOM and text content
+- checking console and network state
+- running small JS probes through the DevTools protocol
+
+What is less reliable for external browser pages:
+
+- screenshot capture as the source of truth for the visible Deck browser page
+
+In practice:
+
+- use CEF debugging to inspect state for external pages
+- use manual Deck screenshots when you need to verify what the user actually sees
+- use desktop-browser screenshots when the goal is layout/debugging rather than Steam Deck browser rendering
+
 ## Related Commands
 
 ```bash
