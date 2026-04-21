@@ -21,7 +21,7 @@ import {
   setPluginSettingsAutoSyncEnabled,
 } from '../../lib/cloudSync';
 import { getVoterId } from '../../lib/voting';
-import { fetchPluginLinkStatus, getInstallationId, startPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
+import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
 import { buildPluginLinkProfileUrl } from '../../lib/protonPulseLinkUrl';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
@@ -51,6 +51,34 @@ function focusClipRowStyle(): React.CSSProperties {
     borderRadius: 10,
     overflow: 'hidden',
     margin: '0 8px',
+  };
+}
+
+function compactActionRowStyle(): React.CSSProperties {
+  return {
+    display: 'flex',
+    gap: 8,
+    margin: '0 8px',
+    flexWrap: 'wrap',
+  };
+}
+
+function compactActionCellStyle(): React.CSSProperties {
+  return {
+    flex: '1 1 0',
+    minWidth: 0,
+  };
+}
+
+function compactDialogButtonStyle(): React.CSSProperties {
+  return {
+    width: '100%',
+    minHeight: 52,
+    padding: '8px 12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
   };
 }
 
@@ -508,6 +536,35 @@ export function GeneralSettingsTab() {
     });
   };
 
+  const handleUnlinkPlugin = async () => {
+    const modal = showModal(
+      <ConfirmModal
+        strTitle={extras.protonPulseUnlink()}
+        strDescription={extras.protonPulseUnlinkConfirm()}
+        strOKButtonText={extras.protonPulseUnlink()}
+        strCancelButtonText={t().common.cancel}
+        onOK={() => {
+          void (async () => {
+            setPluginLinkBusy(true);
+            try {
+              const status = await unlinkPluginLink();
+              setPluginLinkStatus(status);
+              toaster.toast({ title: 'Proton Pulse', body: extras.protonPulseUnlinked() });
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error);
+              void logFrontendEvent('ERROR', 'Failed to unlink Proton Pulse account', { error: message });
+              toaster.toast({ title: 'Proton Pulse', body: extras.protonPulseUnlinkFailed(message) });
+            } finally {
+              setPluginLinkBusy(false);
+              modal?.Close();
+            }
+          })();
+        }}
+        onCancel={() => modal?.Close()}
+      />,
+    );
+  };
+
   const linkStatusLine = pluginLinkStatus?.linked
     ? extras.protonPulseAccountLinked()
     : extras.protonPulseAccountNotLinked();
@@ -626,24 +683,34 @@ export function GeneralSettingsTab() {
             </div>
           )}
         </div>
-        <div style={{ ...focusClipRowStyle(), paddingBottom: 6 }}>
-          <DialogButton
-            onClick={() => void handleGeneratePluginLinkCode()}
-            disabled={pluginLinkBusy}
-            style={{ padding: '8px 16px' }}
-          >
-            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseGenerateLinkCode()}</div>
-            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.protonPulseGenerateLinkCodeDescription()}</div>
-          </DialogButton>
-        </div>
-        <div style={focusClipRowStyle()}>
-          <DialogButton
-            onClick={() => void handleOpenProfileForLinking()}
-            style={{ padding: '8px 16px' }}
-          >
-            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseOpenLinkPage()}</div>
-            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.protonPulseOpenLinkPageDescription()}</div>
-          </DialogButton>
+        <div style={compactActionRowStyle()}>
+          <div style={compactActionCellStyle()}>
+            <DialogButton
+              onClick={() => void handleGeneratePluginLinkCode()}
+              disabled={pluginLinkBusy}
+              style={compactDialogButtonStyle()}
+            >
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseGenerateLinkCode()}</div>
+            </DialogButton>
+          </div>
+          <div style={compactActionCellStyle()}>
+            <DialogButton
+              onClick={() => void handleOpenProfileForLinking()}
+              disabled={pluginLinkBusy}
+              style={compactDialogButtonStyle()}
+            >
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseOpenLinkPage()}</div>
+            </DialogButton>
+          </div>
+          <div style={compactActionCellStyle()}>
+            <DialogButton
+              onClick={() => void handleUnlinkPlugin()}
+              disabled={pluginLinkBusy || !pluginLinkStatus?.linked}
+              style={compactDialogButtonStyle()}
+            >
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseUnlink()}</div>
+            </DialogButton>
+          </div>
         </div>
       </div>
 
@@ -654,57 +721,56 @@ export function GeneralSettingsTab() {
         <div style={{ fontSize: 11, color: '#7a9bb5', margin: '0 8px 10px' }}>
           {extras.myHardwareSectionDescription()}
         </div>
-        <div style={{ ...focusClipRowStyle(), paddingBottom: 6 }}>
-          <DialogButton
-            onClick={() => {
-              showModal(<MyHardwareModal />);
-            }}
-            style={{ padding: '8px 16px' }}
-          >
-            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareView()}</div>
-            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.myHardwareViewDescription()}</div>
-          </DialogButton>
-        </div>
-        <div style={{ ...focusClipRowStyle(), paddingBottom: 6 }}>
-          <DialogButton
-            onClick={async () => {
-              void logFrontendEvent('INFO', 'My Hardware upload clicked');
-              try {
-                const info = await getProtonDBSystemInfoCall();
-                void logFrontendEvent('DEBUG', 'My Hardware upload starting', {
-                  infoBytes: info?.length ?? 0,
-                });
-                const result = await uploadSystem(info);
-                if (result.ok) {
-                  void logFrontendEvent('INFO', 'My Hardware upload succeeded');
-                  toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadSuccess() });
-                } else {
-                  void logFrontendEvent('ERROR', 'My Hardware upload failed', { error: result.error });
-                  toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadFailed(result.error) });
+        <div style={compactActionRowStyle()}>
+          <div style={compactActionCellStyle()}>
+            <DialogButton
+              onClick={() => {
+                showModal(<MyHardwareModal />);
+              }}
+              style={compactDialogButtonStyle()}
+            >
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareView()}</div>
+            </DialogButton>
+          </div>
+          <div style={compactActionCellStyle()}>
+            <DialogButton
+              onClick={async () => {
+                void logFrontendEvent('INFO', 'My Hardware upload clicked');
+                try {
+                  const info = await getProtonDBSystemInfoCall();
+                  void logFrontendEvent('DEBUG', 'My Hardware upload starting', {
+                    infoBytes: info?.length ?? 0,
+                  });
+                  const result = await uploadSystem(info);
+                  if (result.ok) {
+                    void logFrontendEvent('INFO', 'My Hardware upload succeeded');
+                    toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadSuccess() });
+                  } else {
+                    void logFrontendEvent('ERROR', 'My Hardware upload failed', { error: result.error });
+                    toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadFailed(result.error) });
+                  }
+                } catch (e) {
+                  const msg = e instanceof Error ? e.message : String(e);
+                  void logFrontendEvent('ERROR', 'My Hardware upload threw', { error: msg });
+                  toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadFailed(msg) });
                 }
-              } catch (e) {
-                const msg = e instanceof Error ? e.message : String(e);
-                void logFrontendEvent('ERROR', 'My Hardware upload threw', { error: msg });
-                toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadFailed(msg) });
-              }
-            }}
-            style={{ padding: '8px 16px' }}
-          >
-            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareUpload()}</div>
-            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.myHardwareUploadDescription()}</div>
-          </DialogButton>
-        </div>
-        <div style={focusClipRowStyle()}>
-          <DialogButton
-            onClick={() => {
-              Navigation.NavigateToExternalWeb('https://www.proton-pulse.com/profile.html');
-              void logFrontendEvent('INFO', 'Opened Pulse web profile from settings');
-            }}
-            style={{ padding: '8px 16px' }}
-          >
-            <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareOpenProfile()}</div>
-            <div style={{ fontSize: 11, color: '#7a9bb5' }}>{extras.myHardwareOpenProfileDescription()}</div>
-          </DialogButton>
+              }}
+              style={compactDialogButtonStyle()}
+            >
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareUpload()}</div>
+            </DialogButton>
+          </div>
+          <div style={compactActionCellStyle()}>
+            <DialogButton
+              onClick={() => {
+                Navigation.NavigateToExternalWeb('https://www.proton-pulse.com/profile.html');
+                void logFrontendEvent('INFO', 'Opened Pulse web profile from settings');
+              }}
+              style={compactDialogButtonStyle()}
+            >
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareOpenProfile()}</div>
+            </DialogButton>
+          </div>
         </div>
       </div>
 

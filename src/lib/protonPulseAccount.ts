@@ -109,3 +109,13 @@ export async function startPluginLink(): Promise<PluginLinkStatus> {
   });
   return normalizeStatus({ installationId, ...payload });
 }
+
+export async function unlinkPluginLink(): Promise<PluginLinkStatus> {
+  const installationId = getInstallationId();
+  const installationSecret = getInstallationSecret();
+  const payload = await callFunction<Partial<PluginLinkStatus>>('plugin-link-unlink', {
+    installationId,
+    installationSecret,
+  });
+  return normalizeStatus({ installationId, ...payload });
+}

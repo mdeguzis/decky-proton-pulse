@@ -109,3 +109,28 @@ describe('fetchPluginLinkStatus', () => {
     expect(localStorage.getItem('proton-pulse:linked-proton-pulse-user-id')).toBeNull();
   });
 });
+
+describe('unlinkPluginLink', () => {
+  it('posts the installation proof and clears the cached linked user', async () => {
+    localStorage.setItem('proton-pulse:linked-proton-pulse-user-id', 'old-user');
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      linked: false,
+      linkedUserId: null,
+      linkedAt: null,
+      linkCode: null,
+      linkCodeExpiresAt: null,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    const { unlinkPluginLink } = await import('./protonPulseAccount');
+    const status = await unlinkPluginLink();
+
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toContain('/plugin-link-unlink');
+    expect(JSON.parse(String(init?.body))).toEqual({
+      installationId: 'install-uuid-1234',
+      installationSecret: 'install-uuid-1234',
+    });
+    expect(status.linked).toBe(false);
+    expect(localStorage.getItem('proton-pulse:linked-proton-pulse-user-id')).toBeNull();
+  });
+});
