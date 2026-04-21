@@ -472,6 +472,7 @@ export const ru: TranslationTree = {
     protonPulseAccountSection: () => 'Аккаунт Proton Pulse',
     protonPulseAccountSectionDescription: () => 'Свяжите эту установку Decky со своим аккаунтом Proton Pulse, чтобы загрузки из плагина отображались на сайте как ваши.',
     protonPulseAccountLinked: () => 'Связано с Proton Pulse',
+    protonPulseAlreadyLinked: () => 'Уже связано с Proton Pulse',
     protonPulseAccountNotLinked: () => 'Ещё не связано',
     protonPulseInstallationId: () => 'ID этой установки',
     protonPulseGenerateLinkCode: () => 'Создать код привязки',

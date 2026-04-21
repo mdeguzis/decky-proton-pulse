@@ -442,6 +442,7 @@ export const zhCN: TranslationTree = {
     protonPulseAccountSection: () => 'Proton Pulse 账号',
     protonPulseAccountSectionDescription: () => '将此 Decky 安装实例绑定到你的 Proton Pulse 账号，这样插件上传的内容就会在网站上显示为你的内容。',
     protonPulseAccountLinked: () => '已绑定到 Proton Pulse',
+    protonPulseAlreadyLinked: () => '已绑定到 Proton Pulse',
     protonPulseAccountNotLinked: () => '尚未绑定',
     protonPulseInstallationId: () => '此安装实例 ID',
     protonPulseGenerateLinkCode: () => '生成绑定代码',

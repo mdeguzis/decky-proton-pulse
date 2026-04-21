@@ -442,6 +442,7 @@ export const ko: TranslationTree = {
     protonPulseAccountSection: () => 'Proton Pulse 계정',
     protonPulseAccountSectionDescription: () => '이 Decky 설치를 Proton Pulse 계정에 연결하면 플러그인 업로드가 웹사이트에서 내 것으로 표시됩니다.',
     protonPulseAccountLinked: () => 'Proton Pulse에 연결됨',
+    protonPulseAlreadyLinked: () => '이미 Proton Pulse에 연결되어 있습니다',
     protonPulseAccountNotLinked: () => '아직 연결되지 않음',
     protonPulseInstallationId: () => '이 설치 ID',
     protonPulseGenerateLinkCode: () => '링크 코드 생성',

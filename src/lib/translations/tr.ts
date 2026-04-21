@@ -442,6 +442,7 @@ export const tr: TranslationTree = {
     protonPulseAccountSection: () => 'Proton Pulse Hesabı',
     protonPulseAccountSectionDescription: () => 'Bu Decky kurulumunu Proton Pulse hesabınıza bağlayın; böylece eklenti yüklemeleri web sitesinde size ait olarak görünür.',
     protonPulseAccountLinked: () => 'Proton Pulse’a bağlandı',
+    protonPulseAlreadyLinked: () => 'Zaten Proton Pulse’a bağlı',
     protonPulseAccountNotLinked: () => 'Henüz bağlanmadı',
     protonPulseInstallationId: () => 'Bu kurulum kimliği',
     protonPulseGenerateLinkCode: () => 'Bağlantı kodu oluştur',

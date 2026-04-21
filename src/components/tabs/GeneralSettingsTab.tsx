@@ -518,6 +518,10 @@ export function GeneralSettingsTab() {
   };
 
   const handleOpenProfileForLinking = async () => {
+    if (pluginLinkStatus?.linked) {
+      toaster.toast({ title: 'Proton Pulse', body: extras.protonPulseAlreadyLinked() });
+      return;
+    }
     let code = pluginLinkStatus?.linkCode ?? null;
     try {
       if (!pluginLinkStatus?.linked && !code) {

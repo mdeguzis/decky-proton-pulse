@@ -442,6 +442,7 @@ export const ja: TranslationTree = {
     protonPulseAccountSection: () => 'Proton Pulse アカウント',
     protonPulseAccountSectionDescription: () => 'この Decky インストールを Proton Pulse アカウントにリンクすると、プラグインからの投稿が Web サイトで自分のものとして表示されます。',
     protonPulseAccountLinked: () => 'Proton Pulse にリンク済み',
+    protonPulseAlreadyLinked: () => 'すでに Proton Pulse にリンクされています',
     protonPulseAccountNotLinked: () => 'まだリンクされていません',
     protonPulseInstallationId: () => 'このインストール ID',
     protonPulseGenerateLinkCode: () => 'リンクコードを生成',

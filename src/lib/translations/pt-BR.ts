@@ -442,6 +442,7 @@ export const ptBR: TranslationTree = {
     protonPulseAccountSection: () => 'Conta Proton Pulse',
     protonPulseAccountSectionDescription: () => 'Vincule esta instalação do Decky à sua conta Proton Pulse para que os envios do plugin apareçam como seus no site.',
     protonPulseAccountLinked: () => 'Vinculado ao Proton Pulse',
+    protonPulseAlreadyLinked: () => 'Já vinculado ao Proton Pulse',
     protonPulseAccountNotLinked: () => 'Ainda não vinculado',
     protonPulseInstallationId: () => 'ID desta instalação',
     protonPulseGenerateLinkCode: () => 'Gerar código de vínculo',
