@@ -33,6 +33,11 @@ vi.mock('./trackedConfigs', () => ({
   onConfigSaved: vi.fn(),
 }));
 
+vi.mock('./protonPulseAccount', () => ({
+  getInstallationId: vi.fn(() => 'install-123'),
+  getLinkedProtonPulseUserId: vi.fn(() => 'pp-user-123'),
+}));
+
 vi.mock('./localDataBackup', () => ({
   buildPluginSettingsBackupPayload: vi.fn(() => ({
     format: 'proton-pulse-local-backup',
@@ -101,6 +106,8 @@ describe('pushConfig', () => {
 
     const body = JSON.parse(init.body as string);
     expect(body.voter_id).toBe('abc123voterId');
+    expect(body.proton_pulse_user_id).toBe('pp-user-123');
+    expect(body.installation_id).toBe('install-123');
     expect(body.app_id).toBe(12345);
     expect(body.app_name).toBe('Test Game');
     expect(body.config).toMatchObject({ appId: 12345, protonVersion: 'GE-Proton9-27' });
@@ -291,7 +298,15 @@ describe('fetchCloudConfigs', () => {
     const cfg = makeConfig();
     mockRestRequest.mockResolvedValueOnce({
       data: [
-        { voter_id: 'abc123voterId', app_id: 12345, app_name: 'Test Game', config: cfg, updated_at: '2026-04-11T00:00:00Z' },
+        {
+          voter_id: 'abc123voterId',
+          proton_pulse_user_id: 'pp-user-123',
+          installation_id: 'install-123',
+          app_id: 12345,
+          app_name: 'Test Game',
+          config: cfg,
+          updated_at: '2026-04-11T00:00:00Z',
+        },
       ],
       error: null,
       status: 200,
@@ -302,6 +317,7 @@ describe('fetchCloudConfigs', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].app_id).toBe(12345);
+    expect(result[0].proton_pulse_user_id).toBe('pp-user-123');
     expect(result[0].config.appId).toBe(12345);
   });
 

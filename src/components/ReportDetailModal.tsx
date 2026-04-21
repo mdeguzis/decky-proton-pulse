@@ -1062,10 +1062,16 @@ export function ReportDetailModal({
   };
 
   const handleUpload = () => {
-    showModal(
+    const modal = showModal(
       <UploadDestinationModal
-        onUploadToProtonDB={handleUploadToProtonDB}
-        onUploadToProtonPulse={handleUploadToProtonPulse}
+        onUploadToProtonDB={() => {
+          modal.Close();
+          handleUploadToProtonDB();
+        }}
+        onUploadToProtonPulse={() => {
+          handleUploadToProtonPulse();
+          modal.Close();
+        }}
         uploadsDisabled={!report.isEdited}
       />,
     );

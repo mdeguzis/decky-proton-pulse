@@ -4,8 +4,11 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Migrate hardware uploads to Proton Pulse ownership
-- Add Proton Pulse account linking flow to Decky
+- No unreleased changes yet.
+
+## v0.8.9
+
+- Sync cloud-owned reports and close upload modal
 
 ## v0.8.8
 

@@ -3,6 +3,7 @@ import { logFrontendEvent } from './logger';
 import { getVoterId, restRequest } from './voting';
 import { getSetting, setSetting, onSettingsChanged } from './settings';
 import { getTrackedConfigs, addTrackedConfig, onConfigSaved, type TrackedConfig } from './trackedConfigs';
+import { getInstallationId, getLinkedProtonPulseUserId } from './protonPulseAccount';
 import {
   applyPluginSettingsBackupPayload,
   buildPluginSettingsBackupPayload,
@@ -64,8 +65,13 @@ export async function pushConfig(
 ): Promise<boolean> {
   try {
     const voterId = await getVoterId();
+    const protonPulseUserId = getLinkedProtonPulseUserId();
+    const installationId = getInstallationId();
     void logFrontendEvent('DEBUG', 'Cloud sync: pushing config', {
-      appId: config.appId, voterIdPrefix: voterId.slice(0, 8), source,
+      appId: config.appId,
+      voterIdPrefix: voterId.slice(0, 8),
+      protonPulseLinked: Boolean(protonPulseUserId),
+      source,
     });
 
     const { error } = await restRequest<null>('user_proton_configs', {
@@ -73,6 +79,8 @@ export async function pushConfig(
       headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify({
         voter_id: voterId,
+        proton_pulse_user_id: protonPulseUserId,
+        installation_id: installationId,
         app_id: config.appId,
         app_name: config.appName,
         config,
@@ -111,6 +119,8 @@ export interface PushAllResult {
 
 export interface CloudConfigRow {
   voter_id: string;
+  proton_pulse_user_id?: string | null;
+  installation_id?: string | null;
   app_id: number;
   app_name: string;
   config: TrackedConfig;
@@ -132,7 +142,7 @@ export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
     const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', {
       method: 'GET',
     }, {
-      select: 'voter_id,app_id,app_name,config,updated_at',
+      select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,config,updated_at',
       voter_id: `eq.${voterId}`,
     });
 

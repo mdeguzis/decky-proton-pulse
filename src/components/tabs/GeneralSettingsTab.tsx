@@ -287,6 +287,12 @@ export function GeneralSettingsTab() {
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const languageRowRef = useRef<HTMLDivElement>(null);
   const localDataSectionRef = useRef<HTMLDivElement>(null);
+  const accountGenerateButtonRef = useRef<HTMLElement | null>(null);
+  const accountOpenButtonRef = useRef<HTMLElement | null>(null);
+  const accountUnlinkButtonRef = useRef<HTMLElement | null>(null);
+  const hardwareViewButtonRef = useRef<HTMLElement | null>(null);
+  const hardwareUploadButtonRef = useRef<HTMLElement | null>(null);
+  const hardwareProfileButtonRef = useRef<HTMLElement | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupStatusMessage, setBackupStatusMessage] = useState('');
   const [backupStatusTone, setBackupStatusTone] = useState<'neutral' | 'success' | 'error'>('neutral');
@@ -354,6 +360,34 @@ export function GeneralSettingsTab() {
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) {
       evt.preventDefault();
+    }
+  };
+
+  const focusSiblingButton = (
+    evt: GamepadEvent,
+    previous: HTMLElement | null,
+    next: HTMLElement | null,
+    upTarget?: HTMLElement | null,
+    downTarget?: HTMLElement | null,
+  ) => {
+    if (evt.detail.button === GamepadButton.DIR_LEFT && previous) {
+      evt.preventDefault();
+      previous.focus();
+      return;
+    }
+    if (evt.detail.button === GamepadButton.DIR_RIGHT && next) {
+      evt.preventDefault();
+      next.focus();
+      return;
+    }
+    if (evt.detail.button === GamepadButton.DIR_UP && upTarget) {
+      evt.preventDefault();
+      upTarget.focus();
+      return;
+    }
+    if (evt.detail.button === GamepadButton.DIR_DOWN && downTarget) {
+      evt.preventDefault();
+      downTarget.focus();
     }
   };
 
@@ -692,6 +726,18 @@ export function GeneralSettingsTab() {
             <DialogButton
               onClick={() => void handleGeneratePluginLinkCode()}
               disabled={pluginLinkBusy}
+              ref={(node) => {
+                accountGenerateButtonRef.current = node;
+              }}
+              onGamepadDirection={(evt) => {
+                focusSiblingButton(
+                  evt,
+                  null,
+                  accountOpenButtonRef.current,
+                  null,
+                  hardwareViewButtonRef.current,
+                );
+              }}
               style={compactDialogButtonStyle()}
             >
               <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseGenerateLinkCode()}</div>
@@ -701,6 +747,18 @@ export function GeneralSettingsTab() {
             <DialogButton
               onClick={() => void handleOpenProfileForLinking()}
               disabled={pluginLinkBusy}
+              ref={(node) => {
+                accountOpenButtonRef.current = node;
+              }}
+              onGamepadDirection={(evt) => {
+                focusSiblingButton(
+                  evt,
+                  accountGenerateButtonRef.current,
+                  accountUnlinkButtonRef.current,
+                  null,
+                  hardwareUploadButtonRef.current,
+                );
+              }}
               style={compactDialogButtonStyle()}
             >
               <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseOpenLinkPage()}</div>
@@ -710,6 +768,18 @@ export function GeneralSettingsTab() {
             <DialogButton
               onClick={() => void handleUnlinkPlugin()}
               disabled={pluginLinkBusy || !pluginLinkStatus?.linked}
+              ref={(node) => {
+                accountUnlinkButtonRef.current = node;
+              }}
+              onGamepadDirection={(evt) => {
+                focusSiblingButton(
+                  evt,
+                  accountOpenButtonRef.current,
+                  null,
+                  null,
+                  hardwareProfileButtonRef.current,
+                );
+              }}
               style={compactDialogButtonStyle()}
             >
               <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.protonPulseUnlink()}</div>
@@ -730,6 +800,17 @@ export function GeneralSettingsTab() {
             <DialogButton
               onClick={() => {
                 showModal(<MyHardwareModal />);
+              }}
+              ref={(node) => {
+                hardwareViewButtonRef.current = node;
+              }}
+              onGamepadDirection={(evt) => {
+                focusSiblingButton(
+                  evt,
+                  null,
+                  hardwareUploadButtonRef.current,
+                  accountGenerateButtonRef.current,
+                );
               }}
               style={compactDialogButtonStyle()}
             >
@@ -759,6 +840,17 @@ export function GeneralSettingsTab() {
                   toaster.toast({ title: 'Proton Pulse', body: extras.myHardwareUploadFailed(msg) });
                 }
               }}
+              ref={(node) => {
+                hardwareUploadButtonRef.current = node;
+              }}
+              onGamepadDirection={(evt) => {
+                focusSiblingButton(
+                  evt,
+                  hardwareViewButtonRef.current,
+                  hardwareProfileButtonRef.current,
+                  accountOpenButtonRef.current,
+                );
+              }}
               style={compactDialogButtonStyle()}
             >
               <div style={{ fontSize: 12, fontWeight: 600 }}>{extras.myHardwareUpload()}</div>
@@ -769,6 +861,17 @@ export function GeneralSettingsTab() {
               onClick={() => {
                 Navigation.NavigateToExternalWeb('https://www.proton-pulse.com/profile.html');
                 void logFrontendEvent('INFO', 'Opened Pulse web profile from settings');
+              }}
+              ref={(node) => {
+                hardwareProfileButtonRef.current = node;
+              }}
+              onGamepadDirection={(evt) => {
+                focusSiblingButton(
+                  evt,
+                  hardwareUploadButtonRef.current,
+                  null,
+                  accountUnlinkButtonRef.current,
+                );
               }}
               style={compactDialogButtonStyle()}
             >
