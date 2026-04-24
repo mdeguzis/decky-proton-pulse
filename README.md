@@ -87,7 +87,7 @@ After linking, uploads from that Decky install can show up as yours on the websi
 <!-- translation-coverage:start -->
 Generated from [metrics/translation-coverage.json](metrics/translation-coverage.json) during `pnpm run build`.
 
-Proton Pulse supports 15 languages. Translation coverage is measured during build and can be enforced with `pnpm run check-translations` (90% minimum).
+Proton Pulse supports 19 languages. Translation coverage is measured during build and can be enforced with `pnpm run check-translations` (90% minimum).
 
 | Language | Code | Coverage | Status |
 |---|---|---|---|
@@ -104,6 +104,10 @@ Proton Pulse supports 15 languages. Translation coverage is measured during buil
 | Русский | ru | 100.0% | pass |
 | Türkçe | tr | 100.0% | pass |
 | Українська | uk | 100.0% | pass |
+| Svenska | sv | 99.8% | pass |
+| Čeština | cs | 100.0% | pass |
+| ภาษาไทย | th | 100.0% | pass |
+| Tiếng Việt | vi | 100.0% | pass |
 | 简体中文 | zh-CN | 100.0% | pass |
 | 繁體中文 | zh-TW | 100.0% | pass |
 <!-- translation-coverage:end -->
