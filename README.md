@@ -92,15 +92,15 @@ Proton Pulse supports 10 languages. Translation coverage is measured during buil
 | Language | Code | Coverage | Status |
 |---|---|---|---|
 | English | en | 100.0% (canonical) | canonical |
-| Deutsch | de | 97.8% | pass |
-| Español | es | 97.8% | pass |
-| Français | fr | 97.8% | pass |
-| 日本語 | ja | 97.8% | pass |
-| 한국어 | ko | 97.8% | pass |
-| Português (BR) | pt-BR | 97.8% | pass |
-| Русский | ru | 97.8% | pass |
-| Türkçe | tr | 97.8% | pass |
-| 简体中文 | zh-CN | 97.8% | pass |
+| Deutsch | de | 100.0% | pass |
+| Español | es | 100.0% | pass |
+| Français | fr | 100.0% | pass |
+| 日本語 | ja | 100.0% | pass |
+| 한국어 | ko | 100.0% | pass |
+| Português (BR) | pt-BR | 100.0% | pass |
+| Русский | ru | 100.0% | pass |
+| Türkçe | tr | 100.0% | pass |
+| 简体中文 | zh-CN | 100.0% | pass |
 <!-- translation-coverage:end -->
 
 Want to help translate? See `src/lib/translations/` for the translation files.
