@@ -104,7 +104,7 @@ Proton Pulse supports 19 languages. Translation coverage is measured during buil
 | Русский | ru | 100.0% | pass |
 | Türkçe | tr | 100.0% | pass |
 | Українська | uk | 100.0% | pass |
-| Svenska | sv | 99.8% | pass |
+| Svenska | sv | 100.0% | pass |
 | Čeština | cs | 100.0% | pass |
 | ภาษาไทย | th | 100.0% | pass |
 | Tiếng Việt | vi | 100.0% | pass |
