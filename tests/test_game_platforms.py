@@ -70,11 +70,13 @@ def test_get_library_info_returns_nones_when_no_libraries() -> None:
 
 
 def test_get_library_info_returns_nones_when_manifest_missing(tmp_path: Path) -> None:
+    # When manifest is missing, falls back to primary library free space (not None)
     lib_dir = tmp_path / "steamapps"
     lib_dir.mkdir()
     with patch("lib.game_platforms._library_folders", return_value=[lib_dir]):
         info = game_platforms._get_library_info("12345")
-    assert info == {"last_updated": None, "storage_free_gb": None}
+    assert info["last_updated"] is None
+    assert info["storage_free_gb"] is not None  # fallback to primary library free space
 
 
 def test_get_library_info_parses_last_updated_and_free_space(tmp_path: Path) -> None:
