@@ -1,0 +1,31 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "strict",
+  "include": [
+    "main.py",
+    "lib",
+    "tests",
+    "scripts"
+  ],
+  "reportMissingModuleSource": false,
+  "reportMissingTypeStubs": false,
+  "executionEnvironments": [
+    {
+      "root": "tests",
+      "extraPaths": [
+        ".."
+      ],
+      "reportMissingImports": false,
+      "reportMissingParameterType": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownVariableType": false,
+      "reportUnknownParameterType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnknownLambdaType": false,
+      "reportPrivateUsage": false,
+      "reportUntypedFunctionDecorator": false
+    }
+  ]
+}

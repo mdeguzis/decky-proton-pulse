@@ -1,0 +1,309 @@
+// src/patches/gamePageBadge.tsx
+// Injects a Proton Pulse icon badge into the game library page header.
+// Pattern adapted from protondb-decky by OMGDuke (MIT):
+// https://github.com/OMGDuke/protondb-decky
+// Uses createReactTreePatcher to drill through component boundaries so that
+// the afterPatch callback receives ret from the inner component that renders
+// InnerContainer directly (not the shallow outer renderFunc output).
+import {
+  afterPatch,
+  findInReactTree,
+  appDetailsClasses,
+  createReactTreePatcher,
+  Navigation,
+  Focusable,
+} from '@decky/ui';
+import { useRef, useEffect, useLayoutEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import { callable } from '@decky/api';
+import { BrandGlyph } from '../components/BrandGlyph';
+import { dispatchNavigate, rememberReturnPath } from '../lib/pageState';
+import { getSetting } from '../lib/settings';
+import { logFrontendEvent } from '../lib/logger';
+import { getProtonDBSummary } from '../lib/protondb';
+import { RATING_COLORS } from '../lib/reportFormatters';
+import { t } from '../lib/i18n';
+
+interface GameSourceInfo { is_steam: boolean; source: string; steam_app_id_match: string | null }
+const _getGameSource = callable<[string, string], GameSourceInfo>('get_game_source');
+
+const SOURCE_COLORS: Record<string, { bg: string; color: string }> = {
+  Heroic:      { bg: '#7b3fb5', color: '#f0e0ff' },
+  Epic:        { bg: '#2d6da3', color: '#ddf0ff' },
+  GOG:         { bg: '#6b4f2a', color: '#ffe8c0' },
+  Lutris:      { bg: '#1a5c3a', color: '#c8ffe0' },
+  Bottles:     { bg: '#8c3a1a', color: '#ffe8d8' },
+  'itch.io':   { bg: '#7a1f3c', color: '#ffd0df' },
+  'Non-Steam': { bg: '#3a3a3a', color: '#cccccc' },
+};
+
+const TIER_TEXT_COLOR: Record<string, string> = {
+  platinum: '#1a1a2e',
+  gold: '#1a1a00',
+  silver: '#1a1a1a',
+  bronze: '#fff',
+  borked: '#fff',
+  pending: '#fff',
+};
+
+const BADGE_ID = 'proton-pulse-game-badge';
+const PATCHED_FLAG = '__pp_badge_patched__';
+
+function BadgeIcon({ appId }: { appId: number }) {
+  // pos drives both visibility (null = hidden) and position via React state,
+  // so the Focusable's rendered DOM coords are correct when the navmesh scans.
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [tier, setTier] = useState<string | null>(null);
+  const [sourceInfo, setSourceInfo] = useState<GameSourceInfo | null>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const appName =
+      (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appId)?.display_name ?? '';
+    getProtonDBSummary(String(appId)).then((summary) => {
+      if (summary?.tier) setTier(summary.tier);
+    }).catch(() => {/* show icon fallback */});
+    _getGameSource(String(appId), appName).then(setSourceInfo).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appId]);
+
+  function measurePos(): { top: number; left: number } | null {
+    const inner = innerRef.current;
+    if (!inner) return null;
+    const el = inner.parentElement as HTMLDivElement | null; // Focusable div
+    if (!el) return null;
+    const parent = el.parentElement; // InnerContainer
+    if (!parent) return null;
+
+    const siblings = (Array.from(parent.children) as HTMLElement[]).filter(
+      (c) => c !== el && window.getComputedStyle(c).position === 'absolute',
+    );
+    if (siblings.length === 0) return { top: 8, left: 8 };
+
+    // Use computed CSS values (same coordinate space as el.style.top/left) rather
+    // than getBoundingClientRect, which is viewport-absolute. If InnerContainer has
+    // padding the rect approach offsets our badge relative to siblings, breaking
+    // the navmesh's spatial grouping (we appear "above" instead of "to the right").
+    let maxRight = 0;
+    let sibTop = 8;
+    for (const sib of siblings) {
+      const st = window.getComputedStyle(sib);
+      const cssTop = parseFloat(st.top);
+      const cssLeft = parseFloat(st.left);
+      const cssWidth = parseFloat(st.width);
+      const rightEdge = (isNaN(cssLeft) ? 0 : cssLeft) + (isNaN(cssWidth) ? 0 : cssWidth);
+      if (rightEdge > maxRight) {
+        maxRight = rightEdge;
+        if (!isNaN(cssTop)) sibTop = cssTop;
+      }
+    }
+    const result = { top: sibTop, left: maxRight + 4 };
+    void logFrontendEvent('DEBUG', 'gamePageBadge: measurePos', {
+      sibCount: siblings.length,
+      sibs: siblings.map((sib) => {
+        const st = window.getComputedStyle(sib);
+        const r = sib.getBoundingClientRect();
+        return { cssTop: st.top, cssLeft: st.left, cssWidth: st.width, rectTop: Math.round(r.top), rectLeft: Math.round(r.left), rectRight: Math.round(r.right), rectBottom: Math.round(r.bottom) };
+      }),
+      result,
+    });
+    return result;
+  }
+
+  // Fires synchronously before paint — positions the badge so the navmesh
+  // reads the correct coordinates when it scans the DOM after mount.
+  useLayoutEffect(() => {
+    const p = measurePos();
+    if (p) setPos(p);
+    const el = innerRef.current?.parentElement;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      void logFrontendEvent('DEBUG', 'gamePageBadge: ownRect', {
+        top: Math.round(r.top), left: Math.round(r.left), right: Math.round(r.right), bottom: Math.round(r.bottom),
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Observers re-measure on ProtonDB toggle or focus-expand.
+  useEffect(() => {
+    const remeasure = () => {
+      const p = measurePos();
+      if (p) setPos(p);
+    };
+
+    const inner = innerRef.current;
+    const el = inner?.parentElement;
+    const parent = el?.parentElement ?? null;
+    if (!parent) return;
+
+    // childList: badge added/removed from DOM
+    const childObs = new MutationObserver(remeasure);
+    childObs.observe(parent, { childList: true });
+
+    // Watch each sibling for: resize (focus expand) AND style/class changes (toggle hide/show)
+    const siblingObservers: MutationObserver[] = [];
+    const resizeObs = new ResizeObserver(remeasure);
+    (Array.from(parent.children) as HTMLElement[])
+      .filter((c) => c !== el)
+      .forEach((sib) => {
+        resizeObs.observe(sib);
+        const attrObs = new MutationObserver(remeasure);
+        attrObs.observe(sib, { attributes: true, attributeFilter: ['style', 'class'] });
+        siblingObservers.push(attrObs);
+      });
+
+    return () => {
+      childObs.disconnect();
+      resizeObs.disconnect();
+      siblingObservers.forEach((o) => o.disconnect());
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isNonSteam = sourceInfo !== null && !sourceInfo.is_steam;
+  const sourceLabel = sourceInfo?.source ?? null;
+  const sourceColors = sourceLabel ? (SOURCE_COLORS[sourceLabel] ?? SOURCE_COLORS['Non-Steam']) : null;
+
+  const navigate = () => {
+    const appName =
+      (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appId)?.display_name ?? '';
+    // For non-Steam games with a title match, use the matched Steam app ID for reports
+    const effectiveAppId = isNonSteam && sourceInfo?.steam_app_id_match
+      ? parseInt(sourceInfo.steam_app_id_match, 10)
+      : appId;
+    rememberReturnPath(globalThis.location?.pathname);
+    dispatchNavigate({ tab: 'manage-game', appId: effectiveAppId, appName });
+    try {
+      Navigation.Navigate('/proton-pulse');
+    } catch {
+      // fallback
+    }
+  };
+
+  return (
+    <Focusable
+      noFocusRing={false}
+      onActivate={navigate}
+      onClick={navigate}
+      onFocus={() => {
+        void logFrontendEvent('DEBUG', 'gamePageBadge: focused via gamepad');
+        setTimeout(() => { const p = measurePos(); if (p) setPos(p); }, 120);
+      }}
+      style={{
+        position: 'absolute',
+        top: pos?.top ?? 8,
+        left: pos?.left ?? 8,
+        zIndex: 20,
+        display: 'flex',
+        gap: 4,
+        opacity: pos ? 1 : 0,
+      }}
+    >
+      {isNonSteam && sourceColors ? (
+        <div
+          ref={innerRef}
+          title={t().common.openInProtonPulse}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '5px 8px',
+            borderRadius: 4,
+            background: sourceColors.bg,
+            color: sourceColors.color,
+            fontWeight: 700,
+            fontSize: 11,
+            whiteSpace: 'nowrap',
+            letterSpacing: '0.04em',
+            cursor: 'pointer',
+          }}
+        >
+          {sourceLabel}
+        </div>
+      ) : (
+        <div
+          ref={innerRef}
+          title={t().common.openInProtonPulse}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            cursor: 'pointer',
+            padding: '5px 8px',
+            borderRadius: 4,
+            background: tier ? (RATING_COLORS[tier] ?? 'rgba(0,0,0,0.82)') : 'rgba(0,0,0,0.82)',
+            color: tier ? (TIER_TEXT_COLOR[tier] ?? '#fff') : 'white',
+            fontWeight: 600,
+            fontSize: 13,
+            letterSpacing: '0.04em',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <BrandGlyph size={16} />
+          {tier && <span>{tier.toUpperCase()}</span>}
+        </div>
+      )}
+    </Focusable>
+  );
+}
+
+/**
+ * Called from inside the working gamePagePatch route callback in index.tsx.
+ * Guard prevents stacking multiple patches on the same routeProps object.
+ */
+export function setupGamePageBadge(routeProps: any) {
+  if (routeProps[PATCHED_FLAG]) return;
+  routeProps[PATCHED_FLAG] = true;
+
+  const patchHandler = createReactTreePatcher(
+    [
+      (tree: any) =>
+        findInReactTree(tree, (x: any) => x?.props?.children?.props?.overview)?.props?.children,
+    ],
+    (_args: any[], ret?: ReactElement) => {
+      try {
+        if (!getSetting('showGamePageBadge', true)) return ret;
+
+        const appId = parseInt(
+          globalThis.location?.pathname?.match(/\/library\/app\/(\d+)/)?.[1] ?? '0',
+          10,
+        );
+        if (!appId) return ret;
+
+        const container = findInReactTree(
+          ret,
+          (x: ReactElement) =>
+            Array.isArray((x as any)?.props?.children) &&
+            typeof (x as any)?.props?.className === 'string' &&
+            (x as any).props.className.includes(appDetailsClasses?.InnerContainer ?? ''),
+        );
+
+        if (!container) {
+          void logFrontendEvent('WARNING', 'gamePageBadge: InnerContainer not found', {
+            innerClass: appDetailsClasses?.InnerContainer ?? null,
+          });
+          return ret;
+        }
+
+        const children = (container as any).props.children as any[];
+
+        if (children.some((c: any) => c?.key === BADGE_ID)) return ret;
+
+        (container as any).props.style = {
+          ...((container as any).props.style ?? {}),
+          position: (container as any).props.style?.position ?? 'relative',
+        };
+
+        children.splice(1, 0, <BadgeIcon key={BADGE_ID} appId={appId} />);
+        void logFrontendEvent('DEBUG', 'gamePageBadge: injected', { appId });
+      } catch (e) {
+        void logFrontendEvent('ERROR', 'gamePageBadge: injection error', {
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
+      return ret;
+    },
+  );
+
+  afterPatch(routeProps, 'renderFunc', patchHandler);
+}

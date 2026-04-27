@@ -1,0 +1,182 @@
+// src/lib/trackedConfigs.test.ts
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+})();
+
+vi.stubGlobal('localStorage', localStorageMock);
+
+import {
+  getTrackedConfigs,
+  addTrackedConfig,
+  removeTrackedConfig,
+  getTrackedConfig,
+  onConfigSaved,
+  type TrackedConfig,
+} from './trackedConfigs';
+
+describe('trackedConfigs', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+  });
+
+  it('returns empty array when no configs exist', () => {
+    expect(getTrackedConfigs()).toEqual([]);
+  });
+
+  it('addTrackedConfig stores a config and getTrackedConfigs retrieves it', () => {
+    const config: TrackedConfig = {
+      appId: 12345,
+      appName: 'Test Game',
+      profileName: '',
+      protonVersion: 'GE-Proton9-27',
+      launchOptions: 'PROTON_VERSION="GE-Proton9-27" %command%',
+      enabledVars: {},
+      appliedAt: Date.now(),
+    };
+    addTrackedConfig(config);
+    const all = getTrackedConfigs();
+    expect(all).toHaveLength(1);
+    expect(all[0].appId).toBe(12345);
+  });
+
+  it('addTrackedConfig upserts by appId', () => {
+    const config1: TrackedConfig = {
+      appId: 100,
+      appName: 'Game A',
+      profileName: '',
+      protonVersion: 'GE-Proton9-1',
+      launchOptions: 'PROTON_VERSION="GE-Proton9-1" %command%',
+      enabledVars: {},
+      appliedAt: 1000,
+    };
+    const config2: TrackedConfig = {
+      appId: 100,
+      appName: 'Game A',
+      profileName: '',
+      protonVersion: 'GE-Proton9-5',
+      launchOptions: 'PROTON_VERSION="GE-Proton9-5" %command%',
+      enabledVars: { MANGOHUD: '1' },
+      appliedAt: 2000,
+    };
+    addTrackedConfig(config1);
+    addTrackedConfig(config2);
+    const all = getTrackedConfigs();
+    expect(all).toHaveLength(1);
+    expect(all[0].protonVersion).toBe('GE-Proton9-5');
+    expect(all[0].enabledVars).toEqual({ MANGOHUD: '1' });
+  });
+
+  it('getTrackedConfig returns null for unknown appId', () => {
+    expect(getTrackedConfig(999)).toBeNull();
+  });
+
+  it('getTrackedConfig returns the config for a known appId', () => {
+    addTrackedConfig({
+      appId: 42,
+      appName: 'Found',
+      profileName: '',
+      protonVersion: 'GE-Proton10-1',
+      launchOptions: 'PROTON_VERSION="GE-Proton10-1" %command%',
+      enabledVars: {},
+      appliedAt: Date.now(),
+    });
+    const found = getTrackedConfig(42);
+    expect(found).not.toBeNull();
+    expect(found!.appName).toBe('Found');
+  });
+
+  it('removeTrackedConfig removes by appId', () => {
+    addTrackedConfig({
+      appId: 1,
+      appName: 'A',
+      profileName: '',
+      protonVersion: 'v1',
+      launchOptions: 'PROTON_VERSION="v1" %command%',
+      enabledVars: {},
+      appliedAt: 1000,
+    });
+    addTrackedConfig({
+      appId: 2,
+      appName: 'B',
+      profileName: '',
+      protonVersion: 'v2',
+      launchOptions: 'PROTON_VERSION="v2" %command%',
+      enabledVars: {},
+      appliedAt: 2000,
+    });
+    removeTrackedConfig(2);
+    expect(getTrackedConfigs()).toHaveLength(1);
+    expect(getTrackedConfigs()[0].appId).toBe(1);
+  });
+
+  it('removeTrackedConfig is a no-op for unknown appId', () => {
+    addTrackedConfig({
+      appId: 1,
+      appName: 'A',
+      profileName: '',
+      protonVersion: 'v1',
+      launchOptions: 'PROTON_VERSION="v1" %command%',
+      enabledVars: {},
+      appliedAt: 1000,
+    });
+    removeTrackedConfig(999);
+    expect(getTrackedConfigs()).toHaveLength(1);
+  });
+});
+
+describe('onConfigSaved hook', () => {
+  it('calls registered callbacks after addTrackedConfig', () => {
+    const spy = vi.fn();
+    const unsub = onConfigSaved(spy);
+
+    const config: TrackedConfig = {
+      appId: 777,
+      appName: 'Hook Test',
+      profileName: '',
+      protonVersion: 'GE-Proton10-1',
+      launchOptions: '%command%',
+      enabledVars: {},
+      appliedAt: Date.now(),
+    };
+    addTrackedConfig(config);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(config);
+
+    unsub();
+    addTrackedConfig({ ...config, appId: 888 });
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not block save when callback throws', () => {
+    const bad = vi.fn(() => { throw new Error('boom'); });
+    const good = vi.fn();
+    const unsub1 = onConfigSaved(bad);
+    const unsub2 = onConfigSaved(good);
+
+    addTrackedConfig({
+      appId: 999,
+      appName: 'Error Test',
+      profileName: '',
+      protonVersion: 'v1',
+      launchOptions: '%command%',
+      enabledVars: {},
+      appliedAt: Date.now(),
+    });
+
+    expect(bad).toHaveBeenCalledTimes(1);
+    expect(good).toHaveBeenCalledTimes(1);
+    expect(getTrackedConfig(999)).not.toBeNull();
+
+    unsub1();
+    unsub2();
+  });
+});

@@ -1,0 +1,170 @@
+name: Build Reusable
+
+on:
+  workflow_call:
+    inputs:
+      workflow_name:
+        required: true
+        type: string
+      runs_on:
+        required: false
+        type: string
+        default: ubuntu-latest
+      build_cmd:
+        required: false
+        type: string
+        default: make build
+      enforce_diff_coverage:
+        required: false
+        type: boolean
+        default: true
+      bootstrap_cmd:
+        required: false
+        type: string
+        default: ""
+      uv_cache_dir:
+        required: false
+        type: string
+        default: ""
+      container_image:
+        required: false
+        type: string
+        default: ""
+      uv_python_preference:
+        required: false
+        type: string
+        default: ""
+      install_cmd:
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-host:
+    if: ${{ inputs.container_image == '' }}
+    name: ${{ inputs.workflow_name }}
+    runs-on: ${{ inputs.runs_on }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync Python dependencies
+        run: uv sync --group dev
+
+      - name: Build
+        run: ${{ inputs.build_cmd }}
+
+      - name: Fetch base branch for diff coverage
+        if: ${{ github.event_name == 'pull_request' && inputs.enforce_diff_coverage }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
+
+      - name: Enforce diff coverage
+        if: ${{ github.event_name == 'pull_request' && inputs.enforce_diff_coverage }}
+        env:
+          DIFF_COVERAGE_BASE: origin/${{ github.base_ref }}
+        run: pnpm run coverage:diff
+
+  build-container:
+    if: ${{ inputs.container_image != '' }}
+    name: ${{ inputs.workflow_name }}
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ inputs.container_image }}
+
+    steps:
+      - name: Install system packages
+        if: ${{ inputs.install_cmd != '' }}
+        run: ${{ inputs.install_cmd }}
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        if: ${{ inputs.bootstrap_cmd == '' }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        if: ${{ inputs.bootstrap_cmd == '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frontend dependencies
+        if: ${{ inputs.bootstrap_cmd == '' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up Python
+        if: ${{ inputs.bootstrap_cmd == '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        if: ${{ inputs.bootstrap_cmd == '' }}
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync Python dependencies
+        if: ${{ inputs.bootstrap_cmd == '' }}
+        run: uv sync --group dev
+
+      - name: Bootstrap native container toolchain
+        if: ${{ inputs.bootstrap_cmd != '' }}
+        run: ${{ inputs.bootstrap_cmd }}
+
+      - name: Build
+        env:
+          UV_CACHE_DIR: ${{ inputs.uv_cache_dir }}
+          UV_PYTHON_PREFERENCE: ${{ inputs.uv_python_preference }}
+        run: ${{ inputs.build_cmd }}
+
+      - name: Fetch base branch for diff coverage
+        if: ${{ github.event_name == 'pull_request' && inputs.enforce_diff_coverage }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
+
+      - name: Enforce diff coverage
+        if: ${{ github.event_name == 'pull_request' && inputs.enforce_diff_coverage }}
+        env:
+          DIFF_COVERAGE_BASE: origin/${{ github.base_ref }}
+          UV_CACHE_DIR: ${{ inputs.uv_cache_dir }}
+          UV_PYTHON_PREFERENCE: ${{ inputs.uv_python_preference }}
+        run: pnpm run coverage:diff

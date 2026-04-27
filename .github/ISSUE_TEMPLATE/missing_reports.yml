@@ -1,0 +1,46 @@
+name: Missing ProtonDB Reports
+description: Report a game with missing or incomplete ProtonDB reports
+labels: ["missing-reports"]
+body:
+  - type: input
+    id: game_name
+    attributes:
+      label: Game Name
+      placeholder: e.g. Elden Ring
+    validations:
+      required: true
+  - type: input
+    id: app_id
+    attributes:
+      label: Steam AppID
+      placeholder: e.g. 1245620
+    validations:
+      required: true
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue Type
+      options:
+        - No reports at all
+        - Reports exist on ProtonDB but not shown in plugin
+        - Reports outdated / stale
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Any additional context about the missing reports
+  - type: textarea
+    id: system_info
+    attributes:
+      label: System Info
+      description: Auto-filled by the plugin when submitted from the About page
+      render: shell
+  - type: textarea
+    id: logs
+    attributes:
+      label: Plugin Logs
+      description: Auto-filled by the plugin when submitted from the About page (last 30 lines). Attach the full log file if needed.
+      render: shell

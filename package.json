@@ -1,0 +1,53 @@
+{
+  "name": "decky-proton-pulse",
+  "version": "0.9.9",
+  "description": "Decky plugin that ranks ProtonDB reports by system compatibility and applies launch options.",
+  "type": "module",
+  "scripts": {
+    "sync-version": "node scripts/sync-version.mjs",
+    "build": "node scripts/sync-version.mjs && node scripts/sync-changelog.mjs --sync-unreleased && node scripts/check-translations.mjs --no-fail && node scripts/check-ui-strings.mjs --no-fail && rollup -c",
+    "watch": "rollup -c -w",
+    "test": "vitest run",
+    "test:coverage": "pnpm exec vitest run --coverage",
+    "coverage:check": "pnpm test:coverage && UV_CACHE_DIR=${UV_CACHE_DIR:-${HOME}/.cache/uv} UV_PYTHON_PREFERENCE=${UV_PYTHON_PREFERENCE:-system} uv run --group dev python -m pytest tests --cov=main --cov=lib --cov-report=term-missing --cov-report=json:coverage/python/coverage.json --cov-report=xml:coverage/python/coverage.xml",
+    "coverage:diff": "UV_CACHE_DIR=${UV_CACHE_DIR:-${HOME}/.cache/uv} UV_PYTHON_PREFERENCE=${UV_PYTHON_PREFERENCE:-system} uv run --group dev python scripts/check_diff_coverage.py",
+    "coverage:delta": "node scripts/check-coverage-delta.mjs",
+    "coverage:summary": "node scripts/print-coverage-summary.mjs",
+    "check-translations": "node scripts/check-translations.mjs",
+    "check-ui-strings": "node scripts/check-ui-strings.mjs",
+    "coverage:badges": "node scripts/generate-coverage-badges.mjs"
+  },
+  "keywords": [
+    "decky",
+    "plugin",
+    "protondb",
+    "steam-deck",
+    "proton"
+  ],
+  "author": "mdeguzis",
+  "license": "BSD-3-Clause",
+  "devDependencies": {
+    "@decky/rollup": "^1.0.2",
+    "@decky/ui": "^4.11.0",
+    "vitest": "^2.1.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "@types/react": "19.1.1",
+    "@types/react-dom": "19.1.1",
+    "@types/webpack": "^5.28.5",
+    "rollup": "^4.53.3",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "@decky/api": "^1.1.3",
+    "react-icons": "^5.3.0",
+    "tslib": "^2.7.0"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "react-dom"
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+name: Autobuild
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-reusable.yml
+    with:
+      workflow_name: Ubuntu Build

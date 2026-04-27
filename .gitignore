@@ -1,0 +1,72 @@
+lib-cov
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.swp
+*.zip
+
+.codex
+.claude
+.superpowers/
+*/*/plans/*
+
+pids
+logs
+results
+tmp
+
+# Python bits
+py_modules
+
+# Coverage reports
+coverage
+.coverage
+
+# API keys and secrets
+.env
+
+# Dependency directory
+node_modules
+bower_components
+.pnpm-store
+
+# Editors
+.idea
+*.iml
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Ignore built ts files
+dist/
+
+__pycache__/
+*.egg-info/
+
+/.yalc
+yalc.lock
+
+.vscode/settings.json
+.cline/
+
+# Local planning / scratch docs
+docs/superpowers/specs/
+
+# Ignore output folder
+
+backend/out
+
+# Make sure to ignore any instance of the loader's decky_plugin.py
+decky_plugin.py
+
+# Ignore decky CLI for building plugins
+out
+out/*
+cli/
+cli/*
+cli/decky

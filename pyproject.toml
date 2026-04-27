@@ -1,0 +1,47 @@
+[project]
+name = "decky-proton-pulse"
+version = "0.9.9"
+requires-python = ">=3.11"
+dependencies = [
+    "aiohttp>=3.9",
+]
+
+[dependency-groups]
+dev = [
+    "diff-cover>=9.7.1",
+    "mypy>=1.20.0",
+    "pylint>=4.0.5",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "vitest>=2.0",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.pylint.main]
+max-line-length = 100
+
+[tool.pylint."messages control"]
+# R0801: the Steam path constants naturally appear in both
+# steam_paths.py and compat_tools.py
+disable = ["duplicate-code"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["main", "lib"]
+omit = [
+    "lib/compat_tools.py",
+    "lib/http_client.py",
+    "lib/lsfg_vk.py",
+    "lib/prefetch.py",
+    "lib/proton_ge.py",
+    "lib/protondb_systeminfo.py",
+    "lib/steam_paths.py",
+]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true

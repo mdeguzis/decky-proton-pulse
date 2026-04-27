@@ -1,0 +1,91 @@
+name: Build Termux
+
+# Termux Docker can only run Termux-compiled (Bionic libc) binaries.
+# Standard Linux ELFs fail (missing /lib64/ld-linux-x86-64.so.2) and
+# Android-native npm packages fail (missing /system/bin/linker64).
+# This means esbuild/rollup native binaries won't work, so frontend
+# build and tests can't run here. Other CI workflows (autobuild,
+# debian, arch, bazzite) already cover the full frontend build.
+#
+# This workflow focuses on what's Termux-specific: Python backend tests.
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    name: Termux Python Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fix workspace permissions for container
+        run: chmod -R a+rwX "$GITHUB_WORKSPACE"
+
+      - name: Run Python tests in Termux container
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            -e CI=true \
+            -e EVENT_NAME="$EVENT_NAME" \
+            -e BASE_REF="$BASE_REF" \
+            termux/termux-docker:x86_64 \
+            bash -c '
+              set -euo pipefail
+              export HOME="${HOME:-/data/data/com.termux/files/home}"
+              export PATH=/data/data/com.termux/files/usr/bin:$PATH
+              export UV_CACHE_DIR="$HOME/.cache/uv"
+              export UV_PYTHON_PREFERENCE=system
+              EVENT_NAME="${EVENT_NAME:-}"
+              BASE_REF="${BASE_REF:-}"
+
+              # Avoid pkg mirror auto-selection in CI; pin a known-good mirror
+              # and use apt directly for deterministic package resolution.
+              echo "deb https://packages-cf.termux.dev/apt/termux-main stable main" \
+                > /data/data/com.termux/files/usr/etc/apt/sources.list
+              rm -rf /data/data/com.termux/files/usr/etc/termux/chosen_mirrors
+
+              mkdir -p "$UV_CACHE_DIR"
+              apt update
+              apt full-upgrade -y
+              apt install -y git make python uv
+
+              python3 --version
+              uv --version
+
+              uv sync --group dev
+
+              # run python tests with coverage output
+              uv run python -m pytest tests \
+                --cov=main --cov=lib \
+                --cov-report=term-missing \
+                --cov-report=json:coverage/python/coverage.json \
+                --cov-report=xml:coverage/python/coverage.xml
+
+              if [ "$EVENT_NAME" = "pull_request" ] && [ -n "$BASE_REF" ]; then
+                git config --global --add safe.directory /workspace
+                git fetch origin "${BASE_REF}:${BASE_REF}"
+                # diff coverage for python only -- frontend diff coverage
+                # is handled by the other CI workflows
+                uv run diff-cover coverage/python/coverage.xml \
+                  --compare-branch="origin/${BASE_REF}" \
+                  --fail-under=80
+              fi
+            '
