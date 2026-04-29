@@ -195,6 +195,8 @@ export interface TranslationTree {
     debugLogsDescription: string;
     notifications: string;
     notificationsDescription: string;
+    toastSound?: string;
+    toastSoundDescription?: string;
     general: string;
     cloudPluginSettingsAutoSync: string;
     cloudPluginSettingsAutoSyncDescription: string;
@@ -648,7 +650,7 @@ export const en: TranslationTree = {
     debugLogs: 'Debug Logs',
     debugLogsDesc: 'Turn on verbose logging without opening Settings',
     notifications: 'Notifications',
-    notificationsDesc: 'Show Proton Pulse toast popups and sounds',
+    notificationsDesc: 'Show Proton Pulse toast notifications',
     about: (v) => `About: Proton Pulse v${v}`,
   },
   nav: {
@@ -769,7 +771,9 @@ export const en: TranslationTree = {
     debugLogs: 'Debug Logs',
     debugLogsDescription: 'Enable verbose debug logging',
     notifications: 'Notifications',
-    notificationsDescription: 'Show Proton Pulse toast notifications and sounds',
+    notificationsDescription: 'Show Proton Pulse toast notifications',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: 'General',
     cloudPluginSettingsAutoSync: 'Auto-sync plugin settings to cloud',
     cloudPluginSettingsAutoSyncDescription: 'Automatically back up Proton Pulse settings, preferences, and custom toggles when they change.',

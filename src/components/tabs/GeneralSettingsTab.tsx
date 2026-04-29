@@ -4,7 +4,7 @@ import type { GamepadEvent } from '@decky/ui';
 import { callable, openFilePicker, FileSelectionType } from '@decky/api';
 import { useEffect, useRef, useState } from 'react';
 import { getSetting, setSetting } from '../../lib/settings';
-import { NOTIFICATIONS_ENABLED_KEY, toaster } from '../../lib/notify';
+import { NOTIFICATIONS_ENABLED_KEY, TOAST_SOUND_KEY, toaster } from '../../lib/notify';
 import { logFrontendEvent, callWithTimeout } from '../../lib/logger';
 import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
@@ -290,6 +290,7 @@ export function GeneralSettingsTab() {
   const cacheStats = getCacheStats();
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
+  const [toastSoundEnabled, setToastSoundEnabled] = useState(() => getSetting(TOAST_SOUND_KEY, true));
   const [cloudAutoSync, setCloudAutoSync] = useState(() => isAutoSyncEnabled());
   const [cloudPluginSettingsAutoSync, setCloudPluginSettingsAutoSync] = useState(
     () => isPluginSettingsAutoSyncEnabled(),
@@ -753,6 +754,18 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             onChange={(enabled) => {
               setNotificationsEnabled(enabled);
               setSetting(NOTIFICATIONS_ENABLED_KEY, enabled);
+            }}
+          />
+        </div>
+        <div style={focusClipRowStyle()}>
+          <ToggleField
+            label={t().settings.toastSound}
+            description={t().settings.toastSoundDescription}
+            checked={toastSoundEnabled}
+            disabled={!notificationsEnabled}
+            onChange={(enabled) => {
+              setToastSoundEnabled(enabled);
+              setSetting(TOAST_SOUND_KEY, enabled);
             }}
           />
         </div>
