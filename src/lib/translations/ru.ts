@@ -183,6 +183,8 @@ export const ru: TranslationTree = {
     debugLogsDescription: 'Включить подробное ведение журнала отладки',
     notifications: 'Уведомления',
     notificationsDescription: 'Показывать тост-уведомления и звуки Proton Pulse',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: 'Общие',
     cloudPluginSettingsAutoSync: 'Автосинхронизация настроек плагина с облаком',
     cloudPluginSettingsAutoSyncDescription: 'Автоматически сохраняет настройки Proton Pulse, предпочтения и пользовательские переключатели при их изменении.',

@@ -153,6 +153,8 @@ export const zhCN: TranslationTree = {
     debugLogsDescription: '启用详细调试日志记录',
     notifications: '通知',
     notificationsDescription: '显示 Proton Pulse 的弹窗通知和声音',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: '常规',
     cloudPluginSettingsAutoSync: '自动将插件设置同步到云端',
     cloudPluginSettingsAutoSyncDescription: '当 Proton Pulse 的设置、偏好和自定义开关发生变化时自动备份到云端。',

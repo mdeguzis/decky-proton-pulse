@@ -153,6 +153,8 @@ export const vi: TranslationTree = {
     debugLogsDescription: 'Bật ghi nhật ký gỡ lỗi chi tiết',
     notifications: 'Thông báo',
     notificationsDescription: 'Hiển thị thông báo và âm thanh của Proton Pulse',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: 'Chung',
     cloudPluginSettingsAutoSync: 'Tự động đồng bộ cài đặt plugin với đám mây',
     cloudPluginSettingsAutoSyncDescription: 'Tự động sao lưu cài đặt, tùy chọn và công tắc tùy chỉnh của Proton Pulse khi chúng thay đổi.',

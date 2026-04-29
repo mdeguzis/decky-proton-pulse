@@ -153,6 +153,8 @@ export const th: TranslationTree = {
     debugLogsDescription: 'เปิดใช้การบันทึกการดีบักแบบละเอียด',
     notifications: 'การแจ้งเตือน',
     notificationsDescription: 'แสดงการแจ้งเตือนและเสียงของ Proton Pulse',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: 'ทั่วไป',
     cloudPluginSettingsAutoSync: 'ซิงค์การตั้งค่าปลั๊กอินกับคลาวด์โดยอัตโนมัติ',
     cloudPluginSettingsAutoSyncDescription: 'สำรองการตั้งค่า ค่าที่ต้องการ และสวิตช์ที่กำหนดเองของ Proton Pulse โดยอัตโนมัติเมื่อมีการเปลี่ยนแปลง',

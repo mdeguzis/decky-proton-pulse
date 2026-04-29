@@ -153,6 +153,8 @@ export const zhTW: TranslationTree = {
     debugLogsDescription: '啟用詳細除錯記錄',
     notifications: '通知',
     notificationsDescription: '顯示 Proton Pulse 快顯通知和聲音',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: '一般',
     cloudPluginSettingsAutoSync: '自動將外掛設定同步至雲端',
     cloudPluginSettingsAutoSyncDescription: '在 Proton Pulse 設定、偏好設定和自訂切換發生變更時自動備份。',

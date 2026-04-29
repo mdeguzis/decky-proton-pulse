@@ -153,6 +153,8 @@ export const nl: TranslationTree = {
     debugLogsDescription: 'Gedetailleerde debuglogging inschakelen',
     notifications: 'Meldingen',
     notificationsDescription: 'Proton Pulse-meldingen en geluiden weergeven',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: 'Algemeen',
     cloudPluginSettingsAutoSync: 'Plugin-instellingen automatisch synchroniseren met de cloud',
     cloudPluginSettingsAutoSyncDescription: 'Maakt automatisch een back-up van Proton Pulse-instellingen, voorkeuren en aangepaste schakelaars wanneer ze wijzigen.',

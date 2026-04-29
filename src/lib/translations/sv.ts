@@ -153,6 +153,8 @@ export const sv: TranslationTree = {
     debugLogsDescription: 'Aktivera utförlig felsökningsloggning',
     notifications: 'Notiser',
     notificationsDescription: 'Visa Proton Pulse-notiser och ljud',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: 'Allmänt',
     cloudPluginSettingsAutoSync: 'Synkronisera plugin-inställningar automatiskt med molnet',
     cloudPluginSettingsAutoSyncDescription: 'Säkerhetskopierar automatiskt Proton Pulse-inställningar, preferenser och anpassade växlar när de ändras.',

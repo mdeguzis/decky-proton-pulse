@@ -153,6 +153,8 @@ export const uk: TranslationTree = {
     debugLogsDescription: 'Увімкнути детальне журналювання налагодження',
     notifications: 'Сповіщення',
     notificationsDescription: 'Показувати спливаючі сповіщення та звуки Proton Pulse',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: 'Загальні',
     cloudPluginSettingsAutoSync: 'Автоматична синхронізація налаштувань плагіна з хмарою',
     cloudPluginSettingsAutoSyncDescription: 'Автоматично резервує налаштування, параметри та користувацькі перемикачі Proton Pulse при їх зміні.',

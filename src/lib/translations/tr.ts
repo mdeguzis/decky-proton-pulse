@@ -153,6 +153,8 @@ export const tr: TranslationTree = {
     debugLogsDescription: 'Ayrıntılı hata ayıklama günlüğünü etkinleştir',
     notifications: 'Bildirimler',
     notificationsDescription: 'Proton Pulse bildirimlerini ve seslerini göster',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: 'Genel',
     cloudPluginSettingsAutoSync: 'Eklenti ayarlarını buluta otomatik eşitle',
     cloudPluginSettingsAutoSyncDescription: 'Proton Pulse ayarları, tercihleri ve özel geçişleri değiştiğinde otomatik olarak yedekler.',

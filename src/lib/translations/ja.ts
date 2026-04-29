@@ -153,6 +153,8 @@ export const ja: TranslationTree = {
     debugLogsDescription: '詳細なデバッグログを有効にする',
     notifications: '通知',
     notificationsDescription: 'Proton Pulse のトースト通知とサウンドを表示する',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: '一般',
     cloudPluginSettingsAutoSync: 'プラグイン設定をクラウドへ自動同期',
     cloudPluginSettingsAutoSyncDescription: 'Proton Pulse の設定、各種プリファレンス、カスタムトグルが変わったときに自動でバックアップします。',

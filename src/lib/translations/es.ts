@@ -153,6 +153,8 @@ export const es: TranslationTree = {
     debugLogsDescription: 'Activar el registro de depuración detallado',
     notifications: 'Notificaciones',
     notificationsDescription: 'Mostrar notificaciones emergentes y sonidos de Proton Pulse',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: 'Ajustes generales',
     cloudPluginSettingsAutoSync: 'Sincronizar ajustes del plugin con la nube automáticamente',
     cloudPluginSettingsAutoSyncDescription: 'Hace una copia de seguridad automática de los ajustes, preferencias y toggles personalizados de Proton Pulse cuando cambian.',

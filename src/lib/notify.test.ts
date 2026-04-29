@@ -44,7 +44,7 @@ describe('toaster', () => {
     toaster.toast({ title: 'Proton Pulse', body: 'Hello' });
 
     expect(deckyToastMock).toHaveBeenCalledTimes(1);
-    expect(deckyToastMock).toHaveBeenCalledWith({ title: 'Proton Pulse', body: 'Hello' });
+    expect(deckyToastMock).toHaveBeenCalledWith({ playSound: true, title: 'Proton Pulse', body: 'Hello' });
   });
 
   it('suppresses toast calls when notifications are disabled', async () => {

@@ -153,6 +153,8 @@ export const ko: TranslationTree = {
     debugLogsDescription: '상세 디버그 로그 기록 활성화',
     notifications: '알림',
     notificationsDescription: 'Proton Pulse 토스트 알림과 소리를 표시',
+    toastSound: 'Toast sound',
+    toastSoundDescription: 'Play a sound when a toast notification appears',
     general: '일반',
     cloudPluginSettingsAutoSync: '플러그인 설정을 클라우드에 자동 동기화',
     cloudPluginSettingsAutoSyncDescription: 'Proton Pulse 설정, 환경설정, 사용자 지정 토글이 바뀔 때 자동으로 백업합니다.',

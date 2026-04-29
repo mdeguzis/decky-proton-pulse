@@ -29,6 +29,15 @@ import { ptBR } from './translations/pt-BR';
 import { ru } from './translations/ru';
 import { tr } from './translations/tr';
 import { zhCN } from './translations/zh-CN';
+import { zhTW } from './translations/zh-TW';
+import { cs } from './translations/cs';
+import { it as itLang } from './translations/it';
+import { nl } from './translations/nl';
+import { pl } from './translations/pl';
+import { sv } from './translations/sv';
+import { th } from './translations/th';
+import { uk } from './translations/uk';
+import { vi as viLang } from './translations/vi';
 import './translations/index';
 
 // ---------------------------------------------------------------------------
@@ -313,7 +322,7 @@ describe('translation function coverage', () => {
   it('invokes every translation helper function across all locales', () => {
     // include en via t() so the template functions in i18n.ts get covered
     const en = t();
-    for (const tree of [en, de, es, fr, ja, ko, ptBR, ru, tr, zhCN]) {
+    for (const tree of [en, de, es, fr, ja, ko, ptBR, ru, tr, zhCN, zhTW, cs, itLang, nl, pl, sv, th, uk, viLang]) {
       invokeAllTranslationFunctions(tree);
     }
   });
