@@ -4,13 +4,11 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Add System Requirements tab with platform info, storage free space, and i18n
-- Live Pulse report fetch from Supabase on CDN miss before nightly pipeline runs
-- Sort manage configs and edited report overrides A to Z by app name
-- Move get_grid_artwork callable out of steamApps.ts to fix @decky/manifest vitest error
-- Fallback to local Steam grid artwork for non-Steam/shortcut app banners
-- Also probe appStore for playtime, add playtime_forever field variant
-- Pass userRating as initialRating to NativePulseReportModal from Publish to Pulse
+- Use eType:40 to silence toast sound when setting is off
+- Update tests for toast sound toggle and backfill translation coverage
+- Add toast sound toggle to general settings
+- Update test to match _get_library_info fallback free-space behavior
+- Restore: recover full repo after accidental filter-repo wipe
 
 ## v0.9.8
 

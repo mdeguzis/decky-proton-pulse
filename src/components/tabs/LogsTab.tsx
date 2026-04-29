@@ -62,7 +62,7 @@ export function LogsTab() {
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-all',
           lineHeight: 1.45,
-          minHeight: 180,
+          minHeight: 250,
         }}
       >
         {latestLines || strings.noLogs}
