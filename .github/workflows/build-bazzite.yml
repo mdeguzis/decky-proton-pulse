@@ -10,27 +10,17 @@ jobs:
     name: Bazzite Build
     runs-on: ubuntu-latest
     steps:
-      - name: Free disk space
+      - name: Install crane
         run: |
-          sudo rm -rf /opt/ghc /opt/hostedtoolcache/CodeQL \
-            /usr/local/lib/android /usr/local/share/boost \
-            /usr/share/dotnet /usr/share/swift \
-            /usr/local/share/chromium /usr/local/share/powershell
-          docker system prune -af
-          df -h
+          curl -sL https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin crane
+          crane version
 
-      - name: Configure Docker vfs storage driver
+      - name: Import Bazzite as single-layer image
         run: |
-          sudo systemctl stop docker
-          echo '{"storage-driver":"vfs"}' | sudo tee /etc/docker/daemon.json
-          sudo systemctl start docker
-
-      - name: Pull and squash Bazzite image
-        run: |
-          docker pull ghcr.io/ublue-os/bazzite:latest
-          cid=$(docker create ghcr.io/ublue-os/bazzite:latest /bin/true)
-          docker export "$cid" | docker import --change 'CMD ["/bin/bash"]' - bazzite:ci
-          docker rm "$cid"
+          crane export ghcr.io/ublue-os/bazzite:latest - \
+            | docker import --change 'CMD ["/bin/bash"]' - bazzite:ci
+          docker images bazzite:ci
 
       - name: Check out repository
         uses: actions/checkout@v4
