@@ -10,6 +10,15 @@ jobs:
     name: Bazzite Build
     runs-on: ubuntu-latest
     steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /opt/ghc /opt/hostedtoolcache/CodeQL \
+            /usr/local/lib/android /usr/local/share/boost \
+            /usr/share/dotnet /usr/share/swift \
+            /usr/local/share/chromium /usr/local/share/powershell
+          docker system prune -af
+          df -h
+
       - name: Configure Docker vfs storage driver
         run: |
           sudo systemctl stop docker
