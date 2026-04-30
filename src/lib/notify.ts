@@ -20,6 +20,9 @@ export const toaster = {
     if (!notificationsEnabled()) return;
     const soundOn = toastSoundEnabled();
     void logFrontendEvent('DEBUG', '[notify] toast fired', { playSound: soundOn, sound: soundOn ? undefined : 0, rawSetting: localStorage.getItem('proton-pulse:toast-sound-enabled') });
+    // TODO: When https://github.com/SteamDeckHomebrew/decky-loader/pull/901 ships,
+    // replace the eType:40 workaround below with the proper playSound arg it exposes.
+    //
     // `playSound` and `info.sound` are both ignored by the toast React component.
     // It calls PlayNotificationSound(toastData) which looks up W[eType] in Steam's
     // hardcoded notification type map and uses W[eType].playSound to decide whether

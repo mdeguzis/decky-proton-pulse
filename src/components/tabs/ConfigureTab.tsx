@@ -14,7 +14,8 @@ import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
-import { getLaunchOptionsFromDetails, getSteamAppDetails } from '../../lib/steamApps';
+import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
+import { getGameSource } from '../../lib/gameSource';
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
 import {
   registerScreenshotAutomationHandler,
@@ -25,7 +26,6 @@ import { ReportDetailModal } from '../ReportDetailModal';
 import { RATING_COLORS } from '../../lib/reportFormatters';
 import { resolveLaunchOptionsWithPrompt, showLaunchOptionConflictPreview } from '../LaunchOptionConflictModal';
 import { t } from '../../lib/i18n';
-import { isSteamShortcutApp } from '../../lib/steamApps';
 import { addTrackedConfig } from '../../lib/trackedConfigs';
 import { parseLaunchOptions } from '../../lib/launchVars';
 import { computeCombinedTier, type PulseTierResult } from '../../lib/pulseTier';
@@ -308,19 +308,22 @@ function GameSummaryHeader({
   appName,
   reportsCount,
   combinedTier,
+  resolvedSteamAppId,
 }: {
   appId: number;
   appName: string;
   reportsCount?: number;
   combinedTier?: PulseTierResult | null;
+  resolvedSteamAppId?: number | null;
 }) {
   const extras = t().extras!;
   const isShortcut = isSteamShortcutApp(appId);
+  const headerAppId = isShortcut && resolvedSteamAppId ? resolvedSteamAppId : appId;
   const tierColor = combinedTier && combinedTier.count > 0 ? (RATING_COLORS[combinedTier.tier] ?? '#888') : null;
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
       <img
-        src={STEAM_HEADER_URL(appId)}
+        src={STEAM_HEADER_URL(headerAppId)}
         style={{ height: 40, borderRadius: 3, objectFit: 'cover' }}
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
@@ -330,7 +333,7 @@ function GameSummaryHeader({
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5' }}>
           {isShortcut
-            ? extras.nonSteamShortcut()
+            ? `${extras.nonSteamShortcut()}${resolvedSteamAppId ? ` (Steam app id: ${resolvedSteamAppId})` : ''}`
             : `${extras.appIdLabel(appId)}${typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}`}
         </div>
       </div>
@@ -477,8 +480,35 @@ class ConfigureTabErrorBoundary extends Component<ConfigureTabBoundaryProps, Con
   }
 }
 
+function lookupAppNameFromCollection(appId: number): string {
+  try {
+    const collection = (globalThis as any).collectionStore?.allAppsCollection;
+    const allApps = Array.isArray(collection?.allApps)
+      ? collection.allApps
+      : collection?.apps && Symbol.iterator in collection.apps
+        ? Array.from(collection.apps)
+        : [];
+    const entry = allApps.find((app: any) => Number(app?.appid) === appId);
+    return entry?.display_name || entry?.strDisplayName || entry?.app_name || entry?.appname || entry?.name || '';
+  } catch {
+    return '';
+  }
+}
+
 function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const extras = t().extras!;
+  const isShortcut = appId ? isSteamShortcutApp(appId) : false;
+  // When appName prop is empty for a non-Steam shortcut, try collectionStore
+  const effectiveAppName = (appName || (appId && isShortcut ? lookupAppNameFromCollection(appId) : '')) ?? '';
+  // null = resolution pending, 'none' = tried but no Steam match, number = resolved ID
+  const [resolvedSteamAppId, setResolvedSteamAppId] = useState<number | 'none' | null>(null);
+  // For non-Steam shortcuts: block data fetches until resolution completes, then
+  // use the matched Steam store app ID (or fall back to the shortcut ID if none).
+  const effectiveAppId = !isShortcut ? appId
+    : resolvedSteamAppId === null ? null
+    : resolvedSteamAppId === 'none' ? appId
+    : resolvedSteamAppId;
+
   const [reports, setReports]   = useState<CdnReport[]>([]);
   const [editedReports, setEditedReports] = useState<EditedReportEntry[]>([]);
   const [pulseReports, setPulseReports] = useState<UserConfigRow[]>([]);
@@ -567,8 +597,26 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       ? [...configFilteredReports].sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes))
       : configFilteredReports;
 
+  // For non-Steam shortcuts, resolve the matching Steam store app ID so we can
+  // fetch reports filed under the real Steam app ID (not the shortcut CRC32 ID).
   useEffect(() => {
-    if (!appId) {
+    setResolvedSteamAppId(null);
+    void logFrontendEvent('DEBUG', '[ConfigureTab] resolve effect fired', { appId, appName: effectiveAppName, isShortcut });
+    if (!appId || !isShortcut) return;
+    let cancelled = false;
+    void getGameSource(appId, effectiveAppName).then((info) => {
+      if (cancelled) return;
+      void logFrontendEvent('DEBUG', '[ConfigureTab] getGameSource result', { appId, appName: effectiveAppName, info });
+      const matched = info?.steam_app_id_match ? parseInt(info.steam_app_id_match, 10) : null;
+      const resolved = matched && Number.isFinite(matched) ? matched : 'none';
+      void logFrontendEvent('DEBUG', '[ConfigureTab] resolved steam app id', { appId, resolved });
+      setResolvedSteamAppId(resolved);
+    });
+    return () => { cancelled = true; };
+  }, [appId, effectiveAppName, isShortcut]);
+
+  useEffect(() => {
+    if (!effectiveAppId) {
       setLoading(false);
       setReports([]);
       setEditedReports([]);
@@ -585,17 +633,17 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     let cancelled = false;
     const loadT0 = Date.now();
     void logFrontendEvent('INFO', 'Manage This Game: loading started', {
-      appId,
+      appId: effectiveAppId,
       appName,
       hasSystemInfo: !!sysInfo,
       gpuVendor: sysInfo?.gpu_vendor ?? null,
     });
     setLoading(true);
     setReports([]);
-    const loaded = loadEditedReports(appId);
+    const loaded = loadEditedReports(effectiveAppId);
     setEditedReports(loaded);
     if (loaded.length > 0) {
-      upsertEditedReportIndex(appId, appName, loaded[0].report.protonVersion, loaded[0].label || '');
+      upsertEditedReportIndex(effectiveAppId, appName, loaded[0].report.protonVersion, loaded[0].label || '');
     }
     setPulseReports([]);
     setVotes({});
@@ -607,15 +655,15 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     setReportDiagnostics(null);
 
     void Promise.all([
-      getProtonDBReportsWithDiagnostics(String(appId)),
-      getVoteTotals(String(appId)),
-      getUserConfigs(String(appId)),
+      getProtonDBReportsWithDiagnostics(String(effectiveAppId)),
+      getVoteTotals(String(effectiveAppId)),
+      getUserConfigs(String(effectiveAppId)),
     ])
       .then(([reportResult, voteTotals, pulseRows]) => {
         if (cancelled) return;
         const r = reportResult.reports;
         void logFrontendEvent('INFO', `Manage This Game: loaded (${Date.now() - loadT0}ms)`, {
-          appId,
+          appId: effectiveAppId,
           appName,
           reportCount: r.length,
           pulseCount: pulseRows.length,
@@ -631,7 +679,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       .catch((error) => {
         if (cancelled) return;
         void logFrontendEvent('ERROR', `Manage This Game: load FAILED (${Date.now() - loadT0}ms)`, {
-          appId,
+          appId: effectiveAppId,
           appName,
           error: error instanceof Error ? error.message : String(error),
           durationMs: Date.now() - loadT0,
@@ -646,7 +694,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [appId, appName, sysInfo]);
+  }, [effectiveAppId, appName, sysInfo]);
 
   useEffect(() => {
     if (filterTouched) return;
@@ -913,6 +961,8 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         enabledVars: parsedVars.vars,
         appliedAt: Date.now(),
         source: 'protondb',
+        isNonSteam: isShortcut,
+        resolvedSteamAppId: typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : undefined,
       });
       void logFrontendEvent('INFO', 'Launch options applied', {
         appId,
@@ -1140,7 +1190,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} />
+      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} />
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
           <SteamSpinner />

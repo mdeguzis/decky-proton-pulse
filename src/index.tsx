@@ -41,6 +41,7 @@ import {
   onCloudConfigPushed,
 } from './lib/cloudSync';
 import { getTrackedConfigs } from './lib/trackedConfigs';
+import { getShortcutName } from './lib/gameSource';
 import { toaster } from './lib/notify';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
@@ -288,15 +289,44 @@ export default definePlugin(() => {
     const focusedAppId = extractLibraryAppId(pathname);
     if (!focusedAppId || focusedAppId === pageState.focusedAppId) return;
 
-    const focusedAppName =
-      (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(focusedAppId)?.display_name ?? '';
+    const _ov = (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(focusedAppId)
+      ?? (globalThis as any).appStore?.GetAppOverviewByAppID?.(focusedAppId)
+      ?? null;
+    let focusedAppName =
+      _ov?.display_name || _ov?.strDisplayName || _ov?.app_name || _ov?.appname || '';
+
+    // Fallback: scan collectionStore.allAppsCollection for non-Steam shortcuts
+    // where GetAppOverviewByAppID returns null
+    if (!focusedAppName) {
+      try {
+        const collection = (globalThis as any).collectionStore?.allAppsCollection;
+        const allApps = Array.isArray(collection?.allApps)
+          ? collection.allApps
+          : collection?.apps && Symbol.iterator in collection.apps
+            ? Array.from(collection.apps)
+            : [];
+        const entry = allApps.find((app: any) => Number(app?.appid) === focusedAppId);
+        focusedAppName = entry?.display_name || entry?.strDisplayName || entry?.app_name || entry?.appname || entry?.name || '';
+      } catch { /* not available */ }
+    }
+
     pageState.focusedAppId = focusedAppId;
     pageState.focusedAppName = focusedAppName;
     void logFrontendEvent('DEBUG', 'Observed focused library app route', {
       focusedAppId,
       focusedAppName,
+      ovKeys: _ov ? Object.keys(_ov).filter(k => typeof (_ov as any)[k] === 'string').slice(0, 15) : null,
       pathname,
     });
+    // For non-Steam shortcuts, also try VDF lookup and collectionStore as async fallbacks.
+    if (!focusedAppName && focusedAppId >= 2_000_000_000) {
+      void getShortcutName(focusedAppId).then((name) => {
+        if (name && pageState.focusedAppId === focusedAppId) {
+          pageState.focusedAppName = name;
+          void logFrontendEvent('DEBUG', 'Resolved non-Steam shortcut name from vdf', { focusedAppId, name });
+        }
+      });
+    }
   };
 
   syncFocusedGameFromPath();

@@ -20,6 +20,8 @@ interface Props {
   // passed, the dropdown is hidden and the value goes along silently
   autoDuration?: string;
   launchOptions?: string;
+  // For non-Steam shortcuts: the resolved Steam store app ID to submit under
+  resolvedSteamAppId?: number | null;
   closeModal?: () => void;
 }
 
@@ -130,9 +132,12 @@ export function NativePulseReportModal({
   protonVersion: initialProton = '',
   initialRating,
   autoDuration, launchOptions: initialLaunchOptions = '',
+  resolvedSteamAppId,
   closeModal,
 }: Props) {
   const isShortcut = isSteamShortcutApp(appId);
+  // For non-Steam shortcuts with a resolved Steam store ID, submit under that ID
+  const submitAppId = isShortcut && resolvedSteamAppId ? resolvedSteamAppId : appId;
 
   const [rating,   setRating]   = useState<ProtonRating | ''>((initialRating as ProtonRating | '') ?? '');
   const [proton,   setProton]   = useState(initialProton);
@@ -184,7 +189,7 @@ export function NativePulseReportModal({
     void logFrontendEvent('INFO', 'Native Pulse report submission started', { appId, appName, rating, proton });
 
     const result = await submitUserConfig({
-      appId:             String(appId),
+      appId:             String(submitAppId),
       title:             appName,
       cpu:               sysInfo.cpu,
       gpu:               sysInfo.gpu,
@@ -217,7 +222,7 @@ export function NativePulseReportModal({
     }
   };
 
-  if (isShortcut) {
+  if (isShortcut && !resolvedSteamAppId) {
     return (
       <ModalRoot onCancel={closeModal}>
         <div style={{ padding: 16, color: '#9dc4e8', fontSize: 12 }}>
@@ -235,7 +240,9 @@ export function NativePulseReportModal({
           {t().nativeReport.title}
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 12 }}>
-          {appName}{appId ? ` · App ${appId}` : ''}
+          {appName}{isShortcut && resolvedSteamAppId
+            ? ` · Non-Steam (Steam app id: ${resolvedSteamAppId})`
+            : (appId ? ` · App ${appId}` : '')}
         </div>
 
         <Focusable style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>

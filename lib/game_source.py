@@ -6,8 +6,12 @@ inferred from the executable path or launch options stored in shortcuts.vdf.
 
 from __future__ import annotations
 
+import json
 import re
+import ssl
 import struct
+import urllib.parse
+import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +57,45 @@ def find_steam_appid_by_title(title: str) -> str | None:
                         return m.group(1)
         except OSError:
             continue
+    return None
+
+
+def find_steam_appid_from_store(title: str) -> str | None:
+    """Search the Steam store API for a game whose name exactly matches title.
+
+    Falls back to this when the game is not found in any local ACF manifest
+    (e.g. Dredge added as a non-Steam shortcut from another store). Returns the
+    app_id string (e.g. "1562430") or None.
+    """
+    try:
+        encoded = urllib.parse.quote(title)
+        url = (
+            f"https://store.steampowered.com/api/storesearch/"
+            f"?term={encoded}&l=english&cc=US&infinite=1"
+        )
+        decky.logger.debug("find_steam_appid_from_store: fetching %s", url)
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        # SteamOS lacks a CA bundle accessible to Python; skip cert verification
+        # since we're calling Steam's own API from Steam's own OS.
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
+            data = json.loads(resp.read().decode())
+        title_lower = title.strip().lower()
+        names_found = [item.get("name") for item in data.get("items", [])]
+        decky.logger.debug(
+            "find_steam_appid_from_store: title=%r items=%s", title, names_found
+        )
+        for item in data.get("items", []):
+            if item.get("type") == "app" and item.get("name", "").strip().lower() == title_lower:
+                decky.logger.debug(
+                    "find_steam_appid_from_store: matched %r -> %s", title, item["id"]
+                )
+                return str(item["id"])
+        decky.logger.debug("find_steam_appid_from_store: no exact match for %r", title)
+    except Exception as exc:
+        decky.logger.warning("find_steam_appid_from_store: error for %r: %s", title, exc)
     return None
 
 
@@ -116,6 +159,33 @@ def _parse_shortcuts_vdf(path: Path) -> list[dict[str, Any]]:
             shortcuts.append(entry)
 
     return shortcuts
+
+
+def find_shortcut_name_by_appid(app_id: str) -> str | None:
+    """Find the display name of a non-Steam shortcut by matching its app_id.
+
+    The app_id in shortcuts.vdf is stored as uint32 and equals the shortcut
+    app_id the Steam client exposes (CRC32 with high bit set).
+    """
+    try:
+        numeric_id = int(app_id)
+        for vdf_path in _find_shortcuts_vdf():
+            for entry in _parse_shortcuts_vdf(vdf_path):
+                vdf_id = int(entry.get("appid", 0))
+                decky.logger.debug(
+                    "find_shortcut_name_by_appid: checking vdf_id=%s vs numeric_id=%s appname=%r",
+                    vdf_id, numeric_id, entry.get("appname"),
+                )
+                if vdf_id == numeric_id or (vdf_id | 0x80000000) == numeric_id:
+                    name = str(entry.get("appname", "")).strip()
+                    decky.logger.debug(
+                        "find_shortcut_name_by_appid: %s -> %r (vdf_id=%s)", app_id, name, vdf_id
+                    )
+                    if name:
+                        return name
+    except Exception as exc:
+        decky.logger.warning("find_shortcut_name_by_appid: error: %s", exc)
+    return None
 
 
 def _find_shortcuts_vdf() -> list[Path]:
@@ -196,17 +266,34 @@ def get_game_source(app_id: str, title: str = "") -> dict[str, Any]:
     except Exception as exc:
         decky.logger.warning("get_game_source: shortcuts parse failed: %s", exc)
 
-    # Try to find a matching Steam game by title
+    # Try to find a matching Steam game by title -- first local ACF manifests,
+    # then the Steam store API (catches games not installed locally, e.g. a
+    # non-Steam shortcut pointing to an EGS/GOG copy of a Steam-listed title).
+    # If the frontend didn't supply a title (GetAppOverviewByAppID returned null
+    # for this shortcut), look it up directly in shortcuts.vdf by app_id.
+    if not title:
+        title = find_shortcut_name_by_appid(app_id) or ""
+        decky.logger.debug("get_game_source: resolved title from vdf: %r", title)
+
+    decky.logger.debug("get_game_source: non-steam app_id=%s title=%r source=%s", app_id, title, source)
     if title:
         try:
             steam_match = find_steam_appid_by_title(title)
+            decky.logger.debug("get_game_source: local ACF match=%s for title=%r", steam_match, title)
         except Exception as exc:
-            decky.logger.warning("get_game_source: title match failed: %s", exc)
+            decky.logger.warning("get_game_source: title match (local) failed: %s", exc)
+        if not steam_match:
+            try:
+                steam_match = find_steam_appid_from_store(title)
+                decky.logger.debug("get_game_source: store match=%s for title=%r", steam_match, title)
+            except Exception as exc:
+                decky.logger.warning("get_game_source: title match (store) failed: %s", exc)
 
     result = {
         "is_steam": False,
         "source": source,
         "steam_app_id_match": steam_match,
     }
+    decky.logger.debug("get_game_source: result=%s", result)
     _source_cache[cache_key] = result
     return result

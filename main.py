@@ -377,6 +377,11 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         from lib.game_source import get_game_source as _get_source
         return _get_source(app_id, title)
 
+    async def get_shortcut_name(self, app_id: str) -> str:
+        """Return the display name of a non-Steam shortcut looked up via shortcuts.vdf."""
+        from lib.game_source import find_shortcut_name_by_appid
+        return find_shortcut_name_by_appid(app_id) or ""
+
     async def get_installed_game_stats(self) -> dict[str, Any]:
         """Return backend manifest-based installed Steam game stats."""
         return get_installed_game_stats()

@@ -15,7 +15,6 @@ import {
 } from '@decky/ui';
 import { useRef, useEffect, useLayoutEffect, useState } from 'react';
 import type { ReactElement } from 'react';
-import { callable } from '@decky/api';
 import { BrandGlyph } from '../components/BrandGlyph';
 import { dispatchNavigate, rememberReturnPath } from '../lib/pageState';
 import { getSetting } from '../lib/settings';
@@ -23,9 +22,7 @@ import { logFrontendEvent } from '../lib/logger';
 import { getProtonDBSummary } from '../lib/protondb';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { t } from '../lib/i18n';
-
-interface GameSourceInfo { is_steam: boolean; source: string; steam_app_id_match: string | null }
-const _getGameSource = callable<[string, string], GameSourceInfo>('get_game_source');
+import { type GameSourceInfo, getGameSource } from '../lib/gameSource';
 
 const SOURCE_COLORS: Record<string, { bg: string; color: string }> = {
   Heroic:      { bg: '#7b3fb5', color: '#f0e0ff' },
@@ -63,7 +60,7 @@ function BadgeIcon({ appId }: { appId: number }) {
     getProtonDBSummary(String(appId)).then((summary) => {
       if (summary?.tier) setTier(summary.tier);
     }).catch(() => {/* show icon fallback */});
-    _getGameSource(String(appId), appName).then(setSourceInfo).catch(() => {});
+    void getGameSource(appId, appName).then((info) => { if (info) setSourceInfo(info); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId]);
 

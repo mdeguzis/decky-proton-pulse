@@ -33,6 +33,10 @@ export interface TrackedConfig {
   kernel?: string | null;
   // Game source
   isNonSteam?: boolean;
+  // Resolved Steam store app ID for non-Steam shortcuts (e.g. a GOG/EGS copy
+  // of a game that also exists on Steam). Reports are fetched and submitted
+  // using this ID instead of the shortcut's CRC32 app ID.
+  resolvedSteamAppId?: number;
 }
 
 export function getTrackedConfigs(): TrackedConfig[] {

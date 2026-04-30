@@ -585,8 +585,11 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           const syncStatus: SyncStatus = cloudLoading ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
           const cloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
           const isPublished = cloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
+          const appIdLabel = isShortcut
+            ? `${extras.nonSteamShortcut()}${config.resolvedSteamAppId ? ` (Steam app id: ${config.resolvedSteamAppId})` : ''}`
+            : extras.appIdLabel(config.appId);
           const metaParts = [
-            isShortcut ? extras.nonSteamShortcut() : extras.appIdLabel(config.appId),
+            appIdLabel,
             config.protonVersion,
             t().configManager.appliedAgo(relativeTime(config.appliedAt)),
           ].filter(Boolean).join(' · ');
