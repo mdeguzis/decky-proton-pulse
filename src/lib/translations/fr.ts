@@ -273,6 +273,7 @@ export const fr: TranslationTree = {
   configManager: {
     title: 'Profils enregistrés',
     createConfig: 'Créer une configuration',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Configurer le jeu actuel',
     emptyState: 'Aucune configuration pour le moment. Appliquez un rapport depuis Gérer ce jeu pour commencer.',
     deleteConfirm: (name) => `Supprimer la configuration de ${name} ? Les options de lancement du jeu seront effacées.`,

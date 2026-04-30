@@ -273,6 +273,7 @@ export const nl: TranslationTree = {
   configManager: {
     title: 'Configuraties',
     createConfig: 'Configuratie aanmaken',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Huidig spel configureren',
     emptyState: 'Geen configuraties. Pas een rapport toe onder "Dit spel beheren" om te beginnen.',
     deleteConfirm: (name) => `Configuratie voor ${name} verwijderen? De startopties van het spel worden gereset.`,

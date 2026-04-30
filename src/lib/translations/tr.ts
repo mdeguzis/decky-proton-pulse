@@ -273,6 +273,7 @@ export const tr: TranslationTree = {
   configManager: {
     title: 'Yapılandırmalar',
     createConfig: 'Yapılandırma oluştur',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Mevcut oyunu yapılandır',
     emptyState: 'Henüz yapılandırma yok. Başlamak için Bu Oyunu Yönet bölümünden bir rapor uygulayın.',
     deleteConfirm: (name) => `${name} yapılandırmasını silmek istiyor musunuz? Oyunun başlatma seçenekleri temizlenecektir.`,

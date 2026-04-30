@@ -273,6 +273,7 @@ export const th: TranslationTree = {
   configManager: {
     title: 'การตั้งค่า',
     createConfig: 'สร้างการตั้งค่า',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'ตั้งค่าเกมปัจจุบัน',
     emptyState: 'ไม่มีการตั้งค่า ใช้รายงานใน "จัดการเกมนี้" เพื่อเริ่มต้น',
     deleteConfirm: (name) => `ลบการตั้งค่าสำหรับ ${name}? ตัวเลือกการเปิดใช้งานของเกมจะถูกรีเซ็ต`,

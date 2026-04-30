@@ -273,6 +273,7 @@ export const uk: TranslationTree = {
   configManager: {
     title: 'Конфігурації',
     createConfig: 'Створити конфігурацію',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Налаштувати поточну гру',
     emptyState: 'Конфігурацій немає. Застосуйте звіт у розділі «Керування цією грою», щоб почати.',
     deleteConfirm: (name) => `Видалити конфігурацію для ${name}? Параметри запуску гри буде скинуто.`,

@@ -273,6 +273,7 @@ export const zhCN: TranslationTree = {
   configManager: {
     title: '配置管理',
     createConfig: '创建配置',
+    filterGames: 'Filter games...',
     configureCurrentGame: '配置当前游戏',
     emptyState: '暂无配置。前往「管理此游戏」应用报告以开始使用。',
     deleteConfirm: (name) => `删除 ${name} 的配置？游戏的启动选项将被清除。`,

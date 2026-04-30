@@ -1,6 +1,6 @@
 // src/components/tabs/ManageTab.tsx
 import { useState, useEffect, useRef } from 'react';
-import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, GamepadButton } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, GamepadButton, TextField } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '../../lib/notify';
 import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
@@ -82,6 +82,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   const [cloudLoading, setCloudLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [filterText, setFilterText] = useState('');
 
   const refresh = () => {
     setConfigs(getTrackedConfigs());
@@ -279,13 +280,16 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   const displayName = (config: TrackedConfig): string =>
     config.appName || resolvedNames[config.appId] || `App ${config.appId}`;
 
-  const sorted = [...configs].sort((a, b) => {
-    if (appId && a.appId === appId) return -1;
-    if (appId && b.appId === appId) return 1;
-    const nameA = (a.appName || resolvedNames[a.appId] || `App ${a.appId}`).toLowerCase();
-    const nameB = (b.appName || resolvedNames[b.appId] || `App ${b.appId}`).toLowerCase();
-    return nameA.localeCompare(nameB);
-  });
+  const filterLower = filterText.toLowerCase();
+  const sorted = [...configs]
+    .filter((c) => !filterLower || (c.appName || resolvedNames[c.appId] || `App ${c.appId}`).toLowerCase().includes(filterLower))
+    .sort((a, b) => {
+      if (appId && a.appId === appId) return -1;
+      if (appId && b.appId === appId) return 1;
+      const nameA = (a.appName || resolvedNames[a.appId] || `App ${a.appId}`).toLowerCase();
+      const nameB = (b.appName || resolvedNames[b.appId] || `App ${b.appId}`).toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
   const handleDelete = (config: TrackedConfig) => {
     showModal(
@@ -507,19 +511,23 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
 
   return (
     <Focusable onGamepadDirection={handleRootDirection} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ marginBottom: 12 }}>
-        <DialogButton onClick={handleCreate}>
+      <Focusable flow-children="horizontal" style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <DialogButton onClick={handleCreate} style={{ flex: 1, fontSize: 11, padding: '6px 4px', whiteSpace: 'nowrap' }}>
           {t().configManager.createConfig}
         </DialogButton>
-      </div>
-      <Focusable flow-children="horizontal" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <DialogButton onClick={handleSyncAll} disabled={syncing || restoring} style={{ flex: 1 }}>
+        <DialogButton onClick={handleSyncAll} disabled={syncing || restoring} style={{ flex: 1, fontSize: 11, padding: '6px 4px', whiteSpace: 'nowrap' }}>
           {syncing ? t().configManager.syncingCloud : t().configManager.syncAllToCloud}
         </DialogButton>
-        <DialogButton onClick={handleRestoreCloud} disabled={syncing || restoring} style={{ flex: 1 }}>
+        <DialogButton onClick={handleRestoreCloud} disabled={syncing || restoring} style={{ flex: 1, fontSize: 11, padding: '6px 4px', whiteSpace: 'nowrap' }}>
           {restoring ? t().configManager.restoringFromCloud : t().configManager.restoreFromCloud}
         </DialogButton>
       </Focusable>
+      <TextField
+        placeholder={t().configManager.filterGames}
+        value={filterText}
+        onChange={(e) => setFilterText(e.target.value)}
+        style={{ marginBottom: 12 }}
+      />
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {sorted.map((config) => {
           const isCurrent = appId === config.appId;

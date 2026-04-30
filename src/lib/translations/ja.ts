@@ -273,6 +273,7 @@ export const ja: TranslationTree = {
   configManager: {
     title: '設定',
     createConfig: '設定を作成',
+    filterGames: 'Filter games...',
     configureCurrentGame: '現在のゲームを設定',
     emptyState: 'まだ設定がありません。「このゲームを管理」からレポートを適用して始めましょう。',
     deleteConfirm: (name) => `${name}の設定を削除しますか？ゲームの起動オプションがクリアされます。`,

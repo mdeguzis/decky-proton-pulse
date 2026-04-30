@@ -4,6 +4,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Increase live log height
 - Use eType:40 to silence toast sound when setting is off
 - Update tests for toast sound toggle and backfill translation coverage
 - Add toast sound toggle to general settings

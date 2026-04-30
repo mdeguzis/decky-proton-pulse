@@ -303,6 +303,7 @@ export const ru: TranslationTree = {
   configManager: {
     title: 'Конфигурации',
     createConfig: 'Создать конфигурацию',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Настроить текущую игру',
     emptyState: 'Конфигураций пока нет. Примените отчёт в разделе «Управление этой игрой», чтобы начать.',
     deleteConfirm: (name) => `Удалить конфигурацию для ${name}? Параметры запуска игры будут сброшены.`,

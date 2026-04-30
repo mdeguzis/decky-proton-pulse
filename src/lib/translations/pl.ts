@@ -273,6 +273,7 @@ export const pl: TranslationTree = {
   configManager: {
     title: 'Konfiguracje',
     createConfig: 'Utwórz konfigurację',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Skonfiguruj bieżącą grę',
     emptyState: 'Brak konfiguracji. Zastosuj raport w sekcji "Zarządzaj tą grą", aby rozpocząć.',
     deleteConfirm: (name) => `Usunąć konfigurację dla ${name}? Opcje uruchamiania gry zostaną zresetowane.`,

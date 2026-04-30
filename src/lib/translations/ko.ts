@@ -273,6 +273,7 @@ export const ko: TranslationTree = {
   configManager: {
     title: '구성',
     createConfig: '구성 만들기',
+    filterGames: 'Filter games...',
     configureCurrentGame: '현재 게임 구성',
     emptyState: '아직 구성이 없습니다. 이 게임 관리에서 보고서를 적용하여 시작하세요.',
     deleteConfirm: (name) => `${name} 구성을 삭제하시겠습니까? 게임의 실행 옵션이 초기화됩니다.`,

@@ -315,6 +315,7 @@ export interface TranslationTree {
   configManager: {
     title: string;
     createConfig: string;
+    filterGames: string;
     configureCurrentGame: string;
     emptyState: string;
     deleteConfirm: (gameName: string) => string;
@@ -892,6 +893,7 @@ export const en: TranslationTree = {
   configManager: {
     title: 'Configurations',
     createConfig: 'Create Config',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Configure Current Game',
     emptyState: 'No saved configurations yet. Apply a report from Manage This Game to get started.',
     deleteConfirm: (name) => `Delete config for ${name}? This will clear the game's launch options.`,

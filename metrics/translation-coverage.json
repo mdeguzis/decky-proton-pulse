@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 90,
-  "totalKeys": 526,
+  "totalKeys": 527,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 526,
-      "total": 526,
+      "translated": 527,
+      "total": 527,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -17,8 +17,8 @@
       "code": "de",
       "name": "Deutsch",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -41,7 +41,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -49,8 +50,8 @@
       "code": "es",
       "name": "Español",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -73,7 +74,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -81,8 +83,8 @@
       "code": "fr",
       "name": "Français",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -105,7 +107,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -113,8 +116,8 @@
       "code": "it",
       "name": "Italiano",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -137,7 +140,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -145,8 +149,8 @@
       "code": "ja",
       "name": "日本語",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -169,7 +173,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -177,8 +182,8 @@
       "code": "ko",
       "name": "한국어",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -201,7 +206,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -209,8 +215,8 @@
       "code": "nl",
       "name": "Nederlands",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -233,7 +239,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -241,8 +248,8 @@
       "code": "pl",
       "name": "Polski",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -265,7 +272,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -273,8 +281,8 @@
       "code": "pt-BR",
       "name": "Português (BR)",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -297,7 +305,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -305,8 +314,8 @@
       "code": "ru",
       "name": "Русский",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -329,7 +338,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -337,8 +347,8 @@
       "code": "tr",
       "name": "Türkçe",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -361,7 +371,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -369,8 +380,8 @@
       "code": "uk",
       "name": "Українська",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -393,7 +404,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -401,8 +413,8 @@
       "code": "sv",
       "name": "Svenska",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -425,7 +437,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -433,8 +446,8 @@
       "code": "cs",
       "name": "Čeština",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -457,7 +470,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -465,8 +479,8 @@
       "code": "th",
       "name": "ภาษาไทย",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -489,7 +503,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -497,8 +512,8 @@
       "code": "vi",
       "name": "Tiếng Việt",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -521,7 +536,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -529,8 +545,8 @@
       "code": "zh-CN",
       "name": "简体中文",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -553,7 +569,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     },
@@ -561,8 +578,8 @@
       "code": "zh-TW",
       "name": "繁體中文",
       "translated": 505,
-      "total": 526,
-      "coveragePercent": 96,
+      "total": 527,
+      "coveragePercent": 95.8,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "nav.systemRequirements",
@@ -585,7 +602,8 @@
         "detail.sysReqStatus",
         "settings.toastSound",
         "settings.toastSoundDescription",
-        "compatTools.info"
+        "compatTools.info",
+        "configManager.filterGames"
       ],
       "typeMismatches": []
     }

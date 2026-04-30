@@ -273,6 +273,7 @@ export const cs: TranslationTree = {
   configManager: {
     title: 'Konfigurace',
     createConfig: 'Vytvořit konfiguraci',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Konfigurovat aktuální hru',
     emptyState: 'Žádné konfigurace. Použijte zprávu v části "Spravovat tuto hru" pro začátek.',
     deleteConfirm: (name) => `Smazat konfiguraci pro ${name}? Možnosti spuštění hry budou obnoveny.`,

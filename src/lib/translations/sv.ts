@@ -273,6 +273,7 @@ export const sv: TranslationTree = {
   configManager: {
     title: 'Konfigurationer',
     createConfig: 'Skapa konfiguration',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Konfigurera nuvarande spel',
     emptyState: 'Inga konfigurationer. Tillämpa en rapport under "Hantera det här spelet" för att börja.',
     deleteConfirm: (name) => `Ta bort konfiguration för ${name}? Spelets startalternativ återställs.`,

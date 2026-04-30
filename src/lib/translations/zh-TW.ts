@@ -273,6 +273,7 @@ export const zhTW: TranslationTree = {
   configManager: {
     title: '設定',
     createConfig: '建立設定',
+    filterGames: 'Filter games...',
     configureCurrentGame: '設定目前遊戲',
     emptyState: '尚無設定，在「管理此遊戲」中套用報告以開始。',
     deleteConfirm: (name) => `刪除 ${name} 的設定？遊戲的啟動選項將被重設。`,

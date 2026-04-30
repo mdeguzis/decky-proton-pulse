@@ -273,6 +273,7 @@ export const vi: TranslationTree = {
   configManager: {
     title: 'Cấu hình',
     createConfig: 'Tạo cấu hình',
+    filterGames: 'Filter games...',
     configureCurrentGame: 'Cấu hình trò chơi hiện tại',
     emptyState: 'Không có cấu hình. Áp dụng báo cáo trong "Quản lý trò chơi này" để bắt đầu.',
     deleteConfirm: (name) => `Xóa cấu hình cho ${name}? Tùy chọn khởi chạy của trò chơi sẽ được đặt lại.`,
