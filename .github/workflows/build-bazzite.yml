@@ -7,9 +7,39 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/build-reusable.yml
-    with:
-      workflow_name: Bazzite Build
-      container_image: fedora:41
-      install_cmd: |
-        dnf install -y bash ca-certificates curl git make rsync unzip xz
+    name: Bazzite Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure Docker vfs storage driver
+        run: |
+          sudo systemctl stop docker
+          echo '{"storage-driver":"vfs"}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl start docker
+
+      - name: Pull and squash Bazzite image
+        run: |
+          docker pull ghcr.io/ublue-os/bazzite:latest
+          cid=$(docker create ghcr.io/ublue-os/bazzite:latest /bin/true)
+          docker export "$cid" | docker import --change 'CMD ["/bin/bash"]' - bazzite:ci
+          docker rm "$cid"
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build inside Bazzite container
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            bazzite:ci \
+            bash -c "
+              set -euo pipefail
+              dnf install -y bash ca-certificates curl git make rsync unzip xz nodejs npm python3 python3-pip &&
+              npm install -g pnpm@9 &&
+              pip3 install uv --break-system-packages &&
+              pnpm install --frozen-lockfile &&
+              uv sync --group dev &&
+              make build
+            "
