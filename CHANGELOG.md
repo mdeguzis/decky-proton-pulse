@@ -4,6 +4,15 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Replace Bazzite workflow with fedora:latest to auto-track stable releases
+- Use standalone pnpm and uv installers to avoid OSTree /usr/local symlink issue
+- Use crane export to import Bazzite as single-layer image
+- Free runner disk space before vfs pull to avoid ENOSPC
+- Pull and squash real Bazzite image to bypass layer limit
+- Switch to fedora:41 to fix max depth exceeded layer error
+- Add published/draft badge, info modal, and restore-overwrite behavior
+- Add game filter and consolidate action buttons on one row
+- Add right-side focus highlight and left-align hint text
 - Increase live log height
 - Use eType:40 to silence toast sound when setting is off
 - Update tests for toast sound toggle and backfill translation coverage

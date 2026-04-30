@@ -54,6 +54,35 @@ jobs:
       - name: Collect and enforce coverage
         run: make coverage
 
+      - name: Generate OS version badges
+        run: |
+          mkdir -p coverage/site/badges
+
+          badge() {
+            local file="$1" label="$2" message="$3" color="$4"
+            printf '{"schemaVersion":1,"label":"%s","message":"%s","color":"%s"}\n' \
+              "$label" "$message" "$color" > "coverage/site/badges/$file"
+          }
+
+          # Ubuntu -- host runner, no container pull needed
+          UBUNTU_VER=$(lsb_release -sr 2>/dev/null || echo '?')
+          badge "os-ubuntu.json"   "ubuntu:latest"      "$UBUNTU_VER"  "e95420"
+
+          # Fedora
+          FEDORA_VER=$(docker run --rm fedora:latest bash -c \
+            'source /etc/os-release && echo "$VERSION_ID"' 2>/dev/null || echo '?')
+          badge "os-fedora.json"   "fedora:latest"      "$FEDORA_VER"  "3c6eb4"
+
+          # Debian
+          DEBIAN_VER=$(docker run --rm debian:12 bash -c \
+            'source /etc/os-release && echo "$VERSION_ID"' 2>/dev/null || echo '?')
+          badge "os-debian.json"   "debian:12"          "$DEBIAN_VER"  "a80030"
+
+          # Arch Linux (rolling -- VERSION_ID is the image datestamp)
+          ARCH_VER=$(docker run --rm archlinux:latest bash -c \
+            'source /etc/os-release && echo "${VERSION_ID:-rolling}"' 2>/dev/null || echo 'rolling')
+          badge "os-arch.json"     "archlinux:latest"   "$ARCH_VER"    "1793d1"
+
       - name: Set up Pages
         uses: actions/configure-pages@v5
 

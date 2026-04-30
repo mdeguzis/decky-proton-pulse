@@ -1,13 +1,13 @@
 # Decky Proton Pulse
 
-| Autobuild | Status |
-|---|---|
-| Ubuntu | [![Ubuntu Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml) |
-| Debian | [![Debian Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml) |
-| Arch Linux | [![Arch Linux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml) |
-| Fedora | [![Fedora Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-fedora.yml) |
-| Termux | [![Termux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml) |
-| Windows toolchain | [![Windows Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml) |
+| Autobuild | Status | OS Version |
+|---|---|---|
+| Ubuntu | [![Ubuntu Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml) | [![Ubuntu OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-ubuntu.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
+| Debian | [![Debian Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml) | [![Debian OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-debian.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
+| Arch Linux | [![Arch Linux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml) | [![Arch Linux OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-arch.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
+| Fedora | [![Fedora Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-fedora.yml) | [![Fedora OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-fedora.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
+| Termux | [![Termux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml) | |
+| Windows toolchain | [![Windows Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml) | |
 
 Windows CI currently validates that the repo toolchain can install and build on a GitHub-hosted Windows runner. It is not a claim that the Decky plugin runtime or hardware-detection backend is fully supported on Windows.
 
