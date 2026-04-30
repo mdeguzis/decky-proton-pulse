@@ -349,3 +349,38 @@ describe('deleteMyReport', () => {
     expect(result.error).toMatch(/socket closed/);
   });
 });
+
+describe('getMySubmittedAppIds', () => {
+  it('returns app IDs from both client_id and proton_pulse_user_id queries', async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ app_id: '100' }, { app_id: '200' }]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ app_id: '200' }, { app_id: '300' }]), { status: 200 }));
+
+    const { getMySubmittedAppIds } = await import('./userConfigs');
+    const result = await getMySubmittedAppIds();
+
+    expect(result).toEqual(new Set(['100', '200', '300']));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns only client_id results when no proton_pulse_user_id is linked', async () => {
+    const { getLinkedProtonPulseUserId } = await import('./protonPulseAccount');
+    vi.mocked(getLinkedProtonPulseUserId).mockReturnValueOnce(null);
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([{ app_id: '42' }]), { status: 200 }));
+
+    const { getMySubmittedAppIds } = await import('./userConfigs');
+    const result = await getMySubmittedAppIds();
+
+    expect(result).toEqual(new Set(['42']));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns empty set when fetch throws', async () => {
+    fetchMock.mockRejectedValue(new Error('network error'));
+
+    const { getMySubmittedAppIds } = await import('./userConfigs');
+    const result = await getMySubmittedAppIds();
+
+    expect(result).toEqual(new Set());
+  });
+});

@@ -416,9 +416,10 @@ describe('getCloudSyncStatus', () => {
 });
 
 describe('restoreCloudConfigs', () => {
-  it('restores cloud configs that dont exist locally', async () => {
-    mockGetTrackedConfigs.mockReturnValue([]);
+  it('overwrites local configs that exist in the cloud', async () => {
+    const localCfg = makeConfig({ appId: 500, appName: 'Local Game' });
     const cloudCfg = makeConfig({ appId: 500, appName: 'Cloud Game' });
+    mockGetTrackedConfigs.mockReturnValue([localCfg]);
     mockRestRequest.mockResolvedValueOnce({
       data: [
         { voter_id: 'abc123voterId', app_id: 500, app_name: 'Cloud Game', config: cloudCfg, updated_at: '2026-04-11T00:00:00Z' },
@@ -434,13 +435,12 @@ describe('restoreCloudConfigs', () => {
     expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudCfg);
   });
 
-  it('skips configs that already exist locally', async () => {
-    const localCfg = makeConfig({ appId: 100, appName: 'Local Game' });
-    mockGetTrackedConfigs.mockReturnValue([localCfg]);
+  it('skips cloud configs that have no matching local entry', async () => {
+    mockGetTrackedConfigs.mockReturnValue([]);
 
     mockRestRequest.mockResolvedValueOnce({
       data: [
-        { voter_id: 'abc123voterId', app_id: 100, app_name: 'Local Game', config: localCfg, updated_at: '2026-04-11T00:00:00Z' },
+        { voter_id: 'abc123voterId', app_id: 100, app_name: 'Cloud Only Game', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T00:00:00Z' },
       ],
       error: null,
       status: 200,
@@ -463,7 +463,8 @@ describe('restoreCloudConfigs', () => {
   });
 
   it('counts failed restores when a local insert throws', async () => {
-    mockGetTrackedConfigs.mockReturnValue([]);
+    const localCfg = makeConfig({ appId: 600, appName: 'Local Game' });
+    mockGetTrackedConfigs.mockReturnValue([localCfg]);
     mockAddTrackedConfig.mockImplementationOnce(() => {
       throw new Error('disk full');
     });

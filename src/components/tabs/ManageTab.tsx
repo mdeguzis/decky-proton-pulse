@@ -28,7 +28,9 @@ import {
   type CloudConfigRow,
   type SyncStatus,
 } from '../../lib/cloudSync';
-import { deleteMyReport } from '../../lib/userConfigs';
+import { deleteMyReport, getMySubmittedAppIds } from '../../lib/userConfigs';
+import { getVoterId } from '../../lib/voting';
+import { getLinkedProtonPulseUserId } from '../../lib/protonPulseAccount';
 import { getSetting } from '../../lib/settings';
 import { clearEditedReports, getEditedReportIndex, removeFromEditedReportIndex, upsertEditedReportIndex, type EditedReportIndexEntry } from './ConfigureTab';
 import { bucketPlaytimeMinutes, getEffectivePlaytimeMinutes } from '../../lib/playtime';
@@ -62,6 +64,12 @@ function GameBanner({ appId, style }: { appId: number; style?: React.CSSProperti
   return <img src={src} style={style} onError={handleError} />;
 }
 
+function formatDate(value: number | string | null | undefined): string {
+  if (!value) return '--';
+  const d = typeof value === 'number' ? new Date(value) : new Date(value);
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
 function relativeTime(timestamp: number): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
   if (seconds < 60) return '<1m';
@@ -83,6 +91,9 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   const [syncing, setSyncing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [filterText, setFilterText] = useState('');
+  const [publishedAppIds, setPublishedAppIds] = useState<Set<string>>(new Set());
+  const [clientId, setClientId] = useState<string | null>(null);
+  const linkedUserId = getLinkedProtonPulseUserId();
 
   const refresh = () => {
     setConfigs(getTrackedConfigs());
@@ -132,6 +143,11 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   }, []);
   useEffect(() => {
     void refreshCloud();
+  }, []);
+
+  useEffect(() => {
+    void getMySubmittedAppIds().then(setPublishedAppIds);
+    void getVoterId().then(setClientId);
   }, []);
 
   // Auto-sync fires pushConfig off in the background when a config is saved.
@@ -458,6 +474,36 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
     const syncLabel = cloudLoading
       ? t().configManager.syncingCloud
       : (menuSyncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced);
+    const menuCloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
+    const menuIsPublished = menuCloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
+
+    const infoRows: { label: string; value: string }[] = [
+      { label: t().configManager.infoApplied, value: formatDate(config.appliedAt) },
+      { label: t().configManager.infoUploaded, value: menuCloudRow ? formatDate(menuCloudRow.updated_at) : '--' },
+      { label: t().configManager.infoPublished, value: menuIsPublished ? t().common.yes : t().common.no },
+      { label: t().configManager.infoLinkedProfile, value: linkedUserId ? t().common.yes : t().common.no },
+      { label: t().configManager.infoClientId, value: clientId ?? '--' },
+    ];
+    const infoTitle = displayName(config);
+    const handleInfo = () => showModal(
+      <ConfirmModal
+        strTitle={infoTitle}
+        strDescription={
+          <div>
+            {infoRows.map(({ label, value }) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <span style={{ color: '#7a9bb5', fontWeight: 600 }}>{label}</span>
+                <span>{value}</span>
+              </div>
+            ))}
+          </div> as any
+        }
+        strOKButtonText={t().common.close}
+        bAlertDialog
+        onOK={() => {}}
+      />,
+    );
+
     showContextMenu(
       <Menu label={displayName(config)}>
         {/* Informational header, disabled so it's not focusable but the
@@ -466,6 +512,9 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           <span style={{ color: menuSyncStatus === 'synced' ? '#4caf50' : '#f59e0b' }}>
             {`${t().configManager.cloudStatusLabel}: ${syncLabel}`}
           </span>
+        </MenuItem>
+        <MenuItem onClick={handleInfo}>
+          {t().configManager.infoAction}
         </MenuItem>
         <MenuItem onClick={() => handleEdit(config)}>
           {t().common.edit}
@@ -534,6 +583,8 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           const name = displayName(config);
           const isShortcut = isSteamShortcutApp(config.appId);
           const syncStatus: SyncStatus = cloudLoading ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
+          const cloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
+          const isPublished = cloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
           const metaParts = [
             isShortcut ? extras.nonSteamShortcut() : extras.appIdLabel(config.appId),
             config.protonVersion,
@@ -577,6 +628,25 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
                       }}
                     >
                       {syncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced}
+                    </span>
+                  )}
+                  {!isShortcut && (
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        fontSize: 9,
+                        fontWeight: 700,
+                        padding: '1px 6px',
+                        borderRadius: 999,
+                        marginLeft: 4,
+                        verticalAlign: 'middle',
+                        background: isPublished ? 'rgba(76,175,80,0.18)' : 'rgba(120,120,120,0.18)',
+                        color: isPublished ? '#4caf50' : '#888',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.3,
+                      }}
+                    >
+                      {isPublished ? t().configManager.published : t().configManager.draft}
                     </span>
                   )}
                 </div>

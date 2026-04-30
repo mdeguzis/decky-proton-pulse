@@ -55,6 +55,8 @@ export interface TranslationTree {
     clear: string;
     reset: string;
     close: string;
+    yes: string;
+    no: string;
     filters: string;
     sort: string;
     shown: (count: number) => string;
@@ -321,6 +323,12 @@ export interface TranslationTree {
     deleteConfirm: (gameName: string) => string;
     deleteConfirmTitle: string;
     deleteAction: string;
+    infoAction: string;
+    infoApplied: string;
+    infoUploaded: string;
+    infoPublished: string;
+    infoLinkedProfile: string;
+    infoClientId: string;
     applied: string;
     appliedAgo: (time: string) => string;
     noConfigs: string;
@@ -366,6 +374,8 @@ export interface TranslationTree {
     configTypeProtondbEdited: string;
     synced: string;
     notSynced: string;
+    published: string;
+    draft: string;
     cloudStatusLabel: string;
     uploadToCloud: string;
     uploadingToCloud: string;
@@ -633,6 +643,8 @@ export const en: TranslationTree = {
     clear: 'Clear',
     reset: 'Reset',
     close: 'Close',
+    yes: 'Yes',
+    no: 'No',
     filters: 'Filters',
     sort: 'Sort',
     shown: (n) => `${n} shown`,
@@ -899,6 +911,12 @@ export const en: TranslationTree = {
     deleteConfirm: (name) => `Delete config for ${name}? This will clear the game's launch options.`,
     deleteConfirmTitle: 'Delete Configuration',
     deleteAction: 'Delete',
+    infoAction: 'Info',
+    infoApplied: 'Applied',
+    infoUploaded: 'Uploaded',
+    infoPublished: 'Published',
+    infoLinkedProfile: 'Linked Profile',
+    infoClientId: 'Client ID',
     applied: 'Applied',
     appliedAgo: (time) => `Applied ${time}`,
     noConfigs: 'No saved configurations',
@@ -944,6 +962,8 @@ export const en: TranslationTree = {
     configTypeProtondbEdited: 'ProtonDB (edited)',
     synced: 'Synced',
     notSynced: 'Not synced',
+    published: 'Published',
+    draft: 'Draft',
     cloudStatusLabel: 'Cloud',
     uploadToCloud: 'Upload to Cloud',
     uploadingToCloud: 'Uploading...',

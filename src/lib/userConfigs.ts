@@ -274,6 +274,31 @@ export async function getMyConfig(appId: string): Promise<UserConfigRow | null> 
   }
 }
 
+export async function getMySubmittedAppIds(): Promise<Set<string>> {
+  try {
+    const clientId = await getVoterId();
+    const protonPulseUserId = getLinkedProtonPulseUserId();
+
+    const requests: Promise<{ data: { app_id: string }[] | null; error: string | null; status: number }>[] = [
+      restRequest<{ app_id: string }[]>('user_configs', { method: 'GET' }, { select: 'app_id', client_id: `eq.${clientId}` }),
+    ];
+    if (protonPulseUserId) {
+      requests.push(
+        restRequest<{ app_id: string }[]>('user_configs', { method: 'GET' }, { select: 'app_id', proton_pulse_user_id: `eq.${protonPulseUserId}` }),
+      );
+    }
+
+    const results = await Promise.all(requests);
+    const appIds = new Set<string>();
+    for (const { data } of results) {
+      if (data) for (const r of data) appIds.add(r.app_id);
+    }
+    return appIds;
+  } catch {
+    return new Set();
+  }
+}
+
 export { VALID_OS, VALID_RATINGS, VALID_GPU_VENDORS, VALID_SOURCES };
 
 // ─── Owner delete (RLS via x-client-id header) ───────────────────────────────

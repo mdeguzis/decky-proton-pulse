@@ -126,6 +126,7 @@ export interface CloudConfigRow {
   app_name: string;
   config: TrackedConfig;
   updated_at: string;
+  is_published?: boolean;
 }
 
 export interface CloudPluginSettingsRow {
@@ -143,7 +144,7 @@ export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
     const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', {
       method: 'GET',
     }, {
-      select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,config,updated_at',
+      select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,config,updated_at,is_published',
       voter_id: `eq.${voterId}`,
     });
 
@@ -306,7 +307,7 @@ export async function restoreCloudConfigs(): Promise<RestoreResult> {
   let skipped = 0;
 
   for (const row of cloudRows) {
-    if (localAppIds.has(row.app_id)) {
+    if (!localAppIds.has(row.app_id)) {
       skipped++;
       continue;
     }
