@@ -1,0 +1,15 @@
+name: Build Fedora
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-reusable.yml
+    with:
+      workflow_name: Fedora Build
+      container_image: fedora:latest
+      install_cmd: |
+        dnf install -y bash ca-certificates curl git make rsync unzip xz
