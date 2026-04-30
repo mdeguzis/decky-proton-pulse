@@ -53,8 +53,6 @@ const ROW_BTN: React.CSSProperties = {
   minHeight: 44,
   padding: '6px 12px',
   background: 'transparent',
-  border: 'none',
-  boxShadow: 'none',
   textAlign: 'left',
   fontSize: 12,
   color: '#e8f4ff',
@@ -76,6 +74,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
   const [reqs, setReqs]                 = useState<GameReqResponse | null>(null);
   const [platformData, setPlatformData] = useState<PlatformsResponse | null>(null);
   const [loading, setLoading]         = useState(true);
+  const [focusedRow, setFocusedRow]   = useState<string | null>(null);
 
   useEffect(() => {
     if (!appId) { setLoading(false); return; }
@@ -122,9 +121,6 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
   return (
     <Focusable onGamepadDirection={handleRootDirection} style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
-      {/* top anchor — lets D-pad up scroll back to the very top */}
-      <DialogButton onClick={() => {}} style={{ height: 0, minHeight: 0, padding: 0, margin: 0, border: 'none', background: 'transparent', boxShadow: 'none', overflow: 'hidden', opacity: 0 }} />
-
       {/* badge absolute top-right, hint below */}
       {platformBadge && (
         <div style={{ position: 'absolute', top: 0, right: 16, zIndex: 10 }}>
@@ -133,12 +129,16 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
           </div>
         </div>
       )}
-      <div style={{ padding: '6px 16px 2px', fontSize: 10, color: '#4a6070', textAlign: 'center' }}>
+      <div style={{ padding: '6px 16px 2px', fontSize: 10, color: '#4a6070', textAlign: 'left' }}>
         {t().detail.sysReqFocusHint}
       </div>
 
       {/* ── Platform availability ── */}
-      <div style={SECTION_HDR}>{t().detail.platformAvailability}</div>
+      <DialogButton onClick={() => {}}
+        onFocus={() => setFocusedRow('hdr-platform')}
+        onBlur={() => setFocusedRow(null)}
+        style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusedRow === 'hdr-platform' ? '3px solid #1a9fff' : '3px solid transparent', paddingLeft: 13 }}
+      >{t().detail.platformAvailability}</DialogButton>
 
       {/* column headers */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '2px 12px 4px', fontSize: 10, color: '#556a7a', fontWeight: 700, textTransform: 'uppercase' }}>
@@ -146,11 +146,14 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
       </div>
 
       {platformRows.map((row, i) => (
-        <div key={row.name} style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr',
-          padding: '8px 12px', alignItems: 'center', gap: 8,
-          borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.06)',
-        }}>
+        <DialogButton key={row.name} onClick={() => {}}
+          onFocus={() => setFocusedRow(`plat-${row.name}`)}
+          onBlur={() => setFocusedRow(null)}
+          style={{
+            ...ROW_BTN,
+            borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.06)',
+            borderRight: focusedRow === `plat-${row.name}` ? '3px solid #1a9fff' : '3px solid transparent',
+          }}>
           <span style={{ fontSize: 12, color: '#c8dcea', fontWeight: 600 }}>{row.name}</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: row.available ? '#4caf50' : '#555' }}>
@@ -163,15 +166,15 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
               <span style={{ fontSize: 10, color: '#9db0c4' }}>{t().detail.updatedLabel} {lastUpdated}</span>
             )}
           </div>
-        </div>
+        </DialogButton>
       ))}
 
       {/* ── Minimum requirements vs our system ── */}
-
-      {/* invisible anchor — first focus target, sits at scroll boundary */}
-      <DialogButton onClick={() => {}} style={{ height: 0, minHeight: 0, padding: 0, margin: 0, border: 'none', background: 'transparent', boxShadow: 'none', overflow: 'hidden', opacity: 0 }} />
-
-      <div style={SECTION_HDR}>{t().detail.minimumRequirements}</div>
+      <DialogButton onClick={() => {}}
+        onFocus={() => setFocusedRow('hdr-min')}
+        onBlur={() => setFocusedRow(null)}
+        style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusedRow === 'hdr-min' ? '3px solid #1a9fff' : '3px solid transparent', paddingLeft: 13 }}
+      >{t().detail.minimumRequirements}</DialogButton>
 
       {/* column headers */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '2px 12px 4px', fontSize: 10, color: '#556a7a', fontWeight: 700, textTransform: 'uppercase' }}>
@@ -185,7 +188,10 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
       ) : reqFields.map((f, i) => {
         const ourValue = buildOurValue(f, sysInfo, storageFreeGb);
         return (
-          <DialogButton key={i} onClick={() => {}} style={ROW_BTN}>
+          <DialogButton key={i} onClick={() => {}}
+            onFocus={() => setFocusedRow(`req-${i}`)}
+            onBlur={() => setFocusedRow(null)}
+            style={{ ...ROW_BTN, borderRight: focusedRow === `req-${i}` ? '3px solid #1a9fff' : '3px solid transparent' }}>
             <span style={{ color: '#c8dcea', fontWeight: 600 }}>{f.label}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <span style={{ fontSize: 11, color: '#9db0c4' }}>{f.value}</span>
