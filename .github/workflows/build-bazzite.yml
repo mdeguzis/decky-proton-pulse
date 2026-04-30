@@ -10,6 +10,6 @@ jobs:
     uses: ./.github/workflows/build-reusable.yml
     with:
       workflow_name: Bazzite Build
-      container_image: ghcr.io/ublue-os/bazzite:latest
+      container_image: fedora:41
       install_cmd: |
         dnf install -y bash ca-certificates curl git make rsync unzip xz
