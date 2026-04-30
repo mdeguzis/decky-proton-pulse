@@ -35,9 +35,9 @@ jobs:
             bazzite:ci \
             bash -c "
               set -euo pipefail
-              dnf install -y bash ca-certificates curl git make rsync unzip xz nodejs npm python3 python3-pip &&
-              npm install -g pnpm@9 &&
-              pip3 install uv --break-system-packages &&
+              dnf install -y bash ca-certificates curl git make rsync unzip xz nodejs npm python3 &&
+              curl -fsSL https://get.pnpm.io/install.sh | env PNPM_HOME=/usr/bin sh - &&
+              curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/bin sh - &&
               pnpm install --frozen-lockfile &&
               uv sync --group dev &&
               make build
