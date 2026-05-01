@@ -16,268 +16,181 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 532,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 98.5,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram",
-        "detail.verdictPass",
-        "detail.verdictFail",
-        "detail.verdictMaybe",
-        "detail.statusColumn",
-        "detail.sysReqStatus",
-        "compatTools.info",
-        "configManager.infoAction"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
-      "translated": 533,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 98.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "common.no",
-        "detail.vram",
-        "detail.verdictPass",
-        "detail.verdictFail",
-        "detail.verdictMaybe",
-        "compatTools.info",
-        "configManager.infoAction"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
-      "translated": 534,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 98.9,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram",
-        "detail.verdictPass",
-        "detail.verdictFail",
-        "detail.verdictMaybe",
-        "compatTools.info",
-        "configManager.infoAction"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "it",
       "name": "Italiano",
-      "translated": 533,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 98.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "common.no",
-        "detail.vram",
-        "detail.verdictPass",
-        "detail.verdictFail",
-        "detail.verdictMaybe",
-        "compatTools.info",
-        "configManager.infoAction"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 539,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.8,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 539,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.8,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "nl",
       "name": "Nederlands",
-      "translated": 531,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 98.3,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram",
-        "detail.verdictPass",
-        "detail.verdictFail",
-        "detail.verdictMaybe",
-        "detail.platformColumn",
-        "detail.statusColumn",
-        "detail.sysReqStatus",
-        "compatTools.info",
-        "configManager.infoAction"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pl",
       "name": "Polski",
-      "translated": 533,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 98.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram",
-        "detail.verdictPass",
-        "detail.verdictFail",
-        "detail.statusColumn",
-        "detail.sysReqStatus",
-        "compatTools.info",
-        "configManager.infoAction"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 533,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 98.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram",
-        "detail.verdictPass",
-        "detail.verdictFail",
-        "detail.statusColumn",
-        "detail.sysReqStatus",
-        "compatTools.info",
-        "configManager.infoAction"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 539,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.8,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 538,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.6,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram",
-        "detail.platformColumn"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "uk",
       "name": "Українська",
-      "translated": 539,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.8,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "sv",
       "name": "Svenska",
-      "translated": 535,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.1,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram",
-        "detail.statusColumn",
-        "detail.sysReqStatus",
-        "compatTools.info",
-        "configManager.infoAction"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "cs",
       "name": "Čeština",
-      "translated": 537,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram",
-        "compatTools.info",
-        "configManager.infoAction"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "th",
       "name": "ภาษาไทย",
-      "translated": 539,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.8,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "vi",
       "name": "Tiếng Việt",
-      "translated": 539,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.8,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 539,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.8,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "zh-TW",
       "name": "繁體中文",
-      "translated": 539,
+      "translated": 540,
       "total": 540,
-      "coveragePercent": 99.8,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.vram"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     }
   ]

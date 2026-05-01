@@ -13,6 +13,7 @@ const SHOULD_FAIL_ON_LOW_COVERAGE = !process.argv.includes('--no-fail');
 const SKIP_VALUES = new Set([
   'GPU', 'RAM', 'CPU', 'ProtonDB', 'GitHub', 'NVIDIA', 'AMD', 'Intel', 'Debug',
   'Kernel', 'Valve Proton',
+  'VRAM', 'PASS', 'FAIL', 'MAYBE', 'Info', 'Status', 'Platform', 'No',
 ]);
 
 const SKIP_KEYS = new Set([
