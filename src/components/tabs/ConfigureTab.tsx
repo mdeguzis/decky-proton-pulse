@@ -14,7 +14,7 @@ import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
-import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
+import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, isSteamShortcutApp } from '../../lib/steamApps';
 import { getGameSource } from '../../lib/gameSource';
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
 import {
@@ -498,6 +498,9 @@ function lookupAppNameFromCollection(appId: number): string {
 function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const extras = t().extras!;
   const isShortcut = appId ? isSteamShortcutApp(appId) : false;
+  // Non-shortcut apps not found in the local library overview are store-only views;
+  // applying launch options requires the game to be in the library.
+  const isInLibrary = isShortcut || (appId ? getSteamAppOverview(appId) !== null : true);
   // When appName prop is empty for a non-Steam shortcut, try collectionStore
   const effectiveAppName = (appName || (appId && isShortcut ? lookupAppNameFromCollection(appId) : '')) ?? '';
   // null = resolution pending, 'none' = tried but no Steam match, number = resolved ID
@@ -757,6 +760,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   const handleApply = async (targetReport: DisplayReportCard) => {
     if (!appId) return;
+    if (!isInLibrary) return;
     void logFrontendEvent('INFO', 'Apply launch option requested', {
       appId,
       appName,
@@ -1072,6 +1076,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         appName={appName}
         sysInfo={sysInfo}
         currentLaunchOptions={currentLaunchOptions}
+        canApply={isInLibrary}
         onApply={handleApply}
         onUpvote={handleUpvote}
         onDownvote={handleDownvote}
@@ -1191,6 +1196,22 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
       <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} />
+      {!isInLibrary && (
+        <div style={{
+          margin: '4px 16px 0',
+          padding: '5px 10px',
+          borderRadius: 4,
+          background: 'rgba(255,200,60,0.12)',
+          border: '1px solid rgba(255,200,60,0.35)',
+          color: 'rgba(255,200,60,0.9)',
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: '0.04em',
+          textAlign: 'center',
+        }}>
+          {t().configure.notInLibrary}
+        </div>
+      )}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
           <SteamSpinner />

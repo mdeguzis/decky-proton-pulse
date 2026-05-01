@@ -1054,6 +1054,7 @@ export interface ReportDetailModalProps {
   appName: string;
   sysInfo: SystemInfo | null;
   currentLaunchOptions: string;
+  canApply?: boolean;
   onApply: (report: DisplayReportCard) => Promise<void>;
   onUpvote: (report: DisplayReportCard) => Promise<boolean>;
   onDownvote?: (report: DisplayReportCard) => Promise<boolean>;
@@ -1067,6 +1068,7 @@ export function ReportDetailModal({
   appName,
   sysInfo,
   currentLaunchOptions,
+  canApply = true,
   onApply,
   onUpvote,
   onDownvote,
@@ -1304,7 +1306,7 @@ export function ReportDetailModal({
           handleUploadToProtonPulse();
           modal.Close();
         }}
-        uploadsDisabled={!report.isEdited}
+        uploadsDisabled={!report.isEdited || !canApply}
       />,
     );
   };
@@ -1518,7 +1520,7 @@ export function ReportDetailModal({
         >
           <DialogButton
             onClick={handleApply}
-            disabled={applying}
+            disabled={applying || !canApply}
             ref={(node) => {
               applyButtonRef.current = node;
             }}
@@ -1526,6 +1528,7 @@ export function ReportDetailModal({
               focusSiblingButton(evt, null, editButtonRef.current, compareButtonRef.current);
             }}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
+            title={!canApply ? t().detail.applyRequiresLibrary : undefined}
           >
             {applying ? <SteamSpinner /> : t().detail.apply}
           </DialogButton>
@@ -1543,6 +1546,8 @@ export function ReportDetailModal({
           </DialogButton>
           <DialogButton
             onClick={handleUpload}
+            disabled={!canApply}
+            title={!canApply ? t().detail.applyRequiresLibrary : undefined}
             ref={(node) => {
               uploadButtonRef.current = node;
             }}

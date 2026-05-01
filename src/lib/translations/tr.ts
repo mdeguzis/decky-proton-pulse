@@ -20,6 +20,7 @@ export const tr: TranslationTree = {
     shown: (n) => `${n} gösteriliyor`,
     daysAgo: (d) => `${d}g önce`,
     openInProtonPulse: "Proton Pulse'da aç",
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: 'Yapılandırmaları Yönet',
@@ -72,6 +73,7 @@ export const tr: TranslationTree = {
   },
   detail: {
     apply: 'Uygula',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: 'Düzenle',
     upload: 'Yükle',
     uploadDestinationTitle: 'Yükleme hedefini seç',
@@ -164,6 +166,8 @@ export const tr: TranslationTree = {
     experimentalGamePageShortcut: 'Oyun sayfası kısayol düğmesi',
     experimentalGamePageShortcutDescription: 'Oyun sayfasındaki eylem düğmelerinin yanında Proton Pulse kısayolu gösterir. Deneyseldir ve varsayılan olarak kapalıdır.',
     gamePageBadge: 'Oyun sayfasında ProtonDB rozeti',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Oyun sayfasında ProtonDB uyumluluk rozeti göster.',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const tr: TranslationTree = {
     launchOptionConflictAppend: 'Ekle',
     launchOptionConflictReplace: 'Değiştir',
     renderErrorIntro: 'Bu Oyunu Yönet ekranı mevcut Steam arayüzü ortamında bir render hatasıyla karşılaştı.',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `${v} yüklendi.`,

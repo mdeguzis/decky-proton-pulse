@@ -20,6 +20,7 @@ export const nl: TranslationTree = {
     shown: (n) => `${n} weergegeven`,
     daysAgo: (d) => `${d}d geleden`,
     openInProtonPulse: 'Openen in Proton Pulse',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: 'Configuraties beheren',
@@ -72,6 +73,7 @@ export const nl: TranslationTree = {
   },
   detail: {
     apply: 'Toepassen',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: 'Bewerken',
     upload: 'Uploaden',
     uploadDestinationTitle: 'Upload-bestemming kiezen',
@@ -164,6 +166,8 @@ export const nl: TranslationTree = {
     experimentalGamePageShortcut: 'Snelkoppeling spelspagina',
     experimentalGamePageShortcutDescription: 'Toont een Proton Pulse-snelkoppeling naast de actieknoppen van de spelpagina. Experimenteel en standaard uitgeschakeld.',
     gamePageBadge: 'ProtonDB-badge op spelpagina',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Toon de ProtonDB-compatibiliteitsniveaubadge op de spelpagina.',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const nl: TranslationTree = {
     launchOptionConflictAppend: 'Toevoegen',
     launchOptionConflictReplace: 'Vervangen',
     renderErrorIntro: 'Dit spel beheren is een renderingfout tegengekomen in de huidige Steam UI-omgeving.',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `${v} geïnstalleerd.`,

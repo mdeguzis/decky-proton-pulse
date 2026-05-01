@@ -20,6 +20,7 @@ export const uk: TranslationTree = {
     shown: (n) => `Показано: ${n}`,
     daysAgo: (d) => `${d}д тому`,
     openInProtonPulse: 'Відкрити у Proton Pulse',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: 'Керування конфігураціями',
@@ -72,6 +73,7 @@ export const uk: TranslationTree = {
   },
   detail: {
     apply: 'Застосувати',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: 'Редагувати',
     upload: 'Завантажити',
     uploadDestinationTitle: 'Оберіть місце завантаження',
@@ -164,6 +166,8 @@ export const uk: TranslationTree = {
     experimentalGamePageShortcut: 'Ярлик сторінки гри',
     experimentalGamePageShortcutDescription: 'Відображає ярлик Proton Pulse поряд з кнопками дій на сторінці гри. Експериментальна функція, вимкнена за замовчуванням.',
     gamePageBadge: 'Значок ProtonDB на сторінці гри',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Відображати значок рівня сумісності ProtonDB на сторінці гри.',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const uk: TranslationTree = {
     launchOptionConflictAppend: 'Додати',
     launchOptionConflictReplace: 'Замінити',
     renderErrorIntro: 'Керування цією грою зустріло помилку рендерингу в поточному середовищі Steam UI.',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `${v} встановлено.`,

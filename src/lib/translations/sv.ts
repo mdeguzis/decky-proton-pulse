@@ -20,6 +20,7 @@ export const sv: TranslationTree = {
     shown: (n) => `${n} visas`,
     daysAgo: (d) => `${d}d sedan`,
     openInProtonPulse: 'Öppna i Proton Pulse',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: 'Hantera konfigurationer',
@@ -72,6 +73,7 @@ export const sv: TranslationTree = {
   },
   detail: {
     apply: 'Tillämpa',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: 'Redigera',
     upload: 'Ladda upp',
     uploadDestinationTitle: 'Välj uppladdningsdestination',
@@ -164,6 +166,8 @@ export const sv: TranslationTree = {
     experimentalGamePageShortcut: 'Genväg till spelsida',
     experimentalGamePageShortcutDescription: 'Visar en Proton Pulse-genväg bredvid åtgärdsknapparna på spelsidan. Experimentellt och inaktiverat som standard.',
     gamePageBadge: 'ProtonDB-märke på spelsida',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Visa ProtonDB-kompatibilitetsnivåmärket på spelsidan.',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const sv: TranslationTree = {
     launchOptionConflictAppend: 'Lägg till',
     launchOptionConflictReplace: 'Ersätt',
     renderErrorIntro: 'Hantera det här spelet stötte på ett renderingsfel i den nuvarande Steam UI-miljön.',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `${v} installerad.`,

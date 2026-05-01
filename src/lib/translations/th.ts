@@ -20,6 +20,7 @@ export const th: TranslationTree = {
     shown: (n) => `แสดง ${n} รายการ`,
     daysAgo: (d) => `${d} วันที่แล้ว`,
     openInProtonPulse: 'เปิดใน Proton Pulse',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: 'จัดการการตั้งค่า',
@@ -72,6 +73,7 @@ export const th: TranslationTree = {
   },
   detail: {
     apply: 'ใช้งาน',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: 'แก้ไข',
     upload: 'อัปโหลด',
     uploadDestinationTitle: 'เลือกปลายทางการอัปโหลด',
@@ -164,6 +166,8 @@ export const th: TranslationTree = {
     experimentalGamePageShortcut: 'ทางลัดหน้าเกม',
     experimentalGamePageShortcutDescription: 'แสดงทางลัด Proton Pulse ถัดจากปุ่มการดำเนินการในหน้าเกม ทดลองใช้และปิดใช้งานโดยค่าเริ่มต้น',
     gamePageBadge: 'ป้าย ProtonDB ในหน้าเกม',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'แสดงป้ายระดับความเข้ากันได้ของ ProtonDB ในหน้าเกม',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const th: TranslationTree = {
     launchOptionConflictAppend: 'ต่อท้าย',
     launchOptionConflictReplace: 'แทนที่',
     renderErrorIntro: 'การจัดการเกมนี้พบข้อผิดพลาดในการแสดงผลในสภาพแวดล้อม Steam UI ปัจจุบัน',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `ติดตั้ง ${v} แล้ว`,

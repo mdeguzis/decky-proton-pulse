@@ -20,6 +20,7 @@ export const cs: TranslationTree = {
     shown: (n) => `Zobrazeno: ${n}`,
     daysAgo: (d) => `před ${d}d`,
     openInProtonPulse: 'Otevřít v Proton Pulse',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: 'Spravovat konfigurace',
@@ -72,6 +73,7 @@ export const cs: TranslationTree = {
   },
   detail: {
     apply: 'Použít',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: 'Upravit',
     upload: 'Nahrát',
     uploadDestinationTitle: 'Vyberte cíl nahrání',
@@ -164,6 +166,8 @@ export const cs: TranslationTree = {
     experimentalGamePageShortcut: 'Zkratka na stránce hry',
     experimentalGamePageShortcutDescription: 'Zobrazí zkratku Proton Pulse vedle tlačítek akcí na stránce hry. Experimentální, ve výchozím nastavení zakázáno.',
     gamePageBadge: 'Odznak ProtonDB na stránce hry',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Zobrazit odznak úrovně kompatibility ProtonDB na stránce hry.',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const cs: TranslationTree = {
     launchOptionConflictAppend: 'Přidat',
     launchOptionConflictReplace: 'Nahradit',
     renderErrorIntro: 'Správa této hry narazila na chybu vykreslování v aktuálním prostředí Steam UI.',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `${v} nainstalováno.`,

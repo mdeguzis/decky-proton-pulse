@@ -20,6 +20,7 @@ export const vi: TranslationTree = {
     shown: (n) => `Hiển thị ${n}`,
     daysAgo: (d) => `${d} ngày trước`,
     openInProtonPulse: 'Mở trong Proton Pulse',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: 'Quản lý cấu hình',
@@ -72,6 +73,7 @@ export const vi: TranslationTree = {
   },
   detail: {
     apply: 'Áp dụng',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: 'Chỉnh sửa',
     upload: 'Tải lên',
     uploadDestinationTitle: 'Chọn điểm đến tải lên',
@@ -164,6 +166,8 @@ export const vi: TranslationTree = {
     experimentalGamePageShortcut: 'Phím tắt trang trò chơi',
     experimentalGamePageShortcutDescription: 'Hiển thị phím tắt Proton Pulse bên cạnh các nút hành động trên trang trò chơi. Thử nghiệm và tắt theo mặc định.',
     gamePageBadge: 'Huy hiệu ProtonDB trên trang trò chơi',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Hiển thị huy hiệu cấp độ tương thích ProtonDB trên trang trò chơi.',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const vi: TranslationTree = {
     launchOptionConflictAppend: 'Thêm vào',
     launchOptionConflictReplace: 'Thay thế',
     renderErrorIntro: 'Quản lý trò chơi này gặp lỗi kết xuất trong môi trường Steam UI hiện tại.',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `Đã cài đặt ${v}.`,

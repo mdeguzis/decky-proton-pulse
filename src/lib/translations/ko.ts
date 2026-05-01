@@ -20,6 +20,7 @@ export const ko: TranslationTree = {
     shown: (n) => `${n}개 표시`,
     daysAgo: (d) => `${d}일 전`,
     openInProtonPulse: 'Proton Pulse에서 열기',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: '설정 관리',
@@ -72,6 +73,7 @@ export const ko: TranslationTree = {
   },
   detail: {
     apply: '적용',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: '편집',
     upload: '업로드',
     uploadDestinationTitle: '업로드 위치 선택',
@@ -164,6 +166,8 @@ export const ko: TranslationTree = {
     experimentalGamePageShortcut: '게임 페이지 바로가기 버튼',
     experimentalGamePageShortcutDescription: '게임 페이지 동작 버튼 옆에 Proton Pulse 바로가기를 표시합니다. 실험 기능이며 기본값은 꺼짐입니다.',
     gamePageBadge: '게임 페이지에 ProtonDB 배지 표시',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: '게임 페이지에 ProtonDB 호환성 등급 배지를 표시합니다.',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const ko: TranslationTree = {
     launchOptionConflictAppend: '덧붙이기',
     launchOptionConflictReplace: '교체',
     renderErrorIntro: '현재 Steam UI 환경에서 이 게임 관리 화면에 렌더링 오류가 발생했습니다.',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `${v}이(가) 설치되었습니다.`,

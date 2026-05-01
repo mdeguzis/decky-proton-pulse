@@ -20,6 +20,7 @@ export const zhCN: TranslationTree = {
     shown: (n) => `已显示 ${n} 条`,
     daysAgo: (d) => `${d} 天前`,
     openInProtonPulse: '在 Proton Pulse 中打开',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: '管理配置',
@@ -72,6 +73,7 @@ export const zhCN: TranslationTree = {
   },
   detail: {
     apply: '应用',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: '编辑',
     upload: '上传',
     uploadDestinationTitle: '选择上传目标',
@@ -164,6 +166,8 @@ export const zhCN: TranslationTree = {
     experimentalGamePageShortcut: '游戏页面快捷按钮',
     experimentalGamePageShortcutDescription: '在游戏页面操作按钮旁显示 Proton Pulse 快捷入口。该功能为实验性质，默认关闭。',
     gamePageBadge: '在游戏页面显示 ProtonDB 徽章',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: '在游戏页面显示 ProtonDB 兼容性等级徽章。',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const zhCN: TranslationTree = {
     launchOptionConflictAppend: '追加',
     launchOptionConflictReplace: '替换',
     renderErrorIntro: '在当前 Steam 界面环境中，“管理此游戏”界面发生了渲染错误。',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `已安装 ${v}。`,

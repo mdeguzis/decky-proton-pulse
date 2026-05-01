@@ -20,6 +20,7 @@ export const ja: TranslationTree = {
     shown: (n) => `${n} 件表示`,
     daysAgo: (d) => `${d}日前`,
     openInProtonPulse: 'Proton Pulseで開く',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: '設定を管理',
@@ -72,6 +73,7 @@ export const ja: TranslationTree = {
   },
   detail: {
     apply: '適用',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: '編集',
     upload: '送信',
     uploadDestinationTitle: '送信先を選択',
@@ -164,6 +166,8 @@ export const ja: TranslationTree = {
     experimentalGamePageShortcut: 'ゲームページのショートカットボタン',
     experimentalGamePageShortcutDescription: 'ゲームページのアクションボタンの横に Proton Pulse のショートカットを表示します。実験機能のため既定ではオフです。',
     gamePageBadge: 'ゲームページにProtonDBバッジを表示',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'ゲームページにProtonDB互換性バッジを表示します。',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const ja: TranslationTree = {
     launchOptionConflictAppend: '追加',
     launchOptionConflictReplace: '置き換え',
     renderErrorIntro: '現在の Steam UI 環境で「このゲームを管理」に描画エラーが発生しました。',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `${v} をインストールしました。`,

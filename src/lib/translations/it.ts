@@ -20,6 +20,7 @@ export const it: TranslationTree = {
     shown: (n) => `${n} mostrati`,
     daysAgo: (d) => `${d}g fa`,
     openInProtonPulse: 'Apri in Proton Pulse',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: 'Gestisci configurazioni',
@@ -72,6 +73,7 @@ export const it: TranslationTree = {
   },
   detail: {
     apply: 'Applica',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: 'Modifica',
     upload: 'Carica',
     uploadDestinationTitle: 'Scegli destinazione caricamento',
@@ -164,6 +166,8 @@ export const it: TranslationTree = {
     experimentalGamePageShortcut: 'Collegamento pagina gioco',
     experimentalGamePageShortcutDescription: 'Mostra un collegamento Proton Pulse accanto ai pulsanti azione della pagina del gioco. Sperimentale e disabilitato per impostazione predefinita.',
     gamePageBadge: 'Badge ProtonDB nella pagina del gioco',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Mostra il badge del livello di compatibilità ProtonDB nella pagina del gioco.',
   },
   compatTools: {
@@ -224,6 +228,7 @@ export const it: TranslationTree = {
     launchOptionConflictAppend: 'Aggiungi',
     launchOptionConflictReplace: 'Sostituisci',
     renderErrorIntro: 'Gestisci questo gioco ha riscontrato un errore di rendering nell\'ambiente UI Steam attuale.',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `${v} installato.`,

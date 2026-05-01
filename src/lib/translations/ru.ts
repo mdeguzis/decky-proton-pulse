@@ -32,6 +32,7 @@ export const ru: TranslationTree = {
       return `${d} дней назад`;
     },
     openInProtonPulse: 'Открыть в Proton Pulse',
+    showProtonInfo: 'Show Proton Info',
   },
   sidebar: {
     manageConfigurations: 'Управление конфигурациями',
@@ -102,6 +103,7 @@ export const ru: TranslationTree = {
   },
   detail: {
     apply: 'Применить',
+    applyRequiresLibrary: 'Add this game to your library to apply launch options',
     edit: 'Изменить',
     upload: 'Загрузить',
     uploadDestinationTitle: 'Выберите место загрузки',
@@ -194,6 +196,8 @@ export const ru: TranslationTree = {
     experimentalGamePageShortcut: 'Кнопка на странице игры',
     experimentalGamePageShortcutDescription: 'Показывает ярлык Proton Pulse рядом с кнопками действий на странице игры. Экспериментальная функция, по умолчанию выключена.',
     gamePageBadge: 'Значок ProtonDB на странице игры',
+    storePageBadge: 'Proton Pulse badge on store pages',
+    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Показывать значок совместимости ProtonDB на странице игры.',
   },
   compatTools: {
@@ -254,6 +258,7 @@ export const ru: TranslationTree = {
     launchOptionConflictAppend: 'Добавить',
     launchOptionConflictReplace: 'Заменить',
     renderErrorIntro: 'На экране «Управление этой игрой» произошла ошибка отрисовки в текущей среде интерфейса Steam.',
+    notInLibrary: '',
   },
   toast: {
     installed: (v) => `${v} установлено.`,
