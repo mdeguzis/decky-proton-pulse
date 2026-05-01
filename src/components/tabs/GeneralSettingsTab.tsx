@@ -300,6 +300,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
   const [cefDebuggingBusy, setCefDebuggingBusy] = useState(false);
   const [cefDebuggingStatus, setCefDebuggingStatus] = useState<CefDebuggingStatus | null>(null);
   const [badgeEnabled, setBadgeEnabled] = useState(() => getSetting('showGamePageBadge', true));
+  const [storeBadgeEnabled, setStoreBadgeEnabled] = useState(() => getSetting('showStorePageBadge', false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const languageRowRef = useRef<HTMLDivElement>(null);
@@ -802,6 +803,18 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
                setBadgeEnabled(enabled);
                setSetting('showGamePageBadge', enabled);
                void logFrontendEvent('INFO', 'Game page badge toggled', { enabled });
+             }}
+           />
+         </div>
+         <div style={focusClipRowStyle()}>
+           <ToggleField
+             label={t().settings.storePageBadge}
+             description={t().settings.storePageBadgeDescription}
+             checked={storeBadgeEnabled}
+             onChange={(enabled) => {
+               setStoreBadgeEnabled(enabled);
+               setSetting('showStorePageBadge', enabled);
+               void logFrontendEvent('INFO', 'Store page badge toggled', { enabled });
              }}
            />
          </div>

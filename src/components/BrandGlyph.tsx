@@ -1,8 +1,32 @@
 interface BrandGlyphProps {
   size?: number;
+  variant?: 'default' | 'material';
 }
 
-export function BrandGlyph({ size = 20 }: BrandGlyphProps) {
+export function BrandGlyph({ size = 20, variant = 'default' }: BrandGlyphProps) {
+  if (variant === 'material') {
+    // Simplified two-element icon: octagonal badge outline + pulse waveform.
+    // Designed for small sizes (20-24px) as a material-style button icon.
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        aria-label="Proton Pulse"
+        role="img"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ display: 'block', flex: '0 0 auto' }}
+      >
+        <path d="M12 2l5.2 2.8 2.8 4.5V14.7l-2.8 4.5L12 22l-5.2-2.8L4 14.7V9.3l2.8-4.5z" />
+        <polyline points="6.5,12 8.5,12 10,9.5 12,14.5 14,9.5 15.5,12 17.5,12" />
+      </svg>
+    );
+  }
+
   return (
     <svg
       width={size}

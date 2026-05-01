@@ -36,6 +36,7 @@ PREPARE_ACTION_JSON = __PREPARE_ACTION_JSON__
 LANGUAGE = __LANGUAGE__
 DEBUG_ENABLED = __DEBUG_ENABLED__
 DPAD_SEQUENCE = __DPAD_SEQUENCE__
+STORE_URL = __STORE_URL__
 PLUGIN_ROUTE = "/proton-pulse"
 
 # Maps friendly dpad names to (windowsVirtualKeyCode, key) tuples.
@@ -142,7 +143,18 @@ def choose_control_target(page_states):
     return page_states[0] if page_states else None
 
 
-def choose_capture_target(page_states):
+def choose_capture_target(page_states, prefer_steamweb=False):
+    if prefer_steamweb:
+        # For store page captures: prefer the SharedJSContext on /routes/steamweb,
+        # then a store.steampowered.com target, then fall back to BPM.
+        for state in page_states:
+            url = state["page"].get("url", "")
+            if "store.steampowered.com" in url:
+                return state
+        for state in page_states:
+            pathname = state["info"].get("pathname") or ""
+            if "steamweb" in pathname and state["page"].get("title") == "SharedJSContext":
+                return state
     for state in page_states:
         if state["page"].get("title") == "Steam Big Picture Mode":
             return state
@@ -165,6 +177,80 @@ async def inspect_all_pages(session):
         if state is not None:
             page_states.append(state)
     return page_states
+
+
+async def find_shared_js_context(session):
+    async with session.get(DEBUG_LIST_URL) as resp:
+        pages = await resp.json()
+    for p in pages:
+        if p.get("title") == "SharedJSContext":
+            return p
+    return None
+
+
+async def find_store_page_target(session):
+    async with session.get(DEBUG_LIST_URL) as resp:
+        pages = await resp.json()
+    for p in pages:
+        if "store.steampowered.com" in p.get("url", ""):
+            return p
+    return None
+
+
+def extract_app_id_from_store_url(store_url):
+    import re
+    m = re.search(r"/app/(\d+)", store_url)
+    return m.group(1) if m else None
+
+
+async def navigate_store_browser(session, store_url, control_page):
+    app_id = extract_app_id_from_store_url(store_url)
+    if not app_id:
+        debug_log(f"Could not extract app ID from store URL: {store_url}")
+        return
+
+    shared_js = await find_shared_js_context(session)
+    if not shared_js:
+        debug_log("SharedJSContext target not found -- skipping store navigation")
+        return
+    sjs_debugger = shared_js.get("webSocketDebuggerUrl")
+    if not sjs_debugger:
+        debug_log("SharedJSContext has no debugger URL")
+        return
+
+    steam_url = f"steam://store/{app_id}"
+    debug_log(f"Executing steam URL: {steam_url}")
+    async with session.ws_connect(sjs_debugger) as ws:
+        expr = f"SteamClient.URL.ExecuteSteamURL({json.dumps(steam_url)})"
+        payload = {
+            "id": 1,
+            "method": "Runtime.evaluate",
+            "params": {"expression": expr, "returnByValue": True},
+        }
+        await ws.send_str(json.dumps(payload))
+        async for msg in ws:
+            if msg.type.name != "TEXT":
+                continue
+            data = json.loads(msg.data)
+            if data.get("id") == 1:
+                debug_log(f"ExecuteSteamURL result: {json.dumps(data)}")
+                break
+
+    # Poll for store page target (fast initial check, then fall back to timed wait)
+    store_target = None
+    for _ in range(12):
+        await asyncio.sleep(0.5)
+        store_target = await find_store_page_target(session)
+        if store_target:
+            break
+
+    if store_target:
+        debug_log(f"Store page target appeared: {store_target.get('title')} | {store_target.get('url')}")
+        # Give page extra time to fully render
+        await asyncio.sleep(3.0)
+    else:
+        debug_log("Store page target did not appear in 6s -- waiting an extra 4s anyway")
+        await asyncio.sleep(4.0)
 
 
 async def dismiss_visible_overlay(session, page):
@@ -210,6 +296,21 @@ async def main():
             )
         control_page = control_state["page"]
         capture_page = capture_state["page"]
+
+        if STORE_URL:
+            await navigate_store_browser(session, STORE_URL, control_page)
+            # Re-inspect after navigation so capture target is fresh
+            page_states = await inspect_all_pages(session)
+            control_state = choose_control_target(page_states)
+            capture_state = choose_capture_target(page_states, prefer_steamweb=True)
+            if not control_state or not capture_state:
+                raise SystemExit("Lost Steam CEF debug target after store navigation.")
+            control_page = control_state["page"]
+            capture_page = capture_state["page"]
+            # Let the store badge poll interval fire before capturing
+            if not PREPARE_ACTION_JSON:
+                await asyncio.sleep(2.5)
+
         if PREPARE_ACTION_JSON:
             await dismiss_visible_overlay(session, capture_page)
 
@@ -299,7 +400,7 @@ async def main():
                 debug_log(f"Post-prepare page info: {json.dumps(location_after_prepare)}")
 
                 page_states = await inspect_all_pages(session)
-                capture_state = choose_capture_target(page_states)
+                capture_state = choose_capture_target(page_states, prefer_steamweb=bool(STORE_URL))
                 if not capture_state:
                     raise SystemExit(
                         "Lost the Steam CEF debug target after screenshot preparation."
@@ -506,10 +607,15 @@ def main() -> int:
         default="",
         help="Comma-separated D-pad commands to send before capturing: up,down,left,right,a,b (e.g. 'up,a')",
     )
+    parser.add_argument(
+        "--store-url",
+        default="",
+        help="Navigate the Steam store browser to this URL before capturing (e.g. https://store.steampowered.com/app/848480)",
+    )
     args = parser.parse_args()
 
-    normalized_language = normalize_language(args.language)
-    if normalized_language not in SUPPORTED_SCREENSHOT_LANGUAGES:
+    normalized_language = normalize_language(args.language) if args.language.strip() else ""
+    if normalized_language and normalized_language not in SUPPORTED_SCREENSHOT_LANGUAGES:
         normalized_language = ""
 
     output_dir = Path(args.output_dir).resolve()
@@ -539,6 +645,9 @@ def main() -> int:
         ).replace(
             "__DPAD_SEQUENCE__",
             json.dumps(dpad_sequence),
+        ).replace(
+            "__STORE_URL__",
+            json.dumps(args.store_url),
         )
         if capture_locally:
             remote = run(

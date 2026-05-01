@@ -13,6 +13,7 @@ export interface ScreenshotAutomationAction {
   profileName?: string;
   protonVersion?: string;
   steamRoute?: string;
+  webUrl?: string;
   tab?: PageId;
   target?: string;
   useFocusedApp?: boolean;
@@ -175,7 +176,7 @@ async function runAutomationAction(action: ScreenshotAutomationAction): Promise<
   target: string | null;
 }> {
   let navigationPayload: { tab: PageId; appId: number | null; appName: string } | null = null;
-  const hasUiNavigationWork = Boolean(action.tab || action.target || action.steamRoute);
+  const hasUiNavigationWork = Boolean(action.tab || action.target || action.steamRoute || action.webUrl);
   void logFrontendEvent('DEBUG', 'Screenshot automation action started', {
     action,
     pathname: globalThis.location?.pathname ?? null,
@@ -216,6 +217,14 @@ async function runAutomationAction(action: ScreenshotAutomationAction): Promise<
       Router.Navigate(action.steamRoute);
     }
     await delay(1200);
+  }
+
+  if (action.webUrl) {
+    void logFrontendEvent('DEBUG', 'Screenshot automation navigating to web URL', {
+      webUrl: action.webUrl,
+    });
+    Navigation.NavigateToExternalWeb(action.webUrl);
+    await delay(6000);
   }
 
   if (action.tab) {

@@ -130,6 +130,7 @@ help:
 	@printf "  %-27s %s\n" "take-screenshot" "Capture the current Steam UI into \$$HOME/storage/screenshots/"
 	@printf "  %-27s %s\n" "" "Optional: SCREENSHOT_BASE=my-name make take-screenshot"
 	@printf "  %-27s %s\n" "" "Optional: PAGE=/library/app/1145350 make take-screenshot"
+	@printf "  %-27s %s\n" "" "Optional: STORE_URL=https://store.steampowered.com/app/848480 make take-screenshot"
 	@printf "  %-27s %s\n" "" "Optional: DPAD=up,a make take-screenshot  (send dpad before capture)"
 	@printf "  %-27s %s\n" "" "Optional catalog metadata: SCREENSHOT_GROUP=manage-game SCREENSHOT_KEY=default"
 	@printf "  %-27s %s\n" "" "Optional language gallery: LANG=cn (also supports SCREENSHOT_LANGUAGE=...)"
@@ -391,7 +392,7 @@ take-screenshot:
 	@echo "Capturing the current Steam UI via CEF remote debugging..."
 	@echo "This may include private on-screen content visible on the Steam UI."
 	@mkdir -p $(SCREENSHOT_DIR)
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py $(if $(DECK_IP),--deck-ip $(DECK_IP) --deck-user $(DECK_USER),) --output-dir $(SCREENSHOT_DIR) $(if $(SCREENSHOT_LANGUAGE),--language $(SCREENSHOT_LANGUAGE),) $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),) $(if $(SCREENSHOT_GROUP),--group $(SCREENSHOT_GROUP),) $(if $(SCREENSHOT_KEY),--shot-key $(SCREENSHOT_KEY),) $(if $(SCREENSHOT_TITLE),--title "$(SCREENSHOT_TITLE)",) $(if $(SCREENSHOT_CAPTION),--caption "$(SCREENSHOT_CAPTION)",) $(if $(PAGE),--prepare-action-json "{\"steamRoute\": \"$(PAGE)\"}",) $(if $(DPAD),--dpad-sequence "$(DPAD)",)
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/take_cef_screenshot.py $(if $(DECK_IP),--deck-ip $(DECK_IP) --deck-user $(DECK_USER),) --output-dir $(SCREENSHOT_DIR) $(if $(SCREENSHOT_LANGUAGE),--language $(SCREENSHOT_LANGUAGE),) $(if $(SCREENSHOT_BASE),--filename-base $(SCREENSHOT_BASE),) $(if $(SCREENSHOT_GROUP),--group $(SCREENSHOT_GROUP),) $(if $(SCREENSHOT_KEY),--shot-key $(SCREENSHOT_KEY),) $(if $(SCREENSHOT_TITLE),--title "$(SCREENSHOT_TITLE)",) $(if $(SCREENSHOT_CAPTION),--caption "$(SCREENSHOT_CAPTION)",) $(if $(STORE_URL),--store-url "$(STORE_URL)",$(if $(WEB_URL),--prepare-action-json "{\"webUrl\": \"$(WEB_URL)\"}",$(if $(PAGE),--prepare-action-json "{\"steamRoute\": \"$(PAGE)\"}",))) $(if $(DPAD),--dpad-sequence "$(DPAD)",)
 
 take-screenshot-wiki:
 	$(call require_deck_ip)

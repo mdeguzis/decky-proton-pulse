@@ -245,6 +245,22 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         """Hand back the plugin version string that Decky knows about."""
         return getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
 
+    async def get_active_store_app_id(self) -> int | None:
+        """Return the app ID of the store page currently visible in the Steam browser, or None."""
+        import re
+        import urllib.request
+        try:
+            req = urllib.request.urlopen("http://localhost:8080/json", timeout=2)
+            targets = json.loads(req.read())
+            for t in targets:
+                url = t.get("url", "")
+                m = re.search(r"store\.steampowered\.com/app/(\d+)", url)
+                if m:
+                    return int(m.group(1))
+        except Exception:
+            pass
+        return None
+
     async def get_protondb_systeminfo(self) -> str:
         """Build the system-info blob that ProtonDB submissions need."""
         try:
