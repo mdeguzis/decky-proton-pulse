@@ -1087,10 +1087,7 @@ export function SettingsTab() {
                             }}
                             onClick={(e: MouseEvent) =>
                               showContextMenu(
-                                <Menu label={row.displayName}>
-                                  <MenuItem onClick={() => {}}>
-                                    {t().common.cancel}
-                                  </MenuItem>
+                                <Menu label={row.displayName} cancelText={t().common.close}>
                                   {row.release && (
                                     <MenuItem onClick={() => {
                                       const m = showModal(<ReleaseInfoModal release={row.release!} onClose={() => m.Close()} />);
@@ -1198,10 +1195,7 @@ export function SettingsTab() {
                             }}
                             onClick={(e: MouseEvent) =>
                               showContextMenu(
-                                <Menu label={row.release?.tag_name ?? row.displayName}>
-                                  <MenuItem onClick={() => {}}>
-                                    {t().common.cancel}
-                                  </MenuItem>
+                                <Menu label={row.release?.tag_name ?? row.displayName} cancelText={t().common.close}>
                                   {row.release && (
                                     <MenuItem onClick={() => {
                                       const m = showModal(<ReleaseInfoModal release={row.release!} onClose={() => m.Close()} />);
