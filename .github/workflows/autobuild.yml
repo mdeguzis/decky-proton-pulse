@@ -1,4 +1,4 @@
-name: Autobuild
+name: Ubuntu Build
 
 on:
   workflow_dispatch:
