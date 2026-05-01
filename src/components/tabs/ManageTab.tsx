@@ -67,7 +67,7 @@ function GameBanner({ appId, style }: { appId: number; style?: React.CSSProperti
 }
 
 function formatDate(value: number | string | null | undefined): string {
-  if (!value) return '--';
+  if (!value) return 'No';
   const d = typeof value === 'number' ? new Date(value) : new Date(value);
   return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
@@ -481,10 +481,10 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
 
     const infoRows: { label: string; value: string }[] = [
       { label: t().configManager.infoApplied, value: formatDate(config.appliedAt) },
-      { label: t().configManager.infoUploaded, value: menuCloudRow ? formatDate(menuCloudRow.updated_at) : '--' },
-      { label: t().configManager.infoPublished, value: menuIsPublished ? t().common.yes : t().common.no },
+      { label: t().configManager.infoUploaded, value: menuCloudRow ? formatDate(menuCloudRow.updated_at) : 'No' },
+      { label: t().configManager.infoPublished, value: menuIsPublished ? formatDate(menuCloudRow?.published_at ?? null) || t().common.yes : t().common.no },
       { label: t().configManager.infoLinkedProfile, value: linkedUserId ? t().common.yes : t().common.no },
-      { label: t().configManager.infoClientId, value: clientId ?? '--' },
+      { label: t().configManager.infoClientId, value: clientId ?? 'No' },
     ];
     const infoTitle = displayName(config);
     const handleInfo = () => showModal(

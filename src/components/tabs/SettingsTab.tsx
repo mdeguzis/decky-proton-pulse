@@ -1,5 +1,5 @@
 // src/components/tabs/SettingsTab.tsx
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { ToggleField, Focusable, GamepadButton, DialogButton, ConfirmModal, ModalRoot, showModal, Menu, MenuItem, showContextMenu } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { openFilePicker, FileSelectionType } from '@decky/api';
@@ -137,12 +137,29 @@ function releaseStatusTone(release: CompatToolRelease, installedReleaseTags: Set
   };
 }
 
+const RELEASE_SCROLL_STEP = 120;
+
 function ReleaseInfoModal({ release, onClose }: { release: CompatToolRelease; onClose: () => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   return (
-    <ModalRoot onCancel={onClose} style={{ width: 'min(720px, calc(100vw - 48px))' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 0, height: '100%' }}>
-        {/* header */}
-        <div style={{ padding: '16px 20px 8px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+    <ModalRoot
+      onCancel={onClose}
+      bAllowFullSize
+      className="pp-release-info-modal"
+      modalClassName="pp-release-info-modal"
+    >
+      <style>{`
+        .pp-release-info-modal,
+        .pp-release-info-modal > div,
+        .pp-release-info-modal .DialogContent_InnerWidth {
+          max-height: 80vh !important;
+          height: 80vh !important;
+          padding: 0 !important;
+        }
+        .pp-release-info-modal .ModalPosition { inset: 0 !important; }
+      `}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(80vh - 40px)', padding: '16px 20px 0' }}>
+        <div style={{ flexShrink: 0, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#eef7ff' }}>{release.tag_name}</div>
           {release.published_at && (
             <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 4 }}>
@@ -151,23 +168,29 @@ function ReleaseInfoModal({ release, onClose }: { release: CompatToolRelease; on
           )}
         </div>
 
-        {/* scrollable body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px', minHeight: 0, maxHeight: 420 }}>
-          {release.body ? (
-            <div style={{ fontSize: 12, color: '#c8dcea', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-              {release.body}
-            </div>
-          ) : (
-            <div style={{ fontSize: 11, color: '#556a7a' }}>{t().detail.noGameRequirementsFound}</div>
-          )}
+        <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+          <div style={{ fontSize: 12, color: '#c8dcea', lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', wordBreak: 'break-word', paddingBottom: 12 }}>
+            {release.body ?? <span style={{ color: '#556a7a' }}>{t().detail.noGameRequirementsFound}</span>}
+          </div>
         </div>
 
-        {/* single close button */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <Focusable
+          onGamepadDirection={(evt: GamepadEvent) => {
+            const el = scrollRef.current;
+            if (!el) return;
+            if (evt.detail.button === GamepadButton.DIR_UP) {
+              el.scrollBy({ top: -RELEASE_SCROLL_STEP, behavior: 'auto' });
+            } else if (evt.detail.button === GamepadButton.DIR_DOWN) {
+              evt.preventDefault();
+              el.scrollBy({ top: RELEASE_SCROLL_STEP, behavior: 'auto' });
+            }
+          }}
+          style={{ flexShrink: 0, padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}
+        >
           <DialogButton onClick={onClose} style={{ width: '100%' }}>
             {t().common.close}
           </DialogButton>
-        </div>
+        </Focusable>
       </div>
     </ModalRoot>
   );
