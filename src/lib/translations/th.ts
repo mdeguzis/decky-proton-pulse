@@ -166,8 +166,6 @@ export const th: TranslationTree = {
     experimentalGamePageShortcut: 'ทางลัดหน้าเกม',
     experimentalGamePageShortcutDescription: 'แสดงทางลัด Proton Pulse ถัดจากปุ่มการดำเนินการในหน้าเกม ทดลองใช้และปิดใช้งานโดยค่าเริ่มต้น',
     gamePageBadge: 'ป้าย ProtonDB ในหน้าเกม',
-    storePageBadge: 'Proton Pulse badge on store pages',
-    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'แสดงป้ายระดับความเข้ากันได้ของ ProtonDB ในหน้าเกม',
   },
   compatTools: {

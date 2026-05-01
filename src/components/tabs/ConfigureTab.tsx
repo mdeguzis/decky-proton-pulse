@@ -309,12 +309,14 @@ function GameSummaryHeader({
   reportsCount,
   combinedTier,
   resolvedSteamAppId,
+  isInLibrary,
 }: {
   appId: number;
   appName: string;
   reportsCount?: number;
   combinedTier?: PulseTierResult | null;
   resolvedSteamAppId?: number | null;
+  isInLibrary?: boolean;
 }) {
   const extras = t().extras!;
   const isShortcut = isSteamShortcutApp(appId);
@@ -337,23 +339,39 @@ function GameSummaryHeader({
             : `${extras.appIdLabel(appId)}${typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}`}
         </div>
       </div>
-      {tierColor && combinedTier && (
-        <span
-          style={{
-            background: tierColor,
-            color: '#111',
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        {isInLibrary === false && (
+          <span style={{
+            background: 'rgba(255,200,60,0.15)',
+            border: '1px solid rgba(255,200,60,0.4)',
+            color: 'rgba(255,200,60,0.9)',
             borderRadius: 999,
-            padding: '3px 10px',
-            fontWeight: 700,
-            fontSize: 11,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            flexShrink: 0,
-          }}
-        >
-          {(t().ratings as Record<string, string>)[combinedTier.tier] ?? combinedTier.tier}
-        </span>
-      )}
+            padding: '2px 8px',
+            fontWeight: 600,
+            fontSize: 10,
+            whiteSpace: 'nowrap',
+            letterSpacing: '0.03em',
+          }}>
+            {t().configure.notInLibrary}
+          </span>
+        )}
+        {tierColor && combinedTier && (
+          <span
+            style={{
+              background: tierColor,
+              color: '#111',
+              borderRadius: 999,
+              padding: '3px 10px',
+              fontWeight: 700,
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}
+          >
+            {(t().ratings as Record<string, string>)[combinedTier.tier] ?? combinedTier.tier}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -1195,23 +1213,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} />
-      {!isInLibrary && (
-        <div style={{
-          margin: '4px 16px 0',
-          padding: '5px 10px',
-          borderRadius: 4,
-          background: 'rgba(255,200,60,0.12)',
-          border: '1px solid rgba(255,200,60,0.35)',
-          color: 'rgba(255,200,60,0.9)',
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: '0.04em',
-          textAlign: 'center',
-        }}>
-          {t().configure.notInLibrary}
-        </div>
-      )}
+      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} isInLibrary={isInLibrary} />
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
           <SteamSpinner />

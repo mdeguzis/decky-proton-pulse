@@ -166,8 +166,6 @@ export const fr: TranslationTree = {
     experimentalGamePageShortcut: 'Raccourci sur la page du jeu',
     experimentalGamePageShortcutDescription: 'Affiche un raccourci Proton Pulse à côté des boutons d’action de la page du jeu. Fonction expérimentale désactivée par défaut.',
     gamePageBadge: 'Badge ProtonDB sur la page du jeu',
-    storePageBadge: 'Proton Pulse badge on store pages',
-    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Afficher le badge de compatibilité ProtonDB sur la page du jeu.',
   },
   compatTools: {

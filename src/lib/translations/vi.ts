@@ -166,8 +166,6 @@ export const vi: TranslationTree = {
     experimentalGamePageShortcut: 'Phím tắt trang trò chơi',
     experimentalGamePageShortcutDescription: 'Hiển thị phím tắt Proton Pulse bên cạnh các nút hành động trên trang trò chơi. Thử nghiệm và tắt theo mặc định.',
     gamePageBadge: 'Huy hiệu ProtonDB trên trang trò chơi',
-    storePageBadge: 'Proton Pulse badge on store pages',
-    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Hiển thị huy hiệu cấp độ tương thích ProtonDB trên trang trò chơi.',
   },
   compatTools: {

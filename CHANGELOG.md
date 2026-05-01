@@ -4,6 +4,13 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Fix VDF parser nested map desync and show dual badges
+- Wire store page badge and search hint into plugin lifecycle
+- Disable all report action buttons for non-library games
+- Add Y-button hint on search results and store page badge
+- Add top-level image field to plugin.json for Decky store submission
+- Add OS version badges and update coverage metrics
+- Resolve non-Steam shortcuts to Steam store app ID for reports
 - Replace Bazzite workflow with fedora:latest to auto-track stable releases
 - Use standalone pnpm and uv installers to avoid OSTree /usr/local symlink issue
 - Use crane export to import Bazzite as single-layer image

@@ -166,8 +166,6 @@ export const nl: TranslationTree = {
     experimentalGamePageShortcut: 'Snelkoppeling spelspagina',
     experimentalGamePageShortcutDescription: 'Toont een Proton Pulse-snelkoppeling naast de actieknoppen van de spelpagina. Experimenteel en standaard uitgeschakeld.',
     gamePageBadge: 'ProtonDB-badge op spelpagina',
-    storePageBadge: 'Proton Pulse badge on store pages',
-    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Toon de ProtonDB-compatibiliteitsniveaubadge op de spelpagina.',
   },
   compatTools: {

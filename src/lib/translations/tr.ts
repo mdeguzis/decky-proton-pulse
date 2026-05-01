@@ -166,8 +166,6 @@ export const tr: TranslationTree = {
     experimentalGamePageShortcut: 'Oyun sayfası kısayol düğmesi',
     experimentalGamePageShortcutDescription: 'Oyun sayfasındaki eylem düğmelerinin yanında Proton Pulse kısayolu gösterir. Deneyseldir ve varsayılan olarak kapalıdır.',
     gamePageBadge: 'Oyun sayfasında ProtonDB rozeti',
-    storePageBadge: 'Proton Pulse badge on store pages',
-    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Oyun sayfasında ProtonDB uyumluluk rozeti göster.',
   },
   compatTools: {

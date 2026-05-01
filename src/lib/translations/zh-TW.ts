@@ -166,8 +166,6 @@ export const zhTW: TranslationTree = {
     experimentalGamePageShortcut: '遊戲頁面捷徑',
     experimentalGamePageShortcutDescription: '在遊戲頁面操作按鈕旁顯示 Proton Pulse 捷徑。實驗性功能，預設停用。',
     gamePageBadge: '遊戲頁面 ProtonDB 徽章',
-    storePageBadge: 'Proton Pulse badge on store pages',
-    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: '在遊戲頁面顯示 ProtonDB 相容性等級徽章。',
   },
   compatTools: {

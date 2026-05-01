@@ -20,7 +20,6 @@ import { t } from '../lib/i18n';
 const HINT_ID = 'pp-search-hint-root';
 
 let _hintEl: HTMLElement | null = null;
-let _hintDoc: Document | null = null;
 let _bpmDocCache: Document | null = null;
 let _focusedAppId: number | null = null;
 let _pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -41,7 +40,7 @@ function getBpmDocument(): Document {
     if (parentDoc && parentDoc !== document && (parentDoc.body?.clientWidth ?? 0) > 1) {
       _bpmDocCache = parentDoc;
       void logFrontendEvent('DEBUG', 'searchResultsHint: BPM doc via window.parent', { w: parentDoc.body.clientWidth });
-      return _bpmDocCache;
+      return _bpmDocCache as Document;
     }
   } catch { /* cross-origin guard */ }
 
@@ -55,7 +54,7 @@ function getBpmDocument(): Document {
     if (el?.ownerDocument && el.ownerDocument !== document && w > 100) {
       _bpmDocCache = el.ownerDocument;
       void logFrontendEvent('DEBUG', 'searchResultsHint: BPM doc via nav tree', { w });
-      return _bpmDocCache;
+      return _bpmDocCache as Document;
     }
   }
 
@@ -65,7 +64,6 @@ function getBpmDocument(): Document {
 
 // ── appId from focused nav tree element ──────────────────────────────────────
 
-// Only show hint while on the search results route.
 function isOnSearchRoute(): boolean {
   return (globalThis.location?.pathname ?? '').includes('search');
 }
@@ -155,7 +153,6 @@ function ensureHint(): HTMLElement {
 
   el.addEventListener('click', triggerHintAction);
   _hintEl = el;
-  _hintDoc = targetDoc;
   targetDoc.body.appendChild(el);
   return el;
 }
@@ -257,7 +254,6 @@ export function teardownSearchResultsHint() {
   _buttonCbs = [];
 
   if (_hintEl) { try { _hintEl.remove(); } catch { /* ignore */ } _hintEl = null; }
-  _hintDoc = null;
   _bpmDocCache = null;
   _focusedAppId = null;
   _yWasDown = false;

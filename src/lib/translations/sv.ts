@@ -166,8 +166,6 @@ export const sv: TranslationTree = {
     experimentalGamePageShortcut: 'Genväg till spelsida',
     experimentalGamePageShortcutDescription: 'Visar en Proton Pulse-genväg bredvid åtgärdsknapparna på spelsidan. Experimentellt och inaktiverat som standard.',
     gamePageBadge: 'ProtonDB-märke på spelsida',
-    storePageBadge: 'Proton Pulse badge on store pages',
-    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: 'Visa ProtonDB-kompatibilitetsnivåmärket på spelsidan.',
   },
   compatTools: {

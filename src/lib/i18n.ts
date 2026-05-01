@@ -209,8 +209,6 @@ export interface TranslationTree {
     experimentalGamePageShortcutDescription: string;
     gamePageBadge: string;
     gamePageBadgeDescription: string;
-    storePageBadge: string;
-    storePageBadgeDescription: string;
   };
   compatTools: {
     install: string;
@@ -802,8 +800,6 @@ export const en: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Show a best-effort Proton Pulse shortcut next to the game page action buttons. Experimental and off by default.',
     gamePageBadge: 'Proton Pulse badge on game page',
     gamePageBadgeDescription: 'Show a Proton Pulse icon badge in the top-left corner of the game page. Click it to open Proton Pulse for that game.',
-    storePageBadge: 'Proton Pulse badge on store pages',
-    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
   },
   compatTools: {
     install: 'Install',

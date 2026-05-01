@@ -166,8 +166,6 @@ export const zhCN: TranslationTree = {
     experimentalGamePageShortcut: '游戏页面快捷按钮',
     experimentalGamePageShortcutDescription: '在游戏页面操作按钮旁显示 Proton Pulse 快捷入口。该功能为实验性质，默认关闭。',
     gamePageBadge: '在游戏页面显示 ProtonDB 徽章',
-    storePageBadge: 'Proton Pulse badge on store pages',
-    storePageBadgeDescription: 'Show a small Proton Pulse icon in the browser bar when viewing a Steam store game page. Click it to open reports for that game.',
     gamePageBadgeDescription: '在游戏页面显示 ProtonDB 兼容性等级徽章。',
   },
   compatTools: {
