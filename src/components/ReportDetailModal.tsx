@@ -1534,6 +1534,8 @@ export function ReportDetailModal({
           </DialogButton>
           <DialogButton
             onClick={handleEditConfig}
+            disabled={!canApply}
+            title={!canApply ? t().detail.applyRequiresLibrary : undefined}
             ref={(node) => {
               editButtonRef.current = node;
             }}
@@ -1566,6 +1568,8 @@ export function ReportDetailModal({
               }
               void handleClearLaunchOptions();
             }}
+            disabled={!canApply}
+            title={!canApply ? t().detail.applyRequiresLibrary : undefined}
             ref={(node) => {
               clearButtonRef.current = node;
             }}
@@ -1578,7 +1582,7 @@ export function ReportDetailModal({
           </DialogButton>
           <DialogButton
             onClick={handleUpvote}
-            disabled={voting || userVote === 1}
+            disabled={voting || userVote === 1 || !canApply}
             ref={(node) => {
               upvoteButtonRef.current = node;
             }}
@@ -1588,7 +1592,7 @@ export function ReportDetailModal({
             style={{
               flex: 0.5, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              opacity: userVote === 1 ? 0.4 : 1,
+              opacity: (userVote === 1 || !canApply) ? 0.4 : 1,
             }}
           >
             {voting ? <SteamSpinner /> : (
@@ -1602,7 +1606,7 @@ export function ReportDetailModal({
           </DialogButton>
           <DialogButton
             onClick={handleDownvote}
-            disabled={voting || userVote === -1}
+            disabled={voting || userVote === -1 || !canApply}
             ref={(node) => {
               downvoteButtonRef.current = node;
             }}
@@ -1612,7 +1616,7 @@ export function ReportDetailModal({
             style={{
               flex: 0.5, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              opacity: userVote === -1 ? 0.4 : 1,
+              opacity: (userVote === -1 || !canApply) ? 0.4 : 1,
             }}
           >
             {voting ? <SteamSpinner /> : (

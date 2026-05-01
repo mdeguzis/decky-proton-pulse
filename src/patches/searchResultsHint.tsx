@@ -8,7 +8,7 @@
 // is embedded in the store CDN image src (steam/apps/<id>/header.jpg).
 //
 // Button detection: hooks m_ButtonDownCallbacks on all gamepad input sources.
-// Y button = EButton 10 in Steam's internal EButton enum (empirically confirmed --
+// Y button = EButton 4 in Steam's internal EButton enum (empirically confirmed --
 // NOT the standard Web Gamepad API index 3).
 //
 // No settings toggle -- always active.
@@ -118,7 +118,10 @@ function ensureHint(): HTMLElement {
   const el = targetDoc.createElement('button');
   el.id = HINT_ID;
   el.type = 'button';
-  // Blend with Steam's native bottom hint bar (bottom:0, transparent bg, matching height)
+  // Centered in the bottom bar, matching Steam's hint bar height and style.
+  // True native injection into Steam's FooterLegend requires afterPatch on Steam's
+  // search tile component (which needs internal component name knowledge), so the
+  // overlay approach is used instead.
   el.style.cssText = [
     'position:fixed',
     'bottom:0',
@@ -139,14 +142,16 @@ function ensureHint(): HTMLElement {
     'pointer-events:auto',
   ].join(';');
 
-  // Y button glyph + label
-  el.innerHTML = `
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"
-      style="display:block;flex:0 0 auto;border:1.5px solid rgba(255,255,255,0.7);border-radius:50%;padding:2px">
-      <text x="12" y="16" text-anchor="middle" font-size="11" font-weight="700"
-        font-family="sans-serif" fill="white">Y</text>
-    </svg>
-    <span>${t().common.showProtonInfo}</span>`;
+  // Pill-shaped Y glyph matching Steam's native A/B button style
+  el.innerHTML = [
+    '<span aria-hidden="true" style="',
+      'display:inline-flex;align-items:center;justify-content:center;',
+      'width:22px;height:22px;border-radius:50%;',
+      'border:2px solid rgba(255,255,255,0.75);',
+      'font-size:12px;font-weight:700;flex:0 0 auto;',
+    '">Y</span>',
+    `<span>${t().common.showProtonInfo}</span>`,
+  ].join('');
 
   el.addEventListener('click', triggerHintAction);
   _hintEl = el;
@@ -181,6 +186,14 @@ function triggerHintAction() {
 
 function pollFocus() {
   if (!isOnSearchRoute()) { hideHint(); return; }
+  // Hide while the on-screen keyboard is active (text input focused in BPM doc)
+  const bpmDoc = getBpmDocument();
+  const active = bpmDoc.activeElement;
+  const tag = (active as HTMLElement)?.tagName ?? '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || (active as HTMLElement)?.isContentEditable) {
+    hideHint();
+    return;
+  }
   const appId = getAppIdFromNavTrees();
   if (appId) showHint(appId);
   else hideHint();
