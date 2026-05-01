@@ -3,9 +3,10 @@
   "author": "mdeguzis",
   "flags": [""],
   "api_version": 1,
+  "image": "https://raw.githubusercontent.com/mdeguzis/decky-proton-pulse/main/assets/logo.png",
   "publish": {
     "tags": ["proton", "compatibility", "launch-options"],
     "description": "Auto-apply ProtonDB launch options ranked by your system specs.",
-    "image": "https://opengraph.githubassets.com/1/mdeguzis/decky-proton-pulse"
+    "image": "https://raw.githubusercontent.com/mdeguzis/decky-proton-pulse/main/assets/logo.png"
   }
 }
