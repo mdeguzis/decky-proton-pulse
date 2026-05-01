@@ -4,6 +4,9 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- I18n: fill translation gaps for all 34 missing keys across 18 languages
+- Suppress @decky/ui DialogButton and TextField prop type gaps
+- Remove store page badge, shrink not-in-library to inline pill
 - Fix VDF parser nested map desync and show dual badges
 - Wire store page badge and search hint into plugin lifecycle
 - Disable all report action buttons for non-library games
