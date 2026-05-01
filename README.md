@@ -1,13 +1,13 @@
 # Decky Proton Pulse
 
-| Autobuild | Status | OS Version |
-|---|---|---|
-| Ubuntu | [![Ubuntu Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml) | [![Ubuntu OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-ubuntu.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
-| Debian | [![Debian Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml) | [![Debian OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-debian.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
-| Arch Linux | [![Arch Linux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml) | [![Arch Linux OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-arch.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
-| Fedora | [![Fedora Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-fedora.yml) | [![Fedora OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-fedora.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
-| Termux | [![Termux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml) | |
-| Windows toolchain | [![Windows Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml) | |
+| Status | OS Version |
+|---|---|
+| [![Ubuntu Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml) | [![Ubuntu OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-ubuntu.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
+| [![Debian Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-debian.yml) | [![Debian OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-debian.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
+| [![Arch Linux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-arch.yml) | [![Arch Linux OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-arch.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
+| [![Fedora Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-fedora.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-fedora.yml) | [![Fedora OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-fedora.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
+| [![Termux Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-termux.yml) | |
+| [![Windows Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/build-windows.yml) | |
 
 Windows CI currently validates that the repo toolchain can install and build on a GitHub-hosted Windows runner. It is not a claim that the Decky plugin runtime or hardware-detection backend is fully supported on Windows.
 
@@ -96,24 +96,24 @@ Proton Pulse supports 19 languages. Translation coverage is measured during buil
 | Language | Code | Coverage | Status |
 |---|---|---|---|
 | English | en | 100.0% (canonical) | canonical |
-| Deutsch | de | 93.7% | pass |
-| Español | es | 93.7% | pass |
-| Français | fr | 93.7% | pass |
-| Italiano | it | 93.7% | pass |
-| 日本語 | ja | 93.7% | pass |
-| 한국어 | ko | 93.7% | pass |
-| Nederlands | nl | 93.7% | pass |
-| Polski | pl | 93.7% | pass |
-| Português (BR) | pt-BR | 93.7% | pass |
-| Русский | ru | 93.7% | pass |
-| Türkçe | tr | 93.7% | pass |
-| Українська | uk | 93.7% | pass |
-| Svenska | sv | 93.7% | pass |
-| Čeština | cs | 93.7% | pass |
-| ภาษาไทย | th | 93.7% | pass |
-| Tiếng Việt | vi | 93.7% | pass |
-| 简体中文 | zh-CN | 93.7% | pass |
-| 繁體中文 | zh-TW | 93.7% | pass |
+| Deutsch | de | 100.0% | pass |
+| Español | es | 100.0% | pass |
+| Français | fr | 100.0% | pass |
+| Italiano | it | 100.0% | pass |
+| 日本語 | ja | 100.0% | pass |
+| 한국어 | ko | 100.0% | pass |
+| Nederlands | nl | 100.0% | pass |
+| Polski | pl | 100.0% | pass |
+| Português (BR) | pt-BR | 100.0% | pass |
+| Русский | ru | 100.0% | pass |
+| Türkçe | tr | 100.0% | pass |
+| Українська | uk | 100.0% | pass |
+| Svenska | sv | 100.0% | pass |
+| Čeština | cs | 100.0% | pass |
+| ภาษาไทย | th | 100.0% | pass |
+| Tiếng Việt | vi | 100.0% | pass |
+| 简体中文 | zh-CN | 100.0% | pass |
+| 繁體中文 | zh-TW | 100.0% | pass |
 <!-- translation-coverage:end -->
 
 Want to help translate? See `src/lib/translations/` for the translation files.
