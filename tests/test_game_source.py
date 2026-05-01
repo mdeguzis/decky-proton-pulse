@@ -207,3 +207,223 @@ def test_get_game_source_handles_shortcuts_parse_exception() -> None:
         result = game_source.get_game_source("7777777", "Boom Game")
 
     assert result["source"] == "Non-Steam"
+
+
+# ── find_steam_appid_by_title OSError ─────────────────────────────────────────
+
+def test_find_steam_appid_by_title_oserror() -> None:
+    mock_lib = MagicMock()
+    mock_lib.glob.side_effect = OSError("permission denied")
+    with patch("lib.game_source._library_folders", return_value=[mock_lib]):
+        assert game_source.find_steam_appid_by_title("Dredge") is None
+
+
+# ── find_steam_appid_from_store ───────────────────────────────────────────────
+
+import json
+
+
+def _mock_urlopen(items: list) -> MagicMock:
+    resp_data = json.dumps({"items": items}).encode()
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = resp_data
+    mock_resp.__enter__ = lambda s: s
+    mock_resp.__exit__ = MagicMock(return_value=False)
+    return mock_resp
+
+
+def test_find_steam_appid_from_store_exact_match() -> None:
+    items = [{"type": "app", "name": "Dredge", "id": 1562430}]
+    with patch("urllib.request.urlopen", return_value=_mock_urlopen(items)):
+        result = game_source.find_steam_appid_from_store("Dredge")
+    assert result == "1562430"
+
+
+def test_find_steam_appid_from_store_no_exact_match() -> None:
+    items = [{"type": "app", "name": "Dredge 2", "id": 999}]
+    with patch("urllib.request.urlopen", return_value=_mock_urlopen(items)):
+        result = game_source.find_steam_appid_from_store("Dredge")
+    assert result is None
+
+
+def test_find_steam_appid_from_store_exception() -> None:
+    with patch("urllib.request.urlopen", side_effect=Exception("network error")):
+        result = game_source.find_steam_appid_from_store("Dredge")
+    assert result is None
+
+
+# ── _skip_bvdf_map ────────────────────────────────────────────────────────────
+
+def _null_str(s: str) -> bytes:
+    return s.encode() + b"\x00"
+
+
+def _make_shortcut_vdf_with_nested_map(app_name: str, exe: str, appid_val: int) -> bytes:
+    """Build a VDF with a nested 'tags' map (Heroic pattern) before the appid field."""
+    tags_map = (
+        b"\x00" + _null_str("tags")
+        + b"\x01" + _null_str("0") + _null_str("action")
+        + b"\x02" + _null_str("1") + struct.pack("<I", 99)
+        + b"\x08"
+    )
+    entry = (
+        b"\x01" + _null_str("AppName") + _null_str(app_name)
+        + b"\x01" + _null_str("exe") + _null_str(exe)
+        + tags_map
+        + b"\x02" + _null_str("appid") + struct.pack("<I", appid_val)
+        + b"\x08"
+    )
+    return (
+        b"\x00" + _null_str("shortcuts")
+        + b"\x00" + _null_str("0")
+        + entry
+        + b"\x08\x08"
+    )
+
+
+def test_parse_shortcuts_vdf_with_nested_tags_map(tmp_path: Path) -> None:
+    vdf = tmp_path / "shortcuts.vdf"
+    vdf.write_bytes(_make_shortcut_vdf_with_nested_map("Dredge", "/usr/bin/heroic", 12345))
+    result = game_source._parse_shortcuts_vdf(vdf)
+    assert len(result) == 1
+    assert result[0]["appname"] == "Dredge"
+    assert result[0]["appid"] == 12345
+
+
+def test_skip_bvdf_map_deeply_nested() -> None:
+    inner = b"\x01" + _null_str("k") + _null_str("v") + b"\x08"
+    outer = b"\x00" + _null_str("inner") + inner + b"\x08"
+    pos = game_source._skip_bvdf_map(outer, 0)
+    assert pos == len(outer)
+
+
+def test_skip_bvdf_map_truncated_returns_gracefully() -> None:
+    data = b"\x01" + _null_str("key") + _null_str("value")  # no 0x08 terminator
+    pos = game_source._skip_bvdf_map(data, 0)
+    assert pos == len(data)
+
+
+def test_parse_shortcuts_vdf_unknown_type_byte_is_skipped(tmp_path: Path) -> None:
+    entry = (
+        b"\x05"  # unknown type byte -- should be skipped
+        + b"\x01" + _null_str("AppName") + _null_str("TestGame")
+        + b"\x08"
+    )
+    data = b"\x00" + _null_str("shortcuts") + b"\x00" + _null_str("0") + entry + b"\x08\x08"
+    vdf = tmp_path / "shortcuts.vdf"
+    vdf.write_bytes(data)
+    result = game_source._parse_shortcuts_vdf(vdf)
+    assert isinstance(result, list)
+
+
+def test_parse_shortcuts_vdf_skips_garbage_outer_bytes(tmp_path: Path) -> None:
+    entry = b"\x01" + _null_str("AppName") + _null_str("TestGame") + b"\x08"
+    data = (
+        b"\x00" + _null_str("shortcuts")
+        + b"\x05"  # garbage byte in outer sequence
+        + b"\x00" + _null_str("0")
+        + entry
+        + b"\x08\x08"
+    )
+    vdf = tmp_path / "shortcuts.vdf"
+    vdf.write_bytes(data)
+    result = game_source._parse_shortcuts_vdf(vdf)
+    assert len(result) == 1
+    assert result[0]["appname"] == "TestGame"
+
+
+# ── find_shortcut_name_by_appid ───────────────────────────────────────────────
+
+def _make_vdf_with_appid(app_name: str, exe: str, appid_val: int) -> bytes:
+    entry = (
+        b"\x01" + _null_str("AppName") + _null_str(app_name)
+        + b"\x01" + _null_str("exe") + _null_str(exe)
+        + b"\x02" + _null_str("appid") + struct.pack("<I", appid_val)
+        + b"\x08"
+    )
+    return (
+        b"\x00" + _null_str("shortcuts")
+        + b"\x00" + _null_str("0")
+        + entry
+        + b"\x08\x08"
+    )
+
+
+def test_find_shortcut_name_by_appid_found(tmp_path: Path) -> None:
+    vdf = tmp_path / "shortcuts.vdf"
+    vdf.write_bytes(_make_vdf_with_appid("Dredge", "/usr/bin/heroic", 12345))
+    with patch("lib.game_source._find_shortcuts_vdf", return_value=[vdf]):
+        assert game_source.find_shortcut_name_by_appid("12345") == "Dredge"
+
+
+def test_find_shortcut_name_by_appid_not_found() -> None:
+    with patch("lib.game_source._find_shortcuts_vdf", return_value=[]):
+        assert game_source.find_shortcut_name_by_appid("99999") is None
+
+
+def test_find_shortcut_name_by_appid_exception() -> None:
+    with patch("lib.game_source._find_shortcuts_vdf", side_effect=RuntimeError("boom")):
+        assert game_source.find_shortcut_name_by_appid("99999") is None
+
+
+# ── get_game_source -- appid match + no-title paths ──────────────────────────
+
+def test_get_game_source_matched_by_appid_field(tmp_path: Path) -> None:
+    appid_val = 9999999
+    vdf = tmp_path / "shortcuts.vdf"
+    vdf.write_bytes(_make_vdf_with_appid("Dredge", "/home/deck/.config/heroic/heroic", appid_val))
+    with (
+        patch("lib.game_source.is_steam_app", return_value=False),
+        patch("lib.game_source._find_shortcuts_vdf", return_value=[vdf]),
+        patch("lib.game_source.find_steam_appid_by_title", return_value="1562430"),
+    ):
+        result = game_source.get_game_source(str(appid_val), "Dredge")
+    assert result["source"] == "Heroic"
+    assert result["steam_app_id_match"] == "1562430"
+
+
+def test_get_game_source_resolves_title_from_matched_entry(tmp_path: Path) -> None:
+    appid_val = 9999999
+    vdf = tmp_path / "shortcuts.vdf"
+    vdf.write_bytes(_make_vdf_with_appid("Dredge", "/home/deck/.config/heroic/heroic", appid_val))
+    with (
+        patch("lib.game_source.is_steam_app", return_value=False),
+        patch("lib.game_source._find_shortcuts_vdf", return_value=[vdf]),
+        patch("lib.game_source.find_steam_appid_by_title", return_value="1562430"),
+    ):
+        result = game_source.get_game_source(str(appid_val))  # no title
+    assert result["source"] == "Heroic"
+    assert result["steam_app_id_match"] == "1562430"
+
+
+def test_get_game_source_resolves_title_via_shortcut_name_lookup() -> None:
+    with (
+        patch("lib.game_source.is_steam_app", return_value=False),
+        patch("lib.game_source._find_shortcuts_vdf", return_value=[]),
+        patch("lib.game_source.find_shortcut_name_by_appid", return_value="Dredge"),
+        patch("lib.game_source.find_steam_appid_by_title", return_value="1562430"),
+    ):
+        result = game_source.get_game_source("9999999")  # no title
+    assert result["steam_app_id_match"] == "1562430"
+
+
+def test_get_game_source_local_acf_exception_is_caught() -> None:
+    with (
+        patch("lib.game_source.is_steam_app", return_value=False),
+        patch("lib.game_source._find_shortcuts_vdf", return_value=[]),
+        patch("lib.game_source.find_steam_appid_by_title", side_effect=RuntimeError("acf error")),
+        patch("lib.game_source.find_steam_appid_from_store", return_value=None),
+    ):
+        result = game_source.get_game_source("9999999", "Dredge")
+    assert result["steam_app_id_match"] is None
+
+
+def test_get_game_source_store_exception_is_caught() -> None:
+    with (
+        patch("lib.game_source.is_steam_app", return_value=False),
+        patch("lib.game_source._find_shortcuts_vdf", return_value=[]),
+        patch("lib.game_source.find_steam_appid_by_title", return_value=None),
+        patch("lib.game_source.find_steam_appid_from_store", side_effect=RuntimeError("store error")),
+    ):
+        result = game_source.get_game_source("9999999", "Dredge")
+    assert result["steam_app_id_match"] is None

@@ -4,6 +4,14 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+## v0.9.10
+
+- Improve Python coverage 94% -> 98%
+- Version bump
+- Add Termux and Windows OS version badges to coverage-badges workflow
+- Rename Autobuild workflow to Ubuntu Build
+- Remove redundant platform name column from build table
+- Achieve 100% translation coverage across all 19 languages
 - I18n: fill translation gaps for all 34 missing keys across 18 languages
 - Suppress @decky/ui DialogButton and TextField prop type gaps
 - Remove store page badge, shrink not-in-library to inline pill
