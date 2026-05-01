@@ -35,6 +35,8 @@ import { getSetting } from '../../lib/settings';
 import { clearEditedReports, getEditedReportIndex, removeFromEditedReportIndex, upsertEditedReportIndex, type EditedReportIndexEntry } from './ConfigureTab';
 import { bucketPlaytimeMinutes, getEffectivePlaytimeMinutes } from '../../lib/playtime';
 
+const PpTextField = TextField as React.ComponentType<React.ComponentProps<typeof TextField> & { placeholder?: string; value?: string; onChange?: React.ChangeEventHandler<HTMLInputElement>; style?: React.CSSProperties }>;
+
 interface Props {
   appId: number | null;
   appName: string;
@@ -571,7 +573,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           {restoring ? t().configManager.restoringFromCloud : t().configManager.restoreFromCloud}
         </DialogButton>
       </Focusable>
-      <TextField
+      <PpTextField
         placeholder={t().configManager.filterGames}
         value={filterText}
         onChange={(e) => setFilterText(e.target.value)}

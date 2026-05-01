@@ -32,6 +32,8 @@ import { t } from '../lib/i18n';
 import { getReportSourceLabel } from '../lib/reportSource';
 import { registerScreenshotAutomationHandler } from '../lib/screenshotAutomation';
 
+const PpDialogButton = DialogButton as React.ComponentType<React.ComponentProps<typeof DialogButton> & { title?: string }>;
+
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
@@ -1518,7 +1520,7 @@ export function ReportDetailModal({
             borderBottom: '1px solid #2a3a4a',
           }}
         >
-          <DialogButton
+          <PpDialogButton
             onClick={handleApply}
             disabled={applying || !canApply}
             ref={(node) => {
@@ -1531,8 +1533,8 @@ export function ReportDetailModal({
             title={!canApply ? t().detail.applyRequiresLibrary : undefined}
           >
             {applying ? <SteamSpinner /> : t().detail.apply}
-          </DialogButton>
-          <DialogButton
+          </PpDialogButton>
+          <PpDialogButton
             onClick={handleEditConfig}
             disabled={!canApply}
             title={!canApply ? t().detail.applyRequiresLibrary : undefined}
@@ -1545,8 +1547,8 @@ export function ReportDetailModal({
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
             {t().detail.edit}
-          </DialogButton>
-          <DialogButton
+          </PpDialogButton>
+          <PpDialogButton
             onClick={handleUpload}
             disabled={!canApply}
             title={!canApply ? t().detail.applyRequiresLibrary : undefined}
@@ -1559,8 +1561,8 @@ export function ReportDetailModal({
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
             {t().detail.upload}
-          </DialogButton>
-          <DialogButton
+          </PpDialogButton>
+          <PpDialogButton
             onClick={() => {
               if (!launchOptionsDisplay) {
                 toaster.toast({ title: 'Proton Pulse', body: t().toast.noOptionsSet });
@@ -1579,7 +1581,7 @@ export function ReportDetailModal({
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
             {t().detail.clear}
-          </DialogButton>
+          </PpDialogButton>
           <DialogButton
             onClick={handleUpvote}
             disabled={voting || userVote === 1 || !canApply}

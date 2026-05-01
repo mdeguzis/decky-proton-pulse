@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Focusable, DialogButton, SteamSpinner, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
+
+const PpDialogButton = DialogButton as React.ComponentType<React.ComponentProps<typeof DialogButton> & { onFocus?: () => void; onBlur?: () => void }>;
 import { callable } from '@decky/api';
 import type { SystemInfo } from '../../types';
 import { t } from '../../lib/i18n';
@@ -134,11 +136,11 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
       </div>
 
       {/* ── Platform availability ── */}
-      <DialogButton onClick={() => {}}
+      <PpDialogButton onClick={() => {}}
         onFocus={() => setFocusedRow('hdr-platform')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusedRow === 'hdr-platform' ? '3px solid #1a9fff' : '3px solid transparent', paddingLeft: 13 }}
-      >{t().detail.platformAvailability}</DialogButton>
+      >{t().detail.platformAvailability}</PpDialogButton>
 
       {/* column headers */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '2px 12px 4px', fontSize: 10, color: '#556a7a', fontWeight: 700, textTransform: 'uppercase' }}>
@@ -146,7 +148,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
       </div>
 
       {platformRows.map((row, i) => (
-        <DialogButton key={row.name} onClick={() => {}}
+        <PpDialogButton key={row.name} onClick={() => {}}
           onFocus={() => setFocusedRow(`plat-${row.name}`)}
           onBlur={() => setFocusedRow(null)}
           style={{
@@ -166,15 +168,15 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
               <span style={{ fontSize: 10, color: '#9db0c4' }}>{t().detail.updatedLabel} {lastUpdated}</span>
             )}
           </div>
-        </DialogButton>
+        </PpDialogButton>
       ))}
 
       {/* ── Minimum requirements vs our system ── */}
-      <DialogButton onClick={() => {}}
+      <PpDialogButton onClick={() => {}}
         onFocus={() => setFocusedRow('hdr-min')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusedRow === 'hdr-min' ? '3px solid #1a9fff' : '3px solid transparent', paddingLeft: 13 }}
-      >{t().detail.minimumRequirements}</DialogButton>
+      >{t().detail.minimumRequirements}</PpDialogButton>
 
       {/* column headers */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', padding: '2px 12px 4px', fontSize: 10, color: '#556a7a', fontWeight: 700, textTransform: 'uppercase' }}>
@@ -188,7 +190,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
       ) : reqFields.map((f, i) => {
         const ourValue = buildOurValue(f, sysInfo, storageFreeGb);
         return (
-          <DialogButton key={i} onClick={() => {}}
+          <PpDialogButton key={i} onClick={() => {}}
             onFocus={() => setFocusedRow(`req-${i}`)}
             onBlur={() => setFocusedRow(null)}
             style={{ ...ROW_BTN, borderRight: focusedRow === `req-${i}` ? '3px solid #1a9fff' : '3px solid transparent' }}>
@@ -199,7 +201,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
                 <span style={{ fontSize: 11, color: '#7ecfff' }}>{t().detail.oursLabel} {ourValue}</span>
               )}
             </div>
-          </DialogButton>
+          </PpDialogButton>
         );
       })}
     </Focusable>
