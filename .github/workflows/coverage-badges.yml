@@ -19,8 +19,21 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  get-windows-version:
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - name: Get Windows OS version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Get-CimInstance Win32_OperatingSystem).Version
+          echo "version=$v" >> $env:GITHUB_OUTPUT
+
   build-coverage:
     runs-on: ubuntu-latest
+    needs: [get-windows-version]
 
     steps:
       - name: Check out repository
@@ -55,6 +68,8 @@ jobs:
         run: make coverage
 
       - name: Generate OS version badges
+        env:
+          WINDOWS_VER: ${{ needs.get-windows-version.outputs.version }}
         run: |
           mkdir -p coverage/site/badges
 
@@ -82,6 +97,18 @@ jobs:
           ARCH_VER=$(docker run --rm archlinux:latest bash -c \
             'source /etc/os-release && echo "${VERSION_ID:-rolling}"' 2>/dev/null || echo 'rolling')
           badge "os-arch.json"     "archlinux:latest"   "$ARCH_VER"    "1793d1"
+
+          # Termux -- get termux-tools package version from the docker image
+          TERMUX_VER=$(docker run --rm termux/termux-docker:x86_64 \
+            bash -c 'PATH=/data/data/com.termux/files/usr/bin:$PATH \
+              dpkg-query -W -f='"'"'${Version}'"'"' termux-tools 2>/dev/null' \
+            2>/dev/null | tr -d '\r\n')
+          [ -z "$TERMUX_VER" ] && TERMUX_VER='latest'
+          badge "os-termux.json"   "termux:x86_64"      "$TERMUX_VER"  "262626"
+
+          # Windows -- version captured from windows-latest runner job above
+          WIN_VER="${WINDOWS_VER:-?}"
+          badge "os-windows.json"  "windows-latest"     "$WIN_VER"     "0078d4"
 
       - name: Set up Pages
         uses: actions/configure-pages@v5
