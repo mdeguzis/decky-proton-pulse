@@ -46,6 +46,7 @@ const TIER_TEXT_COLOR: Record<string, string> = {
 const BADGE_ID = 'proton-pulse-game-badge';
 const PATCHED_FLAG = '__pp_badge_patched__';
 
+
 function BadgeIcon({ appId }: { appId: number }) {
   // pos drives both visibility (null = hidden) and position via React state,
   // so the Focusable's rendered DOM coords are correct when the navmesh scans.
@@ -63,6 +64,17 @@ function BadgeIcon({ appId }: { appId: number }) {
     void getGameSource(appId, appName).then((info) => { if (info) setSourceInfo(info); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId]);
+
+  // For non-Steam shortcuts with a resolved Steam store match, re-fetch tier
+  // using the matched app ID (the shortcut ID has no ProtonDB data).
+  useEffect(() => {
+    const matchId = sourceInfo?.steam_app_id_match;
+    if (!matchId) return;
+    getProtonDBSummary(matchId).then((summary) => {
+      if (summary?.tier) setTier(summary.tier);
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceInfo?.steam_app_id_match]);
 
   function measurePos(): { top: number; left: number } | null {
     const inner = innerRef.current;
@@ -161,6 +173,11 @@ function BadgeIcon({ appId }: { appId: number }) {
   const isNonSteam = sourceInfo !== null && !sourceInfo.is_steam;
   const sourceLabel = sourceInfo?.source ?? null;
   const sourceColors = sourceLabel ? (SOURCE_COLORS[sourceLabel] ?? SOURCE_COLORS['Non-Steam']) : null;
+  const hasResolvedSteamId = isNonSteam && !!sourceInfo?.steam_app_id_match;
+  // Show tier badge when: Steam game, non-Steam with resolved ID, or non-Steam with no source label
+  // (always show something -- source badge alone only when launcher is identified)
+  const showTierBadge = !isNonSteam || hasResolvedSteamId || !sourceColors;
+  const showSourceBadge = isNonSteam && !!sourceColors;
 
   const navigate = () => {
     const appName =
@@ -197,27 +214,7 @@ function BadgeIcon({ appId }: { appId: number }) {
         opacity: pos ? 1 : 0,
       }}
     >
-      {isNonSteam && sourceColors ? (
-        <div
-          ref={innerRef}
-          title={t().common.openInProtonPulse}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '5px 8px',
-            borderRadius: 4,
-            background: sourceColors.bg,
-            color: sourceColors.color,
-            fontWeight: 700,
-            fontSize: 11,
-            whiteSpace: 'nowrap',
-            letterSpacing: '0.04em',
-            cursor: 'pointer',
-          }}
-        >
-          {sourceLabel}
-        </div>
-      ) : (
+      {showTierBadge && (
         <div
           ref={innerRef}
           title={t().common.openInProtonPulse}
@@ -240,6 +237,27 @@ function BadgeIcon({ appId }: { appId: number }) {
           {tier && <span>{tier.toUpperCase()}</span>}
         </div>
       )}
+      {showSourceBadge && (
+        <div
+          ref={!showTierBadge ? innerRef : undefined}
+          title={t().common.openInProtonPulse}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '5px 8px',
+            borderRadius: 4,
+            background: sourceColors.bg,
+            color: sourceColors.color,
+            fontWeight: 700,
+            fontSize: 11,
+            whiteSpace: 'nowrap',
+            letterSpacing: '0.04em',
+            cursor: 'pointer',
+          }}
+        >
+          {sourceLabel}
+        </div>
+      )}
     </Focusable>
   );
 }
@@ -259,8 +277,6 @@ export function setupGamePageBadge(routeProps: any) {
     ],
     (_args: any[], ret?: ReactElement) => {
       try {
-        if (!getSetting('showGamePageBadge', true)) return ret;
-
         const appId = parseInt(
           globalThis.location?.pathname?.match(/\/library\/app\/(\d+)/)?.[1] ?? '0',
           10,
@@ -284,15 +300,16 @@ export function setupGamePageBadge(routeProps: any) {
 
         const children = (container as any).props.children as any[];
 
-        if (children.some((c: any) => c?.key === BADGE_ID)) return ret;
+        // Inject tier badge (PLATINUM/GOLD) in the top-left of the hero image
+        if (getSetting('showGamePageBadge', true) && !children.some((c: any) => c?.key === BADGE_ID)) {
+          (container as any).props.style = {
+            ...((container as any).props.style ?? {}),
+            position: (container as any).props.style?.position ?? 'relative',
+          };
+          children.splice(1, 0, <BadgeIcon key={BADGE_ID} appId={appId} />);
+          void logFrontendEvent('DEBUG', 'gamePageBadge: injected', { appId });
+        }
 
-        (container as any).props.style = {
-          ...((container as any).props.style ?? {}),
-          position: (container as any).props.style?.position ?? 'relative',
-        };
-
-        children.splice(1, 0, <BadgeIcon key={BADGE_ID} appId={appId} />);
-        void logFrontendEvent('DEBUG', 'gamePageBadge: injected', { appId });
       } catch (e) {
         void logFrontendEvent('ERROR', 'gamePageBadge: injection error', {
           error: e instanceof Error ? e.message : String(e),

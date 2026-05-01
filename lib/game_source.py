@@ -110,6 +110,28 @@ def _read_bvdf_string(data: bytes, pos: int) -> tuple[str, int]:
     return data[pos:end].decode("utf-8", errors="replace"), end + 1
 
 
+def _skip_bvdf_map(data: bytes, pos: int) -> int:
+    """Skip a nested binary VDF map starting at pos (after the key has been read).
+
+    Recurses into nested maps. Returns position after the 0x08 end marker.
+    """
+    while pos < len(data):
+        type_byte = data[pos:pos+1]
+        pos += 1
+        if type_byte == b"\x08":
+            return pos
+        if type_byte not in (b"\x00", b"\x01", b"\x02"):
+            continue
+        _, pos = _read_bvdf_string(data, pos)
+        if type_byte == b"\x01":
+            _, pos = _read_bvdf_string(data, pos)
+        elif type_byte == b"\x02":
+            pos += 4
+        elif type_byte == b"\x00":
+            pos = _skip_bvdf_map(data, pos)
+    return pos
+
+
 def _parse_shortcuts_vdf(path: Path) -> list[dict[str, Any]]:
     """Parse a binary shortcuts.vdf and return a list of shortcut dicts."""
     try:
@@ -135,14 +157,11 @@ def _parse_shortcuts_vdf(path: Path) -> list[dict[str, Any]]:
 
         entry: dict[str, Any] = {}
         while pos < len(data):
-            if pos >= len(data):
-                break
             type_byte = data[pos:pos+1]
             pos += 1
             if type_byte == b"\x08":  # end of map
                 break
             if type_byte not in (b"\x00", b"\x01", b"\x02"):
-                # unknown type — skip to next null-terminated key safely
                 continue
             key, pos = _read_bvdf_string(data, pos)
             if type_byte == b"\x01":  # string
@@ -153,7 +172,8 @@ def _parse_shortcuts_vdf(path: Path) -> list[dict[str, Any]]:
                     val_int = struct.unpack_from("<I", data, pos)[0]
                     entry[key.lower()] = val_int
                     pos += 4
-            # nested maps (type 0x00) skipped — we only need flat string fields
+            elif type_byte == b"\x00":  # nested map (e.g. tags) -- skip entirely
+                pos = _skip_bvdf_map(data, pos)
 
         if entry:
             shortcuts.append(entry)
@@ -200,12 +220,18 @@ def _find_shortcuts_vdf() -> list[Path]:
 
 
 def _infer_source_from_shortcut(entry: dict[str, Any]) -> str:
-    """Infer the launcher source from a shortcut entry's exe/launch options."""
-    exe = str(entry.get("exe", "")).lower()
-    opts = str(entry.get("launchoptions", "")).lower()
-    combined = exe + " " + opts
+    """Infer the launcher source from all string fields in a shortcut entry."""
+    # Include exe, launchoptions, startdir, and icon -- Heroic Flatpak installs
+    # often have /usr/bin/flatpak as exe but heroic paths in startdir or opts.
+    parts = [
+        str(entry.get("exe", "")),
+        str(entry.get("launchoptions", "")),
+        str(entry.get("startdir", "")),
+        str(entry.get("icon", "")),
+    ]
+    combined = " ".join(parts).lower()
 
-    if "heroic" in combined:
+    if "heroic" in combined or "com.heroicgameslauncher" in combined:
         return "Heroic"
     if "lutris" in combined:
         return "Lutris"
@@ -248,29 +274,55 @@ def get_game_source(app_id: str, title: str = "") -> dict[str, Any]:
         _source_cache[cache_key] = result
         return result
 
-    # Non-Steam — try to find the shortcut entry by app name
+    # Non-Steam -- find the shortcut entry.
+    # Match by app_id first (unique, reliable), then fall back to name matching.
     source = "Non-Steam"
     steam_match: str | None = None
 
+    matched_entry: dict[str, Any] | None = None
     try:
+        numeric_id = int(app_id)
         for vdf_path in _find_shortcuts_vdf():
             entries = _parse_shortcuts_vdf(vdf_path)
+            decky.logger.debug(
+                "get_game_source: vdf=%s entries=%s",
+                vdf_path.name,
+                [(e.get("appname"), e.get("appid")) for e in entries],
+            )
             for entry in entries:
-                app_name = str(entry.get("appname", "")).strip()
-                if app_name.lower() == title.strip().lower() or not title:
-                    source = _infer_source_from_shortcut(entry)
+                vdf_id = int(entry.get("appid", 0))
+                if vdf_id == numeric_id or (vdf_id | 0x80000000) == numeric_id:
+                    matched_entry = entry
                     break
-            else:
-                continue
-            break
+            if matched_entry:
+                break
     except Exception as exc:
-        decky.logger.warning("get_game_source: shortcuts parse failed: %s", exc)
+        decky.logger.warning("get_game_source: app_id lookup failed: %s", exc)
 
-    # Try to find a matching Steam game by title -- first local ACF manifests,
-    # then the Steam store API (catches games not installed locally, e.g. a
-    # non-Steam shortcut pointing to an EGS/GOG copy of a Steam-listed title).
-    # If the frontend didn't supply a title (GetAppOverviewByAppID returned null
-    # for this shortcut), look it up directly in shortcuts.vdf by app_id.
+    # Fall back to name match if app_id didn't resolve (e.g. appid field missing in VDF)
+    if matched_entry is None and title:
+        try:
+            for vdf_path in _find_shortcuts_vdf():
+                for entry in _parse_shortcuts_vdf(vdf_path):
+                    app_name = str(entry.get("appname", "")).strip()
+                    if app_name.lower() == title.strip().lower():
+                        matched_entry = entry
+                        break
+                if matched_entry:
+                    break
+        except Exception as exc:
+            decky.logger.warning("get_game_source: name lookup failed: %s", exc)
+
+    if matched_entry is not None:
+        source = _infer_source_from_shortcut(matched_entry)
+        if not title:
+            title = str(matched_entry.get("appname", "")).strip()
+
+    decky.logger.debug("get_game_source: app_id=%s title=%r source=%s matched=%s",
+                       app_id, title, source, matched_entry is not None)
+
+    # Resolve title to a Steam store app_id for ProtonDB lookups.
+    # If the frontend didn't supply a title, fall back to VDF name lookup.
     if not title:
         title = find_shortcut_name_by_appid(app_id) or ""
         decky.logger.debug("get_game_source: resolved title from vdf: %r", title)

@@ -48,11 +48,11 @@ If you find Proton Pulse useful, please consider starring or contributing to the
 
 Getting Proton launch options right usually means opening ProtonDB, reading a pile of reports, guessing which ones match your hardware, and then copying flags into Steam by hand. Proton Pulse handles that from the Steam Deck UI:
 
-1. Open the plugin from the **Quick Access sidebar** or navigate to a game in your library.
+1. Open the plugin from the **Quick Access sidebar**, navigate to a game in your library, or browse Steam search results -- a Y-button hint lets you jump straight to a game's Proton data without leaving search.
 2. The plugin fetches ProtonDB reports and scores them against your GPU, driver, and Proton version.
 3. Pick a report and press **Apply**. Proton Pulse writes the launch options straight to that game through Steam's CEF API.
 
-You can also review, edit, or clear the options later from the sidebar.
+Tier badges appear directly on game library pages and Steam store pages so you know compatibility at a glance. Non-Steam games (Heroic, Lutris, Epic, GOG, etc.) are resolved to their Steam store counterpart for accurate report data.
 
 ## Optional Proton Pulse Account Link
 
@@ -76,10 +76,14 @@ After linking, uploads from that Decky install can show up as yours on the websi
 * **Compatibility tool management** - browse, install, refresh, and manage Proton and GE versions without leaving the plugin
 * **Detailed report browsing** - open full report cards with filters, diagnostics, vote counts, and score breakdowns
 * **ProtonDB contribution helpers** - vote on reports and prep system info for ProtonDB submissions from inside the plugin
-* **ProtonDB badge** - shows the game's ProtonDB tier at a glance
+* **Game library badge** - floating tier badge (PLATINUM/GOLD/etc.) injected into the game page header; for non-Steam games with a resolved Steam store match, shows the tier badge alongside the launcher source label (Heroic, Epic, GOG, etc.)
+* **Store page badge** - Proton Pulse icon badge injected into the Steam store page header when browsing a game's store page in the embedded browser
+* **Search results hint** - Y-button gamepad hint appears at the bottom of the screen when a search result tile is focused, letting you jump straight to Proton Pulse for that game without opening the library first
+* **Non-Steam game support** - resolves non-Steam shortcuts (Heroic, Lutris, Bottles, itch.io, etc.) to their matching Steam store app ID for accurate ProtonDB data and report lookup
+* **Library guard** - report action buttons (apply, edit, upload, clear, vote) are disabled for games not in the user's library, with a visible "Not in library" notice at the top of the manage-game tab
 * **System detection** - detects CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions automatically
 * **Sidebar tools** - quick access to settings, logs, cache tools, and plugin controls from the Decky panel
-* **Translations** - interface support for 10 languages, with coverage tracked in generated build metrics
+* **Translations** - interface support for 19 languages, with coverage tracked in generated build metrics
 * **Diagnostics and logging** - built-in logs, cache inspection, performance metrics, and backend troubleshooting support
 
 ## Translation Coverage
@@ -92,24 +96,24 @@ Proton Pulse supports 19 languages. Translation coverage is measured during buil
 | Language | Code | Coverage | Status |
 |---|---|---|---|
 | English | en | 100.0% (canonical) | canonical |
-| Deutsch | de | 94.0% | pass |
-| Español | es | 94.0% | pass |
-| Français | fr | 94.0% | pass |
-| Italiano | it | 94.0% | pass |
-| 日本語 | ja | 94.0% | pass |
-| 한국어 | ko | 94.0% | pass |
-| Nederlands | nl | 94.0% | pass |
-| Polski | pl | 94.0% | pass |
-| Português (BR) | pt-BR | 94.0% | pass |
-| Русский | ru | 94.0% | pass |
-| Türkçe | tr | 94.0% | pass |
-| Українська | uk | 94.0% | pass |
-| Svenska | sv | 94.0% | pass |
-| Čeština | cs | 94.0% | pass |
-| ภาษาไทย | th | 94.0% | pass |
-| Tiếng Việt | vi | 94.0% | pass |
-| 简体中文 | zh-CN | 94.0% | pass |
-| 繁體中文 | zh-TW | 94.0% | pass |
+| Deutsch | de | 93.4% | pass |
+| Español | es | 93.4% | pass |
+| Français | fr | 93.4% | pass |
+| Italiano | it | 93.4% | pass |
+| 日本語 | ja | 93.4% | pass |
+| 한국어 | ko | 93.4% | pass |
+| Nederlands | nl | 93.4% | pass |
+| Polski | pl | 93.4% | pass |
+| Português (BR) | pt-BR | 93.4% | pass |
+| Русский | ru | 93.4% | pass |
+| Türkçe | tr | 93.4% | pass |
+| Українська | uk | 93.4% | pass |
+| Svenska | sv | 93.4% | pass |
+| Čeština | cs | 93.4% | pass |
+| ภาษาไทย | th | 93.4% | pass |
+| Tiếng Việt | vi | 93.4% | pass |
+| 简体中文 | zh-CN | 93.4% | pass |
+| 繁體中文 | zh-TW | 93.4% | pass |
 <!-- translation-coverage:end -->
 
 Want to help translate? See `src/lib/translations/` for the translation files.

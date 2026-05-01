@@ -24,7 +24,9 @@
     "src/components/tabs/SystemRequirementsTab.tsx",
     "src/components/tabs/settingsTabProgress.ts",
     "src/patches/gameContextMenu.tsx",
-    "src/patches/gamePageBadge.tsx"
+    "src/patches/gamePageBadge.tsx",
+    "src/patches/searchResultsHint.tsx",
+    "src/patches/storePageBadge.tsx"
   ],
   "findings": []
 }

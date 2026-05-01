@@ -5,21 +5,21 @@ Proton Pulse supports 19 languages. Translation coverage is measured during buil
 | Language | Code | Coverage | Status |
 |---|---|---|---|
 | English | en | 100.0% (canonical) | canonical |
-| Deutsch | de | 94.0% | pass |
-| Español | es | 94.0% | pass |
-| Français | fr | 94.0% | pass |
-| Italiano | it | 94.0% | pass |
-| 日本語 | ja | 94.0% | pass |
-| 한국어 | ko | 94.0% | pass |
-| Nederlands | nl | 94.0% | pass |
-| Polski | pl | 94.0% | pass |
-| Português (BR) | pt-BR | 94.0% | pass |
-| Русский | ru | 94.0% | pass |
-| Türkçe | tr | 94.0% | pass |
-| Українська | uk | 94.0% | pass |
-| Svenska | sv | 94.0% | pass |
-| Čeština | cs | 94.0% | pass |
-| ภาษาไทย | th | 94.0% | pass |
-| Tiếng Việt | vi | 94.0% | pass |
-| 简体中文 | zh-CN | 94.0% | pass |
-| 繁體中文 | zh-TW | 94.0% | pass |
+| Deutsch | de | 93.4% | pass |
+| Español | es | 93.4% | pass |
+| Français | fr | 93.4% | pass |
+| Italiano | it | 93.4% | pass |
+| 日本語 | ja | 93.4% | pass |
+| 한국어 | ko | 93.4% | pass |
+| Nederlands | nl | 93.4% | pass |
+| Polski | pl | 93.4% | pass |
+| Português (BR) | pt-BR | 93.4% | pass |
+| Русский | ru | 93.4% | pass |
+| Türkçe | tr | 93.4% | pass |
+| Українська | uk | 93.4% | pass |
+| Svenska | sv | 93.4% | pass |
+| Čeština | cs | 93.4% | pass |
+| ภาษาไทย | th | 93.4% | pass |
+| Tiếng Việt | vi | 93.4% | pass |
+| 简体中文 | zh-CN | 93.4% | pass |
+| 繁體中文 | zh-TW | 93.4% | pass |
