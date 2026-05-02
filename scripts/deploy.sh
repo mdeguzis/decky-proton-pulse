@@ -22,7 +22,7 @@ PLUGIN_NAME="decky-proton-pulse"
 TARGET="stable"
 DECK_IP=""
 DECK_USER="deck"
-DECK_PLUGIN_DIR="/home/deck/homebrew/plugins"
+DECK_PLUGIN_DIR=""
 SKIP_BUILD=0
 GH_RELEASE=""
 STORE_MODE=""
@@ -367,6 +367,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+DECK_PLUGIN_DIR="${DECK_PLUGIN_DIR:-/home/${DECK_USER}/homebrew/plugins}"
+
 if [[ ! "$TARGET" =~ ^(stable|beta|autobuild)$ ]]; then
   echo "ERROR: --target must be stable, beta, or autobuild"
   exit 1
@@ -426,7 +428,7 @@ if [[ -n "$DECK_IP" ]]; then
   else
     echo "WARNING: remote sudo mkdir failed, falling back to user-owned deploy."
     echo "For root-owned files, run this once on the Deck:"
-    echo "  echo 'deck ALL=(root) NOPASSWD: /usr/bin/mkdir -p ${REMOTE_PLUGIN_DIR}, /usr/bin/rsync' | sudo tee /etc/sudoers.d/plugin-deploy"
+    echo "  echo '${DECK_USER} ALL=(root) NOPASSWD: /usr/bin/mkdir -p ${REMOTE_PLUGIN_DIR}, /usr/bin/rsync' | sudo tee /etc/sudoers.d/plugin-deploy"
     ssh "${DECK_USER}@${DECK_IP}" "mkdir -p ${REMOTE_PLUGIN_DIR}"
     rsync -rlptz --delete --omit-dir-times \
       "${STAGING_DIR}/${PLUGIN_NAME}/" \

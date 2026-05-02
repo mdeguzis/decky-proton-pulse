@@ -3,7 +3,7 @@ set -euo pipefail
 
 DECK_IP="${DECK_IP:-}"
 DECK_USER="${DECK_USER:-deck}"
-REMOTE_PLUGIN_DIR="${REMOTE_PLUGIN_DIR:-/home/deck/homebrew/plugins/decky-proton-pulse}"
+REMOTE_PLUGIN_DIR="${REMOTE_PLUGIN_DIR:-/home/${DECK_USER}/homebrew/plugins/decky-proton-pulse}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SUDOERS_TEMPLATE="${REPO_ROOT}/config/remote-dev-sudoers.template"
