@@ -484,13 +484,8 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
   }), []);
 
   useEffect(() => registerScreenshotAutomationHandler('settings/local-data', async () => {
-    if (!advancedEnabled) {
-      setAdvancedEnabled(true);
-      setSetting(ADVANCED_SETTINGS_KEY, true);
-      await new Promise((resolve) => window.setTimeout(resolve, 150));
-    }
     localDataSectionRef.current?.scrollIntoView({ block: 'center' });
-  }), [advancedEnabled]);
+  }), []);
 
   useEffect(() => registerScreenshotAutomationHandler('settings/account-linking', async () => {
     setPluginLinkStatus({
@@ -997,6 +992,92 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         </div>
       </div>
 
+      {/* backup & restore -- always visible, at end of normal settings */}
+      <div ref={localDataSectionRef} style={sectionStyle()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 4, marginRight: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff' }}>
+            {extras.localDataSection()}
+          </div>
+          {backupStatusMessage && (
+            <div
+              style={{
+                fontSize: 10,
+                color:
+                  backupStatusTone === 'success'
+                    ? '#9dc4e8'
+                    : backupStatusTone === 'error'
+                      ? '#f3b3b3'
+                      : '#7a9bb5',
+                textAlign: 'right',
+                maxWidth: 360,
+                lineHeight: 1.35,
+              }}
+            >
+              {backupStatusMessage}
+            </div>
+          )}
+        </div>
+        <div style={{ fontSize: 11, color: '#7a9bb5', margin: '0 8px 10px' }}>
+          {extras.localDataSectionDescription()}
+        </div>
+        <div
+          style={{
+            margin: '0 8px 12px',
+            padding: '10px 12px',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.03)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#eef7ff', minWidth: 0, flex: 1 }}>
+              {extras.anonymousClientId()}
+            </div>
+            <div style={{ width: 76, flexShrink: 0, overflow: 'hidden', borderRadius: 8 }}>
+              <DialogButton
+                onClick={() => void handleCopyAnonymousClientId()}
+                disabled={!anonymousClientId}
+                style={{
+                  minWidth: 0,
+                  width: '100%',
+                  padding: '4px 8px',
+                  fontSize: 10,
+                  lineHeight: 1.1,
+                }}
+              >
+                {extras.copyAnonymousClientId()}
+              </DialogButton>
+            </div>
+          </div>
+          <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6, lineHeight: 1.4 }}>
+            {extras.anonymousClientIdDescription()}
+          </div>
+          <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#9dc4e8', wordBreak: 'break-all' }}>
+            {anonymousClientId ?? extras.anonymousClientIdLoading()}
+          </div>
+        </div>
+        <div style={{ ...focusClipRowStyle(), paddingBottom: 8 }}>
+          <DialogButton onClick={() => void handleExportLocalData()} disabled={backupBusy}>
+            <div style={{ fontSize: 12, fontWeight: 600 }}>
+              {extras.backupLocalData()}
+            </div>
+            <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+              {extras.backupLocalDataDescription()}
+            </div>
+          </DialogButton>
+        </div>
+        <div style={focusClipRowStyle()}>
+          <DialogButton onClick={() => void handleImportLocalData()} disabled={backupBusy}>
+            <div style={{ fontSize: 12, fontWeight: 600 }}>
+              {extras.importLocalData()}
+            </div>
+            <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+              {extras.importLocalDataDescription()}
+            </div>
+          </DialogButton>
+        </div>
+      </div>
+
       {/* advanced settings toggle */}
       <div style={sectionStyle()}>
         <div ref={advancedSettingsRowRef} style={focusClipRowStyle()}>
@@ -1075,93 +1156,6 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
                   {cacheStats.networkFetchP95Ms !== null ? ` (p95: ${cacheStats.networkFetchP95Ms}ms)` : ''}
                 </div>
               )}
-            </DialogButton>
-          </div>
-        </div>
-      )}
-
-      {advancedEnabled && (
-        <div ref={localDataSectionRef} style={sectionStyle()}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 4, marginRight: 8 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff' }}>
-              {extras.localDataSection()}
-            </div>
-            {backupStatusMessage && (
-              <div
-                style={{
-                  fontSize: 10,
-                  color:
-                    backupStatusTone === 'success'
-                      ? '#9dc4e8'
-                      : backupStatusTone === 'error'
-                        ? '#f3b3b3'
-                        : '#7a9bb5',
-                  textAlign: 'right',
-                  maxWidth: 360,
-                  lineHeight: 1.35,
-                }}
-              >
-                {backupStatusMessage}
-              </div>
-            )}
-          </div>
-          <div style={{ fontSize: 11, color: '#7a9bb5', margin: '0 8px 10px' }}>
-            {extras.localDataSectionDescription()}
-          </div>
-          <div
-            style={{
-              margin: '0 8px 12px',
-              padding: '10px 12px',
-              borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.03)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#eef7ff', minWidth: 0, flex: 1 }}>
-                {extras.anonymousClientId()}
-              </div>
-              <div style={{ width: 76, flexShrink: 0, overflow: 'hidden', borderRadius: 8 }}>
-                <DialogButton
-                  onClick={() => void handleCopyAnonymousClientId()}
-                  disabled={!anonymousClientId}
-                  style={{
-                    minWidth: 0,
-                    width: '100%',
-                    padding: '4px 8px',
-                    fontSize: 10,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {extras.copyAnonymousClientId()}
-                </DialogButton>
-              </div>
-            </div>
-            <div style={{ fontSize: 10, color: '#7a9bb5', marginBottom: 6, lineHeight: 1.4 }}>
-              {extras.anonymousClientIdDescription()}
-            </div>
-            <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#9dc4e8', wordBreak: 'break-all' }}>
-              {anonymousClientId ?? extras.anonymousClientIdLoading()}
-            </div>
-          </div>
-          <div style={{ ...focusClipRowStyle(), paddingBottom: 8 }}>
-            <DialogButton onClick={() => void handleExportLocalData()} disabled={backupBusy}>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>
-                {extras.backupLocalData()}
-              </div>
-              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
-                {extras.backupLocalDataDescription()}
-              </div>
-            </DialogButton>
-          </div>
-          <div style={focusClipRowStyle()}>
-            <DialogButton onClick={() => void handleImportLocalData()} disabled={backupBusy}>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>
-                {extras.importLocalData()}
-              </div>
-              <div style={{ fontSize: 11, color: '#7a9bb5' }}>
-                {extras.importLocalDataDescription()}
-              </div>
             </DialogButton>
           </div>
         </div>

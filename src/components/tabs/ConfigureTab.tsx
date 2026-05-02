@@ -14,7 +14,7 @@ import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
-import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, isSteamShortcutApp } from '../../lib/steamApps';
+import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, isSteamShortcutApp, NON_STEAM_ID_THRESHOLD } from '../../lib/steamApps';
 import { getGameSource } from '../../lib/gameSource';
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
 import {
@@ -518,7 +518,20 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const isShortcut = appId ? isSteamShortcutApp(appId) : false;
   // Non-shortcut apps not found in the local library overview are store-only views;
   // applying launch options requires the game to be in the library.
-  const isInLibrary = isShortcut || (appId ? getSteamAppOverview(appId) !== null : true);
+  const isInLibrary = isShortcut || (appId !== null && appId !== undefined && appId >= NON_STEAM_ID_THRESHOLD) || (appId ? (
+    getSteamAppOverview(appId) !== null ||
+    (() => {
+      try {
+        const collection = (globalThis as any).collectionStore?.allAppsCollection;
+        const allApps = Array.isArray(collection?.allApps)
+          ? collection.allApps
+          : collection?.apps && Symbol.iterator in collection.apps
+            ? Array.from(collection.apps)
+            : [];
+        return allApps.some((app: any) => Number(app?.appid) === appId);
+      } catch { return false; }
+    })()
+  ) : true);
   // When appName prop is empty for a non-Steam shortcut, try collectionStore
   const effectiveAppName = (appName || (appId && isShortcut ? lookupAppNameFromCollection(appId) : '')) ?? '';
   // null = resolution pending, 'none' = tried but no Steam match, number = resolved ID

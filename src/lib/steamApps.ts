@@ -16,7 +16,7 @@ export function getSteamAppOverview(appId: number): any | null {
 
 // Non-Steam shortcut IDs are CRC32-based with the high bit set, always >= 2^31.
 // Real Steam app IDs are currently in the low millions.
-const NON_STEAM_ID_THRESHOLD = 2_000_000_000;
+export const NON_STEAM_ID_THRESHOLD = 2_000_000_000;
 
 export function isSteamShortcutApp(appId: number | null | undefined): boolean {
   if (!appId) return false;

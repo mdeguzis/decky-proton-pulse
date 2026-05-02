@@ -182,12 +182,10 @@ function BadgeIcon({ appId }: { appId: number }) {
   const navigate = () => {
     const appName =
       (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appId)?.display_name ?? '';
-    // For non-Steam games with a title match, use the matched Steam app ID for reports
-    const effectiveAppId = isNonSteam && sourceInfo?.steam_app_id_match
-      ? parseInt(sourceInfo.steam_app_id_match, 10)
-      : appId;
+    // Always pass the original appId so ConfigureTab can detect isShortcut correctly.
+    // ConfigureTab resolves non-Steam shortcuts to their Steam store ID internally.
     rememberReturnPath(globalThis.location?.pathname);
-    dispatchNavigate({ tab: 'manage-game', appId: effectiveAppId, appName });
+    dispatchNavigate({ tab: 'manage-game', appId: appId, appName });
     try {
       Navigation.Navigate('/proton-pulse');
     } catch {
