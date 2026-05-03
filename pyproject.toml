@@ -29,6 +29,9 @@ disable = ["duplicate-code"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore::coverage.exceptions.CoverageWarning",
+]
 
 [tool.coverage.run]
 source = ["main", "lib"]

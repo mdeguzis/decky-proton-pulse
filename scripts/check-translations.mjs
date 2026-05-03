@@ -14,6 +14,7 @@ const SKIP_VALUES = new Set([
   'GPU', 'RAM', 'CPU', 'ProtonDB', 'GitHub', 'NVIDIA', 'AMD', 'Intel', 'Debug',
   'Kernel', 'Valve Proton',
   'VRAM', 'PASS', 'FAIL', 'MAYBE', 'Info', 'Status', 'Platform', 'No',
+  'Demo',
 ]);
 
 const SKIP_KEYS = new Set([
