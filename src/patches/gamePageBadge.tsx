@@ -67,14 +67,15 @@ function BadgeIcon({ appId }: { appId: number }) {
 
   // For non-Steam shortcuts with a resolved Steam store match, re-fetch tier
   // using the matched app ID (the shortcut ID has no ProtonDB data).
+  // Prefer full_game_app_id when the matched title is a demo.
   useEffect(() => {
-    const matchId = sourceInfo?.steam_app_id_match;
-    if (!matchId) return;
-    getProtonDBSummary(matchId).then((summary) => {
+    const protonId = sourceInfo?.full_game_app_id ?? sourceInfo?.steam_app_id_match;
+    if (!protonId) return;
+    getProtonDBSummary(protonId).then((summary) => {
       if (summary?.tier) setTier(summary.tier);
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceInfo?.steam_app_id_match]);
+  }, [sourceInfo?.full_game_app_id, sourceInfo?.steam_app_id_match]);
 
   function measurePos(): { top: number; left: number } | null {
     const inner = innerRef.current;

@@ -195,7 +195,6 @@ function Content() {
 
 // ─── Plugin definition ────────────────────────────────────────────────────────
 export default definePlugin(() => {
-  console.log('Proton Pulse initializing');
   void logFrontendEvent('INFO', 'Plugin frontend initializing', { translationsLoaded: TRANSLATIONS_LOADED });
 
   void setLogLevelSafe(getSetting('debugEnabled', false) ? 'DEBUG' : 'INFO').catch((error) => {
@@ -354,7 +353,6 @@ export default definePlugin(() => {
     content: <Content />,
     icon: <BrandGlyph size={20} />,
     onDismount() {
-      console.log('Proton Pulse unloading');
       void logFrontendEvent('INFO', 'Plugin frontend unloading');
       unsubCloudPush();
       teardownCloudSync();

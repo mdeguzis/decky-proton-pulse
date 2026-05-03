@@ -199,8 +199,8 @@ auto_commit_release_derived_changes() {
     echo "No staged release-derived changes required."
     return
   fi
-  git commit --amend --no-edit
-  echo "Amended HEAD with release-derived files."
+  git commit -m "chore(release): sync release-derived files for ${VERSION}"
+  echo "Committed release-derived files as a new commit."
 }
 
 update_changelog_for_release() {
@@ -253,13 +253,13 @@ push_release_branch() {
   local current_branch
   current_branch="$(git branch --show-current)"
   if [[ -z "$current_branch" ]]; then
-    echo "ERROR: Cannot push amended release commit because HEAD is detached."
+    echo "ERROR: Cannot push release commit because HEAD is detached."
     echo "Checkout a branch before running a release target."
     exit 1
   fi
 
-  echo "Pushing amended release commit to origin/${current_branch}..."
-  git push origin "HEAD:${current_branch}" --force-with-lease
+  echo "Pushing release commit to origin/${current_branch}..."
+  git push origin "HEAD:${current_branch}"
 }
 
 confirm_release_actions() {
@@ -293,7 +293,7 @@ confirm_release_actions() {
     if is_truthy "$DRY_RUN"; then
       echo "  These files are release-derived drift and may be safe to regenerate or commit separately."
     else
-      echo "  These files will be auto-staged and amended into HEAD after confirmation."
+      echo "  These files will be auto-staged and committed as a new commit after confirmation."
     fi
   fi
   echo ""
@@ -303,14 +303,14 @@ confirm_release_actions() {
       echo "  - Would refresh ## Unreleased from commits since the latest tag when present"
       echo "  - Would update CHANGELOG.md for ${RELEASE_TAG} if needed"
       echo "  - Would create or refresh git tag ${RELEASE_TAG}"
-      echo "  - Would push the amended release commit to the current branch"
+      echo "  - Would push release commits to the current branch"
       echo "  - Would create or update GitHub ${GH_RELEASE} ${RELEASE_TAG}"
       echo "  - Would upload asset ${ZIP_NAME}"
     else
       echo "  - Refresh ## Unreleased from commits since the latest tag when present"
       echo "  - Update CHANGELOG.md for ${RELEASE_TAG} if needed"
       echo "  - Create or refresh git tag ${RELEASE_TAG}"
-      echo "  - Push the amended release commit to the current branch"
+      echo "  - Push release commits to the current branch"
       echo "  - Create or update GitHub ${GH_RELEASE} ${RELEASE_TAG}"
       echo "  - Upload asset ${ZIP_NAME}"
     fi
@@ -322,14 +322,14 @@ confirm_release_actions() {
       echo "  - Would reuse the matching Decky database submission branch for this plugin"
       echo "  - Would detect an active Decky database PR on that branch when possible"
       echo "  - Would update submodule plugins/decky-proton-pulse to ${store_branch_summary}"
-      echo "  - Would amend the existing database submission commit when updating an active PR"
+      echo "  - Would add a new commit to the existing database submission branch when updating an active PR"
       echo "  - Would create a database commit only if the submodule pointer changes"
     else
       echo "  - Refresh the Decky database checkout from upstream main"
       echo "  - Reuse the matching Decky database submission branch for this plugin"
       echo "  - Detect an active Decky database PR on that branch when possible"
       echo "  - Update submodule plugins/decky-proton-pulse to ${store_branch_summary}"
-      echo "  - Amend the existing database submission commit when updating an active PR"
+      echo "  - Add a new commit to the existing database submission branch when updating an active PR"
       echo "  - Create a database commit only if the submodule pointer changes"
     fi
     echo "  - No plugin repo commit or amend is performed by this script"
@@ -635,11 +635,18 @@ if [[ -n "$STORE_MODE" ]]; then
     echo "DRY_RUN=true: skipping Decky database branch changes."
     echo "Would update $SUBMODULE in $PLUGIN_DB_DIR on branch $BRANCH to $COMMIT."
   else
-    # Rebuild the submission branch from upstream every time. Decky database
-    # branches are single-purpose PR branches; rebasing old .gitmodules changes
-    # is fragile when upstream has changed nearby submodule entries.
+    # If the PR branch already exists on origin, continue from it so we don't
+    # force-push and rewrite history (reviewers need to see incremental commits).
+    # If it doesn't exist yet, start fresh from upstream/main.
     cd "$PLUGIN_DB_DIR"
-    git checkout -B "$BRANCH" upstream/main
+    git fetch origin "$BRANCH" 2>/dev/null || true
+    if git ls-remote --exit-code origin "refs/heads/${BRANCH}" >/dev/null 2>&1; then
+      echo "Branch $BRANCH already exists on origin -- checking out to add a new commit."
+      git checkout -B "$BRANCH" "origin/${BRANCH}"
+    else
+      echo "Branch $BRANCH does not exist on origin -- creating from upstream/main."
+      git checkout -B "$BRANCH" upstream/main
+    fi
     if ! git config --file .gitmodules --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep -Fxq "$SUBMODULE"; then
       git submodule add --force git@github.com:mdeguzis/decky-proton-pulse.git "$SUBMODULE"
     fi
@@ -663,7 +670,7 @@ if [[ -n "$STORE_MODE" ]]; then
   echo "Done: branch '$BRANCH' ready at $PLUGIN_DB_DIR"
   echo ""
   echo "Next steps:"
-  echo "  cd $PLUGIN_DB_DIR && git push origin $BRANCH --force-with-lease"
+  echo "  cd $PLUGIN_DB_DIR && git push origin $BRANCH"
   if [[ -n "$ACTIVE_PR_URL" ]]; then
     echo "  Existing PR should update in place: $ACTIVE_PR_URL"
   else

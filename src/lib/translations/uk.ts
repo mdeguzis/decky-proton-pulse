@@ -167,6 +167,8 @@ export const uk: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Відображає ярлик Proton Pulse поряд з кнопками дій на сторінці гри. Експериментальна функція, вимкнена за замовчуванням.',
     gamePageBadge: 'Значок ProtonDB на сторінці гри',
     gamePageBadgeDescription: 'Відображати значок рівня сумісності ProtonDB на сторінці гри.',
+    doubleBToExit: 'Подвiйне B для виходу',
+    doubleBToExitDescription: 'Потребує другого натискання B протягом 3 секунд для виходу з Proton Pulse. Якщо вимкнено, B виходить негайно.',
   },
   compatTools: {
     install: 'Встановити',
@@ -227,6 +229,7 @@ export const uk: TranslationTree = {
     launchOptionConflictReplace: 'Замінити',
     renderErrorIntro: 'Керування цією грою зустріло помилку рендерингу в поточному середовищі Steam UI.',
     notInLibrary: '',
+    demo: 'Демо',
   },
   toast: {
     installed: (v) => `${v} встановлено.`,

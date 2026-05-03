@@ -6,6 +6,8 @@ export interface GameSourceInfo {
   is_steam: boolean;
   source: string;
   steam_app_id_match: string | null;
+  full_game_app_id: string | null;
+  full_game_name: string | null;
 }
 
 const _getGameSource = callable<[string, string], GameSourceInfo>('get_game_source');

@@ -89,6 +89,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
     ]).finally(() => setLoading(false));
   }, [appId]);
 
+
   const platforms = platformData?.platforms ?? {};
   const releaseDate = platformData?.release_date ?? null;
   const lastUpdated = platformData?.last_updated ?? null;
@@ -123,7 +124,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
   return (
     <Focusable onGamepadDirection={handleRootDirection} style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
-      {/* badge absolute top-right, hint below */}
+      {/* badge absolute top-right */}
       {platformBadge && (
         <div style={{ position: 'absolute', top: 0, right: 16, zIndex: 10 }}>
           <div style={{ borderRadius: 999, padding: '4px 12px', fontSize: 11, fontWeight: 700, background: platformBadge.bg, color: platformBadge.color }}>

@@ -167,6 +167,8 @@ export const vi: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Hiển thị phím tắt Proton Pulse bên cạnh các nút hành động trên trang trò chơi. Thử nghiệm và tắt theo mặc định.',
     gamePageBadge: 'Huy hiệu ProtonDB trên trang trò chơi',
     gamePageBadgeDescription: 'Hiển thị huy hiệu cấp độ tương thích ProtonDB trên trang trò chơi.',
+    doubleBToExit: 'Nhan B hai lan de thoat',
+    doubleBToExitDescription: 'Yeu cau nhan B lan thu hai trong vong 3 giay de thoat Proton Pulse. Khi tat, B thoat ngay lap tuc.',
   },
   compatTools: {
     install: 'Cài đặt',
@@ -227,6 +229,7 @@ export const vi: TranslationTree = {
     launchOptionConflictReplace: 'Thay thế',
     renderErrorIntro: 'Quản lý trò chơi này gặp lỗi kết xuất trong môi trường Steam UI hiện tại.',
     notInLibrary: '',
+    demo: 'Demo',
   },
   toast: {
     installed: (v) => `Đã cài đặt ${v}.`,

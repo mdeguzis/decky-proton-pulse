@@ -167,6 +167,8 @@ export const nl: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Toont een Proton Pulse-snelkoppeling naast de actieknoppen van de spelpagina. Experimenteel en standaard uitgeschakeld.',
     gamePageBadge: 'ProtonDB-badge op spelpagina',
     gamePageBadgeDescription: 'Toon de ProtonDB-compatibiliteitsniveaubadge op de spelpagina.',
+    doubleBToExit: 'Dubbel B om te sluiten',
+    doubleBToExitDescription: 'Vereist een tweede B-druk binnen 3 seconden om Proton Pulse te sluiten. Als uitgeschakeld, sluit B onmiddellijk.',
   },
   compatTools: {
     install: 'Installeren',
@@ -227,6 +229,7 @@ export const nl: TranslationTree = {
     launchOptionConflictReplace: 'Vervangen',
     renderErrorIntro: 'Dit spel beheren is een renderingfout tegengekomen in de huidige Steam UI-omgeving.',
     notInLibrary: '',
+    demo: 'Demo',
   },
   toast: {
     installed: (v) => `${v} geïnstalleerd.`,

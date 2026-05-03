@@ -300,6 +300,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
   const [cefDebuggingBusy, setCefDebuggingBusy] = useState(false);
   const [cefDebuggingStatus, setCefDebuggingStatus] = useState<CefDebuggingStatus | null>(null);
   const [badgeEnabled, setBadgeEnabled] = useState(() => getSetting('showGamePageBadge', true));
+  const [doubleBToExit, setDoubleBToExit] = useState(() => getSetting('doubleBToExit', false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const languageRowRef = useRef<HTMLDivElement>(null);
@@ -800,6 +801,18 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
              }}
            />
          </div>
+         <div style={focusClipRowStyle()}>
+           <ToggleField
+             label={t().settings.doubleBToExit}
+             description={t().settings.doubleBToExitDescription}
+             checked={doubleBToExit}
+             onChange={(enabled) => {
+               setDoubleBToExit(enabled);
+               setSetting('doubleBToExit', enabled);
+               void logFrontendEvent('INFO', 'Double-B to exit toggled', { enabled });
+             }}
+           />
+         </div>
        </div>
 
       {/* My Hardware */}
@@ -1094,13 +1107,9 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         </div>
       </div>
 
-      {/* advanced section: cache management */}
       {advancedEnabled && (
         <div style={sectionStyle()}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
-            {t().settings.experimental}
-          </div>
-          <div style={{ ...focusClipRowStyle(), marginTop: 8 }}>
+          <div style={focusClipRowStyle()}>
             <ToggleField
               label={extras.cefDebugging()}
               description={extras.cefDebuggingDescription(
@@ -1117,6 +1126,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         </div>
       )}
 
+      {/* advanced section: cache management */}
       {advancedEnabled && (
         <div style={sectionStyle()}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>

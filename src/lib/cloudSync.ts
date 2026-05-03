@@ -127,6 +127,7 @@ export interface CloudConfigRow {
   config: TrackedConfig;
   updated_at: string;
   is_published?: boolean;
+  published_at?: string | null;
 }
 
 export interface CloudPluginSettingsRow {

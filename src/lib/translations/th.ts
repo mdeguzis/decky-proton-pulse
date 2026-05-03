@@ -167,6 +167,8 @@ export const th: TranslationTree = {
     experimentalGamePageShortcutDescription: 'แสดงทางลัด Proton Pulse ถัดจากปุ่มการดำเนินการในหน้าเกม ทดลองใช้และปิดใช้งานโดยค่าเริ่มต้น',
     gamePageBadge: 'ป้าย ProtonDB ในหน้าเกม',
     gamePageBadgeDescription: 'แสดงป้ายระดับความเข้ากันได้ของ ProtonDB ในหน้าเกม',
+    doubleBToExit: 'กด B สองครั้งเพื่อออก',
+    doubleBToExitDescription: 'ต้องกด B ครั้งที่สองภายใน 3 วินาทีเพื่อออกจาก Proton Pulse เมื่อปิดใช้งาน B จะออกทันที',
   },
   compatTools: {
     install: 'ติดตั้ง',
@@ -227,6 +229,7 @@ export const th: TranslationTree = {
     launchOptionConflictReplace: 'แทนที่',
     renderErrorIntro: 'การจัดการเกมนี้พบข้อผิดพลาดในการแสดงผลในสภาพแวดล้อม Steam UI ปัจจุบัน',
     notInLibrary: '',
+    demo: 'เดโม',
   },
   toast: {
     installed: (v) => `ติดตั้ง ${v} แล้ว`,

@@ -167,6 +167,8 @@ export const zhCN: TranslationTree = {
     experimentalGamePageShortcutDescription: '在游戏页面操作按钮旁显示 Proton Pulse 快捷入口。该功能为实验性质，默认关闭。',
     gamePageBadge: '在游戏页面显示 ProtonDB 徽章',
     gamePageBadgeDescription: '在游戏页面显示 ProtonDB 兼容性等级徽章。',
+    doubleBToExit: '双击 B 键退出',
+    doubleBToExitDescription: '需要在 3 秒内再次按下 B 键以退出 Proton Pulse。关闭时，按 B 键立即退出。',
   },
   compatTools: {
     install: '安装',
@@ -227,6 +229,7 @@ export const zhCN: TranslationTree = {
     launchOptionConflictReplace: '替换',
     renderErrorIntro: '在当前 Steam 界面环境中，“管理此游戏”界面发生了渲染错误。',
     notInLibrary: '',
+    demo: '试玩版',
   },
   toast: {
     installed: (v) => `已安装 ${v}。`,

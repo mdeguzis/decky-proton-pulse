@@ -60,6 +60,35 @@ def find_steam_appid_by_title(title: str) -> str | None:
     return None
 
 
+def _resolve_demo_full_game(app_id: str) -> tuple[str, str] | None:
+    """If app_id is a Steam demo, return (full_game_app_id, full_game_name); otherwise None."""
+    try:
+        url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&filters=basic"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
+            data = json.loads(resp.read().decode())
+        app_data = data.get(str(app_id), {})
+        if not app_data.get("success"):
+            return None
+        detail = app_data.get("data", {})
+        if detail.get("type") == "demo":
+            fullgame = detail.get("fullgame", {})
+            full_id = str(fullgame.get("appid", "")).strip()
+            full_name = str(fullgame.get("name", "")).strip()
+            if full_id:
+                decky.logger.debug(
+                    "_resolve_demo_full_game: %s is demo -> full game %s (%s)",
+                    app_id, full_id, full_name,
+                )
+                return (full_id, full_name)
+    except Exception as exc:
+        decky.logger.warning("_resolve_demo_full_game: error for %s: %s", app_id, exc)
+    return None
+
+
 def find_steam_appid_from_store(title: str) -> str | None:
     """Search the Steam store API for a game whose name exactly matches title.
 
@@ -266,10 +295,13 @@ def get_game_source(app_id: str, title: str = "") -> dict[str, Any]:
         return _source_cache[cache_key]
 
     if is_steam_app(app_id):
+        demo = _resolve_demo_full_game(app_id)
         result: dict[str, Any] = {
             "is_steam": True,
             "source": "Steam",
             "steam_app_id_match": None,
+            "full_game_app_id": demo[0] if demo else None,
+            "full_game_name": demo[1] if demo else None,
         }
         _source_cache[cache_key] = result
         return result
@@ -341,10 +373,21 @@ def get_game_source(app_id: str, title: str = "") -> dict[str, Any]:
             except Exception as exc:
                 decky.logger.warning("get_game_source: title match (store) failed: %s", exc)
 
+    demo: tuple[str, str] | None = None
+    if steam_match:
+        demo = _resolve_demo_full_game(steam_match)
+        if demo:
+            decky.logger.debug(
+                "get_game_source: %r matched demo %s -> full game %s (%s)",
+                title, steam_match, demo[0], demo[1],
+            )
+
     result = {
         "is_steam": False,
         "source": source,
         "steam_app_id_match": steam_match,
+        "full_game_app_id": demo[0] if demo else None,
+        "full_game_name": demo[1] if demo else None,
     }
     decky.logger.debug("get_game_source: result=%s", result)
     _source_cache[cache_key] = result

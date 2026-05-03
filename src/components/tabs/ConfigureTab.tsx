@@ -310,6 +310,8 @@ function GameSummaryHeader({
   combinedTier,
   resolvedSteamAppId,
   isInLibrary,
+  demoFullGameAppId,
+  demoFullGameName,
 }: {
   appId: number;
   appName: string;
@@ -317,10 +319,16 @@ function GameSummaryHeader({
   combinedTier?: PulseTierResult | null;
   resolvedSteamAppId?: number | null;
   isInLibrary?: boolean;
+  demoFullGameAppId?: number | null;
+  demoFullGameName?: string;
 }) {
   const extras = t().extras!;
   const isShortcut = isSteamShortcutApp(appId);
-  const headerAppId = isShortcut && resolvedSteamAppId ? resolvedSteamAppId : appId;
+  const isDemo = !!demoFullGameAppId;
+  const headerAppId = demoFullGameAppId ?? (isShortcut && resolvedSteamAppId ? resolvedSteamAppId : appId);
+  const displayName = isDemo
+    ? `${demoFullGameName || appName} (${t().configure.demo})`
+    : (appName || `App ${appId}`);
   const tierColor = combinedTier && combinedTier.count > 0 ? (RATING_COLORS[combinedTier.tier] ?? '#888') : null;
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
@@ -331,7 +339,7 @@ function GameSummaryHeader({
       />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
-          {appName || `App ${appId}`}
+          {displayName}
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5' }}>
           {isShortcut
@@ -340,6 +348,21 @@ function GameSummaryHeader({
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        {isDemo && (
+          <span style={{
+            background: 'rgba(100,180,255,0.15)',
+            border: '1px solid rgba(100,180,255,0.4)',
+            color: 'rgba(140,200,255,0.9)',
+            borderRadius: 999,
+            padding: '2px 8px',
+            fontWeight: 600,
+            fontSize: 10,
+            whiteSpace: 'nowrap',
+            letterSpacing: '0.03em',
+          }}>
+            {t().configure.demo}
+          </span>
+        )}
         {isInLibrary === false && (
           <span style={{
             background: 'rgba(255,200,60,0.15)',
@@ -536,9 +559,13 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const effectiveAppName = (appName || (appId && isShortcut ? lookupAppNameFromCollection(appId) : '')) ?? '';
   // null = resolution pending, 'none' = tried but no Steam match, number = resolved ID
   const [resolvedSteamAppId, setResolvedSteamAppId] = useState<number | 'none' | null>(null);
+  const [demoFullGameAppId, setDemoFullGameAppId] = useState<number | null>(null);
+  const [demoFullGameName, setDemoFullGameName] = useState<string>('');
   // For non-Steam shortcuts: block data fetches until resolution completes, then
   // use the matched Steam store app ID (or fall back to the shortcut ID if none).
-  const effectiveAppId = !isShortcut ? appId
+  // For Steam demos: use the full game app ID for data fetching.
+  const effectiveAppId = !isShortcut
+    ? (demoFullGameAppId ?? appId)
     : resolvedSteamAppId === null ? null
     : resolvedSteamAppId === 'none' ? appId
     : resolvedSteamAppId;
@@ -631,20 +658,30 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       ? [...configFilteredReports].sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes))
       : configFilteredReports;
 
-  // For non-Steam shortcuts, resolve the matching Steam store app ID so we can
-  // fetch reports filed under the real Steam app ID (not the shortcut CRC32 ID).
+  // Resolve Steam store app ID for non-Steam shortcuts, and detect demos for Steam apps.
   useEffect(() => {
     setResolvedSteamAppId(null);
+    setDemoFullGameAppId(null);
+    setDemoFullGameName('');
     void logFrontendEvent('DEBUG', '[ConfigureTab] resolve effect fired', { appId, appName: effectiveAppName, isShortcut });
-    if (!appId || !isShortcut) return;
+    if (!appId) return;
     let cancelled = false;
     void getGameSource(appId, effectiveAppName).then((info) => {
       if (cancelled) return;
       void logFrontendEvent('DEBUG', '[ConfigureTab] getGameSource result', { appId, appName: effectiveAppName, info });
-      const matched = info?.steam_app_id_match ? parseInt(info.steam_app_id_match, 10) : null;
-      const resolved = matched && Number.isFinite(matched) ? matched : 'none';
-      void logFrontendEvent('DEBUG', '[ConfigureTab] resolved steam app id', { appId, resolved });
-      setResolvedSteamAppId(resolved);
+      if (isShortcut) {
+        const matched = info?.steam_app_id_match ? parseInt(info.steam_app_id_match, 10) : null;
+        const resolved = matched && Number.isFinite(matched) ? matched : 'none';
+        void logFrontendEvent('DEBUG', '[ConfigureTab] resolved steam app id', { appId, resolved });
+        setResolvedSteamAppId(resolved);
+      }
+      if (info?.full_game_app_id) {
+        const fgId = parseInt(info.full_game_app_id, 10);
+        if (Number.isFinite(fgId)) {
+          setDemoFullGameAppId(fgId);
+          setDemoFullGameName(info.full_game_name ?? '');
+        }
+      }
     });
     return () => { cancelled = true; };
   }, [appId, effectiveAppName, isShortcut]);
@@ -1226,7 +1263,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} isInLibrary={isInLibrary} />
+      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} isInLibrary={isInLibrary} demoFullGameAppId={demoFullGameAppId} demoFullGameName={demoFullGameName} />
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
           <SteamSpinner />

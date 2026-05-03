@@ -167,6 +167,8 @@ export const sv: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Visar en Proton Pulse-genväg bredvid åtgärdsknapparna på spelsidan. Experimentellt och inaktiverat som standard.',
     gamePageBadge: 'ProtonDB-märke på spelsida',
     gamePageBadgeDescription: 'Visa ProtonDB-kompatibilitetsnivåmärket på spelsidan.',
+    doubleBToExit: 'Dubbel B for att avsluta',
+    doubleBToExitDescription: 'Kraver ett andra B-tryck inom 3 sekunder for att avsluta Proton Pulse. Nar av, avslutar B omedelbart.',
   },
   compatTools: {
     install: 'Installera',
@@ -227,6 +229,7 @@ export const sv: TranslationTree = {
     launchOptionConflictReplace: 'Ersätt',
     renderErrorIntro: 'Hantera det här spelet stötte på ett renderingsfel i den nuvarande Steam UI-miljön.',
     notInLibrary: '',
+    demo: 'Demo',
   },
   toast: {
     installed: (v) => `${v} installerad.`,

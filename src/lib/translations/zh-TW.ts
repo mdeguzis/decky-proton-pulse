@@ -167,6 +167,8 @@ export const zhTW: TranslationTree = {
     experimentalGamePageShortcutDescription: '在遊戲頁面操作按鈕旁顯示 Proton Pulse 捷徑。實驗性功能，預設停用。',
     gamePageBadge: '遊戲頁面 ProtonDB 徽章',
     gamePageBadgeDescription: '在遊戲頁面顯示 ProtonDB 相容性等級徽章。',
+    doubleBToExit: '按兩下 B 鍵離開',
+    doubleBToExitDescription: '需要在 3 秒内再次按下 B 鍵以離開 Proton Pulse。關閉時，按 B 鍵立即離開。',
   },
   compatTools: {
     install: '安裝',
@@ -227,6 +229,7 @@ export const zhTW: TranslationTree = {
     launchOptionConflictReplace: '取代',
     renderErrorIntro: '在目前的 Steam UI 環境中，管理此遊戲遇到了渲染錯誤。',
     notInLibrary: '',
+    demo: '試玩版',
   },
   toast: {
     installed: (v) => `${v} 已安裝。`,

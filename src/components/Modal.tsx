@@ -16,6 +16,7 @@ import { AboutTab } from './tabs/AboutTab';
 import { SystemRequirementsTab } from './tabs/SystemRequirementsTab';
 import { logFrontendEvent, callWithTimeout } from '../lib/logger';
 import { useLanguage, t } from '../lib/i18n';
+import { getSetting } from '../lib/settings';
 import { registerScreenshotPageAutomation } from '../lib/screenshotAutomation';
 
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
@@ -121,9 +122,23 @@ export function ProtonPulsePage() {
     void logFrontendEvent('DEBUG', 'Exit step: Router.CloseSideMenus()', {
       currentPath: normalizeDeckRoutePath(globalThis.location?.pathname ?? null),
     });
+    // NavigateBack pops the proton-pulse entry from history rather than pushing
+    // a new one, which prevents B on the return page looping back here.
     window.setTimeout(() => {
       if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
-      void logFrontendEvent('DEBUG', 'Exit fallback: target route navigation', {
+      void logFrontendEvent('DEBUG', 'Exit step: NavigateBack', {
+        currentPath: normalizeDeckRoutePath(globalThis.location?.pathname ?? null),
+        targetPath,
+      });
+      try {
+        Navigation.NavigateBack();
+      } catch {
+        Router.Navigate(targetPath);
+      }
+    }, 50);
+    window.setTimeout(() => {
+      if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
+      void logFrontendEvent('DEBUG', 'Exit fallback: explicit Navigate', {
         currentPath: normalizeDeckRoutePath(globalThis.location?.pathname ?? null),
         navigationTargetPath,
         targetPath,
@@ -137,22 +152,14 @@ export function ProtonPulsePage() {
       } catch {
         Router.Navigate(targetPath);
       }
-    }, 50);
-    window.setTimeout(() => {
-      if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
-      void logFrontendEvent('DEBUG', 'Exit fallback: Navigation.NavigateBack()', {
-        currentPath: normalizeDeckRoutePath(globalThis.location?.pathname ?? null),
-        targetPath,
-      });
-      try {
-        Navigation.NavigateBack();
-      } catch {
-        Router.Navigate(targetPath);
-      }
     }, 200);
   }, []);
 
   const handleCancel = useCallback(() => {
+    if (!getSetting('doubleBToExit', false)) {
+      doExit();
+      return;
+    }
     if (exitPendingRef.current) {
       void logFrontendEvent('DEBUG', 'Exit confirmation accepted', {
         currentPath: globalThis.location?.pathname ?? null,

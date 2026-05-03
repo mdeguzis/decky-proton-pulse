@@ -2,6 +2,7 @@ import struct
 import sys
 import os
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -152,11 +153,15 @@ def test_find_shortcuts_vdf_finds_files(tmp_path: Path) -> None:
 # ── get_game_source ───────────────────────────────────────────────────────────
 
 def test_get_game_source_returns_steam_for_installed_game() -> None:
-    with patch("lib.game_source.is_steam_app", return_value=True):
+    with (
+        patch("lib.game_source.is_steam_app", return_value=True),
+        patch("lib.game_source._resolve_demo_full_game", return_value=None),
+    ):
         result = game_source.get_game_source("570", "Dota 2")
     assert result["is_steam"] is True
     assert result["source"] == "Steam"
     assert result["steam_app_id_match"] is None
+    assert result["full_game_app_id"] is None
 
 
 def test_get_game_source_non_steam_with_heroic(tmp_path: Path) -> None:
@@ -167,12 +172,14 @@ def test_get_game_source_non_steam_with_heroic(tmp_path: Path) -> None:
         patch("lib.game_source.is_steam_app", return_value=False),
         patch("lib.game_source._find_shortcuts_vdf", return_value=[vdf]),
         patch("lib.game_source.find_steam_appid_by_title", return_value="1234"),
+        patch("lib.game_source._resolve_demo_full_game", return_value=None),
     ):
         result = game_source.get_game_source("9999999", "Dredge")
 
     assert result["is_steam"] is False
     assert result["source"] == "Heroic"
     assert result["steam_app_id_match"] == "1234"
+    assert result["full_game_app_id"] is None
 
 
 def test_get_game_source_non_steam_no_shortcut_match() -> None:
@@ -186,6 +193,7 @@ def test_get_game_source_non_steam_no_shortcut_match() -> None:
     assert result["is_steam"] is False
     assert result["source"] == "Non-Steam"
     assert result["steam_app_id_match"] is None
+    assert result["full_game_app_id"] is None
 
 
 def test_get_game_source_caches_result() -> None:
@@ -376,10 +384,12 @@ def test_get_game_source_matched_by_appid_field(tmp_path: Path) -> None:
         patch("lib.game_source.is_steam_app", return_value=False),
         patch("lib.game_source._find_shortcuts_vdf", return_value=[vdf]),
         patch("lib.game_source.find_steam_appid_by_title", return_value="1562430"),
+        patch("lib.game_source._resolve_demo_full_game", return_value=None),
     ):
         result = game_source.get_game_source(str(appid_val), "Dredge")
     assert result["source"] == "Heroic"
     assert result["steam_app_id_match"] == "1562430"
+    assert result["full_game_app_id"] is None
 
 
 def test_get_game_source_resolves_title_from_matched_entry(tmp_path: Path) -> None:
@@ -390,6 +400,7 @@ def test_get_game_source_resolves_title_from_matched_entry(tmp_path: Path) -> No
         patch("lib.game_source.is_steam_app", return_value=False),
         patch("lib.game_source._find_shortcuts_vdf", return_value=[vdf]),
         patch("lib.game_source.find_steam_appid_by_title", return_value="1562430"),
+        patch("lib.game_source._resolve_demo_full_game", return_value=None),
     ):
         result = game_source.get_game_source(str(appid_val))  # no title
     assert result["source"] == "Heroic"
@@ -402,6 +413,7 @@ def test_get_game_source_resolves_title_via_shortcut_name_lookup() -> None:
         patch("lib.game_source._find_shortcuts_vdf", return_value=[]),
         patch("lib.game_source.find_shortcut_name_by_appid", return_value="Dredge"),
         patch("lib.game_source.find_steam_appid_by_title", return_value="1562430"),
+        patch("lib.game_source._resolve_demo_full_game", return_value=None),
     ):
         result = game_source.get_game_source("9999999")  # no title
     assert result["steam_app_id_match"] == "1562430"
@@ -427,3 +439,70 @@ def test_get_game_source_store_exception_is_caught() -> None:
     ):
         result = game_source.get_game_source("9999999", "Dredge")
     assert result["steam_app_id_match"] is None
+
+
+# ── _resolve_demo_full_game ───────────────────────────────────────────────────
+
+def _mock_appdetails(app_id: str, app_type: str, full_appid: str | None = None) -> MagicMock:
+    detail: dict[str, Any] = {"type": app_type}
+    if full_appid:
+        detail["fullgame"] = {"appid": full_appid, "name": "Full Game"}
+    resp_data = json.dumps({app_id: {"success": True, "data": detail}}).encode()
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = resp_data
+    mock_resp.__enter__ = lambda s: s
+    mock_resp.__exit__ = MagicMock(return_value=False)
+    return mock_resp
+
+
+def test_resolve_demo_full_game_returns_full_appid_and_name() -> None:
+    with patch("urllib.request.urlopen", return_value=_mock_appdetails("12345", "demo", "99999")):
+        result = game_source._resolve_demo_full_game("12345")
+    assert result == ("99999", "Full Game")
+
+
+def test_resolve_demo_full_game_returns_none_for_game_type() -> None:
+    with patch("urllib.request.urlopen", return_value=_mock_appdetails("12345", "game")):
+        result = game_source._resolve_demo_full_game("12345")
+    assert result is None
+
+
+def test_resolve_demo_full_game_returns_none_on_success_false() -> None:
+    resp_data = json.dumps({"12345": {"success": False}}).encode()
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = resp_data
+    mock_resp.__enter__ = lambda s: s
+    mock_resp.__exit__ = MagicMock(return_value=False)
+    with patch("urllib.request.urlopen", return_value=mock_resp):
+        result = game_source._resolve_demo_full_game("12345")
+    assert result is None
+
+
+def test_resolve_demo_full_game_returns_none_on_exception() -> None:
+    with patch("urllib.request.urlopen", side_effect=Exception("network error")):
+        result = game_source._resolve_demo_full_game("12345")
+    assert result is None
+
+
+# ── get_game_source -- Steam demo paths ───────────────────────────────────────
+
+def test_get_game_source_steam_demo_returns_full_game_app_id() -> None:
+    with (
+        patch("lib.game_source.is_steam_app", return_value=True),
+        patch("lib.game_source._resolve_demo_full_game", return_value=("99999", "Full Game")),
+    ):
+        result = game_source.get_game_source("12345", "Some Demo")
+    assert result["is_steam"] is True
+    assert result["full_game_app_id"] == "99999"
+    assert result["full_game_name"] == "Full Game"
+    assert result["steam_app_id_match"] is None
+
+
+def test_get_game_source_steam_non_demo_full_game_app_id_is_none() -> None:
+    with (
+        patch("lib.game_source.is_steam_app", return_value=True),
+        patch("lib.game_source._resolve_demo_full_game", return_value=None),
+    ):
+        result = game_source.get_game_source("570", "Dota 2")
+    assert result["is_steam"] is True
+    assert result["full_game_app_id"] is None

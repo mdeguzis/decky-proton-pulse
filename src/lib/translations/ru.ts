@@ -197,6 +197,8 @@ export const ru: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Показывает ярлык Proton Pulse рядом с кнопками действий на странице игры. Экспериментальная функция, по умолчанию выключена.',
     gamePageBadge: 'Значок ProtonDB на странице игры',
     gamePageBadgeDescription: 'Показывать значок совместимости ProtonDB на странице игры.',
+    doubleBToExit: 'Двойное нажатие B для выхода',
+    doubleBToExitDescription: 'Требует повторного нажатия B в течение 3 секунд для выхода из Proton Pulse. Если выключено, B выходит немедленно.',
   },
   compatTools: {
     install: 'Установить',
@@ -257,6 +259,7 @@ export const ru: TranslationTree = {
     launchOptionConflictReplace: 'Заменить',
     renderErrorIntro: 'На экране «Управление этой игрой» произошла ошибка отрисовки в текущей среде интерфейса Steam.',
     notInLibrary: '',
+    demo: 'Демо',
   },
   toast: {
     installed: (v) => `${v} установлено.`,

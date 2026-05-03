@@ -167,6 +167,8 @@ export const ko: TranslationTree = {
     experimentalGamePageShortcutDescription: '게임 페이지 동작 버튼 옆에 Proton Pulse 바로가기를 표시합니다. 실험 기능이며 기본값은 꺼짐입니다.',
     gamePageBadge: '게임 페이지에 ProtonDB 배지 표시',
     gamePageBadgeDescription: '게임 페이지에 ProtonDB 호환성 등급 배지를 표시합니다.',
+    doubleBToExit: 'B 두 번 눌러 종료',
+    doubleBToExitDescription: 'Proton Pulse를 종료하려면 3초 이내에 B를 한 번 더 눌러야 합니다. 꺼져 있으면 B를 누르면 즉시 종료됩니다.',
   },
   compatTools: {
     install: '설치',
@@ -227,6 +229,7 @@ export const ko: TranslationTree = {
     launchOptionConflictReplace: '교체',
     renderErrorIntro: '현재 Steam UI 환경에서 이 게임 관리 화면에 렌더링 오류가 발생했습니다.',
     notInLibrary: '',
+    demo: '데모',
   },
   toast: {
     installed: (v) => `${v}이(가) 설치되었습니다.`,

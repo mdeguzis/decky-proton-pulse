@@ -167,6 +167,8 @@ export const de: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Zeigt eine Proton-Pulse-Verknüpfung neben den Aktionsschaltflächen der Spielseite an. Experimentell und standardmäßig deaktiviert.',
     gamePageBadge: 'ProtonDB-Abzeichen auf der Spielseite',
     gamePageBadgeDescription: 'Das ProtonDB-Kompatibilitätsstufen-Abzeichen auf der Spielseite anzeigen.',
+    doubleBToExit: 'Doppeltes B zum Beenden',
+    doubleBToExitDescription: 'Erfordert einen zweiten B-Druck innerhalb von 3 Sekunden, um Proton Pulse zu beenden. Wenn deaktiviert, beendet B sofort.',
   },
   compatTools: {
     install: 'Installieren',
@@ -227,6 +229,7 @@ export const de: TranslationTree = {
     launchOptionConflictReplace: 'Ersetzen',
     renderErrorIntro: 'Dieses Spiel verwalten ist in der aktuellen Steam-UI-Umgebung auf einen Darstellungsfehler gestoßen.',
     notInLibrary: '',
+    demo: 'Demo',
   },
   toast: {
     installed: (v) => `${v} installiert.`,

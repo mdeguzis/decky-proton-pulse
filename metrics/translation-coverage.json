@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 90,
-  "totalKeys": 540,
+  "totalKeys": 543,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 540,
-      "total": 540,
+      "translated": 543,
+      "total": 543,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -16,48 +16,56 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "it",
       "name": "Italiano",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 540,
-      "total": 540,
+      "translated": 543,
+      "total": 543,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -66,8 +74,8 @@
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 540,
-      "total": 540,
+      "translated": 543,
+      "total": 543,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -76,38 +84,44 @@
     {
       "code": "nl",
       "name": "Nederlands",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pl",
       "name": "Polski",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 540,
-      "total": 540,
+      "translated": 543,
+      "total": 543,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -116,18 +130,20 @@
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "uk",
       "name": "Українська",
-      "translated": 540,
-      "total": 540,
+      "translated": 543,
+      "total": 543,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -136,28 +152,32 @@
     {
       "code": "sv",
       "name": "Svenska",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "cs",
       "name": "Čeština",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "th",
       "name": "ภาษาไทย",
-      "translated": 540,
-      "total": 540,
+      "translated": 543,
+      "total": 543,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -166,18 +186,20 @@
     {
       "code": "vi",
       "name": "Tiếng Việt",
-      "translated": 540,
-      "total": 540,
-      "coveragePercent": 100,
+      "translated": 542,
+      "total": 543,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "configure.demo"
+      ],
       "typeMismatches": []
     },
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 540,
-      "total": 540,
+      "translated": 543,
+      "total": 543,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -186,8 +208,8 @@
     {
       "code": "zh-TW",
       "name": "繁體中文",
-      "translated": 540,
-      "total": 540,
+      "translated": 543,
+      "total": 543,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],

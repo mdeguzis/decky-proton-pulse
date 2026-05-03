@@ -167,6 +167,8 @@ export const ptBR: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Mostra um atalho do Proton Pulse ao lado dos botões de ação da página do jogo. É experimental e vem desativado por padrão.',
     gamePageBadge: 'Selo ProtonDB na página do jogo',
     gamePageBadgeDescription: 'Exibir o selo de compatibilidade ProtonDB na página do jogo.',
+    doubleBToExit: 'Pressionar B duas vezes para sair',
+    doubleBToExitDescription: 'Requer uma segunda pressao de B em 3 segundos para sair do Proton Pulse. Quando desativado, B sai imediatamente.',
   },
   compatTools: {
     install: 'Instalar',
@@ -227,6 +229,7 @@ export const ptBR: TranslationTree = {
     launchOptionConflictReplace: 'Substituir',
     renderErrorIntro: 'Gerenciar este jogo encontrou um erro de renderização no ambiente atual da interface Steam.',
     notInLibrary: '',
+    demo: 'Demo',
   },
   toast: {
     installed: (v) => `${v} instalado.`,

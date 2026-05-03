@@ -167,6 +167,8 @@ export const cs: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Zobrazí zkratku Proton Pulse vedle tlačítek akcí na stránce hry. Experimentální, ve výchozím nastavení zakázáno.',
     gamePageBadge: 'Odznak ProtonDB na stránce hry',
     gamePageBadgeDescription: 'Zobrazit odznak úrovně kompatibility ProtonDB na stránce hry.',
+    doubleBToExit: 'Dvojitym B ukoncit',
+    doubleBToExitDescription: 'Vyzadovat druhe stisknuti B do 3 sekund pro ukonceni Proton Pulse. Kdyz je vypnuto, B okamzite ukonci.',
   },
   compatTools: {
     install: 'Instalovat',
@@ -227,6 +229,7 @@ export const cs: TranslationTree = {
     launchOptionConflictReplace: 'Nahradit',
     renderErrorIntro: 'Správa této hry narazila na chybu vykreslování v aktuálním prostředí Steam UI.',
     notInLibrary: '',
+    demo: 'Demo',
   },
   toast: {
     installed: (v) => `${v} nainstalováno.`,
