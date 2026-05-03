@@ -4,6 +4,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+## v1.0.0 pre-release
+
 - Add Demo to translation skip values (universal gaming term)
 - Demo detection, double-B exit opt-in, B routing fix, and 1.0.0 polish
 - Derive plugin dir from DECK_USER instead of hardcoding /home/deck
