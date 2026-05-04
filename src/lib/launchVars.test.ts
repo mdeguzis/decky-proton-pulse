@@ -135,4 +135,52 @@ describe('launch option conflict helpers', () => {
     );
     expect(appendLaunchOptions('', '')).toBe('%command%');
   });
+
+  // issue #68: incoming PROTON_VERSION should replace existing, not duplicate it
+  it('replaces PROTON_VERSION when both sides set one, preserves other vars', () => {
+    const result = appendLaunchOptions(
+      'PROTON_VERSION="GE-Proton9-20" PROTON_LOG=1 %command%',
+      'PROTON_VERSION="GE-Proton10-1" %command%',
+    );
+    // PROTON_LOG from existing stays put, runtime gets replaced, no duplicate version
+    expect(result).toBe('PROTON_LOG=1 PROTON_VERSION="GE-Proton10-1" %command%');
+    expect(result.match(/PROTON_VERSION=/g)).toHaveLength(1);
+  });
+
+  it('overrides shared env vars with incoming values', () => {
+    // user had MANGOHUD off, report turns it on - report wins
+    const result = appendLaunchOptions('MANGOHUD=0 %command%', 'MANGOHUD=1 %command%');
+    expect(result).toBe('MANGOHUD=1 %command%');
+  });
+
+  it('preserves user vars that arent in the incoming options', () => {
+    // matches the issue text: "Non-runtime params from existing that arent in
+    // incoming are preserved"
+    const result = appendLaunchOptions(
+      'MANGOHUD=1 PROTON_LOG=1 %command%',
+      'PROTON_VERSION="GE-Proton10-1" %command%',
+    );
+    expect(result).toBe('MANGOHUD=1 PROTON_LOG=1 PROTON_VERSION="GE-Proton10-1" %command%');
+  });
+
+  it('dedupes wrappers like gamemoderun and adds new ones from incoming', () => {
+    const result = appendLaunchOptions(
+      'gamemoderun %command%',
+      'gamemoderun mangohud %command%',
+    );
+    expect(result).toBe('gamemoderun mangohud %command%');
+  });
+
+  it('dedupes post-command args while merging new flags', () => {
+    const result = appendLaunchOptions('%command% -log', '%command% -log -nojoy');
+    expect(result).toBe('%command% -log -nojoy');
+  });
+
+  it('keeps existing PROTON_VERSION when incoming has none', () => {
+    const result = appendLaunchOptions(
+      'PROTON_VERSION="GE-Proton9-20" %command%',
+      'MANGOHUD=1 %command%',
+    );
+    expect(result).toBe('MANGOHUD=1 PROTON_VERSION="GE-Proton9-20" %command%');
+  });
 });

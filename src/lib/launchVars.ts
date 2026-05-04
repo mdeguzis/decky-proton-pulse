@@ -127,9 +127,33 @@ export function normalizeLaunchOptionsForComparison(launchOptions: string): stri
     .trim();
 }
 
+// merge two arg lists, dedupe by exact string match, keep existing's order then
+// append any new entries from incoming. used for wrappers (gamemoderun) and
+// post-command flags (-log, -nojoy)
+function mergeUniqueArgs(existing: string[], incoming: string[]): string[] {
+  const seen = new Set(existing);
+  const out = [...existing];
+  for (const arg of incoming) {
+    if (!seen.has(arg)) {
+      seen.add(arg);
+      out.push(arg);
+    }
+  }
+  return out;
+}
+
+// structural append: parse both sides, merge by key (incoming wins for shared
+// KEY=value and PROTON_VERSION), dedupe wrappers and post-command flags, then
+// re-emit. fixes the duplicate-runtime bug from issue #68 where two
+// PROTON_VERSION="..." entries could end up side by side
 export function appendLaunchOptions(existing: string, incoming: string): string {
-  const existingNormalized = normalizeLaunchOptionsForComparison(existing);
-  const incomingNormalized = normalizeLaunchOptionsForComparison(incoming);
-  const merged = [existingNormalized, incomingNormalized].filter(Boolean).join(' ').trim();
-  return merged ? `${merged} %command%` : '%command%';
+  const e = parseLaunchOptions(existing);
+  const i = parseLaunchOptions(incoming);
+
+  const mergedVars = { ...e.vars, ...i.vars };
+  const mergedProtonVersion = i.protonVersion ?? e.protonVersion;
+  const mergedRawArgs = mergeUniqueArgs(e.rawArgs, i.rawArgs);
+  const mergedPostCommandArgs = mergeUniqueArgs(e.postCommandArgs, i.postCommandArgs);
+
+  return buildLaunchOptions(mergedProtonVersion, mergedVars, mergedRawArgs, mergedPostCommandArgs);
 }
