@@ -27,6 +27,13 @@ def sync_set_log_level(
 
     numeric = valid[level]
     previous_level = logging.getLevelName(decky.logger.level)
+
+    # no-op guard: frontend re-applies the saved level on every panel mount,
+    # which used to spam "Log level changed from INFO to INFO" (see #67).
+    # NOTSET -> any real level still counts as a transition and gets logged.
+    if previous_level == level:
+        return True
+
     decky.logger.setLevel(numeric)
 
     if numeric == logging.DEBUG:

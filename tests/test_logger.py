@@ -49,6 +49,26 @@ def test_set_log_level_info(plugin: Any) -> None:
     assert decky.logger.level == logging.INFO
 
 
+def test_set_log_level_skips_announce_when_unchanged(plugin: Any) -> None:
+    """Re-applying the same level should not log a 'changed from X to X' line.
+
+    Frontend re-applies the saved level on every panel mount, which used to
+    spam the main log (issue #67).
+    """
+    decky.logger.setLevel(logging.INFO)
+    # first call - real transition from whatever state, should log
+    sync_set_log_level("INFO", plugin._debug_handler_ref)  # pylint: disable=protected-access
+
+    with patch.object(decky.logger, "info") as info_mock:
+        result = sync_set_log_level(
+            "INFO", plugin._debug_handler_ref  # pylint: disable=protected-access
+        )
+
+    assert result is True
+    assert decky.logger.level == logging.INFO
+    info_mock.assert_not_called()
+
+
 def test_set_log_level_invalid(plugin: Any) -> None:
     """Invalid log level returns False"""
     result = sync_set_log_level(
