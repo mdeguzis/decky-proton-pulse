@@ -188,13 +188,13 @@ describe('getSummaryText', () => {
   });
 
   it('shows "n/a" hit rate when no cache operations have been recorded', () => {
-    // after reset: cacheHits=0, cacheMisses=0 → the false branch of the hitRate ternary
+    // after reset: cacheHits=0, cacheMisses=0 -> the false branch of the hitRate ternary
     const text = getSummaryText();
     expect(text).toContain('Cache hit rate:   n/a%');
   });
 
   it('includes error count in timing category lines', () => {
-    // record a span that ends with failure → errorCount > 0 → shows "(N errors)"
+    // record a span that ends with failure -> errorCount > 0 -> shows "(N errors)"
     const span = startDetailedSpan('fetch-cdn-index', '730');
     span.end(false, { reason: 'timeout' });
     const text = getSummaryText();

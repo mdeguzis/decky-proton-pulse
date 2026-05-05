@@ -69,7 +69,7 @@ export const zhCN: TranslationTree = {
     pulseBadge: 'Pulse 评级',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: '打开完整报告以查看原始备注。',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user - may not reflect your GPU's experience`,
   },
   detail: {
     apply: '应用',
@@ -267,7 +267,7 @@ export const zhCN: TranslationTree = {
     jumpToLatest: '跳到最新',
   },
   about: {
-    description: '按系统兼容性对 ProtonDB 社区报告排序，并将最匹配的 Proton 启动选项应用至您的 Steam 游戏 — 全部在 Decky 侧边栏中完成。',
+    description: '按系统兼容性对 ProtonDB 社区报告排序，并将最匹配的 Proton 启动选项应用至您的 Steam 游戏 - 全部在 Decky 侧边栏中完成。',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: '提交问题',
@@ -386,15 +386,15 @@ export const zhCN: TranslationTree = {
     submit: '提交报告',
     submitted: '报告已提交至 Proton Pulse！',
     hardware: '硬件',
-    ratingPlatinum: '白金 — 开箱即用，完美运行',
-    ratingGold: '黄金 — 调整后可运行',
-    ratingSilver: '白银 — 有些问题，仍可游玩',
-    ratingBronze: '青铜 — 可运行但有严重问题',
-    ratingBorked: '无法运行 — 无法启动',
+    ratingPlatinum: '白金 - 开箱即用，完美运行',
+    ratingGold: '黄金 - 调整后可运行',
+    ratingSilver: '白银 - 有些问题，仍可游玩',
+    ratingBronze: '青铜 - 可运行但有严重问题',
+    ratingBorked: '无法运行 - 无法启动',
     durationUnreported: '未报告',
     durationUnderOneHour: '不到 1 小时',
-    durationOneToFour: '1 – 4 小时',
-    durationFourToTen: '4 – 10 小时',
+    durationOneToFour: '1 - 4 小时',
+    durationFourToTen: '4 - 10 小时',
     durationOverTen: '超过 10 小时',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const zhCN: TranslationTree = {
     confirmChanges: '以下更改将包含在您的报告中：',
     confirmSubmit: '继续到 ProtonDB',
     noChanges: '未检测到更改。',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: '铂金',
@@ -576,7 +576,7 @@ export const zhCN: TranslationTree = {
     diagnosticsReportIndexPending: () => '报告索引响应：待定',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `ProtonDB 实时摘要：${status} · ${total} 份报告 · ${tier} 评级`
+        ? `ProtonDB 实时摘要：${status} | ${total} 份报告 . ${tier} 评级`
         : `ProtonDB 实时摘要：${status}`,
     diagnosticsLiveSummaryPending: () => 'ProtonDB 实时摘要：待定',
     // My Hardware modal

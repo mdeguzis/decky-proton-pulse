@@ -11,7 +11,7 @@
 import type { CdnReport, ScoredReport, SystemInfo, TieredReports, GpuTier } from '../types';
 import type { ProtonRating } from '../types';
 
-// ─── Weights, edit these to tune ranking ──────────────────────────────────────
+// --- Weights, edit these to tune ranking ---
 export const WEIGHTS = {
   BASE_MAX: 60,            // max points from the rating alone (platinum=60, borked=0)
   RECENCY_RECENT: 15,      // bonus for reports < 90 days old
@@ -390,7 +390,7 @@ export function getHardwareMatchPercent(
   return Math.max(0, Math.min(100, score));
 }
 
-// ─── Per-field match breakdown for the hardware comparison modal ─────────────
+// --- Per-field match breakdown for the hardware comparison modal ---
 
 export interface FieldMatchInfo {
   percent: number;   // 0-100, how close this field matches
@@ -431,10 +431,10 @@ const GPU_NOISE = new Set([
 // version-like patterns (X.Y.Z, X.Y, or kernel-style X.Y.Z-foo) aren't GPU model info
 const VERSION_PATTERN = /^\d+\.\d+(\.\d+)?/;
 
-// ─── VRAM estimation ────────────────────────────────────────────────────────
+// --- VRAM estimation ---
 
-/** Static GPU model → VRAM (GB) lookup. Patterns are matched against the
- *  lowercased GPU string. Order matters — first match wins. */
+/** Static GPU model -> VRAM (GB) lookup. Patterns are matched against the
+ *  lowercased GPU string. Order matters - first match wins. */
 const VRAM_TABLE: [RegExp, number][] = [
   // NVIDIA RTX 50xx
   [/rtx\s*5090/, 32], [/rtx\s*5080/, 16], [/rtx\s*5070\s*ti/, 16], [/rtx\s*5070/, 12], [/rtx\s*5060\s*ti/, 16], [/rtx\s*5060/, 8],

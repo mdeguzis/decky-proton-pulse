@@ -1,8 +1,8 @@
 # Native Pulse Reports & User Configs
 
-Proton Pulse has its own compatibility reporting system that works alongside ProtonDB. Users can submit reports directly from the plugin — the plugin automatically captures CPU, GPU, RAM, VRAM, driver, kernel, OS, and display resolution, so you only fill in the rating, Proton version, and optional notes.
+Proton Pulse has its own compatibility reporting system that works alongside ProtonDB. Users can submit reports directly from the plugin - the plugin automatically captures CPU, GPU, RAM, VRAM, driver, kernel, OS, and display resolution, so you only fill in the rating, Proton version, and optional notes.
 
-Reports appear on the Proton Pulse site at `www.proton-pulse.com` alongside ProtonDB community reports, labelled with a Pulse badge. They're open source in the same way ProtonDB is — anyone with the plugin can contribute.
+Reports appear on the Proton Pulse site at `www.proton-pulse.com` alongside ProtonDB community reports, labelled with a Pulse badge. They're open source in the same way ProtonDB is - anyone with the plugin can contribute.
 
 ## Overview
 
@@ -31,9 +31,9 @@ Reports appear on the Proton Pulse site at `www.proton-pulse.com` alongside Prot
 | duration | text | default 'unreported' |
 | rating | text | CHECK in (platinum, gold, silver, bronze, borked) |
 | notes | text | default '' |
-| launch_options | text | default '' — full launch option string |
-| enabled_vars | jsonb | default '{}' — env vars map, e.g. `{"DXVK_ASYNC":"1"}` |
-| confidence_score | smallint | CHECK 0-200, nullable — plugin's computed relevance score |
+| launch_options | text | default '' - full launch option string |
+| enabled_vars | jsonb | default '{}' - env vars map, e.g. `{"DXVK_ASYNC":"1"}` |
+| confidence_score | smallint | CHECK 0-200, nullable - plugin's computed relevance score |
 | source | text | CHECK in (user, protondb, protondb-local), default 'user' |
 | created_at | timestamptz | default now() |
 
@@ -66,7 +66,7 @@ grant select, insert on table public.user_configs to anon, authenticated;
 alter table public.user_configs enable row level security;
 ```
 
-No UPDATE grant — configs are insert-only (upsert via `on_conflict`).
+No UPDATE grant - configs are insert-only (upsert via `on_conflict`).
 
 ## Client API
 
@@ -77,7 +77,7 @@ import { submitUserConfig, getUserConfigs, getMyConfig, validateUserConfig, VALI
 const err = validateUserConfig(input);
 if (err) { /* show error */ }
 
-// Submit (upserts — one per client per app)
+// Submit (upserts - one per client per app)
 const { ok, error } = await submitUserConfig(input);
 
 // Fetch all configs for an app
@@ -98,9 +98,9 @@ supabase db push
 
 ## Failure Modes
 
-Same as voting — check these first:
+Same as voting - check these first:
 
 1. Publishable key in `userConfigs.ts` matches the Supabase project
 2. `anon`/`authenticated` roles have grants on `user_configs`
 3. RLS policies allow the current flow
-4. CHECK constraint violations return a Postgres error — the client-side `validateUserConfig()` should catch these before they hit the DB
+4. CHECK constraint violations return a Postgres error - the client-side `validateUserConfig()` should catch these before they hit the DB

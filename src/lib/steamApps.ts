@@ -101,7 +101,7 @@ export function getSteamPlaytimeForeverMinutes(appId: number): number {
   const steamAppsOverview = getSteamAppOverview(appId);
   if (steamAppsOverview) sources.push(steamAppsOverview);
 
-  // window.appStore is the MobX store the Steam library page reads from —
+  // window.appStore is the MobX store the Steam library page reads from -
   // it often has playtime even when SteamClient.Apps.GetAppOverviewByAppID doesn't
   const appStoreOverview = (globalThis as any).appStore?.GetAppOverviewByAppID?.(appId);
   if (appStoreOverview && appStoreOverview !== steamAppsOverview) sources.push(appStoreOverview);

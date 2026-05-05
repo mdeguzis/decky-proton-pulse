@@ -95,7 +95,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     ################################################################
 
     async def _main(self) -> None:
-        """Called by Decky when the plugin loads — our starting line."""
+        """Called by Decky when the plugin loads - our starting line."""
         import traceback as _tb
         try:
             self._main_impl()
@@ -137,7 +137,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         self._prefetch_thread.start()
 
     async def _unload(self) -> None:
-        """Shut everything down gracefully — kill running threads, clean up."""
+        """Shut everything down gracefully - kill running threads, clean up."""
         decky.logger.info("Proton Pulse backend shutting down")
         self._prefetch_cancel.set()
         self._proton_ge_install_cancel.set()

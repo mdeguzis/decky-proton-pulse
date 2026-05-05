@@ -56,7 +56,7 @@ const goldAmdOld = makeCdnReport({
   rating: 'gold', timestamp: now - 400 * 86400,
 });
 
-// ─── scoreReport ──────────────────────────────────────────────────────────────
+// --- scoreReport ---
 
 describe('scoreReport', () => {
   it('attaches gpuTier, recencyDays, notesModifier, upvotes to result', () => {
@@ -96,7 +96,7 @@ describe('scoreReport', () => {
     expect(geScore).toBeGreaterThan(vanillaScore);
   });
 
-  // ── driver matching ──────────────────────────────────────────────────────────
+  // --- driver matching ---
 
   it('exact driver version gives higher score than close version', () => {
     const exactDriver = makeCdnReport({ gpuDriver: 'NVIDIA 595.45.04' }); // matches nvidiaSystem
@@ -172,7 +172,7 @@ describe('scoreReport', () => {
     );
   });
 
-  // ── borked decay ─────────────────────────────────────────────────────────────
+  // --- borked decay ---
 
   it('fresh borked report scores lower than old borked (decay raises old score)', () => {
     const freshBorked = makeCdnReport({ rating: 'borked', timestamp: now - 30 * 86400 });
@@ -202,7 +202,7 @@ describe('scoreToMatchTier', () => {
   });
 });
 
-// ─── parseNotesSentiment ──────────────────────────────────────────────────────
+// --- parseNotesSentiment ---
 
 describe('parseNotesSentiment', () => {
   it('returns 0 for empty notes', () => {
@@ -250,7 +250,7 @@ describe('parseNotesSentiment', () => {
   });
 });
 
-// ─── parseProtonMajorVersion ─────────────────────────────────────────────────
+// --- parseProtonMajorVersion ---
 
 describe('parseProtonMajorVersion', () => {
   it('parses GE-Proton format', () => {
@@ -285,7 +285,7 @@ describe('parseProtonMajorVersion', () => {
   });
 });
 
-// ─── bucketByGpuTier ──────────────────────────────────────────────────────────
+// --- bucketByGpuTier ---
 
 describe('bucketByGpuTier', () => {
   it('separates nvidia and amd into correct buckets', () => {
@@ -385,7 +385,7 @@ describe('getHardwareMatchPercent', () => {
   });
 });
 
-// ─── getHardwareMatchBreakdown ──────────────────────────────────────────────
+// --- getHardwareMatchBreakdown ---
 
 describe('getHardwareMatchBreakdown', () => {
   it('returns all-zero breakdown when sysInfo is null', () => {
@@ -399,7 +399,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.gpu.color).toBe('#ef4444');
   });
 
-  // ── GPU field matching ──────────────────────────────────────────────────────
+  // --- GPU field matching ---
 
   it('gpu: same vendor + same model gives high match', () => {
     const report = makeCdnReport({ gpu: 'NVIDIA GeForce RTX 5080' });
@@ -446,11 +446,11 @@ describe('getHardwareMatchBreakdown', () => {
     const intelSys: SystemInfo = { ...nvidiaSystem, gpu: 'Intel Arc A770', gpu_vendor: 'intel' };
     const report = makeCdnReport({ gpu: 'Intel Arc A750' });
     const bd = getHardwareMatchBreakdown(report, intelSys);
-    // A750 (8GB) vs A770 (16GB) = 8GB VRAM gap → -5 penalty on top of vendor match
+    // A750 (8GB) vs A770 (16GB) = 8GB VRAM gap -> -5 penalty on top of vendor match
     expect(bd.gpu.percent).toBeGreaterThanOrEqual(35);
   });
 
-  // ── Driver field matching ───────────────────────────────────────────────────
+  // --- Driver field matching ---
 
   it('driver: exact major version gives 100%', () => {
     const report = makeCdnReport({ gpuDriver: 'NVIDIA 595.10.00' });
@@ -484,7 +484,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.gpuDriver.percent).toBe(0);
   });
 
-  // ── OS field matching ───────────────────────────────────────────────────────
+  // --- OS field matching ---
 
   it('os: exact match gives 100%', () => {
     const report = makeCdnReport({ os: 'CachyOS' });
@@ -525,7 +525,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.os.percent).toBe(0);
   });
 
-  // ── Kernel field matching ───────────────────────────────────────────────────
+  // --- Kernel field matching ---
 
   it('kernel: exact match gives 100%', () => {
     const report = makeCdnReport({ kernel: '6.19.8' });
@@ -570,7 +570,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.kernel.percent).toBe(0);
   });
 
-  // ── RAM field matching ──────────────────────────────────────────────────────
+  // --- RAM field matching ---
 
   it('ram: exact match gives 100%', () => {
     const report = makeCdnReport({ ram: '64 GB' });
@@ -630,7 +630,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bdWithReqs.ram.percent).toBe(50);
   });
 
-  // ── Color coding ───────────────────────────────────────────────────────────
+  // --- Color coding ---
 
   it('green for 80%+, amber for 50-79%, red for <50%', () => {
     // exact match should be green
@@ -734,7 +734,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.cpu.percent).toBe(0);
   });
 
-  // ── Mesa driver parsing ─────────────────────────────────────────────────────
+  // --- Mesa driver parsing ---
 
   it('driver: Mesa with OpenGL prefix parses correctly', () => {
     // "4.6 (Compatibility Profile) Mesa 22.2.0" should compare against "Mesa 24.3.0"
@@ -770,7 +770,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.gpuDriver.percent).toBe(100);
   });
 
-  // ── GPU noise filtering ─────────────────────────────────────────────────────
+  // --- GPU noise filtering ---
 
   it('gpu: noise tokens (LLVM, DRM, kernel version) dont dilute match', () => {
     // Steam Deck style: GPU string has embedded driver/kernel info
@@ -787,7 +787,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.gpu.percent).toBeGreaterThanOrEqual(80);
   });
 
-  // ── Valve kernel matching ───────────────────────────────────────────────────
+  // --- Valve kernel matching ---
 
   it('kernel: both valve kernels, same major, close builds', () => {
     const valveSys: SystemInfo = { ...nvidiaSystem, kernel: '5.13.0-valve36-1-neptune' };
@@ -820,7 +820,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.kernel.percent).toBe(35);
   });
 
-  // ── Proton version field matching ───────────────────────────────────────────
+  // --- Proton version field matching ---
 
   it('proton: same major and same proton family gives 100%', () => {
     const report = makeCdnReport({ protonVersion: 'GE-Proton9-7' });
@@ -849,7 +849,7 @@ describe('getHardwareMatchBreakdown', () => {
     const sys: SystemInfo = { ...nvidiaSystem, proton_custom: 'cachyos-9.0-20250101' };
     const bd = getHardwareMatchBreakdown(report, sys);
     expect(bd.protonVersion.percent).toBe(70);
-    expect(bd.protonVersion.color).toBe('#4caf50'); // green — 70% exceeds proton field threshold
+    expect(bd.protonVersion.color).toBe('#4caf50'); // green - 70% exceeds proton field threshold
   });
 
   it('proton: 1 major version apart with vanilla vs custom is slightly lower', () => {
@@ -893,7 +893,7 @@ describe('getHardwareMatchBreakdown', () => {
     expect(bd.protonVersion.percent).toBe(0);
   });
 
-  // ── GPU generation penalty ──────────────────────────────────────────────────
+  // --- GPU generation penalty ---
 
   it('gpu: adjacent AMD generations score lower than same generation', () => {
     // RX 6800 vs RX 6700 XT (same RDNA2 gen) should beat RX 6800 vs RX 7800 XT (diff gen)
@@ -917,7 +917,7 @@ describe('getHardwareMatchBreakdown', () => {
   });
 });
 
-// ─── scoreToRating ──────────────────────────────────────────────────────────
+// --- scoreToRating ---
 
 describe('scoreToRating', () => {
   it('maps high scores to platinum', () => {
@@ -954,14 +954,14 @@ describe('scoreToRating', () => {
   });
 });
 
-// ─── game-aware CPU/GPU matching ────────────────────────────────────────────
+// --- game-aware CPU/GPU matching ---
 
 describe('game-aware CPU matching', () => {
   it('does not boost when system and report brands differ', () => {
     const intelSys: SystemInfo = { ...nvidiaSystem, cpu: 'Intel Core i7-12700K' };
     const report = makeCdnReport({ cpu: 'AMD Ryzen 5 3600' });
     const withGame = getHardwareMatchBreakdown(report, intelSys, null, 'AMD FX 6300');
-    // report is AMD, system is Intel — brand mismatch, no boost
+    // report is AMD, system is Intel - brand mismatch, no boost
     expect(withGame.cpu.percent).toBeLessThan(80);
   });
 
@@ -991,19 +991,19 @@ describe('game-aware GPU matching', () => {
   it('does not boost when vendors differ', () => {
     const report = makeCdnReport({ gpu: 'AMD Radeon RX 580' });
     const withGame = getHardwareMatchBreakdown(report, nvidiaSystem, null, null, 'Nvidia GeForce GTX 780');
-    // report is AMD, system is NVIDIA — no boost
+    // report is AMD, system is NVIDIA - no boost
     expect(withGame.gpu.percent).toBeLessThan(80);
   });
 
   it('does not boost when game requirement is missing', () => {
     const report = makeCdnReport({ gpu: 'NVIDIA GeForce GTX 1060' });
     const withoutGame = getHardwareMatchBreakdown(report, nvidiaSystem, null, null, null);
-    // GTX 1060 vs RTX 5080 — same vendor but big gen gap, should be below 80
+    // GTX 1060 vs RTX 5080 - same vendor but big gen gap, should be below 80
     expect(withoutGame.gpu.percent).toBeLessThan(80);
   });
 });
 
-// ─── VRAM estimation ────────────────────────────────────────────────────────
+// --- VRAM estimation ---
 
 describe('estimateVramGb', () => {
   it('identifies common NVIDIA GPUs', () => {
@@ -1050,7 +1050,7 @@ describe('VRAM in GPU scoring', () => {
   });
 
   it('penalizes large VRAM gap between report and system', () => {
-    // GTX 1050 (2GB) report vs RTX 5080 (16GB) system — 14GB gap
+    // GTX 1050 (2GB) report vs RTX 5080 (16GB) system - 14GB gap
     const report = makeCdnReport({ gpu: 'NVIDIA GeForce GTX 1050' });
     const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
     // should be penalized relative to a closer VRAM match
@@ -1060,18 +1060,18 @@ describe('VRAM in GPU scoring', () => {
   });
 });
 
-// ── kernel major diff > 1 ───────────────────────────────────────────────────
+// --- kernel major diff > 1 ---
 
 describe('kernelFieldMatch distant major', () => {
   it('kernel: 2+ major versions apart gives 15%', () => {
-    // nvidiaSystem kernel is 6.19.8; report kernel 4.14.0 → diff=2, no valve build → return 15
+    // nvidiaSystem kernel is 6.19.8; report kernel 4.14.0 -> diff=2, no valve build -> return 15
     const report = makeCdnReport({ kernel: '4.14.0' });
     const bd = getHardwareMatchBreakdown(report, nvidiaSystem);
     expect(bd.kernel.percent).toBe(15);
   });
 });
 
-// ── ram shortfall > 8 below game minimum ───────────────────────────────────
+// --- ram shortfall > 8 below game minimum ---
 
 describe('ramFieldMatch shortfall > 8 below game minimum', () => {
   it('ram: shortfall > 8 GB below game minimum gives 25%', () => {

@@ -62,7 +62,7 @@ function getBpmDocument(): Document {
   return document;
 }
 
-// ── appId from focused nav tree element ──────────────────────────────────────
+// --- appId from focused nav tree element ---
 
 function isOnSearchRoute(): boolean {
   return (globalThis.location?.pathname ?? '').includes('search');
@@ -107,7 +107,7 @@ function extractAppIdFromElement(el: HTMLElement): number | null {
   return null;
 }
 
-// ── hint element ─────────────────────────────────────────────────────────────
+// --- hint element ---
 
 function ensureHint(): HTMLElement {
   const targetDoc = getBpmDocument();
@@ -167,7 +167,7 @@ function hideHint() {
   if (_hintEl) _hintEl.style.display = 'none';
 }
 
-// ── action ───────────────────────────────────────────────────────────────────
+// --- action ---
 
 function triggerHintAction() {
   const appId = _focusedAppId;
@@ -179,7 +179,7 @@ function triggerHintAction() {
   try { Navigation.Navigate('/proton-pulse'); } catch { /* fallback */ }
 }
 
-// ── poll + button hooks ───────────────────────────────────────────────────────
+// --- poll + button hooks ---
 
 function pollFocus() {
   if (!isOnSearchRoute()) { hideHint(); return; }

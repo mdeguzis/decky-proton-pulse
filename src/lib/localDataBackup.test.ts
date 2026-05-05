@@ -139,7 +139,7 @@ describe('localDataBackup', () => {
   });
 
   describe('isPluginSettingsEntryKey', () => {
-    // tracked-configs and data-cache are the user-generated bits — they live in
+    // tracked-configs and data-cache are the user-generated bits - they live in
     // localStorage under the same prefix but shouldn't travel with a plugin
     // settings backup. Same idea for edited-reports:* drafts
     it('rejects the exact non-plugin keys', () => {

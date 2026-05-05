@@ -20,7 +20,7 @@ import {
 } from './metrics';
 import type { CdnReport, ProtonDBSummary } from '../types';
 
-// ── config ──────────────────────────────────────────────────────────────────
+// --- config ---
 
 // default TTL used by getCacheTtlMs when no user setting exists
 // not referenced directly but documents the 24h default for the setting lookup
@@ -43,12 +43,12 @@ export interface CacheEntry {
   source: 'cdn' | 'live-detailed' | 'live-summary' | 'prefetch';
 }
 
-// ── in-memory layer ─────────────────────────────────────────────────────────
+// --- in-memory layer ---
 
 const memCache = new Map<string, CacheEntry>();
 let initialized = false;
 
-// ── TTL ─────────────────────────────────────────────────────────────────────
+// --- TTL ---
 
 export function getCacheTtlMs(): number {
   const hours = getSetting<number>(TTL_SETTING_KEY, 24);
@@ -64,7 +64,7 @@ function isExpired(entry: CacheEntry): boolean {
   return Date.now() - entry.cachedAt > ttl;
 }
 
-// ── init: load from localStorage into memory ────────────────────────────────
+// --- init: load from localStorage into memory ---
 
 export function initCache(): void {
   if (initialized) return;
@@ -96,7 +96,7 @@ export function initCache(): void {
   endSpan();
 }
 
-// ── persist to localStorage ─────────────────────────────────────────────────
+// --- persist to localStorage ---
 
 function persistToStorage(): void {
   const endSpan = startSpan('cache-write', 'persist-to-storage');
@@ -113,7 +113,7 @@ function persistToStorage(): void {
   endSpan();
 }
 
-// ── eviction ────────────────────────────────────────────────────────────────
+// --- eviction ---
 
 function evictIfNeeded(): void {
   if (memCache.size <= MAX_CACHE_ENTRIES) return;
@@ -136,7 +136,7 @@ function evictIfNeeded(): void {
   }
 }
 
-// ── public API ──────────────────────────────────────────────────────────────
+// --- public API ---
 
 export function getCached(appId: string): CacheEntry | null {
   if (!initialized) initCache();
@@ -228,7 +228,7 @@ export function invalidateAll(): void {
   void logFrontendEvent('INFO', 'Cache cleared', { evicted: count });
 }
 
-// ── stats ───────────────────────────────────────────────────────────────────
+// --- stats ---
 
 export function getCacheStats(): {
   size: number;

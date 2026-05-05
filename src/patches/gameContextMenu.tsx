@@ -22,7 +22,7 @@ import { logFrontendEvent } from '../lib/logger';
 import { t } from '../lib/i18n';
 import { selectMenuAppContext } from '../lib/gameContext';
 
-// ─── Find Steam's LibraryContextMenu component ────────────────────────────────
+// --- Find Steam's LibraryContextMenu component ---
 
 export const LibraryContextMenu: any = fakeRenderComponent(
   (Object.values(
@@ -34,7 +34,7 @@ export const LibraryContextMenu: any = fakeRenderComponent(
   ) as FC
 ).type;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// --- Helpers ---
 
 // Only patch the game library context menu, not screenshot or other menus.
 const isGameContextMenu = (items: any[]): boolean => {
@@ -325,7 +325,7 @@ const patchMenuItems = (
   injectMenuItem(items, initialAppId, summarizeContext(component, items));
 };
 
-// ─── Patch factory ────────────────────────────────────────────────────────────
+// --- Patch factory ---
 
 export function patchGameContextMenu(LibraryContextMenuComponent: any): {
   unpatch(): void;

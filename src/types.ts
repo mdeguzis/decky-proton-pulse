@@ -1,6 +1,6 @@
 // src/types.ts
 
-// ─── System Info ───────────────────────────────────────────────────────────────
+// --- System Info ---
 
 export type GpuVendor = 'nvidia' | 'amd' | 'intel' | 'other';
 
@@ -19,7 +19,7 @@ export interface SystemInfo {
   steam_deck_model: string | null;
 }
 
-// ─── ProtonDB Summary ─────────────────────────────────────────────────────────
+// --- ProtonDB Summary ---
 // Still live: https://www.protondb.com/api/v1/reports/summaries/{appId}.json
 
 export type ProtonRating = 'platinum' | 'gold' | 'silver' | 'bronze' | 'borked' | 'pending';
@@ -33,7 +33,7 @@ export interface ProtonDBSummary {
   confidence: string;
 }
 
-// ─── CDN Report ───────────────────────────────────────────────────────────────
+// --- CDN Report ---
 // Shape served by the Proton Pulse CDN year files under
 // https://www.proton-pulse.com/data/{appId}/{year}.json
 // rating is normalized to lowercase at fetch time ("Silver" -> "silver")
@@ -56,7 +56,7 @@ export interface CdnReport {
   source?: string | null; // e.g. "Steam", "Heroic", "Epic", "Non-Steam"
 }
 
-// ─── Scoring ──────────────────────────────────────────────────────────────────
+// --- Scoring ---
 
 export type GpuTier = 'nvidia' | 'amd' | 'intel' | 'unknown';
 
@@ -75,7 +75,7 @@ export interface TieredReports {
   other: ScoredReport[];
 }
 
-// ─── Compatibility Tools ─────────────────────────────────────────────────────
+// --- Compatibility Tools ---
 
 export interface CompatToolRelease {
   tag_name: string;
@@ -128,7 +128,7 @@ export interface ProtonVersionAvailability {
   message: string;
 }
 
-// ─── LSFG-VK Frame Generation ────────────────────────────────────────────────
+// --- LSFG-VK Frame Generation ---
 
 export interface LsfgVkRelease {
   tag_name: string;
@@ -170,5 +170,5 @@ export interface LsfgVkManagerState {
   };
 }
 
-// ─── Steam CEF ───────────────────────────────────────────────────────────────
+// --- Steam CEF ---
 // SteamClient global is provided by @decky/ui -- no redeclaration needed.

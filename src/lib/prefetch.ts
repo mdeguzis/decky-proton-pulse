@@ -23,7 +23,7 @@ import {
 import { isSteamShortcutApp } from './steamApps';
 import type { CdnReport, ProtonDBSummary, ProtonRating } from '../types';
 
-// ── config ──────────────────────────────────────────────────────────────────
+// --- config ---
 
 // recent-play window used only for logging and sort priority
 const RECENTLY_PLAYED_DAYS = 30;
@@ -46,7 +46,7 @@ const getInstalledGameStatsCallable = callable<[], {
 
 const VALID_RATINGS = new Set<string>(['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending']);
 
-// ── steam library enumeration ───────────────────────────────────────────────
+// --- steam library enumeration ---
 
 interface AppOverview {
   appid: number;
@@ -207,7 +207,7 @@ function rankPrefetchCandidates(games: AppOverview[]): AppOverview[] {
   });
 }
 
-// ── individual game prefetch ────────────────────────────────────────────────
+// --- individual game prefetch ---
 
 function normalizeReports(raw: Array<CdnReport & { rating: string }>): CdnReport[] {
   return raw.map((r) => {
@@ -275,7 +275,7 @@ async function prefetchGame(appId: string): Promise<boolean> {
   }
 }
 
-// ── throttled batch prefetch ────────────────────────────────────────────────
+// --- throttled batch prefetch ---
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -304,7 +304,7 @@ async function prefetchBatch(appIds: string[]): Promise<{ ok: number; failed: nu
   return { ok, failed };
 }
 
-// ── main entry point ────────────────────────────────────────────────────────
+// --- main entry point ---
 
 let prefetchRunning = false;
 

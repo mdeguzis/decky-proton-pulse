@@ -12,7 +12,7 @@ def setup_function() -> None:
     game_platforms._cache.clear()
 
 
-# ── _library_folders ──────────────────────────────────────────────────────────
+# --- _library_folders ---
 
 def test_library_folders_returns_empty_when_no_steam_root() -> None:
     with patch("lib.game_platforms.find_steam_root", return_value=None):
@@ -36,7 +36,7 @@ def test_library_folders_returns_empty_when_vdf_unreadable(tmp_path: Path) -> No
 
 
 def test_library_folders_parses_extra_paths(tmp_path: Path) -> None:
-    # The extra path does NOT need to exist on disk — we no longer gate on is_dir()
+    # The extra path does NOT need to exist on disk - we no longer gate on is_dir()
     # so that SD-card libraries are included even when not currently mounted.
     extra = tmp_path / "extra" / "steamapps"
     vdf = tmp_path / "config" / "libraryfolders.vdf"
@@ -47,7 +47,7 @@ def test_library_folders_parses_extra_paths(tmp_path: Path) -> None:
     assert extra in folders
 
 
-# ── _parse_acf ────────────────────────────────────────────────────────────────
+# --- _parse_acf ---
 
 def test_parse_acf_returns_key_value_pairs(tmp_path: Path) -> None:
     acf = tmp_path / "app.acf"
@@ -61,7 +61,7 @@ def test_parse_acf_returns_empty_on_missing_file(tmp_path: Path) -> None:
     assert game_platforms._parse_acf(tmp_path / "nonexistent.acf") == {}
 
 
-# ── _get_library_info ─────────────────────────────────────────────────────────
+# --- _get_library_info ---
 
 def test_get_library_info_returns_nones_when_no_libraries() -> None:
     with patch("lib.game_platforms._library_folders", return_value=[]):
@@ -153,7 +153,7 @@ def test_get_library_info_handles_disk_usage_oserror(tmp_path: Path) -> None:
     assert info["storage_free_gb"] is None
 
 
-# ── get_game_platforms ────────────────────────────────────────────────────────
+# --- get_game_platforms ---
 
 def test_get_game_platforms_success() -> None:
     app_id = "570"

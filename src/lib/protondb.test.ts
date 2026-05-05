@@ -12,7 +12,7 @@ vi.mock('./cache', () => ({
   setCache: vi.fn(),
 }));
 
-// default: no Pulse reports in Supabase — overridden per-test when needed
+// default: no Pulse reports in Supabase - overridden per-test when needed
 vi.mock('./userConfigs', () => ({
   getUserConfigs: vi.fn().mockResolvedValue([]),
 }));
@@ -100,7 +100,7 @@ const fakeCdnRaw = [
   },
 ];
 
-// ─── getProtonDBSummary ────────────────────────────────────────────────────────
+// --- getProtonDBSummary ---
 
 describe('getProtonDBSummary', () => {
   it('returns the cached summary without fetching', async () => {
@@ -136,7 +136,7 @@ describe('getProtonDBSummary', () => {
   });
 });
 
-// ─── getProtonDBReports ────────────────────────────────────────────────────────
+// --- getProtonDBReports ---
 
 describe('getProtonDBReports', () => {
   it('returns cached reports with diagnostics immediately', async () => {
@@ -496,7 +496,7 @@ describe('getProtonDBReports', () => {
   });
 });
 
-// ─── protondb catch path coverage ─────────────────────────────────────────────
+// --- protondb catch path coverage ---
 // These tests mock cdnCache directly so cachedFetchJson can throw, exercising
 // the inner year-file catch (lines 449-458) and outer index catch (lines 485-499).
 
@@ -530,7 +530,7 @@ describe('protondb cdnCache throw paths', () => {
     const { getProtonDBReportsWithDiagnostics } = await import('./protondb');
     const result = await getProtonDBReportsWithDiagnostics('730');
 
-    // year threw, no cdn reports → falls back to live
+    // year threw, no cdn reports -> falls back to live
     expect(result.diagnostics.yearStatuses['2023']).toBeNull();
   });
 
@@ -549,7 +549,7 @@ describe('protondb cdnCache throw paths', () => {
       countFetch: vi.fn(),
     }));
 
-    // index fetch throws a plain string (not Error) → outer catch at lines 485-499
+    // index fetch throws a plain string (not Error) -> outer catch at lines 485-499
     cachedFetchJsonMock.mockRejectedValueOnce('index network reset');
 
     // fallback fetch calls after the outer catch triggers fallbackToLiveSummary

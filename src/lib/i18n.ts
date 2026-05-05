@@ -705,7 +705,7 @@ export const en: TranslationTree = {
     pulseBadge: 'Pulse',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Open the full report to read the original note.',
-    gpuMismatchBadgeHint: (gpuTier) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
+    gpuMismatchBadgeHint: (gpuTier) => `Rating is from a ${String(gpuTier).toUpperCase()} user - may not reflect your GPU's experience`,
   },
   detail: {
     apply: 'Apply',
@@ -766,7 +766,7 @@ export const en: TranslationTree = {
     verdictPass: 'PASS',
     verdictFail: 'FAIL',
     verdictMaybe: 'MAYBE',
-    sysReqFocusHint: 'Press A or D-pad right to focus · D-pad up/down to scroll',
+    sysReqFocusHint: 'Press A or D-pad right to focus . D-pad up/down to scroll',
     platformAvailability: 'Platform Availability',
     platformColumn: 'Platform',
     statusColumn: 'Status',
@@ -1022,15 +1022,15 @@ export const en: TranslationTree = {
     submit: 'Submit Report',
     submitted: 'Report submitted to Proton Pulse!',
     hardware: 'Hardware',
-    ratingPlatinum: 'Platinum — Works perfectly out of the box',
-    ratingGold: 'Gold — Works with tweaks',
-    ratingSilver: 'Silver — Some issues, still playable',
-    ratingBronze: 'Bronze — Runs but with significant issues',
-    ratingBorked: 'Borked — Does not run',
+    ratingPlatinum: 'Platinum - Works perfectly out of the box',
+    ratingGold: 'Gold - Works with tweaks',
+    ratingSilver: 'Silver - Some issues, still playable',
+    ratingBronze: 'Bronze - Runs but with significant issues',
+    ratingBorked: 'Borked - Does not run',
     durationUnreported: 'Not reported',
     durationUnderOneHour: 'Under 1 hour',
-    durationOneToFour: '1 – 4 hours',
-    durationFourToTen: '4 – 10 hours',
+    durationOneToFour: '1 - 4 hours',
+    durationFourToTen: '4 - 10 hours',
     durationOverTen: 'Over 10 hours',
   },
   protondbSubmit: {
@@ -1214,7 +1214,7 @@ export const en: TranslationTree = {
     diagnosticsReportIndexPending: () => 'Report index response: pending',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `Live ProtonDB summary: ${status} · ${total} reports · ${tier} tier`
+        ? `Live ProtonDB summary: ${status} | ${total} reports . ${tier} tier`
         : `Live ProtonDB summary: ${status}`,
     diagnosticsLiveSummaryPending: () => 'Live ProtonDB summary: pending',
     // My Hardware modal

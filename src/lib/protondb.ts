@@ -535,7 +535,7 @@ async function fallbackToLiveSummary(
   reports: CdnReport[];
   diagnostics: ReportFetchDiagnostics;
 }> {
-  // Check our own Supabase first — reports submitted via the plugin are here
+  // Check our own Supabase first - reports submitted via the plugin are here
   // immediately, before the nightly CDN pipeline picks them up
   const pulseReports = await fetchLivePulseReports(appId, reason);
 

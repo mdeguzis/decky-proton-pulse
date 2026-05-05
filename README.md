@@ -17,7 +17,7 @@ Windows CI currently validates that the repo toolchain can install and build on 
 
 A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for Steam Deck that pulls [ProtonDB](https://www.protondb.com) reports for the game in front of you, scores them against your hardware, and lets you apply useful launch options without typing them by hand.
 
-> Website: **<https://www.proton-pulse.com/>** — the companion web app now lives on its own domain. If you had the old `mdeguzis.github.io/proton-pulse-data/*` URLs bookmarked, please update them. The plugin itself already points at the new host.
+> Website: **<https://www.proton-pulse.com/>** - the companion web app now lives on its own domain. If you had the old `mdeguzis.github.io/proton-pulse-data/*` URLs bookmarked, please update them. The plugin itself already points at the new host.
 
 Browse community reports, Pulse configs, and per-game compatibility data on the **[Proton Pulse site](https://www.proton-pulse.com/)** - works on mobile with a collapsible left-side nav.
 
@@ -35,8 +35,8 @@ Proton Pulse would not exist without the open-source projects below. Parts of th
 
 | Project | Author | License |
 |---|---|---|
-| [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) | OMGDuke | — |
-| [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) | moi952 | — |
+| [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) | OMGDuke | - |
+| [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) | moi952 | - |
 | [Wine Cellar (decky-wine-cellar)](https://github.com/FlashyReese/decky-wine-cellar) | FlashyReese | MIT |
 | [SteamGridDB Decky Plugin (decky-steamgriddb)](https://github.com/SteamGridDB/decky-steamgriddb) | SteamGridDB | GPL-3.0-or-later |
 
@@ -174,14 +174,14 @@ Normal build and deploy commands sync that value into `package.json` and `pyproj
 
 ## Documentation
 
-* [Proton Pulse Site](https://www.proton-pulse.com/) — browse community reports, Pulse configs, and per-game data
-* [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) — setup, build, deploy, testing, CEF debugging
-* [Architecture](https://github.com/mdeguzis/decky-proton-pulse/wiki/Architecture) — file-by-file code breakdown and ownership boundaries
-* [System Design](https://github.com/mdeguzis/decky-proton-pulse/wiki/System-Design) — end-to-end flow diagrams, data ownership, scoring model
-* [Scoring Algorithm](https://github.com/mdeguzis/decky-proton-pulse/wiki/Scoring-Algorithm) — how reports are weighted and ranked
-* [API Reference](https://github.com/mdeguzis/decky-proton-pulse/wiki/API-Reference) — Python callables and TypeScript interfaces
-* [ProtonDB Data Resolution](https://github.com/mdeguzis/decky-proton-pulse/wiki/ProtonDB-Data-Resolution) — app ID resolution, mirror misses, and live fallback
-* [Local dev notes](docs/dev/toolchain-and-ci.md) — Node 24, CI, remote Deck helpers, and CEF captures
+* [Proton Pulse Site](https://www.proton-pulse.com/) - browse community reports, Pulse configs, and per-game data
+* [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) - setup, build, deploy, testing, CEF debugging
+* [Architecture](https://github.com/mdeguzis/decky-proton-pulse/wiki/Architecture) - file-by-file code breakdown and ownership boundaries
+* [System Design](https://github.com/mdeguzis/decky-proton-pulse/wiki/System-Design) - end-to-end flow diagrams, data ownership, scoring model
+* [Scoring Algorithm](https://github.com/mdeguzis/decky-proton-pulse/wiki/Scoring-Algorithm) - how reports are weighted and ranked
+* [API Reference](https://github.com/mdeguzis/decky-proton-pulse/wiki/API-Reference) - Python callables and TypeScript interfaces
+* [ProtonDB Data Resolution](https://github.com/mdeguzis/decky-proton-pulse/wiki/ProtonDB-Data-Resolution) - app ID resolution, mirror misses, and live fallback
+* [Local dev notes](docs/dev/toolchain-and-ci.md) - Node 24, CI, remote Deck helpers, and CEF captures
 
 ## Troubleshooting
 

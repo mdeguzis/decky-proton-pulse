@@ -26,7 +26,7 @@ from typing import Any
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
-DEFAULT_TTL = 3600  # 1 hour — anything older than this triggers a revalidation
+DEFAULT_TTL = 3600  # 1 hour - anything older than this triggers a revalidation
 
 
 def _cache_root() -> Path:
@@ -42,11 +42,11 @@ def _meta_dir() -> Path:
 
 
 def _url_hash(url: str) -> str:
-    # Truncated SHA-256 — just needs to be unique enough for filenames
+    # Truncated SHA-256 - just needs to be unique enough for filenames
     return hashlib.sha256(url.encode()).hexdigest()[:16]
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+# --- Public API ---
 
 
 def cache_path_for(app_id: str, filename: str) -> Path:
@@ -94,7 +94,7 @@ def get_meta(url: str) -> dict[str, Any]:
 def set_meta(url: str, *, etag: str | None = None, last_modified: str | None = None) -> None:
     """Save cache metadata for a URL."""
     p = _meta_dir() / f"{_url_hash(url)}.json"
-    # fetched_at is wall-clock time — is_fresh() uses it for TTL checks
+    # fetched_at is wall-clock time - is_fresh() uses it for TTL checks
     p.write_text(json.dumps({
         "etag": etag,
         "last_modified": last_modified,

@@ -69,7 +69,7 @@ export const ja: TranslationTree = {
     pulseBadge: 'Pulse評価',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: '元のメモは詳細レポートで確認できます。',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user - may not reflect your GPU's experience`,
   },
   detail: {
     apply: '適用',
@@ -267,7 +267,7 @@ export const ja: TranslationTree = {
     jumpToLatest: '最新へ移動',
   },
   about: {
-    description: 'システム互換性に基づいて ProtonDB コミュニティレポートをランク付けし、最も一致する Proton 起動オプションを Steam ゲームに適用します — すべて Decky サイドバーから。',
+    description: 'システム互換性に基づいて ProtonDB コミュニティレポートをランク付けし、最も一致する Proton 起動オプションを Steam ゲームに適用します - すべて Decky サイドバーから。',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: '問題を報告',
@@ -386,11 +386,11 @@ export const ja: TranslationTree = {
     submit: 'レポートを送信',
     submitted: 'レポートがProton Pulseに送信されました！',
     hardware: 'ハードウェア',
-    ratingPlatinum: 'プラチナ — 設定なしで完璧に動作',
-    ratingGold: 'ゴールド — 調整すれば動作',
-    ratingSilver: 'シルバー — 問題はあるがプレイ可能',
-    ratingBronze: 'ブロンズ — 動作するが重大な問題あり',
-    ratingBorked: '動作不可 — 起動しない',
+    ratingPlatinum: 'プラチナ - 設定なしで完璧に動作',
+    ratingGold: 'ゴールド - 調整すれば動作',
+    ratingSilver: 'シルバー - 問題はあるがプレイ可能',
+    ratingBronze: 'ブロンズ - 動作するが重大な問題あり',
+    ratingBorked: '動作不可 - 起動しない',
     durationUnreported: '未報告',
     durationUnderOneHour: '1時間未満',
     durationOneToFour: '1〜4時間',
@@ -412,7 +412,7 @@ export const ja: TranslationTree = {
     confirmChanges: '以下の変更がレポートに含まれます：',
     confirmSubmit: 'ProtonDB に進む',
     noChanges: '変更は検出されませんでした。',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'プラチナ',
@@ -576,7 +576,7 @@ export const ja: TranslationTree = {
     diagnosticsReportIndexPending: () => 'レポートインデックス応答: 保留中',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `ProtonDB ライブ要約: ${status} · ${total} 件のレポート · ${tier} ティア`
+        ? `ProtonDB ライブ要約: ${status} | ${total} 件のレポート . ${tier} ティア`
         : `ProtonDB ライブ要約: ${status}`,
     diagnosticsLiveSummaryPending: () => 'ProtonDB ライブ要約: 保留中',
     // My Hardware modal

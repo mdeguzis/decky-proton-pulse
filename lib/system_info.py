@@ -19,7 +19,7 @@ from .plugin_utils import system_command_env
 from .proton_ge import read_latest_metadata
 
 
-# ── Windows helpers ────────────────────────────────────────────────────────────
+# --- Windows helpers ---
 
 def _ps(expression: str) -> str | None:
     """Run a PowerShell expression and return stripped stdout, or None on error."""
@@ -35,7 +35,7 @@ def _ps(expression: str) -> str | None:
 
 
 def _wmic(path: str, get: str) -> str | None:
-    """WMIC fallback — returns first non-empty value field."""
+    """WMIC fallback - returns first non-empty value field."""
     try:
         result = subprocess.run(
             ["wmic", path, "get", get, "/value"],

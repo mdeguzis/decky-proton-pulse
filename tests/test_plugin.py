@@ -51,7 +51,7 @@ def debug_handler_ref() -> list[Optional[logging.Handler]]:
     return [None]
 
 
-# ─── Debug handler cleanup behavior ───────────────────────────────────────────
+# --- Debug handler cleanup behavior ---
 
 
 def test_disable_debug_log_removes_handler(debug_handler_ref: Any) -> None:
@@ -86,7 +86,7 @@ def test_set_log_level_warning_disables_debug_log(debug_handler_ref: Any) -> Non
     assert debug_handler_ref[0] is None
 
 
-# ─── CEF debugging toggle ────────────────────────────────────────────────────
+# --- CEF debugging toggle ---
 
 
 def test_get_cef_debugging_status_reports_marker(tmp_path: pathlib.Path) -> None:
@@ -139,7 +139,7 @@ def test_set_cef_debugging_enabled_removes_marker(tmp_path: pathlib.Path) -> Non
     assert status["enabled"] is False
 
 
-# ─── get_log_contents ─────────────────────────────────────────────────────────
+# --- get_log_contents ---
 
 
 def test_get_log_contents_returns_last_200_lines() -> None:
@@ -177,7 +177,7 @@ def test_get_log_contents_reads_main_log_only() -> None:
     assert "debug line" in result
 
 
-# ─── read_cpu ─────────────────────────────────────────────────────────────────
+# --- read_cpu ---
 
 
 def test_read_cpu_parses_model_name() -> None:
@@ -198,7 +198,7 @@ def test_read_cpu_returns_none_when_no_model_name() -> None:
     assert result is None
 
 
-# ─── read_gpu ─────────────────────────────────────────────────────────────────
+# --- read_gpu ---
 
 
 def test_read_gpu_parses_vga_line() -> None:
@@ -243,7 +243,7 @@ def test_read_gpu_lspci_failure_returns_none() -> None:
     assert vendor is None
 
 
-# ─── read_driver_version ──────────────────────────────────────────────────────
+# --- read_driver_version ---
 
 
 def test_read_driver_version_nvidia_smi_success() -> None:
@@ -282,7 +282,7 @@ def test_read_driver_version_nvidia_smi_nonzero_and_no_drm() -> None:
     assert result is None
 
 
-# ─── read_kernel ──────────────────────────────────────────────────────────────
+# --- read_kernel ---
 
 
 def test_read_kernel_returns_version() -> None:
@@ -299,7 +299,7 @@ def test_read_kernel_failure_returns_none() -> None:
     assert result is None
 
 
-# ─── read_distro ──────────────────────────────────────────────────────────────
+# --- read_distro ---
 
 
 def test_read_distro_parses_pretty_name() -> None:
@@ -322,7 +322,7 @@ def test_read_distro_missing_file_returns_none() -> None:
     assert result is None
 
 
-# ─── read_custom_proton ───────────────────────────────────────────────────────
+# --- read_custom_proton ---
 
 
 def test_read_custom_proton_single_entry(tmp_path: pathlib.Path) -> None:
@@ -1147,7 +1147,7 @@ def test_uninstall_compatibility_tool_removes_managed_directory(
     assert not tool_dir.exists()
 
 
-# ─── CEF debug socket error path ─────────────────────────────────────────────
+# --- CEF debug socket error path ---
 
 
 def test_is_cef_debug_port_listening_returns_false_on_oserror() -> None:
@@ -1170,7 +1170,7 @@ def test_set_cef_debugging_enabled_returns_error_on_oserror(tmp_path: pathlib.Pa
     assert "permission denied" in result["message"]
 
 
-# ─── cleanup thread join paths ────────────────────────────────────────────────
+# --- cleanup thread join paths ---
 
 
 def test_unload_joins_lsfg_vk_thread_when_alive(plugin: Plugin) -> None:
@@ -1180,7 +1180,7 @@ def test_unload_joins_lsfg_vk_thread_when_alive(plugin: Plugin) -> None:
     assert fake.join_called_with == 10
 
 
-# ─── LSFG-VK availability ────────────────────────────────────────────────────
+# --- LSFG-VK availability ---
 
 
 def test_is_lsfg_vk_available_when_present(plugin: Plugin) -> None:
@@ -1199,7 +1199,7 @@ def test_is_lsfg_vk_available_when_absent(plugin: Plugin) -> None:
     assert result["path"] is None
 
 
-# ─── LSFG-VK manager state ───────────────────────────────────────────────────
+# --- LSFG-VK manager state ---
 
 
 def test_get_lsfg_vk_manager_state_returns_bundled_info(plugin: Plugin) -> None:
@@ -1234,7 +1234,7 @@ def test_get_lsfg_vk_manager_state_no_releases(plugin: Plugin) -> None:
     assert result["current_installed"] is False
 
 
-# ─── LSFG-VK install ─────────────────────────────────────────────────────────
+# --- LSFG-VK install ---
 
 
 def test_install_lsfg_vk_rejects_missing_version(plugin: Plugin) -> None:
@@ -1355,7 +1355,7 @@ def test_install_lsfg_vk_worker_exception_path(plugin: Plugin) -> None:
     assert "disk full" in (call_kwargs.get("message") or "")
 
 
-# ─── LSFG-VK cancel ──────────────────────────────────────────────────────────
+# --- LSFG-VK cancel ---
 
 
 def test_cancel_lsfg_vk_install_returns_error_when_not_running(plugin: Plugin) -> None:
@@ -1372,7 +1372,7 @@ def test_cancel_lsfg_vk_install_signals_running_thread(plugin: Plugin) -> None:
     assert plugin._lsfg_vk_install_cancel.is_set()
 
 
-# ─── LSFG-VK uninstall ───────────────────────────────────────────────────────
+# --- LSFG-VK uninstall ---
 
 
 def test_uninstall_lsfg_vk_rejects_empty_name(plugin: Plugin) -> None:

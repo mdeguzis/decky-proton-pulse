@@ -99,7 +99,7 @@ export const ru: TranslationTree = {
     pulseBadge: 'Рейтинг Pulse',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Откройте полный отчёт, чтобы прочитать исходную заметку.',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user - may not reflect your GPU's experience`,
   },
   detail: {
     apply: 'Применить',
@@ -297,7 +297,7 @@ export const ru: TranslationTree = {
     jumpToLatest: 'Перейти к последнему',
   },
   about: {
-    description: 'Ранжирует отчёты сообщества ProtonDB по совместимости с вашей системой и применяет наиболее подходящие параметры запуска Proton к вашим играм в Steam — прямо из боковой панели Decky.',
+    description: 'Ранжирует отчёты сообщества ProtonDB по совместимости с вашей системой и применяет наиболее подходящие параметры запуска Proton к вашим играм в Steam - прямо из боковой панели Decky.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Сообщить о проблеме',
@@ -416,15 +416,15 @@ export const ru: TranslationTree = {
     submit: 'Отправить отчёт',
     submitted: 'Отчёт отправлен в Proton Pulse!',
     hardware: 'Оборудование',
-    ratingPlatinum: 'Платина — Работает идеально без настроек',
-    ratingGold: 'Золото — Работает с настройками',
-    ratingSilver: 'Серебро — Есть проблемы, но играть можно',
-    ratingBronze: 'Бронза — Запускается, но с серьёзными проблемами',
-    ratingBorked: 'Не работает — Не запускается',
+    ratingPlatinum: 'Платина - Работает идеально без настроек',
+    ratingGold: 'Золото - Работает с настройками',
+    ratingSilver: 'Серебро - Есть проблемы, но играть можно',
+    ratingBronze: 'Бронза - Запускается, но с серьёзными проблемами',
+    ratingBorked: 'Не работает - Не запускается',
     durationUnreported: 'Не указано',
     durationUnderOneHour: 'Менее 1 часа',
-    durationOneToFour: '1 – 4 часа',
-    durationFourToTen: '4 – 10 часов',
+    durationOneToFour: '1 - 4 часа',
+    durationFourToTen: '4 - 10 часов',
     durationOverTen: 'Более 10 часов',
   },
   protondbSubmit: {
@@ -442,7 +442,7 @@ export const ru: TranslationTree = {
     confirmChanges: 'Следующие изменения будут включены в ваш отчёт:',
     confirmSubmit: 'Перейти на ProtonDB',
     noChanges: 'Изменения не обнаружены.',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'Платина',
@@ -606,7 +606,7 @@ export const ru: TranslationTree = {
     diagnosticsReportIndexPending: () => 'Ответ индекса отчётов: ожидание',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `Живое резюме ProtonDB: ${status} · ${total} отчётов · уровень ${tier}`
+        ? `Живое резюме ProtonDB: ${status} | ${total} отчётов . уровень ${tier}`
         : `Живое резюме ProtonDB: ${status}`,
     diagnosticsLiveSummaryPending: () => 'Живое резюме ProtonDB: ожидание',
     // My Hardware modal

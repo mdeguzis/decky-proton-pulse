@@ -21,9 +21,9 @@ from .steam_paths import find_steam_root
 from .game_platforms import _library_folders, _parse_acf
 
 
-# ── ACF-based Steam game lookup ───────────────────────────────────────────────
+# --- ACF-based Steam game lookup ---
 
-_NON_STEAM_ID_THRESHOLD = 2_000_000_000  # shortcut IDs are CRC32 with high bit set (≥ 2^31)
+_NON_STEAM_ID_THRESHOLD = 2_000_000_000  # shortcut IDs are CRC32 with high bit set (>= 2^31)
 
 
 def is_steam_app(app_id: str) -> bool:
@@ -128,7 +128,7 @@ def find_steam_appid_from_store(title: str) -> str | None:
     return None
 
 
-# ── Binary VDF shortcuts.vdf parser ──────────────────────────────────────────
+# --- Binary VDF shortcuts.vdf parser ---
 # shortcuts.vdf uses a simplified binary VDF (not the text VDF used by .acf).
 # Format: sequence of entries, each entry is a set of typed key-value pairs.
 # Type bytes: 0x00 = nested map start, 0x01 = string, 0x02 = int32, 0x08 = end.
@@ -275,7 +275,7 @@ def _infer_source_from_shortcut(entry: dict[str, Any]) -> str:
     return "Non-Steam"
 
 
-# ── Public callable ───────────────────────────────────────────────────────────
+# --- Public callable ---
 
 _source_cache: dict[str, dict[str, Any]] = {}
 

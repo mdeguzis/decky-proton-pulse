@@ -69,7 +69,7 @@ export const cs: TranslationTree = {
     pulseBadge: 'Hodnocení Pulse',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Otevřete celou zprávu pro přečtení původní poznámky.',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Hodnocení je od uživatele ${String(gpuTier).toUpperCase()} — nemusí odpovídat výkonu vašeho GPU`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Hodnocení je od uživatele ${String(gpuTier).toUpperCase()} - nemusí odpovídat výkonu vašeho GPU`,
   },
   detail: {
     apply: 'Použít',
@@ -267,7 +267,7 @@ export const cs: TranslationTree = {
     jumpToLatest: 'Přeskočit na nejnovější',
   },
   about: {
-    description: 'Páruje komunitní zprávy ProtonDB na základě kompatibility hardwaru a aplikuje nejvhodnější možnosti spuštění Proton na vaše hry Steam — vše z postranního panelu Decky.',
+    description: 'Páruje komunitní zprávy ProtonDB na základě kompatibility hardwaru a aplikuje nejvhodnější možnosti spuštění Proton na vaše hry Steam - vše z postranního panelu Decky.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Nahlásit problém',
@@ -386,15 +386,15 @@ export const cs: TranslationTree = {
     submit: 'Odeslat zprávu',
     submitted: 'Zpráva odeslána do Proton Pulse!',
     hardware: 'Systémový hardware',
-    ratingPlatinum: 'Platinum — Funguje perfektně bez úprav',
-    ratingGold: 'Zlatá — Funguje s úpravami',
-    ratingSilver: 'Stříbrná — Některé problémy, ale hratelné',
-    ratingBronze: 'Bronzová — Spustí se, ale s velkými problémy',
-    ratingBorked: 'Rozbité — Nespustí se',
+    ratingPlatinum: 'Platinum - Funguje perfektně bez úprav',
+    ratingGold: 'Zlatá - Funguje s úpravami',
+    ratingSilver: 'Stříbrná - Některé problémy, ale hratelné',
+    ratingBronze: 'Bronzová - Spustí se, ale s velkými problémy',
+    ratingBorked: 'Rozbité - Nespustí se',
     durationUnreported: 'Neuvedeno',
     durationUnderOneHour: 'Méně než 1 hodina',
-    durationOneToFour: '1–4 hodiny',
-    durationFourToTen: '4–10 hodin',
+    durationOneToFour: '1-4 hodiny',
+    durationFourToTen: '4-10 hodin',
     durationOverTen: 'Více než 10 hodin',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const cs: TranslationTree = {
     confirmChanges: 'Vaše zpráva bude obsahovat následující změny:',
     confirmSubmit: 'Pokračovat na ProtonDB',
     noChanges: 'Žádné změny nalezeny.',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'Platina',
@@ -576,7 +576,7 @@ export const cs: TranslationTree = {
     diagnosticsReportIndexPending: () => 'Odpověď indexu zpráv: čekající',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `Živý souhrn ProtonDB: ${status} · ${total} zpráv · úroveň ${tier}`
+        ? `Živý souhrn ProtonDB: ${status} | ${total} zpráv . úroveň ${tier}`
         : `Živý souhrn ProtonDB: ${status}`,
     diagnosticsLiveSummaryPending: () => 'Živý souhrn ProtonDB: čekající',
     myHardwareTitle: () => 'Můj hardware',

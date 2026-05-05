@@ -1,13 +1,13 @@
 // src/lib/userConfigs.ts
 // Supabase-backed custom user config reports (ProtonDB-style).
-// Only stores user-submitted custom configs — never imported data.
+// Only stores user-submitted custom configs - never imported data.
 
 import { logFrontendEvent } from './logger';
 import { getVoterId } from './voting';
 import { getInstallationId, getLinkedProtonPulseUserId } from './protonPulseAccount';
 import type { ProtonRating } from '../types';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// --- Constants ---
 
 const SUPABASE_URL = 'https://ilsgdshkaocrmibwdezk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_3Oqhm4JneafJNQw9BuUaxw_L9qZa-5V';
@@ -16,7 +16,7 @@ const SUPABASE_REST_URL = `${SUPABASE_URL}/rest/v1`;
 const SUBMIT_COOLDOWN_MS = 5000;
 let lastSubmitAt = 0;
 
-// ─── Allowed values (must match SQL CHECK constraints) ────────────────────────
+// --- Allowed values (must match SQL CHECK constraints) ---
 
 const VALID_RATINGS: readonly ProtonRating[] = [
   'platinum', 'gold', 'silver', 'bronze', 'borked',
@@ -48,7 +48,7 @@ const RAM_RE = /^\d+ GB$/;
 const VALID_GPU_VENDORS = ['nvidia', 'amd', 'intel', 'other'] as const;
 const VALID_SOURCES = ['user', 'web', 'protondb', 'protondb-local'] as const;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types ---
 
 export type ValidOS = (typeof VALID_OS)[number];
 
@@ -99,7 +99,7 @@ export interface UserConfigRow {
   created_at: string;
 }
 
-// ─── Validation ───────────────────────────────────────────────────────────────
+// --- Validation ---
 
 export function validateUserConfig(input: UserConfigInput): string | null {
   if (!input.appId || !input.title || !input.cpu || !input.gpu) {
@@ -129,7 +129,7 @@ export function validateUserConfig(input: UserConfigInput): string | null {
   return null;
 }
 
-// ─── REST helpers (mirrors voting.ts) ─────────────────────────────────────────
+// --- REST helpers (mirrors voting.ts) ---
 
 function headers(extra: HeadersInit = {}): HeadersInit {
   return {
@@ -166,7 +166,7 @@ async function restRequest<T>(
   return { data: payload as T | null, error: null, status: res.status };
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// --- Public API ---
 
 export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: boolean; error?: string }> {
   if (Date.now() - lastSubmitAt < SUBMIT_COOLDOWN_MS) {
@@ -301,7 +301,7 @@ export async function getMySubmittedAppIds(): Promise<Set<string>> {
 
 export { VALID_OS, VALID_RATINGS, VALID_GPU_VENDORS, VALID_SOURCES };
 
-// ─── Owner delete (RLS via x-client-id header) ───────────────────────────────
+// --- Owner delete (RLS via x-client-id header) ---
 
 export async function deleteMyReport(appId: string): Promise<{ ok: boolean; error?: string }> {
   const clientId = await getVoterId();

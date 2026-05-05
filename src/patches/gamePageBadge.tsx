@@ -120,7 +120,7 @@ function BadgeIcon({ appId }: { appId: number }) {
     return result;
   }
 
-  // Fires synchronously before paint — positions the badge so the navmesh
+  // Fires synchronously before paint - positions the badge so the navmesh
   // reads the correct coordinates when it scans the DOM after mount.
   useLayoutEffect(() => {
     const p = measurePos();

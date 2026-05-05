@@ -43,7 +43,7 @@ COMPAT_TOOL_RESTART_HINT = (
 )
 
 
-# ── Metadata persistence ────────────────────────────────────────────
+# --- Metadata persistence ---
 
 def _latest_metadata_path() -> Path:
     return compat_tools_cache_dir() / "proton-ge-latest.json"
@@ -92,7 +92,7 @@ def read_latest_metadata() -> dict[str, Any] | None:
     return payload
 
 
-# ── Install-status tracking (thread-safe) ───────────────────────────
+# --- Install-status tracking (thread-safe) ---
 
 def make_initial_status() -> dict[str, Any]:
     """Return a blank install-status dict (state=idle)."""
@@ -172,7 +172,7 @@ def get_install_status(
         return dict(status)
 
 
-# ── Release fetching & caching ──────────────────────────────────────
+# --- Release fetching & caching ---
 
 def _cache_path() -> Path:
     return compat_tools_cache_dir() / "proton-ge-releases-cache.json"
@@ -245,7 +245,7 @@ def get_releases_sync(
         return []
 
 
-# ── Finalize extracted compat tool ──────────────────────────────────
+# --- Finalize extracted compat tool ---
 
 def finalize_extracted_compat_tool(
     archive_label: str,
@@ -287,7 +287,7 @@ def finalize_extracted_compat_tool(
     }
 
 
-# ── Synchronous install pipeline (runs on background thread) ────────
+# --- Synchronous install pipeline (runs on background thread) ---
 
 def install_sync(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-return-statements,too-many-statements
     version: str | None,

@@ -88,7 +88,7 @@ export function AboutTab() {
         ))}
       </div>
 
-      {/* ── Submit Issue ── */}
+      {/* --- Submit Issue --- */}
       <div
         style={{
           borderTop: '1px solid #2a3a4a',

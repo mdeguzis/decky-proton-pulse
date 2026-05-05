@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the project screenshot manifest — fully automated or guided."""
+"""Run the project screenshot manifest - fully automated or guided."""
 
 from __future__ import annotations
 

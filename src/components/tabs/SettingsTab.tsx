@@ -352,7 +352,7 @@ function VersionBrowserModal({
                       </div>
                     ) : (
                       <div style={{ fontSize: 10, color: '#7f9bb2', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {release.tag_name} · {formatReleaseDate(release.published_at)}
+                        {release.tag_name} . {formatReleaseDate(release.published_at)}
                       </div>
                     )}
                   </div>

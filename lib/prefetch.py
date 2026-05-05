@@ -78,7 +78,7 @@ def _is_non_game_manifest(app_id: str, name: str) -> str | None:
     return None
 
 
-# ── Steam game discovery ─────────────────────────────────────────────────────
+# --- Steam game discovery ---
 
 
 def _library_folders() -> list[Path]:
@@ -109,7 +109,7 @@ def _library_folders() -> list[Path]:
 
 
 def _parse_acf(path: Path) -> dict[str, str]:
-    """Bare-bones ACF/VDF key-value parser — just grabs top-level string pairs."""
+    """Bare-bones ACF/VDF key-value parser - just grabs top-level string pairs."""
     result: dict[str, str] = {}
     try:
         # ACF files are Valve's KeyValues format; errors="replace" handles
@@ -119,7 +119,7 @@ def _parse_acf(path: Path) -> dict[str, str]:
         return result
     for m in re.finditer(r'"(\w+)"\s+"([^"]*)"', text):
         # Only grabs top-level "key" "value" pairs; nested sections
-        # (like "UserConfig") are ignored — we only need appid/name/size
+        # (like "UserConfig") are ignored - we only need appid/name/size
         result[m.group(1)] = m.group(2)
     return result
 
@@ -194,7 +194,7 @@ def get_installed_game_stats() -> dict[str, Any]:
     }
 
 
-# ── CDN fetch with backoff ───────────────────────────────────────────────────
+# --- CDN fetch with backoff ---
 
 
 def _parse_resp_headers(header_block: str) -> dict[str, str]:
@@ -241,7 +241,7 @@ def _curl_fetch(
     if result.returncode != 0 and not raw:
         return 0, "", {}
 
-    # Split headers from body — headers end at the first blank line.
+    # Split headers from body - headers end at the first blank line.
     # Try \r\n\r\n first (standard HTTP), fall back to \n\n (some curl builds)
     parts = raw.split("\r\n\r\n", 1)
     if len(parts) < 2:
@@ -281,7 +281,7 @@ def _fetch_cdn_json(url: str, app_id: str, filename: str) -> Any | None:
         status, body, resp_headers = _curl_fetch(url, headers)
 
         if status == 304:
-            # Nothing changed — just refresh the timestamp so it stays fresh
+            # Nothing changed - just refresh the timestamp so it stays fresh
             decky.logger.debug(f"Prefetch: 304 Not Modified for {app_id}/{filename}")
             set_meta(
                 url,
@@ -306,10 +306,10 @@ def _fetch_cdn_json(url: str, app_id: str, filename: str) -> Any | None:
             return data
 
         if status == 404:
-            decky.logger.debug(f"Prefetch: 404 for {app_id}/{filename} — game not in CDN")
+            decky.logger.debug(f"Prefetch: 404 for {app_id}/{filename} - game not in CDN")
             return None  # not in the CDN, no point retrying
 
-        # Transient error — back off and try again
+        # Transient error - back off and try again
         decky.logger.debug(
             f"Prefetch: transient error {status} for {app_id}/{filename}"
             f" (attempt {attempt + 1}/{MAX_RETRIES}, backoff {backoff}s)"
@@ -322,13 +322,13 @@ def _fetch_cdn_json(url: str, app_id: str, filename: str) -> Any | None:
     return None
 
 
-# ── Main prefetch entry point ────────────────────────────────────────────────
+# --- Main prefetch entry point ---
 
 
 def prefetch_installed_games(cancel_check: Any | None = None) -> dict[str, Any]:
     """Prefetch CDN data for all installed games.
 
-    *cancel_check* is a ``threading.Event`` — if it gets set, we bail
+    *cancel_check* is a ``threading.Event`` - if it gets set, we bail
     out early.  Returns a summary dict with counts.
     """
     games = discover_installed_games()

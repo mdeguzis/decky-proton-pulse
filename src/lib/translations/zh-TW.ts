@@ -69,7 +69,7 @@ export const zhTW: TranslationTree = {
     pulseBadge: 'Pulse 評分',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: '開啟完整報告以閱讀原始備註。',
-    gpuMismatchBadgeHint: (gpuTier: string) => `評分來自 ${String(gpuTier).toUpperCase()} 使用者 — 可能無法反映您的 GPU 體驗`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `評分來自 ${String(gpuTier).toUpperCase()} 使用者 - 可能無法反映您的 GPU 體驗`,
   },
   detail: {
     apply: '套用',
@@ -267,7 +267,7 @@ export const zhTW: TranslationTree = {
     jumpToLatest: '跳至最新',
   },
   about: {
-    description: '依照硬體相容性匹配 ProtonDB 社群報告，並將最佳 Proton 啟動選項套用至您的 Steam 遊戲 — 全都透過 Decky 側邊欄完成。',
+    description: '依照硬體相容性匹配 ProtonDB 社群報告，並將最佳 Proton 啟動選項套用至您的 Steam 遊戲 - 全都透過 Decky 側邊欄完成。',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: '回報問題',
@@ -386,15 +386,15 @@ export const zhTW: TranslationTree = {
     submit: '提交報告',
     submitted: '報告已發送至 Proton Pulse！',
     hardware: '系統硬體',
-    ratingPlatinum: '白金 — 無需調整即可完美運作',
-    ratingGold: '金 — 需要調整才能運作',
-    ratingSilver: '銀 — 有些問題但可以玩',
-    ratingBronze: '銅 — 可啟動但有重大問題',
-    ratingBorked: '損壞 — 無法啟動',
+    ratingPlatinum: '白金 - 無需調整即可完美運作',
+    ratingGold: '金 - 需要調整才能運作',
+    ratingSilver: '銀 - 有些問題但可以玩',
+    ratingBronze: '銅 - 可啟動但有重大問題',
+    ratingBorked: '損壞 - 無法啟動',
     durationUnreported: '未回報',
     durationUnderOneHour: '不到 1 小時',
-    durationOneToFour: '1–4 小時',
-    durationFourToTen: '4–10 小時',
+    durationOneToFour: '1-4 小時',
+    durationFourToTen: '4-10 小時',
     durationOverTen: '超過 10 小時',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const zhTW: TranslationTree = {
     confirmChanges: '以下變更將包含在您的報告中：',
     confirmSubmit: '繼續至 ProtonDB',
     noChanges: '未偵測到任何變更。',
-    changed: (field: string, from: string, to: string) => `${field}：${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}：${from} -> ${to}`,
   },
   ratings: {
     platinum: '白金',
@@ -576,7 +576,7 @@ export const zhTW: TranslationTree = {
     diagnosticsReportIndexPending: () => '報告索引回應：待定',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `即時 ProtonDB 摘要：${status} · ${total} 份報告 · ${tier} 等級`
+        ? `即時 ProtonDB 摘要：${status} | ${total} 份報告 . ${tier} 等級`
         : `即時 ProtonDB 摘要：${status}`,
     diagnosticsLiveSummaryPending: () => '即時 ProtonDB 摘要：待定',
     myHardwareTitle: () => '我的硬體',

@@ -28,23 +28,23 @@ const getGamePlatforms   = callable<[string], PlatformsResponse>('get_game_platf
 function buildOurValue(f: GameReqField, sysInfo: SystemInfo | null, storageFreeGb: number | null): string {
   const label = f.label.toLowerCase();
   if (label.includes('memory') || label === 'ram')
-    return sysInfo?.ram_gb != null ? `${sysInfo.ram_gb} GB RAM` : '—';
+    return sysInfo?.ram_gb != null ? `${sysInfo.ram_gb} GB RAM` : '-';
   if (label === 'vram' || (label.includes('video') && label.includes('mem')))
-    return sysInfo?.vram_mb != null ? `${(sysInfo.vram_mb / 1024).toFixed(1)} GB` : '—';
+    return sysInfo?.vram_mb != null ? `${(sysInfo.vram_mb / 1024).toFixed(1)} GB` : '-';
   if (label.includes('processor') || label === 'cpu')
-    return sysInfo?.cpu ?? '—';
+    return sysInfo?.cpu ?? '-';
   if (label.includes('graphic') || label.includes('video card') || label === 'gpu') {
     const gpu = sysInfo?.gpu ?? null;
     const vram = sysInfo?.vram_mb != null ? `${(sysInfo.vram_mb / 1024).toFixed(0)} GB VRAM` : null;
-    return [gpu, vram].filter(Boolean).join(', ') || '—';
+    return [gpu, vram].filter(Boolean).join(', ') || '-';
   }
   if (label === 'os' || label.includes('operating system'))
-    return sysInfo?.distro ?? '—';
+    return sysInfo?.distro ?? '-';
   if (label.includes('kernel'))
-    return sysInfo?.kernel ?? '—';
+    return sysInfo?.kernel ?? '-';
   if (label.includes('storage') || label.includes('disk') || label.includes('hard drive') || label.includes('hard disk'))
-    return storageFreeGb != null ? `${storageFreeGb} GB free` : '—';
-  return '—';
+    return storageFreeGb != null ? `${storageFreeGb} GB free` : '-';
+  return '-';
 }
 
 const ROW_BTN: React.CSSProperties = {
@@ -136,7 +136,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
         {t().detail.sysReqFocusHint}
       </div>
 
-      {/* ── Platform availability ── */}
+      {/* --- Platform availability --- */}
       <PpDialogButton onClick={() => {}}
         onFocus={() => setFocusedRow('hdr-platform')}
         onBlur={() => setFocusedRow(null)}
@@ -172,7 +172,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
         </PpDialogButton>
       ))}
 
-      {/* ── Minimum requirements vs our system ── */}
+      {/* --- Minimum requirements vs our system --- */}
       <PpDialogButton onClick={() => {}}
         onFocus={() => setFocusedRow('hdr-min')}
         onBlur={() => setFocusedRow(null)}
@@ -198,7 +198,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
             <span style={{ color: '#c8dcea', fontWeight: 600 }}>{f.label}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <span style={{ fontSize: 11, color: '#9db0c4' }}>{f.value}</span>
-              {ourValue !== '—' && (
+              {ourValue !== '-' && (
                 <span style={{ fontSize: 11, color: '#7ecfff' }}>{t().detail.oursLabel} {ourValue}</span>
               )}
             </div>

@@ -594,7 +594,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
             appIdLabel,
             config.protonVersion,
             t().configManager.appliedAgo(relativeTime(config.appliedAt)),
-          ].filter(Boolean).join(' · ');
+          ].filter(Boolean).join(' . ');
           return (
             <div
               key={config.appId}
@@ -692,7 +692,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
                 extras.appIdLabel(entry.appId),
                 entry.protonVersion,
                 entry.label,
-              ].filter(Boolean).join(' · ');
+              ].filter(Boolean).join(' . ');
               const openEditedMenu = (e: MouseEvent) => showContextMenu(
                 <Menu label={eName}>
                   <MenuItem onClick={() => showModal(

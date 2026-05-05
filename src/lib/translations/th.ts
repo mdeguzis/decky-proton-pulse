@@ -69,7 +69,7 @@ export const th: TranslationTree = {
     pulseBadge: 'คะแนน Pulse',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'เปิดรายงานแบบเต็มเพื่ออ่านหมายเหตุต้นฉบับ',
-    gpuMismatchBadgeHint: (gpuTier: string) => `คะแนนนี้มาจากผู้ใช้ ${String(gpuTier).toUpperCase()} — อาจไม่สะท้อนประสิทธิภาพ GPU ของคุณ`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `คะแนนนี้มาจากผู้ใช้ ${String(gpuTier).toUpperCase()} - อาจไม่สะท้อนประสิทธิภาพ GPU ของคุณ`,
   },
   detail: {
     apply: 'ใช้งาน',
@@ -267,7 +267,7 @@ export const th: TranslationTree = {
     jumpToLatest: 'ข้ามไปยังล่าสุด',
   },
   about: {
-    description: 'จับคู่รายงานชุมชน ProtonDB ตามความเข้ากันได้ของฮาร์ดแวร์ และใช้ตัวเลือกการเปิดใช้งาน Proton ที่เหมาะสมที่สุดกับเกม Steam ของคุณ — ทั้งหมดจากแถบข้างของ Decky',
+    description: 'จับคู่รายงานชุมชน ProtonDB ตามความเข้ากันได้ของฮาร์ดแวร์ และใช้ตัวเลือกการเปิดใช้งาน Proton ที่เหมาะสมที่สุดกับเกม Steam ของคุณ - ทั้งหมดจากแถบข้างของ Decky',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'รายงานปัญหา',
@@ -386,15 +386,15 @@ export const th: TranslationTree = {
     submit: 'ส่งรายงาน',
     submitted: 'ส่งรายงานไปยัง Proton Pulse แล้ว!',
     hardware: 'ฮาร์ดแวร์ระบบ',
-    ratingPlatinum: 'Platinum — ทำงานได้สมบูรณ์แบบโดยไม่ต้องปรับแต่ง',
-    ratingGold: 'ทอง — ทำงานได้ด้วยการปรับแต่ง',
-    ratingSilver: 'เงิน — มีบางปัญหาแต่เล่นได้',
-    ratingBronze: 'ทองแดง — เปิดได้แต่มีปัญหาใหญ่',
-    ratingBorked: 'พัง — เปิดไม่ได้',
+    ratingPlatinum: 'Platinum - ทำงานได้สมบูรณ์แบบโดยไม่ต้องปรับแต่ง',
+    ratingGold: 'ทอง - ทำงานได้ด้วยการปรับแต่ง',
+    ratingSilver: 'เงิน - มีบางปัญหาแต่เล่นได้',
+    ratingBronze: 'ทองแดง - เปิดได้แต่มีปัญหาใหญ่',
+    ratingBorked: 'พัง - เปิดไม่ได้',
     durationUnreported: 'ไม่ได้รายงาน',
     durationUnderOneHour: 'น้อยกว่า 1 ชั่วโมง',
-    durationOneToFour: '1–4 ชั่วโมง',
-    durationFourToTen: '4–10 ชั่วโมง',
+    durationOneToFour: '1-4 ชั่วโมง',
+    durationFourToTen: '4-10 ชั่วโมง',
     durationOverTen: 'มากกว่า 10 ชั่วโมง',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const th: TranslationTree = {
     confirmChanges: 'การเปลี่ยนแปลงต่อไปนี้จะรวมอยู่ในรายงานของคุณ:',
     confirmSubmit: 'ดำเนินการต่อไปยัง ProtonDB',
     noChanges: 'ไม่พบการเปลี่ยนแปลง',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'แพลตินัม',
@@ -576,7 +576,7 @@ export const th: TranslationTree = {
     diagnosticsReportIndexPending: () => 'การตอบสนองดัชนีรายงาน: รอดำเนินการ',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `สรุปสด ProtonDB: ${status} · ${total} รายงาน · ระดับ ${tier}`
+        ? `สรุปสด ProtonDB: ${status} | ${total} รายงาน . ระดับ ${tier}`
         : `สรุปสด ProtonDB: ${status}`,
     diagnosticsLiveSummaryPending: () => 'สรุปสด ProtonDB: รอดำเนินการ',
     myHardwareTitle: () => 'ฮาร์ดแวร์ของฉัน',

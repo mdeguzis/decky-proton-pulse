@@ -8,12 +8,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-# ── Make the project root importable ──────────────────────────────────────────
+# --- Make the project root importable ---
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-# ── Mock the decky module BEFORE any project imports ──────────────────────────
+# --- Mock the decky module BEFORE any project imports ---
 # decky is provided by the Decky Loader runtime and is not available in the
 # test environment.  We install a lightweight mock into sys.modules so that
 # ``import decky`` inside main.py / lib/ succeeds.
@@ -39,7 +39,7 @@ sys.modules["decky"] = _decky_mock
 from main import Plugin  # noqa: E402
 
 
-# ── Fixtures ──────────────────────────────────────────────────────────────────
+# --- Fixtures ---
 
 
 @pytest.fixture

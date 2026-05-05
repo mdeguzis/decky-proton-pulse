@@ -133,7 +133,7 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
             {formatProtonLabel(report.protonVersion)}
           </div>
           <div style={{ fontSize: 11, color: '#8fb4d5', marginBottom: 8 }}>
-            {[report.gpu, report.os].filter(Boolean).join(' · ') || strings.reports.hardwareUnavailable}
+            {[report.gpu, report.os].filter(Boolean).join(' . ') || strings.reports.hardwareUnavailable}
           </div>
           <div style={{ fontSize: 10, color: '#9cb3c7', marginBottom: 8 }}>
             {strings.common.daysAgo(report.recencyDays)}

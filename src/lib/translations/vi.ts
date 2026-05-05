@@ -69,7 +69,7 @@ export const vi: TranslationTree = {
     pulseBadge: 'Đánh giá Pulse',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Mở toàn bộ báo cáo để đọc ghi chú gốc.',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Đánh giá này từ người dùng ${String(gpuTier).toUpperCase()} — có thể không phản ánh hiệu suất GPU của bạn`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Đánh giá này từ người dùng ${String(gpuTier).toUpperCase()} - có thể không phản ánh hiệu suất GPU của bạn`,
   },
   detail: {
     apply: 'Áp dụng',
@@ -267,7 +267,7 @@ export const vi: TranslationTree = {
     jumpToLatest: 'Nhảy đến mới nhất',
   },
   about: {
-    description: 'Khớp các báo cáo cộng đồng ProtonDB dựa trên tính tương thích phần cứng và áp dụng các tùy chọn khởi chạy Proton phù hợp nhất cho trò chơi Steam của bạn — tất cả từ thanh bên Decky.',
+    description: 'Khớp các báo cáo cộng đồng ProtonDB dựa trên tính tương thích phần cứng và áp dụng các tùy chọn khởi chạy Proton phù hợp nhất cho trò chơi Steam của bạn - tất cả từ thanh bên Decky.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Báo cáo sự cố',
@@ -386,15 +386,15 @@ export const vi: TranslationTree = {
     submit: 'Gửi báo cáo',
     submitted: 'Đã gửi báo cáo đến Proton Pulse!',
     hardware: 'Phần cứng hệ thống',
-    ratingPlatinum: 'Platinum — Hoạt động hoàn hảo không cần điều chỉnh',
-    ratingGold: 'Vàng — Hoạt động được với điều chỉnh',
-    ratingSilver: 'Bạc — Một số vấn đề nhưng có thể chơi được',
-    ratingBronze: 'Đồng — Khởi chạy được nhưng có vấn đề lớn',
-    ratingBorked: 'Hỏng — Không khởi chạy được',
+    ratingPlatinum: 'Platinum - Hoạt động hoàn hảo không cần điều chỉnh',
+    ratingGold: 'Vàng - Hoạt động được với điều chỉnh',
+    ratingSilver: 'Bạc - Một số vấn đề nhưng có thể chơi được',
+    ratingBronze: 'Đồng - Khởi chạy được nhưng có vấn đề lớn',
+    ratingBorked: 'Hỏng - Không khởi chạy được',
     durationUnreported: 'Không báo cáo',
     durationUnderOneHour: 'Dưới 1 giờ',
-    durationOneToFour: '1–4 giờ',
-    durationFourToTen: '4–10 giờ',
+    durationOneToFour: '1-4 giờ',
+    durationFourToTen: '4-10 giờ',
     durationOverTen: 'Hơn 10 giờ',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const vi: TranslationTree = {
     confirmChanges: 'Các thay đổi sau sẽ được đưa vào báo cáo của bạn:',
     confirmSubmit: 'Tiếp tục đến ProtonDB',
     noChanges: 'Không tìm thấy thay đổi.',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'Bạch kim',
@@ -576,7 +576,7 @@ export const vi: TranslationTree = {
     diagnosticsReportIndexPending: () => 'Phản hồi chỉ mục báo cáo: đang chờ',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `Tóm tắt trực tiếp ProtonDB: ${status} · ${total} báo cáo · cấp ${tier}`
+        ? `Tóm tắt trực tiếp ProtonDB: ${status} | ${total} báo cáo . cấp ${tier}`
         : `Tóm tắt trực tiếp ProtonDB: ${status}`,
     diagnosticsLiveSummaryPending: () => 'Tóm tắt trực tiếp ProtonDB: đang chờ',
     myHardwareTitle: () => 'Phần cứng của tôi',

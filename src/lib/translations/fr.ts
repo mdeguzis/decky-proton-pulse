@@ -69,7 +69,7 @@ export const fr: TranslationTree = {
     pulseBadge: 'Niveau Pulse',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Ouvrez le rapport complet pour lire la remarque d’origine.',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user - may not reflect your GPU's experience`,
   },
   detail: {
     apply: 'Appliquer',
@@ -267,7 +267,7 @@ export const fr: TranslationTree = {
     jumpToLatest: 'Aller au plus récent',
   },
   about: {
-    description: 'Classe les rapports de la communauté ProtonDB par compatibilité système et applique les meilleures options de lancement Proton à vos jeux Steam — le tout depuis la barre latérale Decky.',
+    description: 'Classe les rapports de la communauté ProtonDB par compatibilité système et applique les meilleures options de lancement Proton à vos jeux Steam - le tout depuis la barre latérale Decky.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Signaler un problème',
@@ -386,15 +386,15 @@ export const fr: TranslationTree = {
     submit: 'Soumettre le rapport',
     submitted: 'Rapport envoyé à Proton Pulse !',
     hardware: 'Matériel',
-    ratingPlatinum: 'Platine — Fonctionne parfaitement sans réglage',
-    ratingGold: 'Or — Fonctionne avec des réglages',
-    ratingSilver: 'Argent — Quelques problèmes, encore jouable',
-    ratingBronze: 'Bronze — Fonctionne mais avec des problèmes importants',
-    ratingBorked: 'Cassé — Ne fonctionne pas',
+    ratingPlatinum: 'Platine - Fonctionne parfaitement sans réglage',
+    ratingGold: 'Or - Fonctionne avec des réglages',
+    ratingSilver: 'Argent - Quelques problèmes, encore jouable',
+    ratingBronze: 'Bronze - Fonctionne mais avec des problèmes importants',
+    ratingBorked: 'Cassé - Ne fonctionne pas',
     durationUnreported: 'Non indiqué',
     durationUnderOneHour: 'Moins d\'1 heure',
-    durationOneToFour: '1 – 4 heures',
-    durationFourToTen: '4 – 10 heures',
+    durationOneToFour: '1 - 4 heures',
+    durationFourToTen: '4 - 10 heures',
     durationOverTen: 'Plus de 10 heures',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const fr: TranslationTree = {
     confirmChanges: 'Les modifications suivantes seront incluses dans votre rapport :',
     confirmSubmit: 'Continuer vers ProtonDB',
     noChanges: 'Aucune modification détectée.',
-    changed: (field: string, from: string, to: string) => `${field} : ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field} : ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'Platine',
@@ -576,7 +576,7 @@ export const fr: TranslationTree = {
     diagnosticsReportIndexPending: () => 'Réponse de l’index des rapports : en attente',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `Résumé ProtonDB en direct : ${status} · ${total} rapports · niveau ${tier}`
+        ? `Résumé ProtonDB en direct : ${status} | ${total} rapports . niveau ${tier}`
         : `Résumé ProtonDB en direct : ${status}`,
     diagnosticsLiveSummaryPending: () => 'Résumé ProtonDB en direct : en attente',
     // My Hardware modal

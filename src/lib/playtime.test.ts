@@ -359,7 +359,7 @@ describe('playtime', () => {
     // source=undefined: hits ?? 'protondb' on both initial insert (line 74) and fallback insert (line 129)
     mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 999, source: undefined }));
     mockRestRequest
-      .mockResolvedValueOnce({ data: null, error: 'insert failed', status: 500 }) // initial fails → rowId=null
+      .mockResolvedValueOnce({ data: null, error: 'insert failed', status: 500 }) // initial fails -> rowId=null
       .mockResolvedValueOnce({ data: null, error: null, status: 201 }); // fallback insert succeeds
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
@@ -394,7 +394,7 @@ describe('playtime', () => {
 
     const [, init] = mockRestRequest.mock.calls[0];
     const body = JSON.parse(String(init?.body));
-    // empty profileName → appName is used → config_key = "custom:Test Game"
+    // empty profileName -> appName is used -> config_key = "custom:Test Game"
     expect(body.config_key).toBe('custom:Test Game');
 
     stopSessionTracking();

@@ -71,7 +71,7 @@ def main() -> int:
             print(f"  {f}")
         print()
     else:
-        print("Wiki repo has no changes — nothing to push.")
+        print("Wiki repo has no changes - nothing to push.")
         return 0
 
     if not args.yes:

@@ -455,7 +455,7 @@ async def main():
                 for cmd in DPAD_SEQUENCE:
                     key_info = _DPAD_KEY_MAP.get(cmd.lower())
                     if not key_info:
-                        debug_log(f"Unknown dpad command: {cmd!r} — skipping")
+                        debug_log(f"Unknown dpad command: {cmd!r} - skipping")
                         continue
                     vk, key_name = key_info
                     await capture_call("Input.dispatchKeyEvent", {"type": "rawKeyDown", "windowsVirtualKeyCode": vk, "nativeVirtualKeyCode": vk, "key": key_name})

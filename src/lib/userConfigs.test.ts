@@ -207,7 +207,7 @@ describe('getMyConfig', () => {
   });
 
   it('returns null when response data is null (200 with empty body)', async () => {
-    // 200 response with no body → payload=null → data=null → !data branch
+    // 200 response with no body -> payload=null -> data=null -> !data branch
     fetchMock.mockResolvedValueOnce(new Response('', { status: 200 }));
 
     const { getMyConfig } = await import('./userConfigs');
@@ -234,7 +234,7 @@ describe('submitUserConfig optional field fallbacks', () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
 
     const { submitUserConfig } = await import('./userConfigs');
-    // omit all optional fields — each ?? fallback must be covered
+    // omit all optional fields - each ?? fallback must be covered
     const result = await submitUserConfig({
       appId: '20',
       title: 'Team Fortress Classic',
@@ -293,7 +293,7 @@ describe('getUserConfigs error paths', () => {
 
 describe('restRequest non-object error payload', () => {
   it('returns HTTP status fallback when error body is empty', async () => {
-    // empty body on a 400 response → payload=null → non-object path → "HTTP 400"
+    // empty body on a 400 response -> payload=null -> non-object path -> "HTTP 400"
     fetchMock.mockResolvedValueOnce(new Response('', { status: 400 }));
 
     const { submitUserConfig } = await import('./userConfigs');

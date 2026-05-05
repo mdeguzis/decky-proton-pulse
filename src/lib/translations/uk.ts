@@ -69,7 +69,7 @@ export const uk: TranslationTree = {
     pulseBadge: 'Оцінка Pulse',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Відкрийте повний звіт, щоб прочитати оригінальну нотатку.',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Оцінка від користувача ${String(gpuTier).toUpperCase()} — може не відображати досвід з вашим GPU`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Оцінка від користувача ${String(gpuTier).toUpperCase()} - може не відображати досвід з вашим GPU`,
   },
   detail: {
     apply: 'Застосувати',
@@ -83,7 +83,7 @@ export const uk: TranslationTree = {
     upvote: 'Проголосувати',
     clear: 'Очистити',
     hardwareComparisonTitle: 'Порівняння апаратного забезпечення',
-    hardwareComparisonDescription: 'Ліворуч — звіт ProtonDB. Праворуч — наша поточна система.',
+    hardwareComparisonDescription: 'Ліворуч - звіт ProtonDB. Праворуч - наша поточна система.',
     launchPreview: 'Попередній перегляд запуску',
     currentLaunchOptions: 'Поточні параметри запуску',
     noLaunchOptions: 'Параметри запуску не встановлено',
@@ -267,7 +267,7 @@ export const uk: TranslationTree = {
     jumpToLatest: 'Перейти до останнього',
   },
   about: {
-    description: 'Зіставляє звіти спільноти ProtonDB за апаратною сумісністю та застосовує найбільш відповідні параметри запуску Proton до ваших ігор Steam — все через бічну панель Decky.',
+    description: 'Зіставляє звіти спільноти ProtonDB за апаратною сумісністю та застосовує найбільш відповідні параметри запуску Proton до ваших ігор Steam - все через бічну панель Decky.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Повідомити про проблему',
@@ -386,15 +386,15 @@ export const uk: TranslationTree = {
     submit: 'Надіслати звіт',
     submitted: 'Звіт надіслано до Proton Pulse!',
     hardware: 'Апаратне забезпечення системи',
-    ratingPlatinum: 'Платина — Працює ідеально без налаштувань',
-    ratingGold: 'Золото — Працює з налаштуваннями',
-    ratingSilver: 'Срібло — Деякі проблеми, але можна грати',
-    ratingBronze: 'Бронза — Запускається, але зі значними проблемами',
-    ratingBorked: 'Зламана — Не запускається',
+    ratingPlatinum: 'Платина - Працює ідеально без налаштувань',
+    ratingGold: 'Золото - Працює з налаштуваннями',
+    ratingSilver: 'Срібло - Деякі проблеми, але можна грати',
+    ratingBronze: 'Бронза - Запускається, але зі значними проблемами',
+    ratingBorked: 'Зламана - Не запускається',
     durationUnreported: 'Не вказано',
     durationUnderOneHour: 'Менше 1 години',
-    durationOneToFour: '1–4 години',
-    durationFourToTen: '4–10 годин',
+    durationOneToFour: '1-4 години',
+    durationFourToTen: '4-10 годин',
     durationOverTen: 'Понад 10 годин',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const uk: TranslationTree = {
     confirmChanges: 'Наступні зміни будуть включені у ваш звіт:',
     confirmSubmit: 'Перейти до ProtonDB',
     noChanges: 'Змін не виявлено.',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'Платина',
@@ -576,7 +576,7 @@ export const uk: TranslationTree = {
     diagnosticsReportIndexPending: () => 'Відповідь індексу звітів: очікує',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `Зведений звіт ProtonDB в реальному часі: ${status} · ${total} звітів · рівень ${tier}`
+        ? `Зведений звіт ProtonDB в реальному часі: ${status} | ${total} звітів . рівень ${tier}`
         : `Зведений звіт ProtonDB в реальному часі: ${status}`,
     diagnosticsLiveSummaryPending: () => 'Зведений звіт ProtonDB в реальному часі: очікує',
     myHardwareTitle: () => 'Моє апаратне забезпечення',

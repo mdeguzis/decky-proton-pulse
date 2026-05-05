@@ -1,6 +1,6 @@
 """Low-level utilities shared across the plugin backend.
 
-Nothing here depends on Plugin state — these are pure helpers for
+Nothing here depends on Plugin state - these are pure helpers for
 cleaning up the environment and safely unpacking archives.
 """
 

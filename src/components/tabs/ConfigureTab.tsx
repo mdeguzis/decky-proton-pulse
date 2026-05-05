@@ -86,7 +86,7 @@ export function removeFromEditedReportIndex(appId: number): void {
   setSetting(EDIT_INDEX_KEY, getEditedReportIndex().filter((e) => e.appId !== appId));
 }
 
-// ── Pulse user-report helpers ──────────────────────────────────────────────
+// --- Pulse user-report helpers ---
 
 function pulseRowToCdnReport(row: UserConfigRow): CdnReport {
   return {
@@ -138,7 +138,7 @@ function mergeWithPulse(
     if (insertAfter !== -1) {
       result.splice(insertAfter + 1, 0, p);
     } else {
-      result.unshift(p);   // no CDN match — show at top
+      result.unshift(p);   // no CDN match - show at top
     }
   }
   return result;
@@ -344,7 +344,7 @@ function GameSummaryHeader({
         <div style={{ fontSize: 11, color: '#7a9bb5' }}>
           {isShortcut
             ? `${extras.nonSteamShortcut()}${resolvedSteamAppId ? ` (Steam app id: ${resolvedSteamAppId})` : ''}`
-            : `${extras.appIdLabel(appId)}${typeof reportsCount === 'number' ? ` · ${t().reports.communityReports(reportsCount)}` : ''}`}
+            : `${extras.appIdLabel(appId)}${typeof reportsCount === 'number' ? ` . ${t().reports.communityReports(reportsCount)}` : ''}`}
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>

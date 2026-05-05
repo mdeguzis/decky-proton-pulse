@@ -1,4 +1,4 @@
-# ProtonDB Data Source — Investigation & Architecture
+# ProtonDB Data Source - Investigation & Architecture
 
 > **Status:** Implemented (data pipeline in `data-pipeline/`)
 > **Date:** 2026-03-31
@@ -23,7 +23,7 @@ The plugin was originally written against:
 GET https://www.protondb.com/api/v1/reports/app/{appId}
 ```
 
-This returned a JSON array of individual community reports. It is **gone** —
+This returned a JSON array of individual community reports. It is **gone** -
 returns 404 for all app IDs. No public replacement was announced.
 
 ### What still works
@@ -32,7 +32,7 @@ returns 404 for all app IDs. No public replacement was announced.
 GET https://www.protondb.com/api/v1/reports/summaries/{appId}.json
 ```
 
-Returns a summary object only — no individual reports:
+Returns a summary object only - no individual reports:
 
 ```json
 {
@@ -62,7 +62,7 @@ reveals the new architecture:
 - The `.netlify/functions/reports` endpoint is POST-only and session-auth-gated
   (returns `{"message":"Session Invalid","success":false}` with a 403 without auth).
 
-These pre-baked files don't exist for arbitrary app IDs — they are system-specific
+These pre-baked files don't exist for arbitrary app IDs - they are system-specific
 per-user reports, not a general per-game listing.
 
 ### Community alternatives investigated
@@ -71,9 +71,9 @@ per-user reports, not a general per-game listing.
 |--------|-----|--------|-------|
 | ProtonDB API v1 | `/api/v1/reports/app/{id}` | **Dead (404)** | Was the primary source |
 | ProtonDB summaries | `/api/v1/reports/summaries/{id}.json` | ✅ Live | Summary only, no per-report data |
-| protondb.max-p.me | `/games/{id}/reports/` | ✅ Live (returns `[]`) | Returns empty for Hades (729 reports) — data is stale |
+| protondb.max-p.me | `/games/{id}/reports/` | ✅ Live (returns `[]`) | Returns empty for Hades (729 reports) - data is stale |
 | SPCR API | `api.spcr.ovh/v1/reports/app/{id}` | ❌ Dead | Domain unreachable |
-| bdefore/protondb-data | GitHub monthly dumps | ✅ Live | **The solution** — see below |
+| bdefore/protondb-data | GitHub monthly dumps | ✅ Live | **The solution** - see below |
 
 ---
 
@@ -85,7 +85,7 @@ per-user reports, not a general per-game listing.
 monthly dumps as `.tar.gz` archives in the `reports/` directory. The most recent
 as of this writing is `reports_sep1_2025.tar.gz`.
 
-Each archive contains a single `reports_piiremoved.json` — a JSON array of all
+Each archive contains a single `reports_piiremoved.json` - a JSON array of all
 ProtonDB reports across all games (~2.1 GB uncompressed).
 
 **Confirmed data for Hades (appId 1145360) in the Sep 2025 dump:**
@@ -140,17 +140,17 @@ We keep only the 6 fields Proton Pulse uses:
 
 ```
 bdefore/protondb-data (monthly)
-        │
+        |
         ▼  GitHub Actions (2nd of each month)
 scripts/split_reports.py
-        │  streams 2.1 GB JSON, extracts 6 fields per record
+        |  streams 2.1 GB JSON, extracts 6 fields per record
         ▼
 data/{appId}.json  (one file per game, minified, sorted newest-first)
 index.json         (metadata: updated timestamp, game count)
-        │
+        |
         ▼  force-push to orphan gh-pages branch
 https://www.proton-pulse.com/data/{appId}.json
-        │
+        |
         ▼  fetchNoCors in plugin
 ConfigureTab → scoring → GPU-bucketed report cards
 ```
@@ -159,7 +159,7 @@ ConfigureTab → scoring → GPU-bucketed report cards
 
 The `gh-pages` branch is an **orphan** (no history). Each monthly run
 force-pushes a single new commit. This keeps the repository size bounded to
-exactly the current dataset — no history accumulation.
+exactly the current dataset - no history accumulation.
 
 Games with fewer than 3 reports are excluded (`MIN_REPORTS = 3` in the script).
 
@@ -189,7 +189,7 @@ const REPORTS_URL = 'https://www.protondb.com/api/v1/reports/app/{id}';
 const REPORTS_URL = 'https://www.proton-pulse.com/data/{id}.json';
 ```
 
-The response is already a plain JSON array — no other changes needed in
+The response is already a plain JSON array - no other changes needed in
 `getProtonDBReports()`.
 
 The stripped field names (`pv`, `v`, `gpu`, `drv`, `os`, `ts`) differ from the
@@ -206,5 +206,5 @@ original bdefore field names. The `ProtonDBReport` TypeScript type and the
   If bdefore's cadence changes, we may want to add a fallback to the summaries
   endpoint for the tier badge.
 - **Hosting migration:** If the dataset outgrows GitHub Pages (1 GB limit),
-  GitHub Releases artifacts are the next natural step — each release can hold
+  GitHub Releases artifacts are the next natural step - each release can hold
   files up to 2 GB and release assets don't count toward repo storage.

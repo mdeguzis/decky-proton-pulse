@@ -108,7 +108,7 @@ describe('computePulseTier', () => {
 
   it('applies 0.15 recency for rows older than a year', () => {
     const result = computePulseTier([row('platinum', 500)]);
-    // avg still normalizes to 1.0, but recency weight is tiny — verify
+    // avg still normalizes to 1.0, but recency weight is tiny - verify
     // by pairing an old platinum with a fresh borked: fresh row dominates
     const mixed = computePulseTier([row('platinum', 500), row('borked', 1)]);
     expect(result.tier).toBe('platinum');
@@ -172,7 +172,7 @@ describe('computeCombinedTier', () => {
 
   it('fresh pulse borked dominates old CDN platinum', () => {
     // CDN: platinum(1.0) 400 days old (weight 0.15) vs pulse: borked(0.0) fresh (weight 1.0)
-    // avg = (1.0*0.15 + 0.0*1.0) / (0.15+1.0) = 0.15/1.15 ≈ 0.13 -> borked
+    // avg = (1.0*0.15 + 0.0*1.0) / (0.15+1.0) = 0.15/1.15 ~= 0.13 -> borked
     const result = computeCombinedTier([cdnRow('platinum', 400)], [row('borked', 1)]);
     expect(result.tier).toBe('borked');
   });

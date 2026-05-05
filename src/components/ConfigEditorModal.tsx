@@ -397,7 +397,7 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
                     {item.key ? `${item.key} = ${item.value}` : item.value}
                   </div>
                   <div style={{ fontSize: 10, color: '#7a9bb5' }}>
-                    {t().configManager.customToggleType}: {customToggleStorageTypeLabel(item.scope)} · {customToggleValueTypeLabel(item.valueType)}
+                    {t().configManager.customToggleType}: {customToggleStorageTypeLabel(item.scope)} . {customToggleValueTypeLabel(item.valueType)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
@@ -467,7 +467,7 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
                       color: '#fff',
                     }}
                   >
-                    ×
+                    x
                   </DialogButton>
                 </div>
               </div>
@@ -525,7 +525,7 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
   );
 }
 
-// ─── Upload Preview Modal ──────────────────────────────────────────────────────
+// --- Upload Preview Modal ---
 
 const RATING_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'borked'] as const;
 
@@ -552,7 +552,7 @@ function UploadPreviewModal({
 
   useLayoutEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
-    // Steam navmesh focuses buttons after mount — override scroll after that settles
+    // Steam navmesh focuses buttons after mount - override scroll after that settles
     const id = window.setTimeout(() => scrollRef.current?.scrollTo({ top: 0 }), 80);
     return () => window.clearTimeout(id);
   }, []);
@@ -594,7 +594,7 @@ function UploadPreviewModal({
           {t().configManager.uploadPreviewHint}
         </div>
 
-        {/* scrollable rows — Focusable enables gamepad d-pad scroll */}
+        {/* scrollable rows - Focusable enables gamepad d-pad scroll */}
         <Focusable
           ref={(node: HTMLDivElement | null) => { scrollRef.current = node; }}
           style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}
@@ -611,7 +611,7 @@ function UploadPreviewModal({
             }
           }}
         >
-          {/* Rating picker — inline select before the info rows */}
+          {/* Rating picker - inline select before the info rows */}
           <div
             style={{
               display: 'flex',
@@ -625,12 +625,12 @@ function UploadPreviewModal({
             <span style={{ fontSize: 11, color: '#7a9bb5', flexShrink: 0, minWidth: 110 }}>{t().nativeReport.rating}</span>
             <Dropdown
               rgOptions={[
-                { data: '', label: '— ' + t().common.cancel + ' —' },
+                { data: '', label: '- ' + t().common.cancel + ' -' },
                 ...RATING_OPTIONS.map((r) => ({ data: r, label: (t().ratings as Record<string, string>)[r] ?? r })),
               ]}
               selectedOption={rating ?? ''}
               onChange={(opt) => setRating((opt.data as string) || null)}
-              strDefaultLabel="—"
+              strDefaultLabel="-"
               focusable
             />
           </div>
@@ -1000,7 +1000,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
 
   // Open the Native Pulse report modal with current editor state pre-filled.
   // Duration is pulled from the local playtime tracker so the user doesn't
-  // have to pick a bucket manually — totally transparent
+  // have to pick a bucket manually - totally transparent
   const handlePublish = async () => {
     if (!appId) return;
     if (isSteamShortcutApp(appId)) {
@@ -1162,7 +1162,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
 
-        {/* ── Fixed header: game info + actions ── */}
+        {/* --- Fixed header: game info + actions --- */}
         <div
           style={{
             flexShrink: 0,
@@ -1240,7 +1240,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           </Focusable>
         </div>
 
-        {/* ── Live preview bar ── */}
+        {/* --- Live preview bar --- */}
         <div
           style={{
             flexShrink: 0,
@@ -1260,11 +1260,11 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           {t().configManager.previewHint}
         </div>
 
-        {/* ── Scrollable content ── */}
+        {/* --- Scrollable content --- */}
         <Focusable style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
-          {/* Profile Name + GPU filter + Rating + Proton Version — uniform compact rows */}
+          {/* Profile Name + GPU filter + Rating + Proton Version - uniform compact rows */}
           <div style={{ marginBottom: 10, display: 'grid', gap: 0 }}>
-            {/* Profile name — Field is not focusable so TextField owns the gamepad nav directly (single A press, native cursor) */}
+            {/* Profile name - Field is not focusable so TextField owns the gamepad nav directly (single A press, native cursor) */}
             <div
               style={profileNameTouched && !profileName.trim() ? { outline: '1px solid #ef4444', borderRadius: 2 } : undefined}
             >
@@ -1290,7 +1290,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
             <DropdownItem
               label={t().nativeReport.rating}
               rgOptions={[
-                { data: '', label: '—' },
+                { data: '', label: '-' },
                 ...RATING_OPTIONS.map((r) => ({ data: r, label: (t().ratings as Record<string, string>)[r] ?? r })),
               ]}
               selectedOption={userRating ?? ''}
@@ -1382,7 +1382,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
                     {def.type === 'bool' || def.type === 'raw' ? (
                       <ToggleField
                         label={def.key}
-                        description={def.hint ? `${def.description} — ${def.hint}` : def.description}
+                        description={def.hint ? `${def.description} - ${def.hint}` : def.description}
                         checked={def.type === 'raw' ? enabledRawKeys.has(def.key) : def.key in enabledVars}
                         onChange={() => toggleVar(def.key, def)}
                       />

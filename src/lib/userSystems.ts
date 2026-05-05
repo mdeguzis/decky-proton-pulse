@@ -63,7 +63,7 @@ export function generateLabel(sysinfoText: string): string {
     return 'Steam Deck';
   }
 
-  if (os && gpu) return `${os} · ${gpu}`;
+  if (os && gpu) return `${os} | ${gpu}`;
 
   const vendor = guessGpuVendor(gpu);
   const parts = [os, vendor, gpu].filter(Boolean);

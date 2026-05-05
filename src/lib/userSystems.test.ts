@@ -49,7 +49,7 @@ describe('generateLabel', () => {
       'Video Card:',
       '    Driver:  NVIDIA Corporation NVIDIA GeForce RTX 4070',
     ].join('\n');
-    expect(generateLabel(blob)).toBe('Arch Linux · GeForce RTX 4070');
+    expect(generateLabel(blob)).toBe('Arch Linux | GeForce RTX 4070');
   });
 
   it('falls back to "Uploaded system" when absolutely nothing parses', async () => {
@@ -111,7 +111,7 @@ describe('generateLabel', () => {
       'Video Card:',
       '    Driver:  AMD Custom GPU 0405',
     ].join('\n');
-    expect(generateLabel(blob)).toBe('SteamOS Holo 3.7 · Custom GPU 0405');
+    expect(generateLabel(blob)).toBe('SteamOS Holo 3.7 | Custom GPU 0405');
   });
 
   it('ignores a literal "Unknown" driver line', async () => {

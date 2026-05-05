@@ -69,7 +69,7 @@ export interface MetricsSummary {
   entryCount: number;
 }
 
-// ── ring buffer + counters ──────────────────────────────────────────────────
+// --- ring buffer + counters ---
 
 const entries: TimingEntry[] = [];
 let writeIdx = 0;
@@ -86,7 +86,7 @@ const counters: CounterSnapshot = {
   totalFetches: 0,
 };
 
-// ── timing API ──────────────────────────────────────────────────────────────
+// --- timing API ---
 
 export function startSpan(category: MetricCategory, label: string): () => void {
   const t0 = Date.now();
@@ -126,7 +126,7 @@ function recordTiming(entry: TimingEntry) {
   totalRecorded++;
 }
 
-// ── counters API ────────────────────────────────────────────────────────────
+// --- counters API ---
 
 export function countCacheHit() { counters.cacheHits++; }
 export function countCacheMiss() { counters.cacheMisses++; }
@@ -140,7 +140,7 @@ export function getCounters(): CounterSnapshot {
   return { ...counters };
 }
 
-// ── summary / aggregation ───────────────────────────────────────────────────
+// --- summary / aggregation ---
 
 function percentile(sorted: number[], pct: number): number {
   if (!sorted.length) return 0;
@@ -250,13 +250,13 @@ export function getSummaryText(): string {
   return lines.join('\n');
 }
 
-// ── raw entries for JSON export ─────────────────────────────────────────────
+// --- raw entries for JSON export ---
 
 export function getRawEntries(): TimingEntry[] {
   return entries.filter(Boolean);
 }
 
-// ── export to backend ───────────────────────────────────────────────────────
+// --- export to backend ---
 
 const exportMetricsCallable = callable<[data: string], boolean>('export_metrics');
 
@@ -280,7 +280,7 @@ export async function flushMetricsToDisk(): Promise<boolean> {
   }
 }
 
-// ── auto-flush timer ────────────────────────────────────────────────────────
+// --- auto-flush timer ---
 
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -298,7 +298,7 @@ export function stopAutoFlush() {
   }
 }
 
-// ── reset (for testing) ────────────────────────────────────────────────────
+// --- reset (for testing) ---
 
 export function resetMetrics() {
   entries.length = 0;

@@ -25,7 +25,7 @@ interface Props {
   closeModal?: () => void;
 }
 
-// ── OS mapping ────────────────────────────────────────────────────────────────
+// --- OS mapping ---
 
 function mapDistroToValidOS(distro: string | null): ValidOS | '' {
   if (!distro) return '';
@@ -55,7 +55,7 @@ function mapDistroToValidOS(distro: string | null): ValidOS | '' {
 
 const NA = 'Not available';
 
-// ── Hardware table (two-column, ProtonDB style) ───────────────────────────────
+// --- Hardware table (two-column, ProtonDB style) ---
 
 function HardwareTable({ sysInfo }: { sysInfo: SystemInfo | null }) {
   const ramStr = sysInfo?.ram_gb != null ? `${sysInfo.ram_gb} GB` : NA;
@@ -109,7 +109,7 @@ function HardwareTable({ sysInfo }: { sysInfo: SystemInfo | null }) {
   );
 }
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
+// --- Modal ---
 
 const getRatings = (): { data: ProtonRating; label: string }[] => [
   { data: 'platinum', label: t().nativeReport.ratingPlatinum },
@@ -149,7 +149,7 @@ export function NativePulseReportModal({
   const [error,    setError]    = useState<string | null>(null);
   // Only treat auto-duration as active when the tracker gave us a real bucket.
   // 'unreported' comes back when playtime is 0, in which case the user still
-  // needs to pick something themselves — don't hide the picker on them
+  // needs to pick something themselves - don't hide the picker on them
   const autoDurationActive = !!autoDuration && autoDuration !== 'unreported';
 
   // tracks which fields were invalid on the last submit attempt
@@ -241,8 +241,8 @@ export function NativePulseReportModal({
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 12 }}>
           {appName}{isShortcut && resolvedSteamAppId
-            ? ` · Non-Steam (Steam app id: ${resolvedSteamAppId})`
-            : (appId ? ` · App ${appId}` : '')}
+            ? ` . Non-Steam (Steam app id: ${resolvedSteamAppId})`
+            : (appId ? ` . App ${appId}` : '')}
         </div>
 
         <Focusable style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -291,7 +291,7 @@ export function NativePulseReportModal({
             </div>
           </div>
 
-          {/* Duration — hidden when auto-detected from the playtime tracker */}
+          {/* Duration - hidden when auto-detected from the playtime tracker */}
           {!autoDurationActive && (
             <div style={fieldErrors.duration ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
@@ -317,7 +317,7 @@ export function NativePulseReportModal({
           </div>
         </Focusable>
 
-        {/* Error — pinned above the action buttons so it's always visible even
+        {/* Error - pinned above the action buttons so it's always visible even
              when the scrollable content above is not in view */}
         {error && (
           <div style={{ fontSize: 11, color: '#ef4444', padding: '6px 10px', marginTop: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 4 }}>

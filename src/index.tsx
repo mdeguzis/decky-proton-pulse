@@ -60,7 +60,7 @@ function extractLibraryAppId(pathname: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-// ─── Sidebar panel ────────────────────────────────────────────────────────────
+// --- Sidebar panel ---
 function Content() {
   useLanguage(); // triggers re-render on language change
   const extras = t().extras!;
@@ -193,7 +193,7 @@ function Content() {
   );
 }
 
-// ─── Plugin definition ────────────────────────────────────────────────────────
+// --- Plugin definition ---
 export default definePlugin(() => {
   void logFrontendEvent('INFO', 'Plugin frontend initializing', { translationsLoaded: TRANSLATIONS_LOADED });
 

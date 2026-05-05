@@ -256,7 +256,7 @@ describe('fetchExistingVote error path', () => {
   });
 
   it('returns null when response is 200 but data is null (empty body)', async () => {
-    // 200 with empty body → payload=null → data=null → !result.data branch
+    // 200 with empty body -> payload=null -> data=null -> !result.data branch
     fetchMock.mockResolvedValueOnce(new Response('', { status: 200 }));
 
     const { getUserVote } = await import('./voting');
@@ -272,7 +272,7 @@ describe('isVoteCooldownActive', () => {
 });
 
 describe('deleteVote', () => {
-  // earlier tests may have replaced crypto.subtle.digest with a thrower — put
+  // earlier tests may have replaced crypto.subtle.digest with a thrower - put
   // the working stub back before each delete test so getVoterId resolves
   beforeEach(() => {
     vi.stubGlobal('crypto', {

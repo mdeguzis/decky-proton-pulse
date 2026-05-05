@@ -69,7 +69,7 @@ export const tr: TranslationTree = {
     pulseBadge: 'Pulse düzeyi',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Orijinal notu okumak için tam raporu açın.',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user - may not reflect your GPU's experience`,
   },
   detail: {
     apply: 'Uygula',
@@ -267,7 +267,7 @@ export const tr: TranslationTree = {
     jumpToLatest: 'En son kayda git',
   },
   about: {
-    description: "ProtonDB topluluk raporlarını sistem uyumluluğuna göre sıralar ve en iyi eşleşen Proton başlatma seçeneklerini Steam oyunlarınıza uygular — hepsi Decky kenar çubuğundan.",
+    description: "ProtonDB topluluk raporlarını sistem uyumluluğuna göre sıralar ve en iyi eşleşen Proton başlatma seçeneklerini Steam oyunlarınıza uygular - hepsi Decky kenar çubuğundan.",
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Sorun Bildir',
@@ -386,15 +386,15 @@ export const tr: TranslationTree = {
     submit: 'Raporu gönder',
     submitted: 'Rapor Proton Pulse\'a gönderildi!',
     hardware: 'Donanım',
-    ratingPlatinum: 'Platin — Ayar gerektirmeden mükemmel çalışıyor',
-    ratingGold: 'Altın — Ayarlarla çalışıyor',
-    ratingSilver: 'Gümüş — Bazı sorunlar var, yine de oynanabilir',
-    ratingBronze: 'Bronz — Çalışıyor ama ciddi sorunlar var',
-    ratingBorked: 'Bozuk — Çalışmıyor',
+    ratingPlatinum: 'Platin - Ayar gerektirmeden mükemmel çalışıyor',
+    ratingGold: 'Altın - Ayarlarla çalışıyor',
+    ratingSilver: 'Gümüş - Bazı sorunlar var, yine de oynanabilir',
+    ratingBronze: 'Bronz - Çalışıyor ama ciddi sorunlar var',
+    ratingBorked: 'Bozuk - Çalışmıyor',
     durationUnreported: 'Belirtilmedi',
     durationUnderOneHour: '1 saatten az',
-    durationOneToFour: '1 – 4 saat',
-    durationFourToTen: '4 – 10 saat',
+    durationOneToFour: '1 - 4 saat',
+    durationFourToTen: '4 - 10 saat',
     durationOverTen: '10 saatten fazla',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const tr: TranslationTree = {
     confirmChanges: 'Aşağıdaki değişiklikler raporunuza dahil edilecektir:',
     confirmSubmit: "ProtonDB'ye devam et",
     noChanges: 'Değişiklik algılanmadı.',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'Platin',
@@ -576,7 +576,7 @@ export const tr: TranslationTree = {
     diagnosticsReportIndexPending: () => 'Rapor dizini yanıtı: beklemede',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `Canlı ProtonDB özeti: ${status} · ${total} rapor · ${tier} seviyesi`
+        ? `Canlı ProtonDB özeti: ${status} | ${total} rapor . ${tier} seviyesi`
         : `Canlı ProtonDB özeti: ${status}`,
     diagnosticsLiveSummaryPending: () => 'Canlı ProtonDB özeti: beklemede',
     // My Hardware modal

@@ -69,7 +69,7 @@ export const sv: TranslationTree = {
     pulseBadge: 'Pulse-betyg',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Öppna hela rapporten för att läsa den ursprungliga anteckningen.',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Betyget är från en ${String(gpuTier).toUpperCase()}-användare — kanske inte återspeglar din GPU:s prestanda`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Betyget är från en ${String(gpuTier).toUpperCase()}-användare - kanske inte återspeglar din GPU:s prestanda`,
   },
   detail: {
     apply: 'Tillämpa',
@@ -267,7 +267,7 @@ export const sv: TranslationTree = {
     jumpToLatest: 'Hoppa till senaste',
   },
   about: {
-    description: 'Matchar ProtonDB-communityrapporter baserat på hårdvarukompatibilitet och tillämpar de mest lämpade Proton-startalternativen på dina Steam-spel — allt via Decky-sidofältet.',
+    description: 'Matchar ProtonDB-communityrapporter baserat på hårdvarukompatibilitet och tillämpar de mest lämpade Proton-startalternativen på dina Steam-spel - allt via Decky-sidofältet.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Rapportera ett problem',
@@ -386,15 +386,15 @@ export const sv: TranslationTree = {
     submit: 'Skicka rapport',
     submitted: 'Rapport skickad till Proton Pulse!',
     hardware: 'Systemhårdvara',
-    ratingPlatinum: 'Platinum — Fungerar perfekt utan justeringar',
-    ratingGold: 'Guld — Fungerar med justeringar',
-    ratingSilver: 'Silver — Vissa problem men spelbart',
-    ratingBronze: 'Brons — Startar men med stora problem',
-    ratingBorked: 'Trasig — Startar inte',
+    ratingPlatinum: 'Platinum - Fungerar perfekt utan justeringar',
+    ratingGold: 'Guld - Fungerar med justeringar',
+    ratingSilver: 'Silver - Vissa problem men spelbart',
+    ratingBronze: 'Brons - Startar men med stora problem',
+    ratingBorked: 'Trasig - Startar inte',
     durationUnreported: 'Inte angivet',
     durationUnderOneHour: 'Under 1 timme',
-    durationOneToFour: '1–4 timmar',
-    durationFourToTen: '4–10 timmar',
+    durationOneToFour: '1-4 timmar',
+    durationFourToTen: '4-10 timmar',
     durationOverTen: 'Över 10 timmar',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const sv: TranslationTree = {
     confirmChanges: 'Följande ändringar inkluderas i din rapport:',
     confirmSubmit: 'Fortsätt till ProtonDB',
     noChanges: 'Inga ändringar hittades.',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'Platina',
@@ -576,7 +576,7 @@ export const sv: TranslationTree = {
     diagnosticsReportIndexPending: () => 'Rapportindexsvar: väntande',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `Live ProtonDB-sammanfattning: ${status} · ${total} rapporter · ${tier}-nivå`
+        ? `Live ProtonDB-sammanfattning: ${status} | ${total} rapporter . ${tier}-nivå`
         : `Live ProtonDB-sammanfattning: ${status}`,
     diagnosticsLiveSummaryPending: () => 'Live ProtonDB-sammanfattning: väntande',
     myHardwareTitle: () => 'Min hårdvara',

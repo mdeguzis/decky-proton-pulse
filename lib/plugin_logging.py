@@ -79,7 +79,7 @@ def log_frontend_event(
     """Let the React frontend write into the backend log file.
 
     Called via ``@decky/api`` callable so frontend events end up in the
-    same log stream as backend events — one place to look when debugging.
+    same log stream as backend events - one place to look when debugging.
     """
     valid = {
         "DEBUG": logging.DEBUG,

@@ -150,7 +150,7 @@ const getGameRequirements = callable<[string], GameReqResponse>('get_game_requir
 const _getSystemInfo = callable<[], SystemInfo>('get_system_info');
 const getSystemInfoSafe = () => callWithTimeout(() => _getSystemInfo(), 'get_system_info');
 
-// ─── Matching Rules explainer ─────────────────────────────────────────────────
+// --- Matching Rules explainer ---
 
 const RULES_SCROLL_STEP = 80;
 
@@ -675,7 +675,7 @@ function getHardwareMatchBadgeStyle(percent: number): { background: string; colo
   return { background: '#7a2f34', color: '#ffe8ea' };
 }
 
-// ─── System Requirements Compare Modal ───────────────────────────────────────
+// --- System Requirements Compare Modal ---
 
 type ReqFieldStatus = 'pass' | 'fail' | 'maybe' | 'unknown';
 
@@ -1299,7 +1299,7 @@ export function ReportDetailModal({
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
 
-        {/* ── Fixed header ── */}
+        {/* --- Fixed header --- */}
         <div
           style={{
             flexShrink: 0,
@@ -1358,13 +1358,13 @@ export function ReportDetailModal({
           <div style={{ fontSize: 11, color: '#ccc', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>
               {formatProtonLabel(report.protonVersion)}
-              {' · '}
+              {' . '}
               {(!sysInfo?.gpu_vendor || report.gpuTier === 'unknown')
                 ? t().detail.unknownGpu
                 : report.gpuTier === sysInfo.gpu_vendor
                   ? t().detail.matchesGpu
                   : t().detail.differentGpu}
-              {' · '}
+              {' . '}
               {extras.confidenceOutOfTen(confScore)}
             </span>
             {statusEntry && (
@@ -1401,7 +1401,7 @@ export function ReportDetailModal({
           </div>
         </div>
 
-        {/* ── Action buttons (fixed, horizontal) ── */}
+        {/* --- Action buttons (fixed, horizontal) --- */}
         <Focusable
           onGamepadDirection={handleButtonBarDirection}
           style={{
@@ -1524,7 +1524,7 @@ export function ReportDetailModal({
           </DialogButton>
         </Focusable>
 
-        {/* ── Scrollable info area (scrolled by button bar D-pad) ── */}
+        {/* --- Scrollable info area (scrolled by button bar D-pad) --- */}
         <div
           ref={scrollRef}
           tabIndex={0}

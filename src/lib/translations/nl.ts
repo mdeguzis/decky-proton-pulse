@@ -69,7 +69,7 @@ export const nl: TranslationTree = {
     pulseBadge: 'Pulse-beoordeling',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: 'Open het volledige rapport om de originele notitie te lezen.',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Beoordeling is van een ${String(gpuTier).toUpperCase()}-gebruiker — weerspiegelt mogelijk niet jouw GPU-ervaring`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Beoordeling is van een ${String(gpuTier).toUpperCase()}-gebruiker - weerspiegelt mogelijk niet jouw GPU-ervaring`,
   },
   detail: {
     apply: 'Toepassen',
@@ -267,7 +267,7 @@ export const nl: TranslationTree = {
     jumpToLatest: 'Naar nieuwste springen',
   },
   about: {
-    description: 'Koppelt ProtonDB-communityrapporten op basis van hardwarecompatibiliteit en past de best passende Proton-startopties toe op je Steam-spellen — alles via de Decky-zijbalk.',
+    description: 'Koppelt ProtonDB-communityrapporten op basis van hardwarecompatibiliteit en past de best passende Proton-startopties toe op je Steam-spellen - alles via de Decky-zijbalk.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: 'Probleem melden',
@@ -386,15 +386,15 @@ export const nl: TranslationTree = {
     submit: 'Rapport indienen',
     submitted: 'Rapport verzonden naar Proton Pulse!',
     hardware: 'Systeemhardware',
-    ratingPlatinum: 'Platina — Werkt perfect zonder aanpassingen',
-    ratingGold: 'Goud — Werkt met aanpassingen',
-    ratingSilver: 'Zilver — Enkele problemen maar speelbaar',
-    ratingBronze: 'Brons — Start op maar met grote problemen',
-    ratingBorked: 'Kapot — Start niet op',
+    ratingPlatinum: 'Platina - Werkt perfect zonder aanpassingen',
+    ratingGold: 'Goud - Werkt met aanpassingen',
+    ratingSilver: 'Zilver - Enkele problemen maar speelbaar',
+    ratingBronze: 'Brons - Start op maar met grote problemen',
+    ratingBorked: 'Kapot - Start niet op',
     durationUnreported: 'Niet opgegeven',
     durationUnderOneHour: 'Minder dan 1 uur',
-    durationOneToFour: '1–4 uur',
-    durationFourToTen: '4–10 uur',
+    durationOneToFour: '1-4 uur',
+    durationFourToTen: '4-10 uur',
     durationOverTen: 'Meer dan 10 uur',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const nl: TranslationTree = {
     confirmChanges: 'De volgende wijzigingen worden opgenomen in jouw rapport:',
     confirmSubmit: 'Doorgaan naar ProtonDB',
     noChanges: 'Geen wijzigingen gedetecteerd.',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: 'Platina',
@@ -576,7 +576,7 @@ export const nl: TranslationTree = {
     diagnosticsReportIndexPending: () => 'Reactie rapportindex: in behandeling',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `Live ProtonDB-samenvatting: ${status} · ${total} rapporten · ${tier}-niveau`
+        ? `Live ProtonDB-samenvatting: ${status} | ${total} rapporten . ${tier}-niveau`
         : `Live ProtonDB-samenvatting: ${status}`,
     diagnosticsLiveSummaryPending: () => 'Live ProtonDB-samenvatting: in behandeling',
     myHardwareTitle: () => 'Mijn hardware',

@@ -69,7 +69,7 @@ export const ko: TranslationTree = {
     pulseBadge: 'Pulse 등급',
     protondbBadge: 'ProtonDB',
     originalNotesInDetail: '원문 메모는 전체 보고서에서 확인할 수 있습니다.',
-    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user — may not reflect your GPU's experience`,
+    gpuMismatchBadgeHint: (gpuTier: string) => `Rating is from a ${String(gpuTier).toUpperCase()} user - may not reflect your GPU's experience`,
   },
   detail: {
     apply: '적용',
@@ -267,7 +267,7 @@ export const ko: TranslationTree = {
     jumpToLatest: '최신으로 이동',
   },
   about: {
-    description: '시스템 호환성을 기준으로 ProtonDB 커뮤니티 보고서의 순위를 매기고, 가장 잘 맞는 Proton 실행 옵션을 Steam 게임에 적용합니다 — 모두 Decky 사이드바에서.',
+    description: '시스템 호환성을 기준으로 ProtonDB 커뮤니티 보고서의 순위를 매기고, 가장 잘 맞는 Proton 실행 옵션을 Steam 게임에 적용합니다 - 모두 Decky 사이드바에서.',
     github: 'GitHub',
     protondb: 'ProtonDB',
     submitIssue: '문제 보고',
@@ -386,15 +386,15 @@ export const ko: TranslationTree = {
     submit: '보고서 제출',
     submitted: 'Proton Pulse에 보고서가 제출되었습니다!',
     hardware: '하드웨어',
-    ratingPlatinum: '플래티넘 — 설정 없이 완벽하게 작동',
-    ratingGold: '골드 — 조정하면 작동',
-    ratingSilver: '실버 — 일부 문제 있지만 플레이 가능',
-    ratingBronze: '브론즈 — 실행되지만 심각한 문제 있음',
-    ratingBorked: '작동 불가 — 실행되지 않음',
+    ratingPlatinum: '플래티넘 - 설정 없이 완벽하게 작동',
+    ratingGold: '골드 - 조정하면 작동',
+    ratingSilver: '실버 - 일부 문제 있지만 플레이 가능',
+    ratingBronze: '브론즈 - 실행되지만 심각한 문제 있음',
+    ratingBorked: '작동 불가 - 실행되지 않음',
     durationUnreported: '미보고',
     durationUnderOneHour: '1시간 미만',
-    durationOneToFour: '1 – 4시간',
-    durationFourToTen: '4 – 10시간',
+    durationOneToFour: '1 - 4시간',
+    durationFourToTen: '4 - 10시간',
     durationOverTen: '10시간 이상',
   },
   protondbSubmit: {
@@ -412,7 +412,7 @@ export const ko: TranslationTree = {
     confirmChanges: '다음 변경 사항이 보고서에 포함됩니다:',
     confirmSubmit: 'ProtonDB로 계속',
     noChanges: '변경 사항이 감지되지 않았습니다.',
-    changed: (field: string, from: string, to: string) => `${field}: ${from} → ${to}`,
+    changed: (field: string, from: string, to: string) => `${field}: ${from} -> ${to}`,
   },
   ratings: {
     platinum: '플래티넘',
@@ -576,7 +576,7 @@ export const ko: TranslationTree = {
     diagnosticsReportIndexPending: () => '보고서 인덱스 응답: 대기 중',
     diagnosticsLiveSummary: (status, total, tier) =>
       total !== undefined && tier !== undefined
-        ? `ProtonDB 라이브 요약: ${status} · 보고서 ${total}개 · ${tier} 등급`
+        ? `ProtonDB 라이브 요약: ${status} | 보고서 ${total}개 . ${tier} 등급`
         : `ProtonDB 라이브 요약: ${status}`,
     diagnosticsLiveSummaryPending: () => 'ProtonDB 라이브 요약: 대기 중',
     // My Hardware modal

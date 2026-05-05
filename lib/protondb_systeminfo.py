@@ -29,7 +29,7 @@ def _run(cmd: list[str], timeout: int = 5) -> str | None:
         return None
 
 
-# ─── Computer Information ─────────────────────────────────────────────────────
+# --- Computer Information ---
 
 def _read_manufacturer() -> str:
     return _read_file("/sys/devices/virtual/dmi/id/board_vendor") or "Unknown"
@@ -51,7 +51,7 @@ def _read_form_factor() -> str:
     return (result or "Unknown").capitalize()
 
 
-# ─── Processor Information ────────────────────────────────────────────────────
+# --- Processor Information ---
 
 def _parse_cpuinfo() -> dict[str, str]:
     """Pull vendor, model, stepping, cores, and flags from /proc/cpuinfo."""
@@ -115,7 +115,7 @@ def _logical_cpus() -> str:
     return result or "Unknown"
 
 
-# ─── Operating System ─────────────────────────────────────────────────────────
+# --- Operating System ---
 
 def _read_os() -> str:
     raw = _read_file("/etc/os-release")
@@ -178,7 +178,7 @@ def _extract_build_id(os_release_path: str) -> str | None:
     return None
 
 
-# ─── Video Card ───────────────────────────────────────────────────────────────
+# --- Video Card ---
 
 def _read_glxinfo() -> dict[str, str]:
     """Try to get GPU renderer, OpenGL version, and VRAM from glxinfo.
@@ -296,7 +296,7 @@ def _read_display_info() -> dict[str, str]:
     return info
 
 
-# ─── Sound ────────────────────────────────────────────────────────────────────
+# --- Sound ---
 
 def _read_audio_device() -> str:
     """Get the default audio sink name.
@@ -318,7 +318,7 @@ def _read_audio_device() -> str:
     return "Unknown"
 
 
-# ─── Memory ───────────────────────────────────────────────────────────────────
+# --- Memory ---
 
 def _read_ram_mb() -> str:
     raw = _read_file("/proc/meminfo")
@@ -330,7 +330,7 @@ def _read_ram_mb() -> str:
     return "Unknown"
 
 
-# ─── Storage ──────────────────────────────────────────────────────────────────
+# --- Storage ---
 
 def _read_disk_info() -> dict[str, str]:
     """Get disk size/avail from df, SSD/HDD counts from lsblk."""
@@ -370,7 +370,7 @@ def _read_disk_info() -> dict[str, str]:
     return info
 
 
-# ─── Main Generator ──────────────────────────────────────────────────────────
+# --- Main Generator ---
 
 def generate_system_info(home: str | None = None) -> str:
     """Build the full 'Steam System Information' text block.

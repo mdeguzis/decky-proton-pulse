@@ -13,7 +13,7 @@ const logFrontendEventCallable = callable<
   boolean
 >('log_frontend_event');
 
-// ── frontend log ring buffer ───────────────────────────────────────────────
+// --- frontend log ring buffer ---
 
 export interface LogEntry {
   timestamp: number;
@@ -87,7 +87,7 @@ export function getLogCount(): number {
   return totalLogged;
 }
 
-// ── backend callable wrapper with timeout ──────────────────────────────────
+// --- backend callable wrapper with timeout ---
 // wraps a callable so it logs start/end and throws a clear error on timeout
 // instead of hanging forever when the Python backend is dead
 
@@ -133,7 +133,7 @@ export function callWithTimeout<T>(
   });
 }
 
-// ── main logging function ──────────────────────────────────────────────────
+// --- main logging function ---
 
 export async function logFrontendEvent(
   level: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR',
