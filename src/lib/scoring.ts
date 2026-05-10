@@ -1017,3 +1017,28 @@ export function bucketByGpuTier(reports: ScoredReport[]): TieredReports {
   buckets.other.sort(byScore);
   return buckets;
 }
+
+// Best-guess ReportResponses for a given rating tier.
+// Used to pre-fill the edit form when a report has no stored form responses.
+// Based on the minimal answer set that produces each rating via deriveRating().
+// Most common fault patterns come from ProtonDB live report analysis.
+export function inferResponsesFromRating(rating: ProtonRating): ReportResponses {
+  const yes: YesNo = 'yes';
+  const no: YesNo = 'no';
+  const installOk = { canInstall: yes, canStart: yes, canPlay: yes };
+  const noFaults = Object.fromEntries(FAULT_KEYS.map((k) => [k, no])) as Record<typeof FAULT_KEYS[number], YesNo>;
+
+  switch (rating) {
+    case 'platinum':
+      return { ...installOk, ...noFaults, verdict: yes, verdictOob: yes };
+    case 'gold':
+      return { ...installOk, ...noFaults, verdict: yes, verdictOob: no };
+    case 'silver':
+      return { ...installOk, ...noFaults, performanceFaults: yes, graphicalFaults: yes, verdict: yes };
+    case 'bronze':
+      return { ...installOk, ...noFaults, performanceFaults: yes, graphicalFaults: yes, stabilityFaults: yes, verdict: yes };
+    case 'borked':
+    default:
+      return { ...installOk, verdict: no };
+  }
+}

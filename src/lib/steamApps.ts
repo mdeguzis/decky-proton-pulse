@@ -90,6 +90,51 @@ export function getLaunchOptionsFromDetails(details: any): string {
   return typeof details.strLaunchOptions === 'string' ? details.strLaunchOptions : '';
 }
 
+// Returns the display name of the Proton/compat tool forced for this game via
+// Steam game properties (Properties > Compatibility > Force a specific tool).
+// Checks the app overview first (fast, synchronous), then falls back to
+// RegisterForAppDetails (async). Returns empty string if nothing is set.
+export async function getCompatToolForApp(appId: number): Promise<string> {
+  // Fast path: app overview often has compat_tool_name or compat_tool_display_name
+  const overview = getSteamAppOverview(appId)
+    ?? (globalThis as any).appStore?.GetAppOverviewByAppID?.(appId);
+
+  if (overview) {
+    const candidates = [
+      overview.compat_tool_display_name,
+      overview.strCompatToolDisplayName,
+      overview.compat_tool_name,
+      overview.strCompatToolName,
+    ];
+    for (const c of candidates) {
+      if (c && typeof c === 'string' && c.trim()) {
+        void logFrontendEvent('DEBUG', 'getCompatToolForApp: found via overview', { appId, value: c });
+        return c.trim();
+      }
+    }
+  }
+
+  // Slow path: RegisterForAppDetails
+  const { details } = await getSteamAppDetails(appId, 1500);
+  if (details) {
+    const candidates = [
+      details.strCompatToolDisplayName,
+      details.strCompatToolName,
+      details.compat_tool_display_name,
+      details.compat_tool_name,
+    ];
+    for (const c of candidates) {
+      if (c && typeof c === 'string' && c.trim()) {
+        void logFrontendEvent('DEBUG', 'getCompatToolForApp: found via details', { appId, value: c });
+        return c.trim();
+      }
+    }
+  }
+
+  void logFrontendEvent('DEBUG', 'getCompatToolForApp: no compat tool found', { appId });
+  return '';
+}
+
 // Lifetime playtime in minutes as Steam knows it for this account.
 // Matches the "PLAY TIME" value shown on the Steam library page for the game.
 // Returns 0 when the overview isn't available or the field is missing.

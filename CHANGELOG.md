@@ -2,8 +2,21 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.2.0
+
+- NativePulseReportModal: fullscreen layout, auto-scroll with focus advance through all questions
+- NativePulseReportModal: live rating badge pinned in header, summary field removed
+- NativePulseReportModal: proton type/version prefill from tracked config and Steam compat tool property
+- ManageTab: duplicate report guard with ConfirmModal before overwriting
+- ManageTab: fetch Steam forced compat tool via getCompatToolForApp for proton version prefill
+- EditReportModal: scroll timeout fix (200ms -> 300ms)
+- ScoringGuideModal: new modal explaining how compatibility scores are calculated
+- i18n: new translation keys for all added UI strings
+
 ## Unreleased
 
+- ProtonDB form parity, consolidated deriveRating, source penalty
+- Cleanup
 - Sync release-derived files for 1.0.0
 
 ## v1.0.0

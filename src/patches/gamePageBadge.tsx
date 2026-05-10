@@ -53,11 +53,17 @@ function BadgeIcon({ appId }: { appId: number }) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [tier, setTier] = useState<string | null>(null);
   const [sourceInfo, setSourceInfo] = useState<GameSourceInfo | null>(null);
+  const [isNativeLinux, setIsNativeLinux] = useState(false);
   const innerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const appName =
-      (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appId)?.display_name ?? '';
+    const overview = (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appId);
+    const appName = overview?.display_name ?? '';
+    // EAppPlatform.Linux = 16 in Steam's client-side enum
+    const platformList: number[] = Array.isArray(overview?.platform_list) ? overview.platform_list : [];
+    const native = platformList.includes(16);
+    setIsNativeLinux(native);
+    void logFrontendEvent('DEBUG', 'gamePageBadge: platform_list', { appId, platformList, native });
     getProtonDBSummary(String(appId)).then((summary) => {
       if (summary?.tier) setTier(summary.tier);
     }).catch(() => {/* show icon fallback */});
@@ -213,6 +219,26 @@ function BadgeIcon({ appId }: { appId: number }) {
         opacity: pos ? 1 : 0,
       }}
     >
+      {isNativeLinux && (
+        <div
+          title="Native Linux build available"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '5px 8px',
+            borderRadius: 4,
+            background: '#1a3a2a',
+            color: '#4ade80',
+            fontWeight: 700,
+            fontSize: 11,
+            letterSpacing: '0.06em',
+            whiteSpace: 'nowrap',
+            border: '1px solid #4ade80',
+          }}
+        >
+          NATIVE
+        </div>
+      )}
       {showTierBadge && (
         <div
           ref={innerRef}

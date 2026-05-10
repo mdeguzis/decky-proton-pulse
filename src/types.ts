@@ -54,6 +54,7 @@ export interface CdnReport {
   title: string;
   reportId?: number | null;
   source?: string | null; // e.g. "Steam", "Heroic", "Epic", "Non-Steam"
+  formResponses?: import('./lib/scoring').ReportResponses | null;
 }
 
 // --- Scoring ---

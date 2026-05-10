@@ -10,7 +10,7 @@ import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } 
 import { ConfigEditorModal } from '../ConfigEditorModal';
 import { NativePulseReportModal } from '../NativePulseReportModal';
 import { callable } from '@decky/api';
-import { getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
+import { getCompatToolForApp, getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
 
 const _getGridArtwork = callable<[number], { dataUrl: string | null }>('get_grid_artwork');
 async function getGridArtworkDataUrl(appId: number): Promise<string | null> {
@@ -28,7 +28,7 @@ import {
   type CloudConfigRow,
   type SyncStatus,
 } from '../../lib/cloudSync';
-import { deleteMyReport, getMySubmittedAppIds } from '../../lib/userConfigs';
+import { deleteMyReport, getMyConfig, getMySubmittedAppIds } from '../../lib/userConfigs';
 import { getVoterId } from '../../lib/voting';
 import { getLinkedProtonPulseUserId } from '../../lib/protonPulseAccount';
 import { getSetting } from '../../lib/settings';
@@ -367,24 +367,45 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
       toaster.toast({ title: 'Proton Pulse', body: extras.shortcutCannotSubmit() });
       return;
     }
-    // Compute playtime bucket from whichever is higher: the plugin's tracked
-    // minutes or Steam's lifetime playtime for this app. Using the max means
-    // games played before the plugin was installed still auto-fill the picker
-    const { minutes, trackedMinutes, steamMinutes } = await getEffectivePlaytimeMinutes(config.appId);
-    const autoDuration = bucketPlaytimeMinutes(minutes);
-    void logFrontendEvent('DEBUG', 'Submit report auto-duration resolved', {
-      appId: config.appId, minutes, trackedMinutes, steamMinutes, autoDuration,
-    });
-    showModal(
-      <NativePulseReportModal
-        appId={config.appId}
-        appName={displayName(config)}
-        sysInfo={sysInfo}
-        protonVersion={config.protonVersion}
-        autoDuration={autoDuration}
-        launchOptions={config.launchOptions}
-      />,
-    );
+
+    const openModal = async () => {
+      const [{ minutes, trackedMinutes, steamMinutes }, compatTool] = await Promise.all([
+        getEffectivePlaytimeMinutes(config.appId),
+        config.protonVersion ? Promise.resolve('') : getCompatToolForApp(config.appId),
+      ]);
+      const autoDuration = bucketPlaytimeMinutes(minutes);
+      const resolvedProtonVersion = config.protonVersion || compatTool;
+      void logFrontendEvent('DEBUG', 'Submit report modal open', {
+        appId: config.appId, minutes, trackedMinutes, steamMinutes, autoDuration,
+        protonVersion: resolvedProtonVersion, protonSource: config.protonVersion ? 'tracked' : compatTool ? 'steam-compat-tool' : 'none',
+      });
+      showModal(
+        <NativePulseReportModal
+          appId={config.appId}
+          appName={displayName(config)}
+          sysInfo={sysInfo}
+          protonVersion={resolvedProtonVersion}
+          autoDuration={autoDuration}
+          launchOptions={config.launchOptions}
+        />,
+      );
+    };
+
+    const existing = await getMyConfig(String(config.appId));
+    if (existing) {
+      showModal(
+        <ConfirmModal
+          strTitle="Report Already Submitted"
+          strDescription={`You already submitted a ${existing.rating?.toUpperCase() ?? 'previous'} report for this game. Submitting again will replace it.`}
+          strOKButtonText="Replace"
+          strCancelButtonText="Cancel"
+          onOK={() => { void openModal(); }}
+        />,
+      );
+      return;
+    }
+
+    void openModal();
   };
 
   const handleCreate = () => {
@@ -418,7 +439,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
       .finally(() => setSyncing(false));
   };
 
-  const handleRestoreCloud = () => {
+  const doRestoreCloud = () => {
     setRestoring(true);
     void restoreCloudConfigs()
       .then((result) => {
@@ -436,6 +457,18 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         });
       })
       .finally(() => setRestoring(false));
+  };
+
+  const handleRestoreCloud = () => {
+    showModal(
+      <ConfirmModal
+        strTitle={t().configManager.restoreFromCloud}
+        strDescription={t().configManager.cloudRestoreConfirm}
+        strOKButtonText={t().common.confirm}
+        strCancelButtonText={t().common.cancel}
+        onOK={doRestoreCloud}
+      />,
+    );
   };
 
   const handleRootDirection = (evt: GamepadEvent) => {
@@ -463,9 +496,19 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
       toaster.toast({ title: 'Proton Pulse', body: t().configManager.cloudRestoreNoBackup });
       return;
     }
-    addTrackedConfig(cloudRow.config);
-    refresh();
-    toaster.toast({ title: 'Proton Pulse', body: t().configManager.cloudRestoreSuccess });
+    showModal(
+      <ConfirmModal
+        strTitle={t().configManager.restoreFromCloud}
+        strDescription={t().configManager.cloudRestoreConfirm}
+        strOKButtonText={t().common.confirm}
+        strCancelButtonText={t().common.cancel}
+        onOK={() => {
+          addTrackedConfig(cloudRow.config);
+          refresh();
+          toaster.toast({ title: 'Proton Pulse', body: t().configManager.cloudRestoreSuccess });
+        }}
+      />,
+    );
   };
 
   const openActionsMenu = (config: TrackedConfig, e: MouseEvent) => {

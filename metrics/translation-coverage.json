@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 90,
-  "totalKeys": 543,
+  "totalKeys": 557,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 543,
-      "total": 543,
+      "translated": 557,
+      "total": 557,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -16,181 +16,235 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "it",
       "name": "Italiano",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "nl",
       "name": "Nederlands",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pl",
       "name": "Polski",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "uk",
       "name": "Українська",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "sv",
       "name": "Svenska",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "cs",
       "name": "Čeština",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "th",
       "name": "ภาษาไทย",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "vi",
       "name": "Tiếng Việt",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     },
     {
       "code": "zh-TW",
       "name": "繁體中文",
-      "translated": 543,
-      "total": 543,
-      "coveragePercent": 100,
+      "translated": 555,
+      "total": 557,
+      "coveragePercent": 99.6,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "common.confirm",
+        "configManager.cloudRestoreConfirm"
+      ],
       "typeMismatches": []
     }
   ]

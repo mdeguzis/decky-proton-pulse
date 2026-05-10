@@ -7,7 +7,6 @@ import {
   GamepadButton,
   ToggleField,
   DropdownItem,
-  Dropdown,
   TextField,
   Field,
   SteamSpinner,
@@ -527,8 +526,6 @@ function CustomToggleManagerModal({ appId, toggles, onSave, closeModal }: Custom
 
 // --- Upload Preview Modal ---
 
-const RATING_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'borked'] as const;
-
 interface UploadPreviewProps {
   appName: string;
   profileName: string;
@@ -537,16 +534,14 @@ interface UploadPreviewProps {
   enabledVars: Record<string, string>;
   systemInfo: SystemInfo | null;
   loadingSystemInfo: boolean;
-  initialRating?: string | null;
   onApply: () => void;
-  onUpload?: (rating: string | null) => void;
+  onUpload?: () => void;
   closeModal?: () => void;
 }
 
 function UploadPreviewModal({
-  appName, profileName, protonVersion, launchOptions, enabledVars, systemInfo, loadingSystemInfo, initialRating, onApply, onUpload, closeModal,
+  appName, profileName, protonVersion, launchOptions, enabledVars, systemInfo, loadingSystemInfo, onApply, onUpload, closeModal,
 }: UploadPreviewProps) {
-  const [rating, setRating] = useState<string | null>(initialRating ?? null);
   const cancelRef = useRef<HTMLElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -611,30 +606,6 @@ function UploadPreviewModal({
             }
           }}
         >
-          {/* Rating picker - inline select before the info rows */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
-              padding: '5px 0',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-            }}
-          >
-            <span style={{ fontSize: 11, color: '#7a9bb5', flexShrink: 0, minWidth: 110 }}>{t().nativeReport.rating}</span>
-            <Dropdown
-              rgOptions={[
-                { data: '', label: '- ' + t().common.cancel + ' -' },
-                ...RATING_OPTIONS.map((r) => ({ data: r, label: (t().ratings as Record<string, string>)[r] ?? r })),
-              ]}
-              selectedOption={rating ?? ''}
-              onChange={(opt) => setRating((opt.data as string) || null)}
-              strDefaultLabel="-"
-              focusable
-            />
-          </div>
-
           {loadingSystemInfo ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
               <SteamSpinner style={{ width: 16, height: 16 }} />
@@ -686,7 +657,7 @@ function UploadPreviewModal({
           </DialogButton>
           {onUpload && (
             <DialogButton
-              onClick={() => { onUpload(rating); closeModal?.(); }}
+              onClick={() => { onUpload(); closeModal?.(); }}
               disabled={loadingSystemInfo}
               style={{ flex: 1 }}
             >
@@ -711,7 +682,6 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
 
   const [profileName, setProfileName] = useState(existingConfig?.profileName ?? '');
   const [profileNameTouched, setProfileNameTouched] = useState(false);
-  const [userRating, setUserRating] = useState<string | null>(null);
   const [protonVersion, setProtonVersion] = useState(initialParsedState.protonVersion);
   const [enabledVars, setEnabledVars] = useState<Record<string, string>>(initialParsedState.enabledVars);
   const [enabledRawKeys, setEnabledRawKeys] = useState<Set<string>>(
@@ -943,7 +913,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     });
   };
 
-  const doApply = async (resolvedLaunchOptions: string, andUpload = false, rating: string | null = null) => {
+  const doApply = async (resolvedLaunchOptions: string, andUpload = false) => {
     if (!appId) return;
     try {
       await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
@@ -969,23 +939,20 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       addTrackedConfig(config);
       if (andUpload) {
         void pushConfig(config);
-        if (rating) {
-          const { minutes } = await getEffectivePlaytimeMinutes(appId);
-          const autoDuration = bucketPlaytimeMinutes(minutes);
-          showModal(
-            <NativePulseReportModal
-              appId={appId}
-              appName={appName}
-              sysInfo={systemInfo}
-              protonVersion={protonVersion || ''}
-              autoDuration={autoDuration}
-              launchOptions={resolvedLaunchOptions}
-              initialRating={rating}
-            />,
-          );
-        }
+        const { minutes } = await getEffectivePlaytimeMinutes(appId);
+        const autoDuration = bucketPlaytimeMinutes(minutes);
+        showModal(
+          <NativePulseReportModal
+            appId={appId}
+            appName={appName}
+            sysInfo={systemInfo}
+            protonVersion={protonVersion || ''}
+            autoDuration={autoDuration}
+            launchOptions={resolvedLaunchOptions}
+          />,
+        );
       }
-      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions, andUpload, rating });
+      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions, andUpload });
       toaster.toast({ title: 'Proton Pulse', body: t().toast.savedToProtonPulse });
       onSave();
       closeModal?.();
@@ -1025,7 +992,6 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         protonVersion={protonVersion}
         autoDuration={autoDuration}
         launchOptions={preview}
-        initialRating={userRating ?? undefined}
       />,
     );
   };
@@ -1060,9 +1026,8 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           enabledVars={allVars}
           systemInfo={systemInfo}
           loadingSystemInfo={loadingSystemInfo}
-          initialRating={userRating}
           onApply={() => void doApply(resolvedLaunchOptions)}
-          onUpload={(r) => void doApply(resolvedLaunchOptions, true, r)}
+          onUpload={() => void doApply(resolvedLaunchOptions, true)}
         />,
       );
     } catch (e) {
@@ -1286,15 +1251,6 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               rgOptions={GPU_FILTER_ORDER.map((f) => ({ data: f, label: gpuFilterLabel(f) }))}
               selectedOption={gpuFilter}
               onChange={(opt) => setGpuFilter(opt.data as GpuFilter)}
-            />
-            <DropdownItem
-              label={t().nativeReport.rating}
-              rgOptions={[
-                { data: '', label: '-' },
-                ...RATING_OPTIONS.map((r) => ({ data: r, label: (t().ratings as Record<string, string>)[r] ?? r })),
-              ]}
-              selectedOption={userRating ?? ''}
-              onChange={(opt) => setUserRating((opt.data as string) || null)}
             />
             {loadingVersions ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>

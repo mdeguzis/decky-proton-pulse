@@ -20,6 +20,22 @@ export const MATCHING_GUIDE_LEGEND_RED = '* red < 50%';
 export function buildMatchingRules(): RuleSection[] {
   return [
     {
+      field: 'Rating Derivation (Compatibility Reports)',
+      description:
+        'Ratings are never chosen manually. They are derived from your answers to the fault '
+        + 'questions, mirroring the exact algorithm ProtonDB uses for its own reports. '
+        + 'Verdict "No" (would not enjoy) -> Borked. '
+        + 'Verdict "Yes": fault count determines the tier. '
+        + 'Out-of-box (no tweaks required) + 0 faults -> Platinum.',
+      tiers: [
+        { label: 'Platinum', note: '0 faults AND game runs out of the box without any tweaks' },
+        { label: 'Gold',     note: '0 or 1 fault (without OOB) OR exactly 1 fault' },
+        { label: 'Silver',   note: '2 faults' },
+        { label: 'Bronze',   note: '3 or more faults' },
+        { label: 'Borked',   note: 'Verdict = No (game is unenjoyable / does not run)' },
+      ],
+    },
+    {
       field: 'Overall Relevance Score',
       description:
         `The relevance score is a composite number used to rank reports. It is NOT the same as the `

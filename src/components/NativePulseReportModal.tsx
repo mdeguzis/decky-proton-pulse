@@ -2,8 +2,9 @@
 // Submit a native Proton Pulse compatibility report, auto-capturing hardware.
 // Form structure mirrors ProtonDB's submission flow so ratings are comparable.
 
-import { useState } from 'react';
-import { ModalRoot, Focusable, DialogButton, TextField, DropdownItem } from '@decky/ui';
+import { useState, useRef } from 'react';
+import { ModalRoot, Focusable, DialogButton, DialogCheckbox, TextField, DropdownItem, showModal } from '@decky/ui';
+import { ScoringGuideModal } from './ScoringGuideModal';
 import { toaster } from '../lib/notify';
 import { submitUserConfig, VALID_OS, type ValidOS } from '../lib/userConfigs';
 import type { SystemInfo, ProtonRating } from '../types';
@@ -18,7 +19,6 @@ interface Props {
   appName: string;
   sysInfo: SystemInfo | null;
   protonVersion?: string;
-  initialRating?: string;
   autoDuration?: string;
   launchOptions?: string;
   resolvedSteamAppId?: number | null;
@@ -175,46 +175,6 @@ const TINKERING_METHODS = [
 ] as const;
 type TinkeringMethod = typeof TINKERING_METHODS[number];
 
-function TinkeringCheckbox({
-  label,
-  checked,
-  onToggle,
-}: {
-  label: string;
-  checked: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div
-      onClick={onToggle}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '4px 0',
-        cursor: 'pointer',
-        fontSize: 11,
-        color: '#c8d4e0',
-      }}
-    >
-      <div style={{
-        width: 14,
-        height: 14,
-        border: `2px solid ${checked ? '#4fc3f7' : '#4a6a8a'}`,
-        borderRadius: 3,
-        background: checked ? '#4fc3f7' : 'transparent',
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        {checked && <span style={{ color: '#000', fontSize: 9, fontWeight: 900, lineHeight: 1 }}>v</span>}
-      </div>
-      {label}
-    </div>
-  );
-}
-
 // --- Proton type options ---
 
 const PROTON_TYPE_OPTIONS = [
@@ -283,13 +243,54 @@ export function NativePulseReportModal({
   const [canStart,   setCanStart]   = useState<YesNo | null>(null);
   const [canPlay,    setCanPlay]    = useState<YesNo | null>(null);
 
+  // Scroll-to-next: refs for conditional questions, scroll container ref
+  // NOTE: scrollContainerRef must point to a plain div, NOT Focusable -- Focusable does not forward refs to the DOM node
+  const scrollContainerRef  = useRef<HTMLDivElement>(null);
+  const refCanStart         = useRef<HTMLDivElement | null>(null);
+  const refCanPlay          = useRef<HTMLDivElement | null>(null);
+  const refProtonType       = useRef<HTMLDivElement | null>(null);
+  const refProtonVersion    = useRef<HTMLDivElement | null>(null);
+  const refVerdict          = useRef<HTMLDivElement | null>(null);
+  // One ref per fault question, same order as FAULT_KEYS
+  const faultRefs           = useRef<(HTMLDivElement | null)[]>([]);
+
+  const scrollToRef = (ref: { current: HTMLDivElement | null }, label: string) => {
+    setTimeout(() => {
+      const el = ref.current;
+      const container = scrollContainerRef.current;
+      if (!el) { void logFrontendEvent('WARN', `NativePulseReport: scrollToRef [${label}] -- ref.current is null`); return; }
+      if (!container) { void logFrontendEvent('WARN', `NativePulseReport: scrollToRef [${label}] -- scrollContainerRef is null`); return; }
+      const elTop = el.getBoundingClientRect().top;
+      const containerTop = container.getBoundingClientRect().top;
+      const delta = elTop - containerTop - 20;
+      // TextField renders <input>, dropdowns render <button role=combobox>
+      const focusEl = el.querySelector<HTMLElement>('button, [role="button"], input');
+      void logFrontendEvent('DEBUG', `NativePulseReport: scrollToRef [${label}]`, {
+        elTop, containerTop, delta,
+        containerScrollTop: container.scrollTop,
+        focusTarget: focusEl
+          ? focusEl.tagName + (focusEl.getAttribute('role') ? `[role=${focusEl.getAttribute('role')}]` : '')
+          : 'none',
+      });
+      container.scrollBy({ top: delta, behavior: 'smooth' });
+      focusEl?.focus();
+    }, 300);
+  };
+
   // borked path: if any install/startup step fails, skip the rest of the form
   const installFailed = canInstall === 'no' || canStart === 'no' || canPlay === 'no';
   const installComplete = canInstall !== null && canStart !== null && canPlay !== null;
 
   // --- Proton + Tinkering ---
   const [proton,          setProton]          = useState(initialProton);
-  const [protonType,      setProtonType]      = useState<ProtonType | null>(null);
+  const [protonType,      setProtonType]      = useState<ProtonType | null>(() => {
+    const v = initialProton.toLowerCase();
+    if (v.includes('ge-proton') || v.includes('proton-ge')) return 'ge';
+    if (v.startsWith('proton ') || v.match(/^proton\d/i)) return 'current';
+    if (v.includes('proton')) return 'current';
+    if (v === 'native' || v === 'no proton') return 'native';
+    return null;
+  });
   const [tinkeringMethods, setTinkeringMethods] = useState<Set<TinkeringMethod>>(new Set());
   const isTinker = (protonType && protonType !== 'current') || tinkeringMethods.size > 0;
 
@@ -473,19 +474,44 @@ export function NativePulseReportModal({
   const anyFaultForOob = FAULT_KEYS.some(k => faults[k] === 'yes');
 
   return (
-    <ModalRoot onCancel={closeModal}>
-      <div style={{ padding: 16, maxHeight: '85vh', display: 'flex', flexDirection: 'column', gap: 0 }}>
-        {/* Header */}
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#e8f4ff', marginBottom: 3 }}>
-          {t().nativeReport.title}
-        </div>
-        <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 12 }}>
-          {appName}{isShortcut && resolvedSteamAppId
-            ? ` . Non-Steam (Steam app id: ${resolvedSteamAppId})`
-            : (appId ? ` . App ${appId}` : '')}
+    <ModalRoot onCancel={closeModal} bAllowFullSize
+      className="proton-pulse-native-report-modal"
+      modalClassName="proton-pulse-native-report-modal"
+    >
+      <style>{`
+        .proton-pulse-native-report-modal,
+        .proton-pulse-native-report-modal > div,
+        .proton-pulse-native-report-modal .DialogContent_InnerWidth {
+          padding: 0 !important; margin: 0 !important;
+          max-width: 100vw !important; width: 100vw !important; max-height: 100vh !important;
+        }
+        .proton-pulse-native-report-modal .ModalPosition { inset: 0 !important; }
+      `}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', padding: '12px 16px 0' }}>
+        {/* Header -- pinned, always visible as user scrolls questions */}
+        <div style={{ flexShrink: 0, borderBottom: '1px solid #2a3a4a', paddingBottom: 8, marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 3 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#e8f4ff' }}>{t().nativeReport.title}</div>
+            <DialogButton
+              onClick={() => showModal(<ScoringGuideModal />)}
+              style={{ fontSize: 11, padding: '2px 8px', minWidth: 0, width: 'auto', flexShrink: 0, fontWeight: 700, letterSpacing: '0.03em' }}
+            >
+              How Scoring Works
+            </DialogButton>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+              {appName}{isShortcut && resolvedSteamAppId
+                ? ` . Non-Steam (Steam app id: ${resolvedSteamAppId})`
+                : (appId ? ` . App ${appId}` : '')}
+            </div>
+            <DerivedRatingBadge rating={installFailed ? 'borked' : derivedRating} />
+          </div>
         </div>
 
-        <Focusable style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Focusable provides gamepad right-stick scroll; plain inner div holds the ref for programmatic scroll */}
+        <Focusable style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <div ref={scrollContainerRef} style={{ height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 48 }}>
           {/* Hardware summary */}
           <HardwareTable sysInfo={sysInfo} />
 
@@ -494,24 +520,28 @@ export function NativePulseReportModal({
           <YesNoDropdown
             label="Were you able to install the game?"
             value={canInstall}
-            onChange={(v) => { setCanInstall(v); setFieldErrors(p => ({ ...p, canInstall: false })); setError(null); }}
+            onChange={(v) => { setCanInstall(v); setFieldErrors(p => ({ ...p, canInstall: false })); setError(null); if (v === 'yes') scrollToRef(refCanStart, 'canStart'); }}
             hasError={!!fieldErrors.canInstall}
           />
           {canInstall === 'yes' && (
-            <YesNoDropdown
-              label="Were you able to start up the game and view its initial menu?"
-              value={canStart}
-              onChange={(v) => { setCanStart(v); setFieldErrors(p => ({ ...p, canStart: false })); setError(null); }}
-              hasError={!!fieldErrors.canStart}
-            />
+            <div ref={refCanStart}>
+              <YesNoDropdown
+                label="Were you able to start up the game and view its initial menu?"
+                value={canStart}
+                onChange={(v) => { setCanStart(v); setFieldErrors(p => ({ ...p, canStart: false })); setError(null); if (v === 'yes') scrollToRef(refCanPlay, 'canPlay'); }}
+                hasError={!!fieldErrors.canStart}
+              />
+            </div>
           )}
           {canInstall === 'yes' && canStart === 'yes' && (
-            <YesNoDropdown
-              label="Were you able to begin playing?"
-              value={canPlay}
-              onChange={(v) => { setCanPlay(v); setFieldErrors(p => ({ ...p, canPlay: false })); setError(null); }}
-              hasError={!!fieldErrors.canPlay}
-            />
+            <div ref={refCanPlay}>
+              <YesNoDropdown
+                label="Were you able to begin playing?"
+                value={canPlay}
+                onChange={(v) => { setCanPlay(v); setFieldErrors(p => ({ ...p, canPlay: false })); setError(null); if (v === 'yes') scrollToRef(refProtonType, 'protonType'); }}
+                hasError={!!fieldErrors.canPlay}
+              />
+            </div>
           )}
 
           {/* Borked short-circuit -- show rating and skip the rest */}
@@ -537,25 +567,30 @@ export function NativePulseReportModal({
           {!installFailed && canPlay === 'yes' && (
             <>
               <SectionHeader label="Proton and Tinkering" />
-              <div style={fieldErrors.protonType ? { outline: '1px solid #f59e0b', borderRadius: 4 } : {}}>
-                <div style={{ fontSize: 12, color: fieldErrors.protonType ? '#f59e0b' : '#c8d4e0', marginBottom: 4 }}>
-                  Which Proton version did you use? <span style={{ color: '#ef4444' }}>*</span>
-                </div>
+              {/* refProtonType on the wrapper div so querySelector('button') finds the DropdownItem button for focus */}
+              <div ref={refProtonType} style={fieldErrors.protonType ? { outline: '1px solid #f59e0b', borderRadius: 4 } : {}}>
                 <DropdownItem
                   rgOptions={PROTON_TYPE_OPTIONS.map(o => ({ data: o.data, label: o.label }))}
                   selectedOption={protonType ?? null}
-                  onChange={(opt) => { setProtonType(opt.data as ProtonType); setFieldErrors(p => ({ ...p, protonType: false })); }}
-                  label="Proton type"
+                  onChange={(opt) => { setProtonType(opt.data as ProtonType); setFieldErrors(p => ({ ...p, protonType: false })); scrollToRef(refProtonVersion, 'protonVersion'); }}
+                  label="Which Proton version did you use?"
                 />
               </div>
 
-              <div style={fieldErrors.proton ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
-                <TextField
-                  label={`${t().nativeReport.protonVersion} *`}
-                  description={t().nativeReport.protonVersionHint}
-                  value={proton}
-                  onChange={(e) => { setProton(e.target.value); setFieldErrors(p => ({ ...p, proton: false })); setError(null); }}
-                />
+              {/* Proton version: 50/50 label left / input right; hint below the row */}
+              <div ref={refProtonVersion} style={fieldErrors.proton ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, fontSize: 12, color: fieldErrors.proton ? '#ef4444' : '#c8d4e0', lineHeight: 1.4 }}>
+                    {t().nativeReport.protonVersion} <span style={{ color: '#ef4444' }}>*</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <TextField
+                      value={proton}
+                      onChange={(e) => { setProton(e.target.value); setFieldErrors(p => ({ ...p, proton: false })); setError(null); }}
+                    />
+                  </div>
+                </div>
+                <div style={{ fontSize: 10, color: '#7a9bb5', marginTop: 4 }}>{t().nativeReport.protonVersionHint}</div>
               </div>
 
               <div>
@@ -563,11 +598,12 @@ export function NativePulseReportModal({
                   Are you using any of these common tinkering methods?
                 </div>
                 {TINKERING_METHODS.map(m => (
-                  <TinkeringCheckbox
+                  <DialogCheckbox
                     key={m}
                     label={m}
                     checked={tinkeringMethods.has(m)}
-                    onToggle={() => toggleTinkering(m)}
+                    onChange={() => toggleTinkering(m)}
+                    bottomSeparator="none"
                   />
                 ))}
               </div>
@@ -583,14 +619,21 @@ export function NativePulseReportModal({
                 ['stabilityFaults',   t().nativeReport.faultStability],
                 ['saveGameFaults',    t().nativeReport.faultSaveGame],
                 ['significantBugs',   t().nativeReport.faultSignificantBugs],
-              ] as [FaultKey, string][]).map(([key, label]) => (
-                <YesNoDropdown
-                  key={key}
-                  label={label}
-                  value={faults[key]}
-                  onChange={(v) => { setFault(key, v); setFieldErrors(p => ({ ...p, [key]: false })); setError(null); }}
-                  hasError={!!fieldErrors[key]}
-                />
+              ] as [FaultKey, string][]).map(([key, label], i) => (
+                <div key={key} ref={(el) => { faultRefs.current[i] = el; }}>
+                  <YesNoDropdown
+                    label={label}
+                    value={faults[key]}
+                    onChange={(v) => {
+                      setFault(key, v);
+                      setFieldErrors(p => ({ ...p, [key]: false }));
+                      setError(null);
+                      if (faultRefs.current[i + 1]) scrollToRef({ current: faultRefs.current[i + 1] }, `fault[${i + 1}]`);
+                      else scrollToRef(refVerdict, 'verdict');
+                    }}
+                    hasError={!!fieldErrors[key]}
+                  />
+                </div>
               ))}
 
               {/* ===== Multiplayer (optional) ===== */}
@@ -612,25 +655,13 @@ export function NativePulseReportModal({
 
               {/* ===== Verdict ===== */}
               <SectionHeader label="Verdict" />
-              <YesNoDropdown
-                label={t().nativeReport.verdictQuestion}
-                value={verdict}
-                onChange={(v) => { setVerdict(v); setFieldErrors(p => ({ ...p, verdict: false })); setError(null); }}
-                hasError={!!fieldErrors.verdict}
-              />
-
-              {/* Summary field (ProtonDB-style, 140 chars) */}
-              <div>
-                <TextField
-                  label="Summary (max 140 chars)"
-                  description="One-line summary of your experience."
-                  value={summary}
-                  onChange={(e) => setSummary(e.target.value.slice(0, 140))}
-                  bShowClearAction
+              <div ref={refVerdict}>
+                <YesNoDropdown
+                  label={t().nativeReport.verdictQuestion}
+                  value={verdict}
+                  onChange={(v) => { setVerdict(v); setFieldErrors(p => ({ ...p, verdict: false })); setError(null); }}
+                  hasError={!!fieldErrors.verdict}
                 />
-                <div style={{ fontSize: 10, color: '#4a6a8a', textAlign: 'right', marginTop: 2 }}>
-                  {summary.length}/140
-                </div>
               </div>
 
               {/* OOB - only shown when verdict=yes and 0 faults (platinum path) */}
@@ -650,9 +681,6 @@ export function NativePulseReportModal({
                   Have you also tried playing with default Steam/Proton without any tinkering?
                 </div>
               )}
-
-              {/* Derived rating preview */}
-              <DerivedRatingBadge rating={derivedRating} />
 
               {/* Concluding Notes */}
               <div style={fieldErrors.notes ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
@@ -696,6 +724,7 @@ export function NativePulseReportModal({
               )}
             </>
           )}
+          </div>
         </Focusable>
 
         {error && (
@@ -704,7 +733,7 @@ export function NativePulseReportModal({
           </div>
         )}
 
-        <Focusable style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+        <Focusable style={{ display: 'flex', gap: 8, marginTop: 8, marginBottom: 8, flexWrap: 'wrap', flexShrink: 0 }}>
           <DialogButton
             onClick={handleSubmit}
             disabled={submitting || (canInstall === null)}

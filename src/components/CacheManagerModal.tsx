@@ -5,7 +5,7 @@
 // refresh/delete icons on right. Filter at top, sorted by recently accessed.
 
 import { useState, useEffect, useMemo } from 'react';
-import { Focusable, DialogButton, ConfirmModal, showModal } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, showModal, TextField } from '@decky/ui';
 import { toaster } from '../lib/notify';
 import { logFrontendEvent } from '../lib/logger';
 import { invalidate, invalidateAll, getCacheStats, getCachedAppIds, getCached } from '../lib/cache';
@@ -175,23 +175,10 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
         )}
 
         {/* search filter */}
-        <input
-          type="text"
-          placeholder={extras.cacheFilterPlaceholder()}
+        <TextField
+          label={extras.cacheFilterPlaceholder()}
           value={filter}
           onChange={e => setFilter(e.target.value)}
-          style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            padding: '8px 12px',
-            background: '#0d1b2a',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 6,
-            color: '#ddd',
-            fontSize: 12,
-            outline: 'none',
-            marginBottom: 10,
-          }}
         />
 
         {/* game list */}

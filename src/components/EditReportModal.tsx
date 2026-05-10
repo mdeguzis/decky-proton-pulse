@@ -1,64 +1,50 @@
 // src/components/EditReportModal.tsx
-import { useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import {
   ModalRoot,
   PanelSection,
   PanelSectionRow,
-  TextField,
   DialogButton,
   DropdownItem,
-  SteamSpinner,
+  showModal,
 } from '@decky/ui';
-import { toaster } from '../lib/notify';
+import { ScoringGuideModal } from './ScoringGuideModal';
 import type { DisplayReportCard } from './ReportCard';
 import type { EditedReportEntry } from './tabs/ConfigureTab';
-import { getProtonGeManagerState, installProtonGe } from '../lib/compatTools';
-import { formatProtonLabel } from '../lib/reportFormatters';
 import { logFrontendEvent } from '../lib/logger';
 import { t } from '../lib/i18n';
-
+import { deriveRating, FAULT_KEYS, inferResponsesFromRating, type ReportResponses, type YesNo } from '../lib/scoring';
+import { RATING_COLORS } from '../lib/reportFormatters';
 
 export interface VersionOption {
-  value: string;          // tag_name or internal_name -- used as dropdown data
-  displayName: string;    // human label, e.g. "Proton GE 9-27"
+  value: string;
+  displayName: string;
   installed: boolean;
-  managed: boolean;       // true for GE releases we can install; false for Valve/custom
+  managed: boolean;
 }
+
+import { formatProtonLabel } from '../lib/reportFormatters';
 
 export function buildVersionOptions(
   releases: { tag_name: string }[],
   installedTools: { directory_name: string; display_name: string; internal_name: string }[],
 ): VersionOption[] {
-  // Build a lookup of installed tag_names for fast matching
   const installedTagSet = new Set<string>();
   for (const tool of installedTools) {
     if (tool.internal_name) installedTagSet.add(tool.internal_name.toLowerCase());
     if (tool.directory_name) installedTagSet.add(tool.directory_name.toLowerCase());
   }
   const isInstalled = (tag: string) => installedTagSet.has(tag.toLowerCase());
-
-  // Releases --> options (all GE releases are managed/installable)
   const releaseOptions: VersionOption[] = releases.map((r) => ({
-    value: r.tag_name,
-    displayName: formatProtonLabel(r.tag_name),
-    installed: isInstalled(r.tag_name),
-    managed: true,
+    value: r.tag_name, displayName: formatProtonLabel(r.tag_name),
+    installed: isInstalled(r.tag_name), managed: true,
   }));
-
-  // Always include Proton-GE-Latest at the top if installed
   const geLatest = installedTools.find(
     (t) => t.directory_name === 'Proton-GE-Latest' || (t as any).managed_slot === 'latest',
   );
   const geLatestOption: VersionOption[] = geLatest
-    ? [{
-        value: 'Proton-GE-Latest',
-        displayName: 'Proton-GE-Latest',
-        installed: true,
-        managed: true, // treated as managed -- always use latest GE
-      }]
+    ? [{ value: 'Proton-GE-Latest', displayName: 'Proton-GE-Latest', installed: true, managed: true }]
     : [];
-
-  // Installed tools that don't appear in releases (custom / Valve builds)
   const releaseTagSet = new Set(releases.map((r) => r.tag_name.toLowerCase()));
   const extraInstalled: VersionOption[] = installedTools
     .filter((t) =>
@@ -67,18 +53,11 @@ export function buildVersionOptions(
       && (t as any).managed_slot !== 'latest',
     )
     .map((t) => ({
-      value: t.internal_name || t.directory_name,
-      displayName: t.display_name || t.directory_name,
-      installed: true,
-      managed: false, // Valve/custom builds -- not installable via GE manager
+      value: t.internal_name || t.directory_name, displayName: t.display_name || t.directory_name,
+      installed: true, managed: false,
     }));
-
-  // Combine: GE-Latest first, then installed, then available
   const combined = [...geLatestOption, ...extraInstalled, ...releaseOptions];
-  combined.sort((a, b) => {
-    if (a.installed !== b.installed) return a.installed ? -1 : 1;
-    return 0;
-  });
+  combined.sort((a, b) => (a.installed !== b.installed ? (a.installed ? -1 : 1) : 0));
   return combined;
 }
 
@@ -87,24 +66,37 @@ export function VersionOptionLabel({ name, installed, managed }: { name: string;
   const statusColor = installed ? '#4caf50' : managed ? '#f59e0b' : '#4a6a8a';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 8 }}>
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {name}
-      </span>
-      <span
-        style={{
-          fontSize: 9,
-          fontWeight: 700,
-          color: statusColor,
-          flexShrink: 0,
-          textTransform: 'uppercase',
-          letterSpacing: 0.3,
-        }}
-      >
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+      <span style={{ fontSize: 9, fontWeight: 700, color: statusColor, flexShrink: 0, textTransform: 'uppercase', letterSpacing: 0.3 }}>
         {statusLabel}
       </span>
     </div>
   );
 }
+
+const TIER_TEXT_COLOR: Record<string, string> = {
+  platinum: '#111', gold: '#111', silver: '#111', bronze: '#fff', borked: '#fff',
+};
+
+const YES_NO_OPTIONS = [
+  { data: '', label: '-' },
+  { data: 'yes', label: 'Yes' },
+  { data: 'no', label: 'No' },
+];
+
+const FAULT_LABEL_KEY: Record<string, keyof ReturnType<typeof t>['nativeReport']> = {
+  performanceFaults:  'faultPerformance',
+  graphicalFaults:    'faultGraphical',
+  windowingFaults:    'faultWindowing',
+  audioFaults:        'faultAudio',
+  inputFaults:        'faultInput',
+  stabilityFaults:    'faultStability',
+  saveGameFaults:     'faultSaveGame',
+  significantBugs:    'faultSignificantBugs',
+};
+
+function yesNoVal(v: YesNo | null | undefined): string { return v ?? ''; }
+function asYesNo(v: string): YesNo | null { return v === 'yes' || v === 'no' ? v : null; }
 
 export interface EditReportModalProps {
   closeModal?: () => void;
@@ -114,143 +106,69 @@ export interface EditReportModalProps {
 
 export function EditReportModal({ closeModal, report, onSave }: EditReportModalProps) {
   const strings = t();
-  const [label, setLabel]               = useState('');
-  const [protonVersion, setProtonVersion] = useState(report.protonVersion);
-  const rating                          = report.rating; // derived from original report answers, not editable
-  const [gpu, setGpu]                   = useState(report.gpu);
-  const [gpuDriver, setGpuDriver]       = useState(report.gpuDriver);
-  const [os, setOs]                     = useState(report.os);
-  const [kernel, setKernel]             = useState(report.kernel);
-  const [ram, setRam]                   = useState(report.ram);
-  const [notes, setNotes]               = useState(report.notes);
 
-  const [versionOptions, setVersionOptions] = useState<VersionOption[]>([]);
-  const [loadingVersions, setLoadingVersions] = useState(true);
-  const [installing, setInstalling] = useState<string | null>(null);
+  const initial: ReportResponses = (report.formResponses as ReportResponses | null | undefined)
+    ?? inferResponsesFromRating(report.rating);
 
-  useEffect(() => {
-    getProtonGeManagerState(false)
-      .then((state) => {
-        const opts = buildVersionOptions(state.releases, state.installed_tools);
+  const [canInstall, setCanInstall] = useState<YesNo | null>(initial.canInstall ?? null);
+  const [canStart, setCanStart]     = useState<YesNo | null>(initial.canStart ?? null);
+  const [canPlay, setCanPlay]       = useState<YesNo | null>(initial.canPlay ?? null);
+  const [verdict, setVerdict]       = useState<YesNo | null>(initial.verdict ?? null);
+  const [verdictOob, setVerdictOob] = useState<YesNo | null>(initial.verdictOob ?? null);
+  const [faults, setFaults]         = useState<Record<string, YesNo | null>>(() => {
+    const out: Record<string, YesNo | null> = {};
+    for (const k of FAULT_KEYS) out[k] = initial[k] ?? null;
+    return out;
+  });
+  const [scoringBtnFocused, setScoringBtnFocused] = useState(false);
 
-        // If the report's current version isn't in the list, add it at the top
-        const currentNorm = report.protonVersion.toLowerCase();
-        const found = opts.some((o) => o.value.toLowerCase() === currentNorm);
-        if (!found) {
-          const isGe = /ge/i.test(report.protonVersion);
-          opts.unshift({
-            value: report.protonVersion,
-            displayName: formatProtonLabel(report.protonVersion),
-            installed: false,
-            managed: isGe, // only GE versions are installable
-          });
-        }
-
-        setVersionOptions(opts);
-        setLoadingVersions(false);
-      })
-      .catch((err) => {
-        void logFrontendEvent('WARNING', 'Failed to load Proton versions for EditReportModal', {
-          error: err instanceof Error ? err.message : String(err),
-        });
-        // Fallback: just the report's current version
-        setVersionOptions([{
-          value: report.protonVersion,
-          displayName: formatProtonLabel(report.protonVersion),
-          installed: false,
-          managed: /ge/i.test(report.protonVersion),
-        }]);
-        setLoadingVersions(false);
-      });
-  }, [report.protonVersion]);
-
-  const handleVersionChange = (nextVersion: string) => {
-    void logFrontendEvent('DEBUG', 'EditReport: Proton version changed', {
-      previousVersion: protonVersion, nextVersion,
-    });
-    setProtonVersion(nextVersion);
-    const opt = versionOptions.find((o) => o.value === nextVersion);
-    if (opt && !opt.installed && opt.managed) {
-      setInstalling(nextVersion);
-      void logFrontendEvent('INFO', 'Auto-installing Proton version from edit modal', {
-        version: nextVersion,
-      });
-      installProtonGe(nextVersion)
-        .then((result) => {
-          if (result.success) {
-            toaster.toast({
-              title: 'Proton Pulse',
-              body: result.already_installed
-                ? t().toast.alreadyInstalled(nextVersion)
-                : t().toast.installed(nextVersion),
-            });
-            setVersionOptions((prev) =>
-              prev.map((o) => (o.value === nextVersion ? { ...o, installed: true } : o)),
-            );
-          } else {
-            toaster.toast({
-              title: 'Proton Pulse',
-              body: t().toast.installFailed(result.message),
-            });
-          }
-        })
-        .catch((err) => {
-          toaster.toast({
-            title: 'Proton Pulse',
-            body: t().toast.installFailed(err instanceof Error ? err.message : String(err)),
-          });
-        })
-        .finally(() => setInstalling(null));
-    }
+  // One ref per question in display order: canInstall, canStart, canPlay, ...FAULT_KEYS, verdict, verdictOob
+  const questionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollToNext = (idx: number) => {
+    setTimeout(() => {
+      const next = questionRefs.current[idx + 1];
+      const container = scrollContainerRef.current;
+      if (!next || !container) return;
+      const nextTop = next.getBoundingClientRect().top;
+      const containerTop = container.getBoundingClientRect().top;
+      container.scrollBy({ top: nextTop - containerTop - 20, behavior: 'smooth' });
+      next.querySelector<HTMLElement>('button, [role="button"]')?.focus();
+    }, 300);
   };
 
-  const handleClearEdits = () => {
-    void logFrontendEvent('INFO', 'EditReport: Reset to original values', {
-      protonVersion: report.protonVersion,
-    });
-    setLabel('');
-    setProtonVersion(report.protonVersion);
-    setGpu(report.gpu);
-    setGpuDriver(report.gpuDriver);
-    setOs(report.os);
-    setKernel(report.kernel);
-    setRam(report.ram);
-    setNotes(report.notes);
+  const currentResponses: ReportResponses = {
+    canInstall, canStart, canPlay, verdict, verdictOob,
+    ...Object.fromEntries(FAULT_KEYS.map((k) => [k, faults[k]])),
   };
+  const displayRating = deriveRating(currentResponses) ?? report.rating;
 
   const handleSave = () => {
-    void logFrontendEvent('INFO', 'EditReport: Saving edited report', {
-      label: label.trim(), protonVersion, rating,
-    });
-    const entry: EditedReportEntry = {
+    void logFrontendEvent('INFO', 'EditReport: Saving response edits', { rating: displayRating });
+    onSave({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      label: label.trim(),
+      label: '',
       baseReportKey: `${report.timestamp}_${report.protonVersion}`,
       report: {
         appId: report.appId,
         cpu: report.cpu,
         duration: report.duration,
-        gpu,
-        gpuDriver,
-        kernel,
-        notes,
-        os,
-        protonVersion,
-        ram,
-        rating,
+        gpu: report.gpu,
+        gpuDriver: report.gpuDriver,
+        kernel: report.kernel,
+        notes: report.notes,
+        os: report.os,
+        protonVersion: report.protonVersion,
+        ram: report.ram,
+        rating: displayRating ?? report.rating,
         timestamp: report.timestamp,
         title: report.title,
+        formResponses: currentResponses,
       },
       updatedAt: Date.now(),
-    };
-    onSave(entry);
+    });
     closeModal?.();
   };
-
-  const dropdownOptions = versionOptions.map((opt) => ({
-    data: opt.value,
-    label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
-  }));
 
   return (
     <ModalRoot
@@ -263,132 +181,107 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
         .proton-pulse-edit-report-modal,
         .proton-pulse-edit-report-modal > div,
         .proton-pulse-edit-report-modal .DialogContent_InnerWidth {
-          padding: 0 !important;
-          margin: 0 !important;
-          max-width: 100vw !important;
-          width: 100vw !important;
+          padding: 0 !important; margin: 0 !important;
+          max-width: 100vw !important; width: 100vw !important;
           max-height: 100vh !important;
         }
         .proton-pulse-edit-report-modal .ModalPosition { inset: 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
-        {/* fixed header */}
-        <div
-          style={{
-            flexShrink: 0,
-            padding: '10px 16px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: '1px solid #2a3a4a',
-          }}
-        >
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>{t().editReport.title}</div>
-          <DialogButton
-            onClick={handleClearEdits}
-            style={{ fontSize: 10, padding: '3px 10px', minWidth: 0, width: 'auto' }}
-          >
-            {t().editReport.resetToOriginal}
-          </DialogButton>
+        {/* header */}
+        <div style={{ flexShrink: 0, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2a3a4a' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>Edit Responses</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+              background: RATING_COLORS[displayRating ?? 'borked'] ?? '#555',
+              color: TIER_TEXT_COLOR[displayRating ?? 'borked'] ?? '#fff',
+              letterSpacing: '0.05em', textTransform: 'uppercase',
+            }}>
+              {displayRating ?? '-'}
+            </span>
+            <div
+              onFocus={() => setScoringBtnFocused(true)}
+              onBlur={() => setScoringBtnFocused(false)}
+              style={{
+                borderRadius: 4,
+                border: `1px solid ${scoringBtnFocused ? '#7ec8f8' : 'transparent'}`,
+                boxShadow: scoringBtnFocused ? '0 0 0 2px #7ec8f8, 0 0 8px #3a8fd0' : 'none',
+                transition: 'box-shadow 0.15s, border-color 0.15s',
+              }}
+            >
+              <DialogButton
+                onClick={() => showModal(<ScoringGuideModal />)}
+                style={{ fontSize: 11, padding: '2px 8px', minWidth: 0, width: 'auto', fontWeight: 700, letterSpacing: '0.03em', background: '#1e4a7a', color: '#7ec8f8', border: '1px solid #2a6aaa' }}
+              >
+                How Scoring Works
+              </DialogButton>
+            </div>
+          </div>
         </div>
 
-        {/* scrollable form body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px' }}>
+        {/* scrollable body */}
+        <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '0 16px' }}>
           <PanelSection>
+            {/* Install & Startup */}
             <PanelSectionRow>
-              <TextField
-                label={t().editReport.label}
-                description={t().editReport.labelDescription}
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                bShowClearAction
-              />
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', paddingTop: 8 }}>Install &amp; Startup</div>
             </PanelSectionRow>
             <PanelSectionRow>
-              {loadingVersions ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-                  <SteamSpinner style={{ width: 16, height: 16 }} />
-                  <span style={{ fontSize: 11, color: '#7a9bb5' }}>{t().common.loading}</span>
-                </div>
-              ) : (
-                <DropdownItem
-                  label={installing ? strings.detail.installing(installing) : strings.detail.protonVersion}
-                  rgOptions={dropdownOptions}
-                  selectedOption={protonVersion}
-                  onChange={(opt) => handleVersionChange(opt.data)}
-                  disabled={!!installing}
-                />
-              )}
-            </PanelSectionRow>
-            <PanelSectionRow>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-                <span style={{ fontSize: 11, color: '#7a9bb5' }}>{strings.editReport.rating}:</span>
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: '2px 8px',
-                  borderRadius: 4,
-                  background: rating === 'platinum' ? '#e5e7eb' : rating === 'gold' ? '#fbbf24' : rating === 'silver' ? '#9ca3af' : rating === 'bronze' ? '#92400e' : '#7f1d1d',
-                  color: rating === 'borked' || rating === 'bronze' ? '#fff' : '#111',
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                }}>
-                  {rating}
-                </span>
-                <span style={{ fontSize: 10, color: '#4a6a8a' }}>(from original report)</span>
+              <div ref={(el) => { questionRefs.current[0] = el; }}>
+                <DropdownItem label="Were you able to install the game?" rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(canInstall)} onChange={(opt) => { setCanInstall(asYesNo(opt.data as string)); scrollToNext(0); }} />
               </div>
             </PanelSectionRow>
             <PanelSectionRow>
-              <TextField
-                label={t().detail.gpu}
-                value={gpu}
-                onChange={(e) => setGpu(e.target.value)}
-              />
+              <div ref={(el) => { questionRefs.current[1] = el; }}>
+                <DropdownItem label="Were you able to start up the game?" rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(canStart)} onChange={(opt) => { setCanStart(asYesNo(opt.data as string)); scrollToNext(1); }} />
+              </div>
             </PanelSectionRow>
             <PanelSectionRow>
-              <TextField
-                label={t().detail.driver}
-                value={gpuDriver}
-                onChange={(e) => setGpuDriver(e.target.value)}
-              />
+              <div ref={(el) => { questionRefs.current[2] = el; }}>
+                <DropdownItem label="Were you able to begin playing?" rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(canPlay)} onChange={(opt) => { setCanPlay(asYesNo(opt.data as string)); scrollToNext(2); }} />
+              </div>
+            </PanelSectionRow>
+
+            {/* Technical Details */}
+            <PanelSectionRow>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', paddingTop: 8 }}>Technical Details</div>
+            </PanelSectionRow>
+            {FAULT_KEYS.map((k, i) => (
+              <PanelSectionRow key={k}>
+                <div ref={(el) => { questionRefs.current[3 + i] = el; }}>
+                  <DropdownItem
+                    label={strings.nativeReport[FAULT_LABEL_KEY[k]]}
+                    rgOptions={YES_NO_OPTIONS}
+                    selectedOption={yesNoVal(faults[k])}
+                    onChange={(opt) => { setFaults((prev) => ({ ...prev, [k]: asYesNo(opt.data as string) })); scrollToNext(3 + i); }}
+                  />
+                </div>
+              </PanelSectionRow>
+            ))}
+
+            {/* Verdict — index 3 + FAULT_KEYS.length */}
+            <PanelSectionRow>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', paddingTop: 8 }}>Verdict</div>
             </PanelSectionRow>
             <PanelSectionRow>
-              <TextField
-                label={t().detail.os}
-                value={os}
-                onChange={(e) => setOs(e.target.value)}
-              />
+              <div ref={(el) => { questionRefs.current[3 + FAULT_KEYS.length] = el; }}>
+                <DropdownItem label={strings.nativeReport.verdictQuestion} rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(verdict)} onChange={(opt) => { setVerdict(asYesNo(opt.data as string)); scrollToNext(3 + FAULT_KEYS.length); }} />
+              </div>
             </PanelSectionRow>
-            <PanelSectionRow>
-              <TextField
-                label={t().detail.kernel}
-                value={kernel}
-                onChange={(e) => setKernel(e.target.value)}
-              />
-            </PanelSectionRow>
-            <PanelSectionRow>
-              <TextField
-                label={t().detail.ram}
-                value={ram}
-                onChange={(e) => setRam(e.target.value)}
-              />
-            </PanelSectionRow>
-            <PanelSectionRow>
-              <TextField
-                label={t().reports.notes}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                bShowClearAction
-              />
-            </PanelSectionRow>
+            {verdict === 'yes' && Object.values(faults).every((v) => v !== 'yes') && (
+              <PanelSectionRow>
+                <div ref={(el) => { questionRefs.current[3 + FAULT_KEYS.length + 1] = el; }}>
+                  <DropdownItem label="Does it work without any tinkering (out of the box)?" rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(verdictOob)} onChange={(opt) => setVerdictOob(asYesNo(opt.data as string))} />
+                </div>
+              </PanelSectionRow>
+            )}
           </PanelSection>
         </div>
 
-        {/* fixed footer */}
+        {/* footer */}
         <div style={{ flexShrink: 0, padding: '8px 16px', borderTop: '1px solid #2a3a4a' }}>
-          <DialogButton onClick={handleSave} disabled={!!installing}>
-            {installing ? strings.common.loading : strings.editReport.saveEdits}
-          </DialogButton>
+          <DialogButton onClick={handleSave}>{strings.editReport.saveEdits}</DialogButton>
         </div>
       </div>
     </ModalRoot>

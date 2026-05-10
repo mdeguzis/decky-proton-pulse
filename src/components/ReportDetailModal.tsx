@@ -8,6 +8,7 @@ import type { SystemInfo } from '../types';
 import type { DisplayReportCard } from './ReportCard';
 import type { EditedReportEntry } from './tabs/ConfigureTab';
 import { ConfigEditorModal } from './ConfigEditorModal';
+import { EditReportModal } from './EditReportModal';
 import { ProtonDBSubmitModal } from './ProtonDBSubmitModal';
 import {
   RATING_COLORS,
@@ -1166,6 +1167,15 @@ export function ReportDetailModal({
     );
   };
 
+  const handleEditResponses = () => {
+    showModal(
+      <EditReportModal
+        report={report}
+        onSave={(entry) => { onSaveEdit(entry); closeModal?.(); }}
+      />,
+    );
+  };
+
   const handleUploadToProtonDB = () => {
     void logFrontendEvent('INFO', 'ReportDetail: Opening ProtonDB submit modal', {
       appId,
@@ -1427,9 +1437,7 @@ export function ReportDetailModal({
             {applying ? <SteamSpinner /> : t().detail.apply}
           </PpDialogButton>
           <PpDialogButton
-            onClick={handleEditConfig}
-            disabled={!canApply}
-            title={!canApply ? t().detail.applyRequiresLibrary : undefined}
+            onClick={handleEditResponses}
             ref={(node) => {
               editButtonRef.current = node;
             }}
@@ -1438,7 +1446,7 @@ export function ReportDetailModal({
             }}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
-            {t().detail.edit}
+            Edit Responses
           </PpDialogButton>
           <PpDialogButton
             onClick={handleUpload}

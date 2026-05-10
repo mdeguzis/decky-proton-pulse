@@ -14,6 +14,7 @@
     "src/components/ProtonDBSubmitModal.tsx",
     "src/components/ReportCard.tsx",
     "src/components/ReportDetailModal.tsx",
+    "src/components/ScoringGuideModal.tsx",
     "src/components/tabs/AboutTab.tsx",
     "src/components/tabs/CompatibilityToolsTab.tsx",
     "src/components/tabs/ConfigureTab.tsx",
@@ -27,5 +28,314 @@
     "src/patches/gamePageBadge.tsx",
     "src/patches/searchResultsHint.tsx"
   ],
-  "findings": []
+  "findings": [
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 83,
+      "column": 25,
+      "kind": "string",
+      "text": "Yes"
+    },
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 193,
+      "column": 76,
+      "kind": "jsx",
+      "text": "Edit Responses"
+    },
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 217,
+      "column": 17,
+      "kind": "jsx",
+      "text": "How Scoring Works"
+    },
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 228,
+      "column": 95,
+      "kind": "jsx",
+      "text": "Install &amp; Startup"
+    },
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 232,
+      "column": 37,
+      "kind": "string",
+      "text": "Were you able to install the game?"
+    },
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 237,
+      "column": 37,
+      "kind": "string",
+      "text": "Were you able to start up the game?"
+    },
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 242,
+      "column": 37,
+      "kind": "string",
+      "text": "Were you able to begin playing?"
+    },
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 248,
+      "column": 95,
+      "kind": "jsx",
+      "text": "Technical Details"
+    },
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 265,
+      "column": 95,
+      "kind": "jsx",
+      "text": "Verdict"
+    },
+    {
+      "file": "src/components/EditReportModal.tsx",
+      "line": 275,
+      "column": 39,
+      "kind": "string",
+      "text": "Does it work without any tinkering (out of the box)?"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 125,
+      "column": 25,
+      "kind": "string",
+      "text": "Yes"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 181,
+      "column": 31,
+      "kind": "string",
+      "text": "Default Proton (current)"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 182,
+      "column": 31,
+      "kind": "string",
+      "text": "Glorious Eggroll (GE)"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 183,
+      "column": 31,
+      "kind": "string",
+      "text": "Switched to an older version"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 184,
+      "column": 31,
+      "kind": "string",
+      "text": "Native - No Proton"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 185,
+      "column": 31,
+      "kind": "string",
+      "text": "Not Listed"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 499,
+      "column": 15,
+      "kind": "jsx",
+      "text": "How Scoring Works"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 519,
+      "column": 32,
+      "kind": "string",
+      "text": "Install and Startup"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 521,
+      "column": 19,
+      "kind": "string",
+      "text": "Were you able to install the game?"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 529,
+      "column": 23,
+      "kind": "string",
+      "text": "Were you able to start up the game and view its initial menu?"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 539,
+      "column": 23,
+      "kind": "string",
+      "text": "Were you able to begin playing?"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 552,
+      "column": 17,
+      "kind": "jsx",
+      "text": "The game failed to install or start. Your report will be submitted as Borked."
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 556,
+      "column": 25,
+      "kind": "string",
+      "text": "Notes (optional)"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 557,
+      "column": 31,
+      "kind": "string",
+      "text": "Describe what went wrong during install or startup."
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 569,
+      "column": 36,
+      "kind": "string",
+      "text": "Proton and Tinkering"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 576,
+      "column": 25,
+      "kind": "string",
+      "text": "Which Proton version did you use?"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 598,
+      "column": 19,
+      "kind": "jsx",
+      "text": "Are you using any of these common tinkering methods?"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 612,
+      "column": 36,
+      "kind": "string",
+      "text": "Technical Details"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 640,
+      "column": 36,
+      "kind": "string",
+      "text": "Multiplayer (optional)"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 642,
+      "column": 23,
+      "kind": "string",
+      "text": "Did you try to play multiplayer online?"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 649,
+      "column": 23,
+      "kind": "string",
+      "text": "Did you try to play multiplayer locally (couch play)?"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 657,
+      "column": 36,
+      "kind": "string",
+      "text": "Verdict"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 670,
+      "column": 25,
+      "kind": "string",
+      "text": "Did the game run out of the box without any tweaks required?"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 680,
+      "column": 19,
+      "kind": "jsx",
+      "text": "Your report will be classified as a tinker report.\n                  Have you also tried playing with default Steam/Proton without any tinkering?"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 1449,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Edit Responses"
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 59,
+      "column": 76,
+      "kind": "jsx",
+      "text": "How Scoring Works"
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 61,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Close"
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 68,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Your Yes/No answers determine the rating automatically."
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 77,
+      "column": 108,
+      "kind": "jsx",
+      "text": "Fault questions"
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 79,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Each \"Yes\" to a fault question (performance, graphical, windowing, audio, input, stability, save game, significant bugs) counts as 1 fault. The total determines Silver, Bronze, or Gold."
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 82,
+      "column": 108,
+      "kind": "jsx",
+      "text": "Out-of-the-box question"
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 84,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Only shown when verdict is Yes and no faults are reported. Answering Yes elevates Gold to Platinum."
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 87,
+      "column": 108,
+      "kind": "jsx",
+      "text": "Quick reference"
+    },
+    {
+      "file": "src/patches/gamePageBadge.tsx",
+      "line": 224,
+      "column": 17,
+      "kind": "string",
+      "text": "Native Linux build available"
+    }
+  ]
 }

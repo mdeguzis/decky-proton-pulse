@@ -47,6 +47,7 @@ export interface TranslationTree {
   common: {
     save: string;
     cancel: string;
+    confirm: string;
     remove: string;
     loading: string;
     error: string;
@@ -397,6 +398,7 @@ export interface TranslationTree {
     cloudRestoreSuccess: string;
     cloudRestoreNoBackup: string;
     cloudRestoreAvailable: string;
+    cloudRestoreConfirm: string;
     cloudAutoSync: string;
     cloudAutoSyncDescription: string;
     uploadPreviewTitle: string;
@@ -438,6 +440,18 @@ export interface TranslationTree {
     durationOneToFour: string;
     durationFourToTen: string;
     durationOverTen: string;
+    verdictQuestion: string;
+    derivedRatingLabel: string;
+    faultPerformance: string;
+    faultGraphical: string;
+    faultWindowing: string;
+    faultAudio: string;
+    faultInput: string;
+    faultStability: string;
+    faultSaveGame: string;
+    faultSignificantBugs: string;
+    answerYes: string;
+    answerNo: string;
   };
   protondbSubmit: {
     title: string;
@@ -641,6 +655,7 @@ export const en: TranslationTree = {
   common: {
     save: 'Save',
     cancel: 'Cancel',
+    confirm: 'Confirm',
     remove: 'Remove',
     loading: 'Loading...',
     error: 'Error',
@@ -991,6 +1006,7 @@ export const en: TranslationTree = {
     cloudRestoreSuccess: 'Config restored from cloud',
     cloudRestoreNoBackup: 'No cloud backup found for this game',
     cloudRestoreAvailable: 'Cloud backups found. Restore them from Configurations.',
+    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
     cloudAutoSync: 'Auto-sync configs to cloud',
     cloudAutoSyncDescription: 'Automatically back up your configurations when they are saved.',
     uploadPreviewTitle: 'Config Upload Preview',
@@ -1032,6 +1048,18 @@ export const en: TranslationTree = {
     durationOneToFour: '1 - 4 hours',
     durationFourToTen: '4 - 10 hours',
     durationOverTen: 'Over 10 hours',
+    verdictQuestion: 'Would a typical gamer enjoy playing this game on Linux as you\'ve played it?',
+    derivedRatingLabel: 'Derived rating',
+    faultPerformance: 'Did you experience unexpected slowness given your hardware?',
+    faultGraphical: 'Did you notice any graphical degradations?',
+    faultWindowing: 'Did you experience any problems with windowing or fullscreen?',
+    faultAudio: 'Did you experience any problems with audio?',
+    faultInput: 'Did you experience any problems with your mouse, gamepad or other input devices?',
+    faultStability: 'Did you experience any stability issues?',
+    faultSaveGame: 'Did you experience any problems with save games?',
+    faultSignificantBugs: 'Did you experience any other significant bugs?',
+    answerYes: 'Yes',
+    answerNo: 'No',
   },
   protondbSubmit: {
     title: 'Submit to ProtonDB',

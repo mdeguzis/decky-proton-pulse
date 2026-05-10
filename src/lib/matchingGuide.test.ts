@@ -20,8 +20,9 @@ describe('matchingGuide', () => {
   it('builds all matching guide sections with populated tiers', () => {
     const rules = buildMatchingRules();
 
-    expect(rules).toHaveLength(8);
+    expect(rules).toHaveLength(9);
     expect(rules.map((section) => section.field)).toEqual([
+      'Rating Derivation (Compatibility Reports)',
       'Overall Relevance Score',
       'GPU Model',
       'GPU Driver',
@@ -43,7 +44,7 @@ describe('matchingGuide', () => {
   });
 
   it('reflects current scoring constants in the rule copy', () => {
-    const overall = buildMatchingRules()[0];
+    const overall = buildMatchingRules()[1];
 
     expect(overall.tiers[0].note).toContain(`Platinum=${WEIGHTS.BASE_MAX}`);
     expect(overall.tiers[1].note).toContain(String(WEIGHTS.RECENCY_RECENT));

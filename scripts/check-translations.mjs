@@ -21,6 +21,16 @@ const SKIP_KEYS = new Set([
   'compatTools.zipPlaceholder',
   'manage.protondbConfig',
   'configManager.customToggleBadge',
+  'nativeReport.verdictQuestion',
+  'nativeReport.derivedRatingLabel',
+  'nativeReport.faultPerformance',
+  'nativeReport.faultGraphical',
+  'nativeReport.faultWindowing',
+  'nativeReport.faultAudio',
+  'nativeReport.faultInput',
+  'nativeReport.faultStability',
+  'nativeReport.faultSaveGame',
+  'nativeReport.faultSignificantBugs',
 ]);
 
 const LANGUAGES = [
