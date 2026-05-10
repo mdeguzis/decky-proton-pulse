@@ -32,6 +32,7 @@ export const WEIGHTS = {
   NOTES_MAX: 10,           // cap on the sentiment modifier from user notes
   PROTON_MATCH: 8,         // bonus for same Proton major version as user's build
   PROTON_CLOSE: 4,         // bonus for adjacent Proton major version
+  SOURCE_PULSE_PENALTY: -5, // native Pulse reports are weighted below ProtonDB CDN/live reports
 } as const;
 
 const RATING_SCORES: Record<string, number> = {
@@ -48,6 +49,69 @@ export function scoreToMatchTier(score: number): ProtonRating {
   if (score >= 40) return 'silver';
   if (score >= 20) return 'bronze';
   return 'borked';
+}
+
+// --- Rating derivation (mirrors ProtonDB's inferLiveRating exactly) ---
+//
+// This is the canonical algorithm for deriving a ProtonRating from form
+// responses. It is used by NativePulseReportModal (native submissions) and
+// by protondb.ts (normalizing live ProtonDB API reports). Both use the same
+// logic so that Pulse and ProtonDB ratings are directly comparable.
+//
+// Weights / thresholds live in WEIGHTS above. The full table is in
+// src/data/scoring-info.json under "ratingDerivation".
+
+export type YesNo = 'yes' | 'no';
+
+export const FAULT_KEYS = [
+  'performanceFaults',
+  'graphicalFaults',
+  'windowingFaults',
+  'audioFaults',
+  'inputFaults',
+  'stabilityFaults',
+  'saveGameFaults',
+  'significantBugs',
+] as const;
+export type FaultKey = typeof FAULT_KEYS[number];
+
+export interface ReportResponses {
+  // Install & Startup (borked if any is 'no')
+  canInstall?: YesNo | null;
+  canStart?: YesNo | null;
+  canPlay?: YesNo | null;
+  // Technical faults (each 'yes' counts toward fault total)
+  performanceFaults?: YesNo | null;
+  graphicalFaults?: YesNo | null;
+  windowingFaults?: YesNo | null;
+  audioFaults?: YesNo | null;
+  inputFaults?: YesNo | null;
+  stabilityFaults?: YesNo | null;
+  saveGameFaults?: YesNo | null;
+  significantBugs?: YesNo | null;
+  // Final verdict
+  verdict?: YesNo | null;
+  verdictOob?: YesNo | null; // "did it run out of the box?" -> platinum if yes + 0 faults
+  triedOob?: YesNo | null;   // ProtonDB alias for the same question on tinker reports
+}
+
+export function deriveRating(r: ReportResponses): ProtonRating | null {
+  // Install/startup failures immediately = borked
+  if (r.canInstall === 'no' || r.canStart === 'no' || r.canPlay === 'no') return 'borked';
+
+  const verdict = r.verdict;
+  if (!verdict) return null;
+  if (verdict === 'no') return 'borked';
+
+  const faultCount = FAULT_KEYS.reduce(
+    (n, k) => (r[k] === 'yes' ? n + 1 : n),
+    0,
+  );
+  if (faultCount >= 3) return 'bronze';
+  if (faultCount === 2) return 'silver';
+  if (faultCount === 1) return 'gold';
+  if (r.verdictOob === 'yes' || r.triedOob === 'yes') return 'platinum';
+  return 'gold';
 }
 
 const CUSTOM_PROTON_MARKERS = ['ge', 'cachyos', 'tkg', 'protonplus', 'experimental'];
@@ -913,8 +977,12 @@ export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredRepor
   }
 
   // GPU multiplier scales everything except the notes sentiment modifier,
-  // so a mismatched GPU report still gets credit for good/bad user feedback
-  const raw = (ratingScore + recencyBonus + customBonus + protonBonus) * gpuMult * distroMult * kernelMult + notesModifier;
+  // so a mismatched GPU report still gets credit for good/bad user feedback.
+  // Native Pulse reports (source='user') get a small penalty because ProtonDB
+  // has a much larger report base and higher aggregate confidence. This penalty
+  // is temporary -- see scoring-info.json SOURCE_PULSE_PENALTY note.
+  const sourcePenalty = report.source === 'user' ? WEIGHTS.SOURCE_PULSE_PENALTY : 0;
+  const raw = (ratingScore + recencyBonus + customBonus + protonBonus) * gpuMult * distroMult * kernelMult + notesModifier + sourcePenalty;
 
   return {
     ...report,

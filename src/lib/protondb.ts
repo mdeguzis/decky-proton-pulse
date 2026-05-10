@@ -14,6 +14,7 @@ import { getCached, setCache } from "./cache";
 import { cachedFetchJson } from "./cdnCache";
 import { startDetailedSpan, countFetch } from "./metrics";
 import { getUserConfigs } from "./userConfigs";
+import { deriveRating } from "./scoring";
 
 // TODO: replace GitHub Pages with a proper CDN (CloudFlare R2, Fastly, etc)
 // for better reliability, caching headers, and reduced latency
@@ -28,16 +29,7 @@ const LIVE_REPORTS_URL =
   "https://www.protondb.com/data/reports/{device}/app/{hash}.json";
 const LIVE_REPORT_DEVICE = "all-devices";
 const LIVE_REPORT_HASH_DEVICE = "any";
-const LIVE_REPORT_FAULT_KEYS = [
-  "audioFaults",
-  "graphicalFaults",
-  "inputFaults",
-  "performanceFaults",
-  "saveGameFaults",
-  "significantBugs",
-  "stabilityFaults",
-  "windowingFaults",
-] as const;
+
 
 export interface ReportFetchDiagnostics {
   source: "cdn" | "live-detailed" | "live-summary" | "pulse-live" | "none";
@@ -225,32 +217,30 @@ function inferLiveRating(
   responses: Record<string, unknown> | null,
 ): ProtonRating {
   const verdict = normalizeWhitespace(responses?.verdict).toLowerCase();
-  if (!verdict) {
-    return "pending";
-  }
-  if (verdict === "no") {
-    return "borked";
-  }
-  if (verdict !== "yes") {
-    return "pending";
-  }
+  if (!verdict || (verdict !== "yes" && verdict !== "no")) return "pending";
 
-  const faultCount = LIVE_REPORT_FAULT_KEYS.reduce((count, key) => (
-    responses?.[key] === "yes" ? count + 1 : count
-  ), 0);
-  if (faultCount >= 3) {
-    return "bronze";
-  }
-  if (faultCount === 2) {
-    return "silver";
-  }
-  if (faultCount === 1) {
-    return "gold";
-  }
-  if (responses?.triedOob === "yes" || responses?.verdictOob === "yes") {
-    return "platinum";
-  }
-  return "gold";
+  // Delegate to the shared deriveRating in scoring.ts so both ProtonDB live
+  // reports and native Pulse submissions use exactly the same algorithm.
+  const yesNo = (v: unknown): 'yes' | 'no' | null =>
+    v === 'yes' ? 'yes' : v === 'no' ? 'no' : null;
+
+  const derived = deriveRating({
+    canInstall: yesNo(responses?.canInstall),
+    canStart: yesNo(responses?.canStart),
+    canPlay: yesNo(responses?.canPlay),
+    verdict: verdict === 'yes' ? 'yes' : 'no',
+    verdictOob: yesNo(responses?.verdictOob),
+    triedOob: yesNo(responses?.triedOob),
+    performanceFaults: yesNo(responses?.performanceFaults),
+    graphicalFaults: yesNo(responses?.graphicalFaults),
+    windowingFaults: yesNo(responses?.windowingFaults),
+    audioFaults: yesNo(responses?.audioFaults),
+    inputFaults: yesNo(responses?.inputFaults),
+    stabilityFaults: yesNo(responses?.stabilityFaults),
+    saveGameFaults: yesNo(responses?.saveGameFaults),
+    significantBugs: yesNo(responses?.significantBugs),
+  });
+  return derived ?? "pending";
 }
 
 function normalizeLiveDetailedReports(
@@ -520,6 +510,7 @@ async function fetchLivePulseReports(appId: string, reason: string): Promise<Cdn
       rating:        r.rating as ProtonRating,
       timestamp:     r.created_at ? new Date(r.created_at).getTime() : Date.now(),
       reportId:      r.id ?? null,
+      source:        'user', // marks as native Pulse so scoring can apply SOURCE_PULSE_PENALTY
     } satisfies CdnReport));
   } catch (err) {
     await logFrontendEvent("WARNING", "Live Pulse report fetch failed", { appId, reason, error: String(err) });

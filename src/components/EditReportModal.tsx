@@ -17,7 +17,6 @@ import { formatProtonLabel } from '../lib/reportFormatters';
 import { logFrontendEvent } from '../lib/logger';
 import { t } from '../lib/i18n';
 
-const RATING_OPTIONS = ['platinum', 'gold', 'silver', 'bronze', 'borked', 'pending'] as const;
 
 export interface VersionOption {
   value: string;          // tag_name or internal_name -- used as dropdown data
@@ -117,7 +116,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
   const strings = t();
   const [label, setLabel]               = useState('');
   const [protonVersion, setProtonVersion] = useState(report.protonVersion);
-  const [rating, setRating]             = useState(report.rating);
+  const rating                          = report.rating; // derived from original report answers, not editable
   const [gpu, setGpu]                   = useState(report.gpu);
   const [gpuDriver, setGpuDriver]       = useState(report.gpuDriver);
   const [os, setOs]                     = useState(report.os);
@@ -211,7 +210,6 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
     });
     setLabel('');
     setProtonVersion(report.protonVersion);
-    setRating(report.rating);
     setGpu(report.gpu);
     setGpuDriver(report.gpuDriver);
     setOs(report.os);
@@ -252,11 +250,6 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
   const dropdownOptions = versionOptions.map((opt) => ({
     data: opt.value,
     label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
-  }));
-
-  const ratingOptions = RATING_OPTIONS.map((value) => ({
-    data: value,
-    label: strings.ratings[value],
   }));
 
   return (
@@ -328,12 +321,22 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
               )}
             </PanelSectionRow>
             <PanelSectionRow>
-              <DropdownItem
-                label={strings.editReport.rating}
-                rgOptions={ratingOptions}
-                selectedOption={rating}
-                onChange={(opt) => setRating(opt.data)}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                <span style={{ fontSize: 11, color: '#7a9bb5' }}>{strings.editReport.rating}:</span>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  background: rating === 'platinum' ? '#e5e7eb' : rating === 'gold' ? '#fbbf24' : rating === 'silver' ? '#9ca3af' : rating === 'bronze' ? '#92400e' : '#7f1d1d',
+                  color: rating === 'borked' || rating === 'bronze' ? '#fff' : '#111',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                }}>
+                  {rating}
+                </span>
+                <span style={{ fontSize: 10, color: '#4a6a8a' }}>(from original report)</span>
+              </div>
             </PanelSectionRow>
             <PanelSectionRow>
               <TextField

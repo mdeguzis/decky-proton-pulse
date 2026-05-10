@@ -74,6 +74,7 @@ export interface UserConfigInput {
   cpuCores?: number | null;
   displayResolution?: string | null;
   steamDeckModel?: string | null;
+  formResponses?: Record<string, unknown>; // ProtonDB-format form answers for algorithm replay
 }
 
 export interface UserConfigRow {
@@ -97,6 +98,7 @@ export interface UserConfigRow {
   confidence_score: number | null;
   source: string;
   created_at: string;
+  form_responses?: Record<string, unknown> | null;
 }
 
 // --- Validation ---
@@ -212,6 +214,7 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
         cpu_cores: input.cpuCores ?? null,
         display_resolution: input.displayResolution ?? null,
         steam_deck_model: input.steamDeckModel ?? null,
+        form_responses: input.formResponses ?? null,
       }),
     }, { on_conflict: 'client_id,app_id' });
 

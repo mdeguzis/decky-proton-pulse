@@ -20,7 +20,8 @@
     "BORKED_DECAY_DAYS": 365,
     "NOTES_MAX": 10,
     "PROTON_MATCH": 8,
-    "PROTON_CLOSE": 4
+    "PROTON_CLOSE": 4,
+    "SOURCE_PULSE_PENALTY": -5
   },
   "ratingScores": {
     "platinum": 1.0,
@@ -52,5 +53,26 @@
     "perfect", "flawless", "works great", "no issues", "out of the box",
     "excellent", "runs perfectly", "zero issues", "works flawlessly"
   ],
-  "formula": "(rating + recency + customProton + protonMatch) * gpuMult * osMult * kernelMult + notesSentiment"
+  "formula": "(rating + recency + customProton + protonMatch) * gpuMult * osMult * kernelMult + notesSentiment + sourcePenalty",
+  "sourcePenaltyNote": "Native Pulse reports (source='user') receive SOURCE_PULSE_PENALTY=-5 until the Pulse report base grows enough to match ProtonDB's confidence. ProtonDB CDN and live reports receive no penalty. See Architecture.md for details.",
+  "ratingDerivation": {
+    "_note": "Canonical algorithm in src/lib/scoring.ts:deriveRating(). Mirrors ProtonDB's inferLiveRating exactly. Rating is never chosen manually -- always derived from structured form answers.",
+    "_source": "src/lib/scoring.ts deriveRating (canonical) -- imported by NativePulseReportModal and protondb.ts inferLiveRating",
+    "installAndStartup": {
+      "_note": "If any of these are 'no', the report is immediately borked regardless of other answers.",
+      "canInstall": "yes/no",
+      "canStart": "yes/no",
+      "canPlay": "yes/no"
+    },
+    "faultKeys": ["performanceFaults", "graphicalFaults", "windowingFaults", "audioFaults", "inputFaults", "stabilityFaults", "saveGameFaults", "significantBugs"],
+    "verdictNo": "borked",
+    "verdictYes": {
+      "faults_3_or_more": "bronze",
+      "faults_2": "silver",
+      "faults_1": "gold",
+      "faults_0_with_oob": "platinum",
+      "faults_0_without_oob": "gold"
+    },
+    "tinkeringNote": "Tinkering (GE proton, winetricks, etc.) does not cap the rating by itself. A tinker report can still reach platinum if verdictOob='yes' (the user confirmed it also works without tinkering)."
+  }
 }
