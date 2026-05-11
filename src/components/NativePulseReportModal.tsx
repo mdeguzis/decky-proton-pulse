@@ -250,7 +250,9 @@ export function NativePulseReportModal({
   const refCanPlay          = useRef<HTMLDivElement | null>(null);
   const refProtonType       = useRef<HTMLDivElement | null>(null);
   const refProtonVersion    = useRef<HTMLDivElement | null>(null);
-  const refVerdict          = useRef<HTMLDivElement | null>(null);
+  const refMultiplayer         = useRef<HTMLDivElement | null>(null);
+  const refLocalMultiplayer    = useRef<HTMLDivElement | null>(null);
+  const refVerdict             = useRef<HTMLDivElement | null>(null);
   // One ref per fault question, same order as FAULT_KEYS
   const faultRefs           = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -330,6 +332,7 @@ export function NativePulseReportModal({
   const [os,       setOs]       = useState<ValidOS | ''>(mapDistroToValidOS(sysInfo?.distro ?? null));
   const [submitting, setSubmitting] = useState(false);
   const [error,    setError]    = useState<string | null>(null);
+  const [scoringBtnFocused, setScoringBtnFocused] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
   const autoDurationActive = !!autoDuration && autoDuration !== 'unreported';
@@ -489,23 +492,48 @@ export function NativePulseReportModal({
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', padding: '12px 16px 0' }}>
         {/* Header -- pinned, always visible as user scrolls questions */}
-        <div style={{ flexShrink: 0, borderBottom: '1px solid #2a3a4a', paddingBottom: 8, marginBottom: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 3 }}>
+        <div style={{ flexShrink: 0, padding: '10px 0 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2a3a4a', marginBottom: 8 }}>
+          <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#e8f4ff' }}>{t().nativeReport.title}</div>
-            <DialogButton
-              onClick={() => showModal(<ScoringGuideModal />)}
-              style={{ fontSize: 11, padding: '2px 8px', minWidth: 0, width: 'auto', flexShrink: 0, fontWeight: 700, letterSpacing: '0.03em' }}
-            >
-              How Scoring Works
-            </DialogButton>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+            <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 2 }}>
               {appName}{isShortcut && resolvedSteamAppId
                 ? ` . Non-Steam (Steam app id: ${resolvedSteamAppId})`
                 : (appId ? ` . App ${appId}` : '')}
             </div>
-            <DerivedRatingBadge rating={installFailed ? 'borked' : derivedRating} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {(() => {
+              const r = installFailed ? 'borked' : derivedRating;
+              return (
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 4,
+                  background: r ? (RATING_COLORS[r] ?? '#555') : '#2a3a4a',
+                  color: r ? (TIER_TEXT_COLOR[r] ?? '#fff') : '#7a9bb5',
+                  letterSpacing: '0.05em', textTransform: 'uppercase',
+                  border: r ? 'none' : '1px solid #3a4a5a',
+                  display: 'inline-flex', alignItems: 'center',
+                }}>
+                  {r ? `Rating: ${r}` : 'Rating: Pending'}
+                </span>
+              );
+            })()}
+            <div
+              onFocus={() => setScoringBtnFocused(true)}
+              onBlur={() => setScoringBtnFocused(false)}
+              style={{
+                borderRadius: 4,
+                border: `1px solid ${scoringBtnFocused ? '#7ec8f8' : 'transparent'}`,
+                boxShadow: scoringBtnFocused ? '0 0 0 2px #7ec8f8, 0 0 8px #3a8fd0' : 'none',
+                transition: 'box-shadow 0.15s, border-color 0.15s',
+              }}
+            >
+              <DialogButton
+                onClick={() => showModal(<ScoringGuideModal />)}
+                style={{ fontSize: 11, padding: '2px 8px', minWidth: 0, width: 'auto', fontWeight: 700, letterSpacing: '0.03em', background: '#1e4a7a', color: '#7ec8f8', border: '1px solid #2a6aaa' }}
+              >
+                How Scoring Works
+              </DialogButton>
+            </div>
           </div>
         </div>
 
@@ -629,7 +657,7 @@ export function NativePulseReportModal({
                       setFieldErrors(p => ({ ...p, [key]: false }));
                       setError(null);
                       if (faultRefs.current[i + 1]) scrollToRef({ current: faultRefs.current[i + 1] }, `fault[${i + 1}]`);
-                      else scrollToRef(refVerdict, 'verdict');
+                      else scrollToRef(refMultiplayer, 'multiplayer');
                     }}
                     hasError={!!fieldErrors[key]}
                   />
@@ -637,21 +665,25 @@ export function NativePulseReportModal({
               ))}
 
               {/* ===== Multiplayer (optional) ===== */}
-              <SectionHeader label="Multiplayer (optional)" />
-              <YesNoDropdown
-                label="Did you try to play multiplayer online?"
-                value={onlineMultiplayer}
-                onChange={setOnlineMultiplayer}
-                hasError={false}
-                required={false}
-              />
-              <YesNoDropdown
-                label="Did you try to play multiplayer locally (couch play)?"
-                value={localMultiplayer}
-                onChange={setLocalMultiplayer}
-                hasError={false}
-                required={false}
-              />
+              <div ref={refMultiplayer}>
+                <SectionHeader label="Multiplayer (optional)" />
+                <YesNoDropdown
+                  label="Did you try to play multiplayer online?"
+                  value={onlineMultiplayer}
+                  onChange={(v) => { setOnlineMultiplayer(v); scrollToRef(refLocalMultiplayer, 'localMultiplayer'); }}
+                  hasError={false}
+                  required={false}
+                />
+              </div>
+              <div ref={refLocalMultiplayer}>
+                <YesNoDropdown
+                  label="Did you try to play multiplayer locally (couch play)?"
+                  value={localMultiplayer}
+                  onChange={(v) => { setLocalMultiplayer(v); scrollToRef(refVerdict, 'verdict'); }}
+                  hasError={false}
+                  required={false}
+                />
+              </div>
 
               {/* ===== Verdict ===== */}
               <SectionHeader label="Verdict" />

@@ -143,126 +143,126 @@
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 499,
-      "column": 15,
+      "line": 534,
+      "column": 17,
       "kind": "jsx",
       "text": "How Scoring Works"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 519,
+      "line": 547,
       "column": 32,
       "kind": "string",
       "text": "Install and Startup"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 521,
+      "line": 549,
       "column": 19,
       "kind": "string",
       "text": "Were you able to install the game?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 529,
+      "line": 557,
       "column": 23,
       "kind": "string",
       "text": "Were you able to start up the game and view its initial menu?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 539,
+      "line": 567,
       "column": 23,
       "kind": "string",
       "text": "Were you able to begin playing?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 552,
+      "line": 580,
       "column": 17,
       "kind": "jsx",
       "text": "The game failed to install or start. Your report will be submitted as Borked."
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 556,
+      "line": 584,
       "column": 25,
       "kind": "string",
       "text": "Notes (optional)"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 557,
+      "line": 585,
       "column": 31,
       "kind": "string",
       "text": "Describe what went wrong during install or startup."
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 569,
+      "line": 597,
       "column": 36,
       "kind": "string",
       "text": "Proton and Tinkering"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 576,
+      "line": 604,
       "column": 25,
       "kind": "string",
       "text": "Which Proton version did you use?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 598,
+      "line": 626,
       "column": 19,
       "kind": "jsx",
       "text": "Are you using any of these common tinkering methods?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 612,
+      "line": 640,
       "column": 36,
       "kind": "string",
       "text": "Technical Details"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 640,
-      "column": 36,
+      "line": 669,
+      "column": 38,
       "kind": "string",
       "text": "Multiplayer (optional)"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 642,
-      "column": 23,
+      "line": 671,
+      "column": 25,
       "kind": "string",
       "text": "Did you try to play multiplayer online?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 649,
-      "column": 23,
+      "line": 680,
+      "column": 25,
       "kind": "string",
       "text": "Did you try to play multiplayer locally (couch play)?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 657,
+      "line": 689,
       "column": 36,
       "kind": "string",
       "text": "Verdict"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 670,
+      "line": 702,
       "column": 25,
       "kind": "string",
       "text": "Did the game run out of the box without any tweaks required?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 680,
+      "line": 712,
       "column": 19,
       "kind": "jsx",
       "text": "Your report will be classified as a tinker report.\n                  Have you also tried playing with default Steam/Proton without any tinkering?"

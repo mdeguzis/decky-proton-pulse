@@ -18,24 +18,24 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/NativePulseReportModal.tsx` | 183 | string | Switched to an older version |
 | `src/components/NativePulseReportModal.tsx` | 184 | string | Native - No Proton |
 | `src/components/NativePulseReportModal.tsx` | 185 | string | Not Listed |
-| `src/components/NativePulseReportModal.tsx` | 499 | jsx | How Scoring Works |
-| `src/components/NativePulseReportModal.tsx` | 519 | string | Install and Startup |
-| `src/components/NativePulseReportModal.tsx` | 521 | string | Were you able to install the game? |
-| `src/components/NativePulseReportModal.tsx` | 529 | string | Were you able to start up the game and view its initial menu? |
-| `src/components/NativePulseReportModal.tsx` | 539 | string | Were you able to begin playing? |
-| `src/components/NativePulseReportModal.tsx` | 552 | jsx | The game failed to install or start. Your report will be submitted as Borked. |
-| `src/components/NativePulseReportModal.tsx` | 556 | string | Notes (optional) |
-| `src/components/NativePulseReportModal.tsx` | 557 | string | Describe what went wrong during install or startup. |
-| `src/components/NativePulseReportModal.tsx` | 569 | string | Proton and Tinkering |
-| `src/components/NativePulseReportModal.tsx` | 576 | string | Which Proton version did you use? |
-| `src/components/NativePulseReportModal.tsx` | 598 | jsx | Are you using any of these common tinkering methods? |
-| `src/components/NativePulseReportModal.tsx` | 612 | string | Technical Details |
-| `src/components/NativePulseReportModal.tsx` | 640 | string | Multiplayer (optional) |
-| `src/components/NativePulseReportModal.tsx` | 642 | string | Did you try to play multiplayer online? |
-| `src/components/NativePulseReportModal.tsx` | 649 | string | Did you try to play multiplayer locally (couch play)? |
-| `src/components/NativePulseReportModal.tsx` | 657 | string | Verdict |
-| `src/components/NativePulseReportModal.tsx` | 670 | string | Did the game run out of the box without any tweaks required? |
-| `src/components/NativePulseReportModal.tsx` | 680 | jsx | Your report will be classified as a tinker report.
+| `src/components/NativePulseReportModal.tsx` | 534 | jsx | How Scoring Works |
+| `src/components/NativePulseReportModal.tsx` | 547 | string | Install and Startup |
+| `src/components/NativePulseReportModal.tsx` | 549 | string | Were you able to install the game? |
+| `src/components/NativePulseReportModal.tsx` | 557 | string | Were you able to start up the game and view its initial menu? |
+| `src/components/NativePulseReportModal.tsx` | 567 | string | Were you able to begin playing? |
+| `src/components/NativePulseReportModal.tsx` | 580 | jsx | The game failed to install or start. Your report will be submitted as Borked. |
+| `src/components/NativePulseReportModal.tsx` | 584 | string | Notes (optional) |
+| `src/components/NativePulseReportModal.tsx` | 585 | string | Describe what went wrong during install or startup. |
+| `src/components/NativePulseReportModal.tsx` | 597 | string | Proton and Tinkering |
+| `src/components/NativePulseReportModal.tsx` | 604 | string | Which Proton version did you use? |
+| `src/components/NativePulseReportModal.tsx` | 626 | jsx | Are you using any of these common tinkering methods? |
+| `src/components/NativePulseReportModal.tsx` | 640 | string | Technical Details |
+| `src/components/NativePulseReportModal.tsx` | 669 | string | Multiplayer (optional) |
+| `src/components/NativePulseReportModal.tsx` | 671 | string | Did you try to play multiplayer online? |
+| `src/components/NativePulseReportModal.tsx` | 680 | string | Did you try to play multiplayer locally (couch play)? |
+| `src/components/NativePulseReportModal.tsx` | 689 | string | Verdict |
+| `src/components/NativePulseReportModal.tsx` | 702 | string | Did the game run out of the box without any tweaks required? |
+| `src/components/NativePulseReportModal.tsx` | 712 | jsx | Your report will be classified as a tinker report.
                   Have you also tried playing with default Steam/Proton without any tinkering? |
 | `src/components/ReportDetailModal.tsx` | 1449 | jsx | Edit Responses |
 | `src/components/ScoringGuideModal.tsx` | 59 | jsx | How Scoring Works |

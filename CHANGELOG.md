@@ -2,6 +2,13 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.2.1
+
+- NativePulseReportModal: auto-advance from significantBugs to multiplayer section
+- NativePulseReportModal: auto-advance online multiplayer -> local multiplayer -> verdict
+- NativePulseReportModal: rating badge always visible as "Rating: Pending" until calculated
+- NativePulseReportModal: restore focus glow on "How Scoring Works" button
+
 ## v1.2.0
 
 - NativePulseReportModal: fullscreen layout, auto-scroll with focus advance through all questions
@@ -15,6 +22,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Fullscreen submit modal, auto-scroll, scoring guide, compat tool prefill
 - ProtonDB form parity, consolidated deriveRating, source penalty
 - Cleanup
 - Sync release-derived files for 1.0.0
