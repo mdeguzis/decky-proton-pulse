@@ -5,7 +5,7 @@ export const zhTW: TranslationTree = {
   common: {
     save: '儲存',
     cancel: '取消',
-    confirm: 'Confirm',
+    confirm: '確認',
     remove: '移除',
     loading: '載入中...',
     error: '錯誤',
@@ -356,7 +356,7 @@ export const zhTW: TranslationTree = {
     cloudRestoreSuccess: '設定已從雲端還原',
     cloudRestoreNoBackup: '找不到此遊戲的雲端備份',
     cloudRestoreAvailable: '已找到雲端備份，請在設定中還原。',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: '這將以雲端版本覆蓋您的本地設定。是否繼續？',
     cloudAutoSync: '自動將設定同步至雲端',
     cloudAutoSyncDescription: '儲存設定時自動備份。',
     uploadPreviewTitle: '設定上傳預覽',

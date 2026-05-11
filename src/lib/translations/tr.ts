@@ -5,7 +5,7 @@ export const tr: TranslationTree = {
   common: {
     save: 'Kaydet',
     cancel: 'İptal',
-    confirm: 'Confirm',
+    confirm: 'Onayla',
     remove: 'Kaldır',
     loading: 'Yükleniyor...',
     error: 'Hata',
@@ -356,7 +356,7 @@ export const tr: TranslationTree = {
     cloudRestoreSuccess: 'Yapılandırma buluttan geri yüklendi',
     cloudRestoreNoBackup: 'Bu oyun için bulut yedeği bulunamadı',
     cloudRestoreAvailable: 'Bulut yedekleri bulundu. Bunları Yapılandırmalar bölümünden geri yükleyin.',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'Bu, yerel yapılandırmanızın üzerine bulut sürümü yazacaktır. Devam edilsin mi?',
     cloudAutoSync: 'Yapılandırmaları otomatik olarak bulutla senkronize et',
     cloudAutoSyncDescription: 'Yapılandırmalarınız kaydedildiğinde otomatik olarak yedekler.',
     uploadPreviewTitle: 'Yapılandırma Yükleme Önizlemesi',

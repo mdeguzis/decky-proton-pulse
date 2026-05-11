@@ -5,7 +5,7 @@ export const nl: TranslationTree = {
   common: {
     save: 'Opslaan',
     cancel: 'Annuleren',
-    confirm: 'Confirm',
+    confirm: 'Bevestigen',
     remove: 'Verwijderen',
     loading: 'Laden...',
     error: 'Fout',
@@ -356,7 +356,7 @@ export const nl: TranslationTree = {
     cloudRestoreSuccess: 'Configuratie hersteld vanuit cloud',
     cloudRestoreNoBackup: 'Geen cloudback-up gevonden voor dit spel',
     cloudRestoreAvailable: 'Cloudback-ups gevonden. Herstel ze onder Configuraties.',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'Dit overschrijft je lokale configuratie met de cloudversie. Doorgaan?',
     cloudAutoSync: 'Configuraties automatisch synchroniseren met cloud',
     cloudAutoSyncDescription: 'Maakt automatisch een back-up van configuraties wanneer ze worden opgeslagen.',
     uploadPreviewTitle: 'Voorbeeld configuratie-upload',

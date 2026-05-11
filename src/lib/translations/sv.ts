@@ -5,7 +5,7 @@ export const sv: TranslationTree = {
   common: {
     save: 'Spara',
     cancel: 'Avbryt',
-    confirm: 'Confirm',
+    confirm: 'Bekräfta',
     remove: 'Ta bort',
     loading: 'Laddar...',
     error: 'Fel',
@@ -356,7 +356,7 @@ export const sv: TranslationTree = {
     cloudRestoreSuccess: 'Konfiguration återställd från molnet',
     cloudRestoreNoBackup: 'Ingen molnsäkerhetskopia hittades för det här spelet',
     cloudRestoreAvailable: 'Molnsäkerhetskopior hittades. Återställ dem under Konfigurationer.',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'Detta skriver över din lokala konfiguration med molnversionen. Fortsätta?',
     cloudAutoSync: 'Synkronisera konfigurationer automatiskt med molnet',
     cloudAutoSyncDescription: 'Säkerhetskopierar automatiskt konfigurationer när de sparas.',
     uploadPreviewTitle: 'Förhandsgranskning av konfigurationsuppladdning',

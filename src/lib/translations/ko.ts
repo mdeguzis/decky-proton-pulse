@@ -5,7 +5,7 @@ export const ko: TranslationTree = {
   common: {
     save: '저장',
     cancel: '취소',
-    confirm: 'Confirm',
+    confirm: '확인',
     remove: '제거',
     loading: '불러오는 중...',
     error: '오류',
@@ -356,7 +356,7 @@ export const ko: TranslationTree = {
     cloudRestoreSuccess: '클라우드에서 설정을 복원했습니다',
     cloudRestoreNoBackup: '이 게임의 클라우드 백업이 없습니다',
     cloudRestoreAvailable: '클라우드 백업을 찾았습니다. 구성 관리에서 복원하세요.',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: '로컬 설정이 클라우드 버전으로 덮어씌워집니다. 계속하시겠습니까?',
     cloudAutoSync: '구성을 클라우드에 자동 동기화',
     cloudAutoSyncDescription: '구성을 저장할 때 자동으로 백업합니다.',
     uploadPreviewTitle: '구성 업로드 미리보기',

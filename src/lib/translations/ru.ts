@@ -5,7 +5,7 @@ export const ru: TranslationTree = {
   common: {
     save: 'Сохранить',
     cancel: 'Отмена',
-    confirm: 'Confirm',
+    confirm: 'Подтвердить',
     remove: 'Удалить',
     loading: 'Загрузка...',
     error: 'Ошибка',
@@ -386,7 +386,7 @@ export const ru: TranslationTree = {
     cloudRestoreSuccess: 'Конфиг восстановлен из облака',
     cloudRestoreNoBackup: 'Нет облачной копии для этой игры',
     cloudRestoreAvailable: 'Найдены облачные резервные копии. Восстановите их в разделе конфигураций.',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'Это перезапишет вашу локальную конфигурацию облачной версией. Продолжить?',
     cloudAutoSync: 'Автосинхронизация конфигураций с облаком',
     cloudAutoSyncDescription: 'Автоматически создаёт резервные копии конфигураций при сохранении.',
     uploadPreviewTitle: 'Предпросмотр загрузки конфигурации',

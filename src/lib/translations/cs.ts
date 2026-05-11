@@ -5,7 +5,7 @@ export const cs: TranslationTree = {
   common: {
     save: 'Uložit',
     cancel: 'Zrušit',
-    confirm: 'Confirm',
+    confirm: 'Potvrdit',
     remove: 'Odebrat',
     loading: 'Načítání...',
     error: 'Chyba',
@@ -356,7 +356,7 @@ export const cs: TranslationTree = {
     cloudRestoreSuccess: 'Konfigurace obnovena z cloudu',
     cloudRestoreNoBackup: 'Pro tuto hru nebyla nalezena žádná záloha v cloudu',
     cloudRestoreAvailable: 'Zálohy v cloudu nalezeny. Obnovte je v části Konfigurace.',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'Tím se přepíše vaše místní konfigurace cloudovou verzí. Pokračovat?',
     cloudAutoSync: 'Automaticky synchronizovat konfigurace s cloudem',
     cloudAutoSyncDescription: 'Automaticky zálohuje konfigurace při jejich uložení.',
     uploadPreviewTitle: 'Náhled nahrání konfigurace',

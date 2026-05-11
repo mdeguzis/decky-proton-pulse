@@ -5,7 +5,7 @@ export const th: TranslationTree = {
   common: {
     save: 'บันทึก',
     cancel: 'ยกเลิก',
-    confirm: 'Confirm',
+    confirm: 'ยืนยัน',
     remove: 'ลบออก',
     loading: 'กำลังโหลด...',
     error: 'ข้อผิดพลาด',
@@ -356,7 +356,7 @@ export const th: TranslationTree = {
     cloudRestoreSuccess: 'กู้คืนการตั้งค่าจากคลาวด์แล้ว',
     cloudRestoreNoBackup: 'ไม่พบข้อมูลสำรองในคลาวด์สำหรับเกมนี้',
     cloudRestoreAvailable: 'พบข้อมูลสำรองในคลาวด์ กู้คืนได้ในส่วนการตั้งค่า',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'การดำเนินการนี้จะเขียนทับการตั้งค่าในเครื่องด้วยเวอร์ชันคลาวด์ ดำเนินการต่อหรือไม่?',
     cloudAutoSync: 'ซิงค์การตั้งค่ากับคลาวด์โดยอัตโนมัติ',
     cloudAutoSyncDescription: 'สำรองการตั้งค่าโดยอัตโนมัติเมื่อบันทึก',
     uploadPreviewTitle: 'ตัวอย่างการอัปโหลดการตั้งค่า',

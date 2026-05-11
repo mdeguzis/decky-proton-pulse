@@ -5,7 +5,7 @@ export const vi: TranslationTree = {
   common: {
     save: 'Lưu',
     cancel: 'Hủy',
-    confirm: 'Confirm',
+    confirm: 'Xác nhận',
     remove: 'Xóa',
     loading: 'Đang tải...',
     error: 'Lỗi',
@@ -356,7 +356,7 @@ export const vi: TranslationTree = {
     cloudRestoreSuccess: 'Đã khôi phục cấu hình từ đám mây',
     cloudRestoreNoBackup: 'Không tìm thấy bản sao lưu đám mây cho trò chơi này',
     cloudRestoreAvailable: 'Tìm thấy bản sao lưu đám mây. Khôi phục trong phần Cấu hình.',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'Điều này sẽ ghi đè cấu hình cục bộ của bạn bằng phiên bản đám mây. Tiếp tục?',
     cloudAutoSync: 'Tự động đồng bộ cấu hình với đám mây',
     cloudAutoSyncDescription: 'Tự động sao lưu cấu hình khi được lưu.',
     uploadPreviewTitle: 'Xem trước tải cấu hình lên',

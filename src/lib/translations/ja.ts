@@ -5,7 +5,7 @@ export const ja: TranslationTree = {
   common: {
     save: '保存',
     cancel: 'キャンセル',
-    confirm: 'Confirm',
+    confirm: '確認',
     remove: '削除',
     loading: '読み込み中...',
     error: 'エラー',
@@ -356,7 +356,7 @@ export const ja: TranslationTree = {
     cloudRestoreSuccess: 'クラウドから設定を復元しました',
     cloudRestoreNoBackup: 'このゲームのクラウドバックアップはありません',
     cloudRestoreAvailable: 'クラウドバックアップが見つかりました。構成一覧から復元できます。',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'ローカル設定がクラウドバージョンで上書きされます。続行しますか？',
     cloudAutoSync: '構成をクラウドへ自動同期',
     cloudAutoSyncDescription: '構成を保存したときに自動でバックアップします。',
     uploadPreviewTitle: '設定アップロードのプレビュー',

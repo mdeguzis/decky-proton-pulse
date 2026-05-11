@@ -5,7 +5,7 @@ export const uk: TranslationTree = {
   common: {
     save: 'Зберегти',
     cancel: 'Скасувати',
-    confirm: 'Confirm',
+    confirm: 'Підтвердити',
     remove: 'Видалити',
     loading: 'Завантаження...',
     error: 'Помилка',
@@ -356,7 +356,7 @@ export const uk: TranslationTree = {
     cloudRestoreSuccess: 'Конфігурацію відновлено з хмари',
     cloudRestoreNoBackup: 'Резервна копія в хмарі для цієї гри не знайдена',
     cloudRestoreAvailable: 'Знайдено резервні копії в хмарі. Відновіть їх у розділі Конфігурації.',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'Це перезапише вашу локальну конфігурацію хмарною версією. Продовжити?',
     cloudAutoSync: 'Автоматична синхронізація конфігурацій з хмарою',
     cloudAutoSyncDescription: 'Автоматично резервує конфігурації при їх збереженні.',
     uploadPreviewTitle: 'Попередній перегляд завантаження конфігурації',

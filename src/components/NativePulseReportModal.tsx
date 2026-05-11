@@ -260,8 +260,8 @@ export function NativePulseReportModal({
     setTimeout(() => {
       const el = ref.current;
       const container = scrollContainerRef.current;
-      if (!el) { void logFrontendEvent('WARN', `NativePulseReport: scrollToRef [${label}] -- ref.current is null`); return; }
-      if (!container) { void logFrontendEvent('WARN', `NativePulseReport: scrollToRef [${label}] -- scrollContainerRef is null`); return; }
+      if (!el) { void logFrontendEvent('WARNING', `NativePulseReport: scrollToRef [${label}] -- ref.current is null`); return; }
+      if (!container) { void logFrontendEvent('WARNING', `NativePulseReport: scrollToRef [${label}] -- scrollContainerRef is null`); return; }
       const elTop = el.getBoundingClientRect().top;
       const containerTop = container.getBoundingClientRect().top;
       const delta = elTop - containerTop - 20;

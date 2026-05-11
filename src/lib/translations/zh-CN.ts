@@ -5,7 +5,7 @@ export const zhCN: TranslationTree = {
   common: {
     save: '保存',
     cancel: '取消',
-    confirm: 'Confirm',
+    confirm: '确认',
     remove: '移除',
     loading: '加载中...',
     error: '错误',
@@ -356,7 +356,7 @@ export const zhCN: TranslationTree = {
     cloudRestoreSuccess: '已从云端恢复配置',
     cloudRestoreNoBackup: '该游戏没有云端备份',
     cloudRestoreAvailable: '发现云端备份。可在“配置管理”中恢复。',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: '这将用云端版本覆盖您的本地配置。是否继续？',
     cloudAutoSync: '自动将配置同步到云端',
     cloudAutoSyncDescription: '保存配置时自动备份到云端。',
     uploadPreviewTitle: '配置上传预览',

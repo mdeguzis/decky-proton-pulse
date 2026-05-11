@@ -5,7 +5,7 @@ export const de: TranslationTree = {
   common: {
     save: 'Speichern',
     cancel: 'Abbrechen',
-    confirm: 'Confirm',
+    confirm: 'Bestätigen',
     remove: 'Entfernen',
     loading: 'Laden...',
     error: 'Fehler',
@@ -356,7 +356,7 @@ export const de: TranslationTree = {
     cloudRestoreSuccess: 'Konfiguration aus der Cloud wiederhergestellt',
     cloudRestoreNoBackup: 'Kein Cloud-Backup für dieses Spiel gefunden',
     cloudRestoreAvailable: 'Cloud-Sicherungen gefunden. Stellen Sie sie unter Konfigurationen wieder her.',
-    cloudRestoreConfirm: 'This will overwrite your local config with the cloud version. Continue?',
+    cloudRestoreConfirm: 'Dadurch wird deine lokale Konfiguration mit der Cloud-Version überschrieben. Fortfahren?',
     cloudAutoSync: 'Konfigurationen automatisch mit der Cloud synchronisieren',
     cloudAutoSyncDescription: 'Sichert Ihre Konfigurationen automatisch, wenn sie gespeichert werden.',
     uploadPreviewTitle: 'Vorschau des Konfigurations-Uploads',
