@@ -4,13 +4,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.2.1
 
-- Translate common.confirm and configManager.cloudRestoreConfirm for all 18 languages; fix WARN -> WARNING log level
-- Only force-push tag when user confirms replacement
-- Multiplayer auto-advance, rating badge, focus glow
-- Fullscreen submit modal, auto-scroll, scoring guide, compat tool prefill
-- ProtonDB form parity, consolidated deriveRating, source penalty
-- Cleanup
-- Sync release-derived files for 1.0.0
+- Sync release-derived files for 1.2.1
 
 ## v1.2.0
 
