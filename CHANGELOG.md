@@ -22,6 +22,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Only force-push tag when user confirms replacement
+- Multiplayer auto-advance, rating badge, focus glow
 - Fullscreen submit modal, auto-scroll, scoring guide, compat tool prefill
 - ProtonDB form parity, consolidated deriveRating, source penalty
 - Cleanup
