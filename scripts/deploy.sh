@@ -219,7 +219,7 @@ update_changelog_from_release_commits() {
 }
 
 ensure_release_tag() {
-  local target_commit existing_commit reply
+  local target_commit existing_commit reply force_flag=""
   target_commit="$(git rev-parse HEAD)"
   if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
     existing_commit="$(git rev-list -n1 "${RELEASE_TAG}")"
@@ -234,6 +234,7 @@ ensure_release_tag() {
       case "$reply" in
         y|Y|yes|YES)
           git tag -fa "${RELEASE_TAG}" -m "Proton Pulse ${RELEASE_TAG}"
+          force_flag="--force"
           ;;
         *)
           echo "Release cancelled because ${RELEASE_TAG} was not replaced."
@@ -246,7 +247,9 @@ ensure_release_tag() {
     echo "Created release tag ${RELEASE_TAG} at ${target_commit}."
   fi
 
-  git push origin "refs/tags/${RELEASE_TAG}" --force
+  # Only force-push when the user explicitly confirmed replacing an existing tag.
+  # New tags and already-correct tags push normally to avoid rewriting published history.
+  git push origin "refs/tags/${RELEASE_TAG}" $force_flag
 }
 
 push_release_branch() {
