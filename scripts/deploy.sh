@@ -676,13 +676,18 @@ if [[ -n "$STORE_MODE" ]]; then
   if [[ "$DRY_RUN" == "true" ]]; then
     echo "DRY_RUN=true: would push branch '$BRANCH' to $PLUGIN_DB_ORIGIN"
   else
-    echo "Pushing branch '$BRANCH' to fork..."
-    git -C "$PLUGIN_DB_DIR" push "$PLUGIN_DB_ORIGIN" "$BRANCH" --force-with-lease
-    echo ""
-    if [[ -n "$ACTIVE_PR_URL" ]]; then
-      echo "PR updated: $ACTIVE_PR_URL"
+    read -r -p "Push branch '$BRANCH' to fork and open PR? [y/N] " _push_confirm
+    if [[ "$_push_confirm" =~ ^[Yy]$ ]]; then
+      git -C "$PLUGIN_DB_DIR" push "$PLUGIN_DB_ORIGIN" "$BRANCH" --force-with-lease
+      echo ""
+      if [[ -n "$ACTIVE_PR_URL" ]]; then
+        echo "PR updated: $ACTIVE_PR_URL"
+      else
+        echo "Open PR at: https://github.com/SteamDeckHomebrew/decky-plugin-database/compare/main...mdeguzis:decky-plugin-database:${BRANCH}?expand=1"
+      fi
     else
-      echo "Open PR at: https://github.com/SteamDeckHomebrew/decky-plugin-database/compare/main...mdeguzis:decky-plugin-database:${BRANCH}?expand=1"
+      echo "Skipped. To push manually:"
+      echo "  cd $PLUGIN_DB_DIR && git push \"$PLUGIN_DB_ORIGIN\" $BRANCH"
     fi
   fi
 fi
