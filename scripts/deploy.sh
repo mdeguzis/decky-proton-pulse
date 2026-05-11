@@ -672,12 +672,18 @@ if [[ -n "$STORE_MODE" ]]; then
   echo ""
   echo "Done: branch '$BRANCH' ready at $PLUGIN_DB_DIR"
   echo ""
-  echo "Next steps:"
-  echo "  cd $PLUGIN_DB_DIR && git push origin $BRANCH"
-  if [[ -n "$ACTIVE_PR_URL" ]]; then
-    echo "  Existing PR should update in place: $ACTIVE_PR_URL"
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo "DRY_RUN=true: would push branch '$BRANCH' to $PLUGIN_DB_ORIGIN"
   else
-    echo "  Open or update PR: https://github.com/SteamDeckHomebrew/decky-plugin-database/pulls"
+    echo "Pushing branch '$BRANCH' to fork..."
+    git -C "$PLUGIN_DB_DIR" push "$PLUGIN_DB_ORIGIN" "$BRANCH" --force-with-lease
+    echo ""
+    if [[ -n "$ACTIVE_PR_URL" ]]; then
+      echo "PR updated: $ACTIVE_PR_URL"
+    else
+      echo "Open PR at: https://github.com/SteamDeckHomebrew/decky-plugin-database/compare/main...mdeguzis:decky-plugin-database:${BRANCH}?expand=1"
+    fi
   fi
 fi
 
