@@ -60,6 +60,24 @@
   "formula": "(rating + recency + customProton + protonMatch + playtimeConfidence) * gpuMult * osMult * kernelMult + notesSentiment + sourcePenalty",
   "sourcePenaltyNote": "Native Pulse reports (source='user') receive SOURCE_PULSE_PENALTY=-5 until the Pulse report base grows enough to match ProtonDB's confidence. ProtonDB CDN and live reports receive no penalty. See Architecture.md for details.",
   "playtimeConfidenceNote": "Reports that declare actual playtime earn a confidence bonus applied inside the GPU/OS/kernel multiplier bracket. Meaningful confidence starts at 2h (oneToFourHours=+6). Buckets: underOneHour=+3, oneToFourHours=+6, fourToTenHours=+9, overTenHours=+12. Reports with no playtime (unreported/empty) receive no bonus.",
+  "tiers": [
+    { "name": "platinum", "rule": "Can install, start, and play. No faults. Works out of the box without any tinkering." },
+    { "name": "gold",     "rule": "Can install, start, and play. No faults. Works but required tinkering (launch options, config, etc.)." },
+    { "name": "silver",   "rule": "Can install, start, and play. Exactly 2 faults reported (e.g. graphical + performance)." },
+    { "name": "bronze",   "rule": "Can install, start, and play. 3 or more faults. Playable but with significant issues." },
+    { "name": "borked",   "rule": "Cannot install, cannot start, cannot begin playing, or overall verdict is No." }
+  ],
+  "faultQuestionsDisplay": ["performance", "graphical", "windowing", "audio", "input", "stability", "save game", "significant bugs"],
+  "outOfBoxNote": "Only shown when verdict is Yes and no faults are reported. Answering Yes elevates Gold to Platinum.",
+  "quickReference": [
+    "0 faults + out-of-box Yes = Platinum",
+    "0 faults + out-of-box No  = Gold",
+    "1 fault                   = Gold",
+    "2 faults                  = Silver",
+    "3+ faults                 = Bronze",
+    "Can't play or verdict No  = Borked"
+  ],
+  "durationAutoFillNote": "When submitting from the plugin, duration is pre-filled from your actual playtime. Time logged with the active config is weighted 1.25x over total Steam playtime -- hours with that exact setup matter more than lifetime hours across all configs.",
   "ratingDerivation": {
     "_note": "Canonical algorithm in src/lib/scoring.ts:deriveRating(). Mirrors ProtonDB's inferLiveRating exactly. Rating is never chosen manually -- always derived from structured form answers.",
     "_source": "src/lib/scoring.ts deriveRating (canonical) -- imported by NativePulseReportModal and protondb.ts inferLiveRating",

@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { ModalRoot, Focusable, DialogButton } from '@decky/ui';
 import { GamepadButton, GamepadEvent } from '@decky/ui';
 import { RATING_COLORS } from '../lib/reportFormatters';
+import scoringInfo from '../data/scoring-info.json';
 
 const TIER_TEXT_COLOR: Record<string, string> = {
   platinum: '#111', gold: '#111', silver: '#111', bronze: '#fff', borked: '#fff',
@@ -68,30 +69,25 @@ export function ScoringGuideModal({ closeModal }: { closeModal?: () => void }) {
             Your Yes/No answers determine the rating automatically.
           </div>
 
-          <TierRow tier="platinum" rule="Can install, start, and play. No faults. Works out of the box without any tinkering." />
-          <TierRow tier="gold"     rule="Can install, start, and play. No faults. Works but required tinkering (launch options, config, etc.)." />
-          <TierRow tier="silver"   rule="Can install, start, and play. Exactly 2 faults reported (e.g. graphical + performance)." />
-          <TierRow tier="bronze"   rule="Can install, start, and play. 3 or more faults. Playable but with significant issues." />
-          <TierRow tier="borked"   rule="Cannot install, cannot start, cannot begin playing, or overall verdict is No." />
+          {scoringInfo.tiers.map(t => (
+            <TierRow key={t.name} tier={t.name} rule={t.rule} />
+          ))}
 
           <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 14, marginBottom: 4 }}>Fault questions</div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
-            Each "Yes" to a fault question (performance, graphical, windowing, audio, input, stability, save game, significant bugs) counts as 1 fault. The total determines Silver, Bronze, or Gold.
+            Each "Yes" to a fault question ({scoringInfo.faultQuestionsDisplay.join(', ')}) counts as 1 fault. The total determines Silver, Bronze, or Gold.
           </div>
 
           <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 14, marginBottom: 4 }}>Out-of-the-box question</div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
-            Only shown when verdict is Yes and no faults are reported. Answering Yes elevates Gold to Platinum.
+            {scoringInfo.outOfBoxNote}
           </div>
 
           <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 14, marginBottom: 4 }}>Quick reference</div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.8 }}>
-            {'0 faults + out-of-box Yes = Platinum'}<br />
-            {'0 faults + out-of-box No  = Gold'}<br />
-            {'1 fault                   = Gold'}<br />
-            {'2 faults                  = Silver'}<br />
-            {'3+ faults                 = Bronze'}<br />
-            {"Can't play or verdict No  = Borked"}
+            {scoringInfo.quickReference.map((line, i) => (
+              <span key={i}>{line}{i < scoringInfo.quickReference.length - 1 ? <br /> : null}</span>
+            ))}
           </div>
 
           <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 18, marginBottom: 4 }}>How reports are ranked</div>
@@ -113,7 +109,7 @@ export function ScoringGuideModal({ closeModal }: { closeModal?: () => void }) {
 
           <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 18, marginBottom: 4 }}>Duration auto-fill</div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
-            When publishing a report, the duration field is pre-filled from your actual playtime. Time logged with the active config is weighted 1.25x over total Steam playtime -- hours with this exact setup matter more than lifetime hours across all configs and Proton versions.
+            {scoringInfo.durationAutoFillNote}
           </div>
         </div>
       </Focusable>
