@@ -18,6 +18,13 @@ All notable changes to Proton Pulse should be recorded here.
 - ScoringGuideModal: new modal explaining how compatibility scores are calculated
 - i18n: new translation keys for all added UI strings
 
+## v1.2.2
+
+- fix(log): correct WARN to WARNING log level in NativePulseReportModal
+- fix(i18n): translate common.confirm and configManager.cloudRestoreConfirm for all 18 languages
+- fix(playtime): async getSteamPlaytimeForeverMinutes with RegisterForAppDetails fallback and GetAppOverviewByGameID source
+- chore(deploy): y/n prompt for PR push, detect existing PR title/author, clean fork sync
+
 ## Unreleased
 
 ## v1.0.0
