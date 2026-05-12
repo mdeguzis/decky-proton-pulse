@@ -582,28 +582,29 @@ if [[ -n "$STORE_MODE" ]]; then
 
   ACTIVE_PR_NUMBER=""
   ACTIVE_PR_URL=""
+  ACTIVE_PR_TITLE=""
+  ACTIVE_PR_AUTHOR=""
   if command -v gh >/dev/null 2>&1 && ! is_truthy "$DRY_RUN"; then
-    ACTIVE_PR_NUMBER="$(
+    _pr_json="$(
       gh pr list \
         --repo SteamDeckHomebrew/decky-plugin-database \
         --head "${BRANCH}" \
         --state open \
-        --json number \
-        --jq '.[0].number // ""' 2>/dev/null || true
+        --json number,url,title,author \
+        --jq '.[0] // empty' 2>/dev/null || true
     )"
-    ACTIVE_PR_URL="$(
-      gh pr list \
-        --repo SteamDeckHomebrew/decky-plugin-database \
-        --head "${BRANCH}" \
-        --state open \
-        --json url \
-        --jq '.[0].url // ""' 2>/dev/null || true
-    )"
+    if [[ -n "$_pr_json" ]]; then
+      ACTIVE_PR_NUMBER="$(echo "$_pr_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["number"])')"
+      ACTIVE_PR_URL="$(echo "$_pr_json"    | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["url"])')"
+      ACTIVE_PR_TITLE="$(echo "$_pr_json"  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["title"])')"
+      ACTIVE_PR_AUTHOR="$(echo "$_pr_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["author"]["login"])')"
+    fi
   fi
 
   echo "Database branch: $BRANCH"
   if [[ -n "$ACTIVE_PR_NUMBER" ]]; then
-    echo "Active Decky database PR detected: #${ACTIVE_PR_NUMBER} ${ACTIVE_PR_URL}"
+    echo "Active Decky database PR detected: #${ACTIVE_PR_NUMBER} \"${ACTIVE_PR_TITLE}\" by @${ACTIVE_PR_AUTHOR}"
+    echo "  ${ACTIVE_PR_URL}"
   else
     echo "No active Decky database PR detected for branch $BRANCH"
   fi
