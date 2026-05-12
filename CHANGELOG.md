@@ -18,6 +18,10 @@ All notable changes to Proton Pulse should be recorded here.
 - ScoringGuideModal: new modal explaining how compatibility scores are calculated
 - i18n: new translation keys for all added UI strings
 
+## v1.3.0
+
+- feat(scoring): playtime confidence bonus -- reports with >= 2h playtime rank higher (underOneHour=+3, oneToFourHours=+6, fourToTenHours=+9, overTenHours=+12)
+
 ## v1.2.2
 
 - fix(log): correct WARN to WARNING log level in NativePulseReportModal
