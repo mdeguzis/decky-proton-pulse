@@ -64,6 +64,7 @@ export interface UserConfigInput {
   kernel?: string;
   protonVersion: string;
   duration?: string;
+  durationMinutes?: number | null;
   rating: ProtonRating;
   notes?: string;
   launchOptions?: string;
@@ -92,6 +93,7 @@ export interface UserConfigRow {
   kernel: string;
   proton_version: string;
   duration: string;
+  duration_minutes?: number | null;
   rating: ProtonRating;
   notes: string;
   launch_options: string;
@@ -206,6 +208,7 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
         kernel: input.kernel ?? '',
         proton_version: input.protonVersion,
         duration: input.duration ?? 'unreported',
+        duration_minutes: input.durationMinutes ?? null,
         rating: input.rating,
         notes: input.notes ?? '',
         launch_options: input.launchOptions ?? '',

@@ -992,6 +992,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         sysInfo={systemInfo}
         protonVersion={protonVersion}
         autoDuration={autoDuration}
+        autoDurationMinutes={minutes}
         launchOptions={preview}
         configKey={configKey}
       />,

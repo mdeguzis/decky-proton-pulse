@@ -20,6 +20,7 @@ interface Props {
   sysInfo: SystemInfo | null;
   protonVersion?: string;
   autoDuration?: string;
+  autoDurationMinutes?: number;
   launchOptions?: string;
   configKey?: string;
   resolvedSteamAppId?: number | null;
@@ -232,7 +233,8 @@ const getDurations = (): { data: string; label: string }[] => [
 export function NativePulseReportModal({
   appId, appName, sysInfo,
   protonVersion: initialProton = '',
-  autoDuration, launchOptions: initialLaunchOptions = '',
+  autoDuration, autoDurationMinutes,
+  launchOptions: initialLaunchOptions = '',
   configKey,
   resolvedSteamAppId,
   closeModal,
@@ -447,6 +449,7 @@ export function NativePulseReportModal({
       notes:             installFailed ? (summary.trim() || 'Game failed to install or start.') : notes.trim(),
       launchOptions:     initialLaunchOptions || undefined,
       configKey:         configKey || undefined,
+      durationMinutes:   autoDurationMinutes ?? null,
       source:            'user',
       vramMb:            sysInfo.vram_mb ?? null,
       cpuCores:          sysInfo.cpu_cores ?? null,
