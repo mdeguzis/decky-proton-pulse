@@ -142,14 +142,14 @@ const PLAYTIME_FIELDS = [
   'playtime_forever',
 ];
 
-function extractPlaytimeMinutes(src: any): number {
-  if (!src || typeof src !== 'object') return 0;
+function extractPlaytimeMinutes(src: any): { minutes: number; field: string | null } {
+  if (!src || typeof src !== 'object') return { minutes: 0, field: null };
   for (const field of PLAYTIME_FIELDS) {
     const v = src[field];
     const n = typeof v === 'number' ? v : Number(v);
-    if (Number.isFinite(n) && n > 0) return Math.round(n);
+    if (Number.isFinite(n) && n > 0) return { minutes: Math.round(n), field };
   }
-  return 0;
+  return { minutes: 0, field: null };
 }
 
 // Lifetime playtime in minutes from Steam. Fast path reads the in-memory
@@ -160,19 +160,22 @@ export async function getSteamPlaytimeForeverMinutes(appId: number): Promise<num
   // and some client builds; GetAppOverviewByAppID is the more common name.
   const steamAppsOverview = getSteamAppOverview(appId);
   const appStore = (globalThis as any).appStore;
-  const appStoreById   = appStore?.GetAppOverviewByAppID?.(appId);
-  const appStoreByGame = appStore?.GetAppOverviewByGameID?.(appId);
-  for (const src of [steamAppsOverview, appStoreById, appStoreByGame]) {
-    const n = extractPlaytimeMinutes(src);
-    if (n > 0) {
-      void logFrontendEvent('DEBUG', 'getSteamPlaytimeForeverMinutes: found via overview', { appId, minutes: n });
-      return n;
+  const sources = [
+    { label: 'SteamClient.Apps.GetAppOverviewByAppID', src: steamAppsOverview },
+    { label: 'appStore.GetAppOverviewByAppID',         src: appStore?.GetAppOverviewByAppID?.(appId) },
+    { label: 'appStore.GetAppOverviewByGameID',        src: appStore?.GetAppOverviewByGameID?.(appId) },
+  ];
+  for (const { label, src } of sources) {
+    const { minutes, field } = extractPlaytimeMinutes(src);
+    if (minutes > 0) {
+      void logFrontendEvent('DEBUG', 'getSteamPlaytimeForeverMinutes: found via overview', { appId, minutes, source: label, field });
+      return minutes;
     }
   }
 
   // Slow path: RegisterForAppDetails
-  const { details } = await getSteamAppDetails(appId, 2000);
-  const n = extractPlaytimeMinutes(details);
-  void logFrontendEvent('DEBUG', 'getSteamPlaytimeForeverMinutes: details path', { appId, minutes: n, timedOut: !details });
-  return n;
+  const { details, timedOut } = await getSteamAppDetails(appId, 2000);
+  const { minutes, field } = extractPlaytimeMinutes(details);
+  void logFrontendEvent('DEBUG', 'getSteamPlaytimeForeverMinutes: details path', { appId, minutes, field, timedOut: timedOut ?? !details });
+  return minutes;
 }
