@@ -4,7 +4,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.2.1
 
-- Drop owner prefix from gh pr list --head to detect fork PRs correctly
+- Print PR title and author when existing PR detected
 - Decky Loader release submission.
 
 ## v1.2.0
