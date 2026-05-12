@@ -586,7 +586,7 @@ if [[ -n "$STORE_MODE" ]]; then
     ACTIVE_PR_NUMBER="$(
       gh pr list \
         --repo SteamDeckHomebrew/decky-plugin-database \
-        --head "mdeguzis:${BRANCH}" \
+        --head "${BRANCH}" \
         --state open \
         --json number \
         --jq '.[0].number // ""' 2>/dev/null || true
@@ -594,7 +594,7 @@ if [[ -n "$STORE_MODE" ]]; then
     ACTIVE_PR_URL="$(
       gh pr list \
         --repo SteamDeckHomebrew/decky-plugin-database \
-        --head "mdeguzis:${BRANCH}" \
+        --head "${BRANCH}" \
         --state open \
         --json url \
         --jq '.[0].url // ""' 2>/dev/null || true
