@@ -4,8 +4,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.2.1
 
-- Prompt y/n before pushing DB branch to fork
-- Auto-push DB fork branch and print PR link instead of manual step
+- Show existing PR number in push prompt
 - Decky Loader release submission.
 
 ## v1.2.0
