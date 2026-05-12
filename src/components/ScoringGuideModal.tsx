@@ -110,6 +110,11 @@ export function ScoringGuideModal({ closeModal }: { closeModal?: () => void }) {
           <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 8, lineHeight: 1.5 }}>
             Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours.
           </div>
+
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 18, marginBottom: 4 }}>Duration auto-fill</div>
+          <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
+            When publishing a report, the duration field is pre-filled from your actual playtime. Time logged with the active config is weighted 1.25x over total Steam playtime -- hours with this exact setup matter more than lifetime hours across all configs and Proton versions.
+          </div>
         </div>
       </Focusable>
     </ModalRoot>
