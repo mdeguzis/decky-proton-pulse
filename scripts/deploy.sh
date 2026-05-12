@@ -585,20 +585,10 @@ if [[ -n "$STORE_MODE" ]]; then
   ACTIVE_PR_TITLE=""
   ACTIVE_PR_AUTHOR=""
   if command -v gh >/dev/null 2>&1 && ! is_truthy "$DRY_RUN"; then
-    _pr_json="$(
-      gh pr list \
-        --repo SteamDeckHomebrew/decky-plugin-database \
-        --head "${BRANCH}" \
-        --state open \
-        --json number,url,title,author \
-        --jq '.[0] // empty' 2>/dev/null || true
-    )"
-    if [[ -n "$_pr_json" ]]; then
-      ACTIVE_PR_NUMBER="$(echo "$_pr_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["number"])')"
-      ACTIVE_PR_URL="$(echo "$_pr_json"    | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["url"])')"
-      ACTIVE_PR_TITLE="$(echo "$_pr_json"  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["title"])')"
-      ACTIVE_PR_AUTHOR="$(echo "$_pr_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["author"]["login"])')"
-    fi
+    ACTIVE_PR_NUMBER="$(gh pr list --repo SteamDeckHomebrew/decky-plugin-database --head "${BRANCH}" --state open --json number --jq '.[0].number // ""' 2>/dev/null || true)"
+    ACTIVE_PR_URL="$(gh pr list    --repo SteamDeckHomebrew/decky-plugin-database --head "${BRANCH}" --state open --json url    --jq '.[0].url // ""'    2>/dev/null || true)"
+    ACTIVE_PR_TITLE="$(gh pr list  --repo SteamDeckHomebrew/decky-plugin-database --head "${BRANCH}" --state open --json title  --jq '.[0].title // ""'  2>/dev/null || true)"
+    ACTIVE_PR_AUTHOR="$(gh pr list --repo SteamDeckHomebrew/decky-plugin-database --head "${BRANCH}" --state open --json author --jq '.[0].author.login // ""' 2>/dev/null || true)"
   fi
 
   echo "Database branch: $BRANCH"
