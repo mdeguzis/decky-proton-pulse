@@ -70,6 +70,7 @@ export interface UserConfigInput {
   enabledVars?: Record<string, string>;
   confidenceScore?: number | null;
   source?: 'user' | 'protondb' | 'protondb-local';
+  configKey?: string;
   vramMb?: number | null;
   cpuCores?: number | null;
   displayResolution?: string | null;
@@ -97,6 +98,7 @@ export interface UserConfigRow {
   enabled_vars: Record<string, string>;
   confidence_score: number | null;
   source: string;
+  config_key?: string | null;
   created_at: string;
   form_responses?: Record<string, unknown> | null;
 }
@@ -210,6 +212,7 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
         enabled_vars: input.enabledVars ?? {},
         confidence_score: input.confidenceScore ?? null,
         source: input.source ?? 'user',
+        config_key: input.configKey ?? null,
         vram_mb: input.vramMb ?? null,
         cpu_cores: input.cpuCores ?? null,
         display_resolution: input.displayResolution ?? null,

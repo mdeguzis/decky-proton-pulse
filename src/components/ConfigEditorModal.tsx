@@ -993,6 +993,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         protonVersion={protonVersion}
         autoDuration={autoDuration}
         launchOptions={preview}
+        configKey={configKey}
       />,
     );
   };

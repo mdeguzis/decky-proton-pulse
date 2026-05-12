@@ -21,6 +21,7 @@ interface Props {
   protonVersion?: string;
   autoDuration?: string;
   launchOptions?: string;
+  configKey?: string;
   resolvedSteamAppId?: number | null;
   closeModal?: () => void;
 }
@@ -232,6 +233,7 @@ export function NativePulseReportModal({
   appId, appName, sysInfo,
   protonVersion: initialProton = '',
   autoDuration, launchOptions: initialLaunchOptions = '',
+  configKey,
   resolvedSteamAppId,
   closeModal,
 }: Props) {
@@ -444,6 +446,7 @@ export function NativePulseReportModal({
       rating:            derivedRating,
       notes:             installFailed ? (summary.trim() || 'Game failed to install or start.') : notes.trim(),
       launchOptions:     initialLaunchOptions || undefined,
+      configKey:         configKey || undefined,
       source:            'user',
       vramMb:            sysInfo.vram_mb ?? null,
       cpuCores:          sysInfo.cpu_cores ?? null,
