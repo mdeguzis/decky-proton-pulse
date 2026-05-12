@@ -46,4 +46,10 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/ScoringGuideModal.tsx` | 82 | jsx | Out-of-the-box question |
 | `src/components/ScoringGuideModal.tsx` | 84 | jsx | Only shown when verdict is Yes and no faults are reported. Answering Yes elevates Gold to Platinum. |
 | `src/components/ScoringGuideModal.tsx` | 87 | jsx | Quick reference |
+| `src/components/ScoringGuideModal.tsx` | 97 | jsx | How reports are ranked |
+| `src/components/ScoringGuideModal.tsx` | 99 | jsx | Each report gets a relevance score so the most useful ones rise to the top. Factors: |
+| `src/components/ScoringGuideModal.tsx` | 111 | jsx | Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours. |
+| `src/components/tabs/ManageTab.tsx` | 563 | string | Active |
+| `src/components/tabs/ManageTab.tsx` | 565 | string | Playtime (total) |
+| `src/components/tabs/ManageTab.tsx` | 566 | string | Playtime (this config) |
 | `src/patches/gamePageBadge.tsx` | 224 | string | Native Linux build available |

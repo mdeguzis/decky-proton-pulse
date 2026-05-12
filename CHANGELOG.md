@@ -18,6 +18,16 @@ All notable changes to Proton Pulse should be recorded here.
 - ScoringGuideModal: new modal explaining how compatibility scores are calculated
 - i18n: new translation keys for all added UI strings
 
+## v1.4.0
+
+- feat(playtime): event-based game detection via RegisterForAppLifetimeNotifications with poll fallback
+- feat(playtime): config-specific playtime weighted 1.25x in getEffectivePlaytimeMinutes
+- feat(manage): Active (yes/no) row in config info modal, color-coded green/amber
+- feat(manage): Playtime (this config) row in info modal
+- feat(manage): Apply option in context menu for quick config reapply
+- fix(playtime): getTrackedConfigs import missing caused poll fallback errors
+- fix(playtime): poll no longer falsely ends session when event listener is active
+
 ## v1.3.0
 
 - feat(scoring): playtime confidence bonus -- reports with >= 2h playtime rank higher (underOneHour=+3, oneToFourHours=+6, fourToTenHours=+9, overTenHours=+12)
@@ -30,6 +40,13 @@ All notable changes to Proton Pulse should be recorded here.
 - chore(deploy): y/n prompt for PR push, detect existing PR title/author, clean fork sync
 
 ## Unreleased
+
+- Bump to v1.3.0
+- Add playtime confidence bonus to report ranking
+- Log source name and field in getSteamPlaytimeForeverMinutes
+- Bump to v1.2.2
+- Also try appStore.GetAppOverviewByGameID per NonSteamPlaytime plugin pattern
+- Make getSteamPlaytimeForeverMinutes async with RegisterForAppDetails fallback so playtime is always fetched
 
 ## v1.0.0
 

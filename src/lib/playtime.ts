@@ -1,11 +1,11 @@
 // src/lib/playtime.ts
-// Polls SteamClient.GameSessions.GetRunningApps() to detect game start/stop,
-// then submits session duration to Supabase config_playtime table.
+// Detects game start/stop via RegisterForAppLifetimeNotifications (event-based),
+// with a poll fallback, then submits session duration to Supabase config_playtime table.
 // Uses the same anonymous voter_id from the voting system so playtime
 // and votes are tied to the same identity.
 
 import { getVoterId, restRequest } from './voting';
-import { getTrackedConfig } from './trackedConfigs';
+import { getTrackedConfig, getTrackedConfigs } from './trackedConfigs';
 import type { TrackedConfig } from './trackedConfigs';
 import { logFrontendEvent } from './logger';
 import { getSteamPlaytimeForeverMinutes } from './steamApps';
@@ -22,11 +22,12 @@ interface ActiveSession {
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let lifetimeUnregister: (() => void) | null = null;
 let activeSession: ActiveSession | null = null;
 
 // build a config_key that matches report_key for protondb configs,
 // or a prefixed key for user-created configs
-function buildConfigKey(cfg: TrackedConfig): string {
+export function buildConfigKey(cfg: TrackedConfig): string {
   if (cfg.source === 'user') {
     return `custom:${cfg.profileName || cfg.appName}`;
   }
@@ -35,15 +36,44 @@ function buildConfigKey(cfg: TrackedConfig): string {
   return `${cfg.appliedAt}_${cfg.protonVersion}`;
 }
 
+// Tries every known API for fetching currently running app IDs.
+// GetRunningApps is undefined on some Steam client builds; fall back to
+// checking each tracked config's app overview running state.
 function getRunningAppIds(): number[] {
   try {
     const sessions = (SteamClient as any).GameSessions?.GetRunningApps?.();
-    if (!Array.isArray(sessions)) return [];
-    // each entry has an appid field
-    return sessions
-      .map((s: any) => typeof s === 'number' ? s : s?.appid ?? s?.appId ?? 0)
-      .filter((id: number) => id > 0);
-  } catch {
+    if (Array.isArray(sessions)) {
+      const ids = sessions
+        .map((s: any) => typeof s === 'number' ? s : s?.appid ?? s?.appId ?? 0)
+        .filter((id: number) => id > 0);
+      void logFrontendEvent('DEBUG', 'getRunningAppIds: via GetRunningApps', { ids });
+      return ids;
+    }
+  } catch (e) {
+    void logFrontendEvent('DEBUG', 'getRunningAppIds: GetRunningApps threw', { error: e instanceof Error ? e.message : String(e) });
+  }
+
+  // Fallback: scan each tracked config's app overview for a running flag.
+  try {
+    const appStore = (globalThis as any).appStore;
+    const tracked = getTrackedConfigs();
+    const ids: number[] = [];
+    for (const cfg of tracked) {
+      const overview = appStore?.GetAppOverviewByAppID?.(cfg.appId)
+        ?? appStore?.GetAppOverviewByGameID?.(cfg.appId);
+      // bIsRunning or per_client_data[0].status indicates an active game process
+      const running =
+        overview?.bIsRunning === true ||
+        overview?.per_client_data?.[0]?.status === 2 ||
+        overview?.per_client_data?.[0]?.bIsLocallyInstalled === true && overview?.per_client_data?.[0]?.status === 2;
+      if (running) ids.push(cfg.appId);
+    }
+    if (ids.length > 0) {
+      void logFrontendEvent('DEBUG', 'getRunningAppIds: via appStore overview', { ids });
+    }
+    return ids;
+  } catch (e) {
+    void logFrontendEvent('DEBUG', 'getRunningAppIds: overview fallback threw', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -167,8 +197,9 @@ function pollRunningApps(): void {
   const running = getRunningAppIds();
 
   if (activeSession) {
-    // check if the tracked game stopped
-    if (!running.includes(activeSession.appId)) {
+    // When the event listener is active it owns stop detection -- don't let
+    // a failed/empty poll result falsely end the session.
+    if (!lifetimeUnregister && !running.includes(activeSession.appId)) {
       const session = activeSession;
       activeSession = null;
       void onGameStopped(session);
@@ -185,13 +216,50 @@ function pollRunningApps(): void {
       break;  // only track one game at a time
     }
   }
+  if (running.length > 0) {
+    const trackedIds = running.filter((id) => !!getTrackedConfig(id));
+    if (trackedIds.length === 0) {
+      void logFrontendEvent('DEBUG', 'pollRunningApps: running games have no tracked config', { running });
+    }
+  }
 }
 
 export function startSessionTracking(): void {
   if (pollTimer) return;
   void logFrontendEvent('INFO', 'Playtime session tracking started');
+
+  // Primary: event-based via RegisterForAppLifetimeNotifications.
+  // Fires immediately when a game starts or stops -- no 30s poll lag.
+  try {
+    const reg = (SteamClient as any).GameSessions?.RegisterForAppLifetimeNotifications?.(
+      (data: { unAppID: number; bRunning: boolean }) => {
+        const appId = data.unAppID;
+        void logFrontendEvent('DEBUG', 'AppLifetimeNotification', { appId, bRunning: data.bRunning });
+        if (data.bRunning) {
+          if (activeSession) return; // already tracking another game
+          const cfg = getTrackedConfig(appId);
+          if (cfg) void onGameStarted(appId, cfg);
+        } else {
+          if (activeSession?.appId === appId) {
+            const session = activeSession;
+            activeSession = null;
+            void onGameStopped(session);
+          }
+        }
+      },
+    );
+    lifetimeUnregister = reg?.unregister ?? null;
+    void logFrontendEvent('INFO', 'Playtime: registered for AppLifetimeNotifications', {
+      available: !!lifetimeUnregister,
+    });
+  } catch (e) {
+    void logFrontendEvent('DEBUG', 'Playtime: RegisterForAppLifetimeNotifications unavailable', {
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  // Fallback: poll every 30s in case the event API is unavailable.
   pollTimer = setInterval(pollRunningApps, POLL_INTERVAL_MS);
-  // run immediately on start too
   pollRunningApps();
 }
 
@@ -199,6 +267,10 @@ export function stopSessionTracking(): void {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
+  }
+  if (lifetimeUnregister) {
+    try { lifetimeUnregister(); } catch { /* ignore */ }
+    lifetimeUnregister = null;
   }
   // if a game is still running when the plugin unloads, finalize the session
   if (activeSession) {
@@ -268,29 +340,67 @@ export async function getMyAccumulatedMinutes(appId: string | number): Promise<n
   }
 }
 
+// Minutes THIS user has logged for a specific config (voter_id + app_id + config_key).
+// Used by the config info modal to show "time played with this config active".
+export async function getMyConfigPlaytimeMinutes(appId: string | number, configKey: string): Promise<number> {
+  try {
+    const voterId = await getVoterId();
+    const { data, error } = await restRequest<{ duration_minutes: number }[]>('config_playtime', {
+      method: 'GET',
+    }, {
+      select: 'duration_minutes',
+      voter_id: `eq.${voterId}`,
+      app_id: `eq.${appId}`,
+      config_key: `eq.${configKey}`,
+    });
+    if (error || !data) return 0;
+    const total = data.reduce((sum, r) => sum + (r.duration_minutes || 0), 0);
+    void logFrontendEvent('DEBUG', 'getMyConfigPlaytimeMinutes', { appId, configKey, total });
+    return total;
+  } catch (err) {
+    void logFrontendEvent('ERROR', 'Failed to fetch config playtime', {
+      appId, configKey, error: err instanceof Error ? err.message : String(err),
+    });
+    return 0;
+  }
+}
+
 // Best-effort playtime for the duration picker. The plugin's own tracker only
 // knows about sessions it observed, so for a game the user played before
 // installing Proton Pulse we'd show 0. Steam's lifetime playtime (the "PLAY
 // TIME" number on the library page) covers everything, so take the max of
-// the two so the duration bucket auto-fills even on the first report.
+// the sources so the duration bucket auto-fills even on the first report.
+//
+// configKey is optional. When provided, config-specific playtime is fetched
+// and weighted 1.25x because time spent with this exact config is more
+// meaningful than overall game playtime across all setups.
 export interface EffectivePlaytime {
   minutes: number;
-  trackedMinutes: number;   // what config_playtime has for this user+app
+  trackedMinutes: number;   // what config_playtime has for this user+app (all configs)
   steamMinutes: number;     // Steam's minutes_playtime_forever
+  configMinutes: number;    // minutes with this specific config active (0 if no configKey given)
 }
 
-export async function getEffectivePlaytimeMinutes(appId: string | number): Promise<EffectivePlaytime> {
+export async function getEffectivePlaytimeMinutes(
+  appId: string | number,
+  configKey?: string,
+): Promise<EffectivePlaytime> {
   const numericAppId = typeof appId === 'number' ? appId : Number(appId);
-  const [trackedMinutes, steamMinutes] = await Promise.all([
+  const [trackedMinutes, steamMinutes, configMinutes] = await Promise.all([
     getMyAccumulatedMinutes(appId),
     Number.isFinite(numericAppId) && numericAppId > 0
       ? getSteamPlaytimeForeverMinutes(numericAppId)
       : Promise.resolve(0),
+    configKey ? getMyConfigPlaytimeMinutes(appId, configKey) : Promise.resolve(0),
   ]);
+  // Config-specific playtime weighted 1.25x -- time with this exact setup is
+  // more relevant than total game time across all configs and Proton versions.
+  const weightedConfig = configMinutes > 0 ? Math.round(configMinutes * 1.25) : 0;
   return {
-    minutes: Math.max(trackedMinutes, steamMinutes),
+    minutes: Math.max(weightedConfig, trackedMinutes, steamMinutes),
     trackedMinutes,
     steamMinutes,
+    configMinutes,
   };
 }
 

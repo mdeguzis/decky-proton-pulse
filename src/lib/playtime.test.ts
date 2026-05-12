@@ -431,7 +431,7 @@ describe('playtime', () => {
       const { getEffectivePlaytimeMinutes } = await import('./playtime');
       const result = await getEffectivePlaytimeMinutes(321);
 
-      expect(result).toEqual({ minutes: 12, trackedMinutes: 0, steamMinutes: 12 });
+      expect(result).toEqual({ minutes: 12, trackedMinutes: 0, steamMinutes: 12, configMinutes: 0 });
     });
 
     it('returns the max of plugin-tracked and Steam lifetime minutes', async () => {
@@ -446,7 +446,7 @@ describe('playtime', () => {
       const result = await getEffectivePlaytimeMinutes(1_284_410);
 
       expect(mockGetSteamPlaytimeForeverMinutes).toHaveBeenCalledWith(1_284_410);
-      expect(result).toEqual({ minutes: 56, trackedMinutes: 7, steamMinutes: 56 });
+      expect(result).toEqual({ minutes: 56, trackedMinutes: 7, steamMinutes: 56, configMinutes: 0 });
     });
 
     it('prefers tracked minutes when Steam reports a smaller number', async () => {
@@ -460,7 +460,7 @@ describe('playtime', () => {
       const { getEffectivePlaytimeMinutes } = await import('./playtime');
       const result = await getEffectivePlaytimeMinutes('900');
 
-      expect(result).toEqual({ minutes: 120, trackedMinutes: 120, steamMinutes: 45 });
+      expect(result).toEqual({ minutes: 120, trackedMinutes: 120, steamMinutes: 45, configMinutes: 0 });
     });
 
     it('returns zeros when tracked fails and Steam has no data', async () => {
@@ -470,7 +470,7 @@ describe('playtime', () => {
       const { getEffectivePlaytimeMinutes } = await import('./playtime');
       const result = await getEffectivePlaytimeMinutes(42);
 
-      expect(result).toEqual({ minutes: 0, trackedMinutes: 0, steamMinutes: 0 });
+      expect(result).toEqual({ minutes: 0, trackedMinutes: 0, steamMinutes: 0, configMinutes: 0 });
     });
 
     it('skips the Steam lookup when appId is not a positive number', async () => {
@@ -479,7 +479,25 @@ describe('playtime', () => {
       const result = await getEffectivePlaytimeMinutes('not-a-number');
 
       expect(mockGetSteamPlaytimeForeverMinutes).not.toHaveBeenCalled();
-      expect(result).toEqual({ minutes: 0, trackedMinutes: 0, steamMinutes: 0 });
+      expect(result).toEqual({ minutes: 0, trackedMinutes: 0, steamMinutes: 0, configMinutes: 0 });
+    });
+
+    it('weights config-specific minutes 1.25x and prefers them over Steam total', async () => {
+      vi.resetModules();
+      const { restRequest: rr } = await import('./voting');
+      const mockRr = vi.mocked(rr);
+      // getMyAccumulatedMinutes returns 30, getMyConfigPlaytimeMinutes returns 80
+      mockRr.mockImplementation(async (_table, _req, query) => {
+        if ((query as any)?.config_key) return { data: [{ duration_minutes: 80 }], error: null, status: 200 };
+        return { data: [{ duration_minutes: 30 }], error: null, status: 200 };
+      });
+      mockGetSteamPlaytimeForeverMinutes.mockResolvedValueOnce(60);
+      const { getEffectivePlaytimeMinutes } = await import('./playtime');
+      const result = await getEffectivePlaytimeMinutes(321, 'some-config-key');
+
+      // 80 * 1.25 = 100, which beats trackedMinutes=30 and steamMinutes=60
+      expect(result.configMinutes).toBe(80);
+      expect(result.minutes).toBe(100);
     });
   });
 

@@ -93,6 +93,23 @@ export function ScoringGuideModal({ closeModal }: { closeModal?: () => void }) {
             {'3+ faults                 = Bronze'}<br />
             {"Can't play or verdict No  = Borked"}
           </div>
+
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 18, marginBottom: 4 }}>How reports are ranked</div>
+          <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
+            Each report gets a relevance score so the most useful ones rise to the top. Factors:
+          </div>
+          <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.8, marginTop: 6 }}>
+            {'1. Rating -- Platinum=60 pts down to Borked=0'}<br />
+            {'2. Recency -- <90 days: +15 | 90-365: +5 | >1yr: -5'}<br />
+            {'3. Custom Proton (GE, CachyOS, etc.) -- +10'}<br />
+            {'4. Proton version match -- same major: +8 | adjacent: +4'}<br />
+            {'5. Playtime confidence -- <1h: +3 | 1-4h: +6 | 4-10h: +9 | 10h+: +12'}<br />
+            {'6. GPU/OS/kernel multipliers scale the above total'}<br />
+            {'7. Notes sentiment -- positive/negative keywords (+/-10 cap)'}
+          </div>
+          <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 8, lineHeight: 1.5 }}>
+            Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours.
+          </div>
         </div>
       </Focusable>
     </ModalRoot>

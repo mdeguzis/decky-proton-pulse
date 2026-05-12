@@ -331,6 +331,48 @@
       "text": "Quick reference"
     },
     {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 97,
+      "column": 108,
+      "kind": "jsx",
+      "text": "How reports are ranked"
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 99,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Each report gets a relevance score so the most useful ones rise to the top. Factors:"
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 111,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours."
+    },
+    {
+      "file": "src/components/tabs/ManageTab.tsx",
+      "line": 563,
+      "column": 18,
+      "kind": "string",
+      "text": "Active"
+    },
+    {
+      "file": "src/components/tabs/ManageTab.tsx",
+      "line": 565,
+      "column": 18,
+      "kind": "string",
+      "text": "Playtime (total)"
+    },
+    {
+      "file": "src/components/tabs/ManageTab.tsx",
+      "line": 566,
+      "column": 18,
+      "kind": "string",
+      "text": "Playtime (this config)"
+    },
+    {
       "file": "src/patches/gamePageBadge.tsx",
       "line": 224,
       "column": 17,

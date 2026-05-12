@@ -10,7 +10,7 @@ import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } 
 import { ConfigEditorModal } from '../ConfigEditorModal';
 import { NativePulseReportModal } from '../NativePulseReportModal';
 import { callable } from '@decky/api';
-import { getCompatToolForApp, getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
+import { getCompatToolForApp, getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
 
 const _getGridArtwork = callable<[number], { dataUrl: string | null }>('get_grid_artwork');
 async function getGridArtworkDataUrl(appId: number): Promise<string | null> {
@@ -33,7 +33,7 @@ import { getVoterId } from '../../lib/voting';
 import { getLinkedProtonPulseUserId } from '../../lib/protonPulseAccount';
 import { getSetting } from '../../lib/settings';
 import { clearEditedReports, getEditedReportIndex, removeFromEditedReportIndex, upsertEditedReportIndex, type EditedReportIndexEntry } from './ConfigureTab';
-import { bucketPlaytimeMinutes, getEffectivePlaytimeMinutes } from '../../lib/playtime';
+import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } from '../../lib/playtime';
 
 const PpTextField = TextField as React.ComponentType<React.ComponentProps<typeof TextField> & { placeholder?: string; value?: string; onChange?: React.ChangeEventHandler<HTMLInputElement>; style?: React.CSSProperties }>;
 
@@ -350,6 +350,22 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
     );
   };
 
+  const handleReapply = async (config: TrackedConfig) => {
+    try {
+      await SteamClient.Apps.SetAppLaunchOptions(config.appId, config.launchOptions);
+      addTrackedConfig({ ...config, appliedAt: Date.now() });
+      void logFrontendEvent('INFO', 'Config reapplied from manage menu', {
+        appId: config.appId, appName: displayName(config), launchOptions: config.launchOptions,
+      });
+      toaster.toast({ title: 'Proton Pulse', body: t().toast.savedToProtonPulse });
+    } catch (e) {
+      void logFrontendEvent('ERROR', 'Config reapply failed', {
+        appId: config.appId, error: e instanceof Error ? e.message : String(e),
+      });
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.applyFailed(e instanceof Error ? e.message : String(e)) });
+    }
+  };
+
   const handleEdit = (config: TrackedConfig) => {
     showModal(
       <ConfigEditorModal
@@ -369,8 +385,9 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
     }
 
     const openModal = async () => {
+      const configKey = buildConfigKey(config);
       const [{ minutes, trackedMinutes, steamMinutes }, compatTool] = await Promise.all([
-        getEffectivePlaytimeMinutes(config.appId),
+        getEffectivePlaytimeMinutes(config.appId, configKey),
         config.protonVersion ? Promise.resolve('') : getCompatToolForApp(config.appId),
       ]);
       const autoDuration = bucketPlaytimeMinutes(minutes);
@@ -530,24 +547,43 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
       { label: t().configManager.infoClientId, value: clientId ?? 'No' },
     ];
     const infoTitle = displayName(config);
-    const handleInfo = () => showModal(
-      <ConfirmModal
-        strTitle={infoTitle}
-        strDescription={
-          <div>
-            {infoRows.map(({ label, value }) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                <span style={{ color: '#7a9bb5', fontWeight: 600 }}>{label}</span>
-                <span>{value}</span>
-              </div>
-            ))}
-          </div> as any
-        }
-        strOKButtonText={t().common.close}
-        bAlertDialog
-        onOK={() => {}}
-      />,
-    );
+    const handleInfo = async () => {
+      const configKey = buildConfigKey(config);
+      const [{ minutes, trackedMinutes, steamMinutes, configMinutes }, { details }] = await Promise.all([
+        getEffectivePlaytimeMinutes(config.appId, configKey),
+        getSteamAppDetails(config.appId, 1500),
+      ]);
+      const currentLaunchOptions = getLaunchOptionsFromDetails(details);
+      const isActive = currentLaunchOptions.trim() === config.launchOptions.trim();
+      const fmtMin = (m: number) => m <= 0 ? '--' : m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+      const playtimeValue = minutes > 0
+        ? `${fmtMin(minutes)} (tracked: ${fmtMin(trackedMinutes)}, Steam: ${fmtMin(steamMinutes)})`
+        : '--';
+      const rows = [
+        { label: 'Active', value: isActive ? t().common.yes : t().common.no },
+        ...infoRows,
+        { label: 'Playtime (total)', value: playtimeValue },
+        { label: 'Playtime (this config)', value: fmtMin(configMinutes) },
+      ];
+      showModal(
+        <ConfirmModal
+          strTitle={infoTitle}
+          strDescription={
+            <div>
+              {rows.map(({ label, value }) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ color: '#7a9bb5', fontWeight: 600 }}>{label}</span>
+                  <span style={label === 'Active' ? { color: value === t().common.yes ? '#4caf50' : '#f59e0b', fontWeight: 600 } : undefined}>{value}</span>
+                </div>
+              ))}
+            </div> as any
+          }
+          strOKButtonText={t().common.close}
+          bAlertDialog
+          onOK={() => {}}
+        />,
+      );
+    };
 
     showContextMenu(
       <Menu label={displayName(config)}>
@@ -560,6 +596,9 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         </MenuItem>
         <MenuItem onClick={handleInfo}>
           {t().configManager.infoAction}
+        </MenuItem>
+        <MenuItem onClick={() => { void handleReapply(config); }}>
+          {t().common.apply}
         </MenuItem>
         <MenuItem onClick={() => handleEdit(config)}>
           {t().common.edit}

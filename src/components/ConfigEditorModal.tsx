@@ -28,7 +28,7 @@ import {
 } from '../lib/customToggles';
 import { logFrontendEvent, callWithTimeout } from '../lib/logger';
 import { t } from '../lib/i18n';
-import { bucketPlaytimeMinutes, getEffectivePlaytimeMinutes } from '../lib/playtime';
+import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } from '../lib/playtime';
 import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
 import type { GpuVendor, SystemInfo } from '../types';
@@ -939,7 +939,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       addTrackedConfig(config);
       if (andUpload) {
         void pushConfig(config);
-        const { minutes } = await getEffectivePlaytimeMinutes(appId);
+        const { minutes } = await getEffectivePlaytimeMinutes(appId, existingConfig ? buildConfigKey(existingConfig) : undefined);
         const autoDuration = bucketPlaytimeMinutes(minutes);
         showModal(
           <NativePulseReportModal
@@ -979,10 +979,11 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       return;
     }
     void logFrontendEvent('INFO', 'Publish to Pulse clicked', { appId, appName });
-    const { minutes, trackedMinutes, steamMinutes } = await getEffectivePlaytimeMinutes(appId);
+    const configKey = existingConfig ? buildConfigKey(existingConfig) : undefined;
+    const { minutes, trackedMinutes, steamMinutes, configMinutes } = await getEffectivePlaytimeMinutes(appId, configKey);
     const autoDuration = bucketPlaytimeMinutes(minutes);
     void logFrontendEvent('DEBUG', 'Publish auto-duration resolved', {
-      appId, minutes, trackedMinutes, steamMinutes, autoDuration,
+      appId, minutes, trackedMinutes, steamMinutes, configMinutes, autoDuration,
     });
     showModal(
       <NativePulseReportModal
