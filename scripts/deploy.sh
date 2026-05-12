@@ -667,7 +667,9 @@ if [[ -n "$STORE_MODE" ]]; then
   if [[ "$DRY_RUN" == "true" ]]; then
     echo "DRY_RUN=true: would push branch '$BRANCH' to $PLUGIN_DB_ORIGIN"
   else
-    if [[ -n "$ACTIVE_PR_URL" ]]; then
+    if [[ -n "$ACTIVE_PR_NUMBER" ]]; then
+      echo "Existing PR #${ACTIVE_PR_NUMBER}: \"${ACTIVE_PR_TITLE}\" by @${ACTIVE_PR_AUTHOR}"
+      echo "  ${ACTIVE_PR_URL}"
       _push_prompt="Push branch '$BRANCH' to fork and update existing PR #${ACTIVE_PR_NUMBER}? [y/N] "
     else
       _push_prompt="Push branch '$BRANCH' to fork and open PR? [y/N] "
