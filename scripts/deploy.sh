@@ -677,7 +677,8 @@ if [[ -n "$STORE_MODE" ]]; then
     echo ""
     read -r -p "$_push_prompt" _push_confirm
     if [[ "$_push_confirm" =~ ^[Yy]$ ]]; then
-      git -C "$PLUGIN_DB_DIR" push "$PLUGIN_DB_ORIGIN" "$BRANCH" --force
+      git -C "$PLUGIN_DB_DIR" fetch "$PLUGIN_DB_ORIGIN" "$BRANCH" 2>/dev/null || true
+      git -C "$PLUGIN_DB_DIR" push "$PLUGIN_DB_ORIGIN" "$BRANCH" --force-with-lease
       echo ""
       if [[ -n "$ACTIVE_PR_URL" ]]; then
         echo "PR updated: $ACTIVE_PR_URL"
