@@ -676,7 +676,12 @@ if [[ -n "$STORE_MODE" ]]; then
   if [[ "$DRY_RUN" == "true" ]]; then
     echo "DRY_RUN=true: would push branch '$BRANCH' to $PLUGIN_DB_ORIGIN"
   else
-    read -r -p "Push branch '$BRANCH' to fork and open PR? [y/N] " _push_confirm
+    if [[ -n "$ACTIVE_PR_URL" ]]; then
+      _push_prompt="Push branch '$BRANCH' to fork and update existing PR #${ACTIVE_PR_NUMBER}? [y/N] "
+    else
+      _push_prompt="Push branch '$BRANCH' to fork and open PR? [y/N] "
+    fi
+    read -r -p "$_push_prompt" _push_confirm
     if [[ "$_push_confirm" =~ ^[Yy]$ ]]; then
       git -C "$PLUGIN_DB_DIR" push "$PLUGIN_DB_ORIGIN" "$BRANCH" --force-with-lease
       echo ""
