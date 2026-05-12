@@ -4,7 +4,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.2.1
 
-- Fetch and rebase fork branch before push to avoid non-fast-forward rejection
+- Sync from fork before committing so push is always a clean fast-forward
+- Use named fork remote with --force-with-lease to update PR branch safely
 - Decky Loader release submission.
 
 ## v1.2.0
