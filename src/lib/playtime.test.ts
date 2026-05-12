@@ -14,7 +14,7 @@ vi.mock('./trackedConfigs', () => ({
 }));
 
 vi.mock('./steamApps', () => ({
-  getSteamPlaytimeForeverMinutes: vi.fn().mockReturnValue(0),
+  getSteamPlaytimeForeverMinutes: vi.fn().mockResolvedValue(0),
 }));
 
 import { getVoterId, restRequest } from './voting';
@@ -57,7 +57,7 @@ describe('playtime', () => {
     mockGetTrackedConfig.mockReturnValue(null);
     mockRestRequest.mockReset();
     mockGetSteamPlaytimeForeverMinutes.mockReset();
-    mockGetSteamPlaytimeForeverMinutes.mockReturnValue(0);
+    mockGetSteamPlaytimeForeverMinutes.mockResolvedValue(0);
     (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
       GameSessions: {
         GetRunningApps: vi.fn().mockReturnValue([]),
@@ -426,7 +426,7 @@ describe('playtime', () => {
   describe('getEffectivePlaytimeMinutes', () => {
     it('returns zero tracked minutes when fetching accumulated playtime throws', async () => {
       mockRestRequest.mockRejectedValueOnce('offline');
-      mockGetSteamPlaytimeForeverMinutes.mockReturnValue(12);
+      mockGetSteamPlaytimeForeverMinutes.mockResolvedValue(12);
 
       const { getEffectivePlaytimeMinutes } = await import('./playtime');
       const result = await getEffectivePlaytimeMinutes(321);
@@ -440,7 +440,7 @@ describe('playtime', () => {
         error: null,
         status: 200,
       });
-      mockGetSteamPlaytimeForeverMinutes.mockReturnValue(56);
+      mockGetSteamPlaytimeForeverMinutes.mockResolvedValue(56);
 
       const { getEffectivePlaytimeMinutes } = await import('./playtime');
       const result = await getEffectivePlaytimeMinutes(1_284_410);
@@ -455,7 +455,7 @@ describe('playtime', () => {
         error: null,
         status: 200,
       });
-      mockGetSteamPlaytimeForeverMinutes.mockReturnValue(45);
+      mockGetSteamPlaytimeForeverMinutes.mockResolvedValue(45);
 
       const { getEffectivePlaytimeMinutes } = await import('./playtime');
       const result = await getEffectivePlaytimeMinutes('900');
@@ -465,7 +465,7 @@ describe('playtime', () => {
 
     it('returns zeros when tracked fails and Steam has no data', async () => {
       mockRestRequest.mockResolvedValueOnce({ data: null, error: 'boom', status: 500 });
-      mockGetSteamPlaytimeForeverMinutes.mockReturnValue(0);
+      mockGetSteamPlaytimeForeverMinutes.mockResolvedValue(0);
 
       const { getEffectivePlaytimeMinutes } = await import('./playtime');
       const result = await getEffectivePlaytimeMinutes(42);

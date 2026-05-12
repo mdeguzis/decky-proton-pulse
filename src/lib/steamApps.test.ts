@@ -171,37 +171,37 @@ describe('steamApps helpers', () => {
   });
 
   describe('getSteamPlaytimeForeverMinutes', () => {
-    it('returns 0 when SteamClient is unavailable', () => {
+    it('returns 0 when SteamClient is unavailable', async () => {
       (globalThis as any).SteamClient = {};
-      expect(getSteamPlaytimeForeverMinutes(620)).toBe(0);
+      expect(await getSteamPlaytimeForeverMinutes(620)).toBe(0);
     });
 
-    it('reads minutes_playtime_forever when present', () => {
+    it('reads minutes_playtime_forever when present', async () => {
       (globalThis as any).SteamClient = {
         Apps: { GetAppOverviewByAppID: () => ({ minutes_playtime_forever: 423 }) },
       };
-      expect(getSteamPlaytimeForeverMinutes(620)).toBe(423);
+      expect(await getSteamPlaytimeForeverMinutes(620)).toBe(423);
     });
 
-    it('falls back to nPlaytimeForever on older client builds', () => {
+    it('falls back to nPlaytimeForever on older client builds', async () => {
       (globalThis as any).SteamClient = {
         Apps: { GetAppOverviewByAppID: () => ({ nPlaytimeForever: 90 }) },
       };
-      expect(getSteamPlaytimeForeverMinutes(620)).toBe(90);
+      expect(await getSteamPlaytimeForeverMinutes(620)).toBe(90);
     });
 
-    it('coerces string-typed minutes and rounds', () => {
+    it('coerces string-typed minutes and rounds', async () => {
       (globalThis as any).SteamClient = {
         Apps: { GetAppOverviewByAppID: () => ({ minutesPlaytimeForever: '12.7' }) },
       };
-      expect(getSteamPlaytimeForeverMinutes(620)).toBe(13);
+      expect(await getSteamPlaytimeForeverMinutes(620)).toBe(13);
     });
 
-    it('returns 0 when all candidate fields are missing or non-positive', () => {
+    it('returns 0 when all candidate fields are missing or non-positive', async () => {
       (globalThis as any).SteamClient = {
         Apps: { GetAppOverviewByAppID: () => ({ minutes_playtime_forever: 0, nPlaytimeForever: -5 }) },
       };
-      expect(getSteamPlaytimeForeverMinutes(620)).toBe(0);
+      expect(await getSteamPlaytimeForeverMinutes(620)).toBe(0);
     });
   });
 });

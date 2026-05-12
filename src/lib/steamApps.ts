@@ -135,33 +135,41 @@ export async function getCompatToolForApp(appId: number): Promise<string> {
   return '';
 }
 
-// Lifetime playtime in minutes as Steam knows it for this account.
-// Matches the "PLAY TIME" value shown on the Steam library page for the game.
-// Returns 0 when the overview isn't available or the field is missing.
-// Tries SteamClient.Apps first, then window.appStore as a fallback since
-// different Steam client versions expose the field under different names.
-export function getSteamPlaytimeForeverMinutes(appId: number): number {
-  const sources: any[] = [];
+const PLAYTIME_FIELDS = [
+  'minutes_playtime_forever',
+  'nPlaytimeForever',
+  'minutesPlaytimeForever',
+  'playtime_forever',
+];
 
-  const steamAppsOverview = getSteamAppOverview(appId);
-  if (steamAppsOverview) sources.push(steamAppsOverview);
-
-  // window.appStore is the MobX store the Steam library page reads from -
-  // it often has playtime even when SteamClient.Apps.GetAppOverviewByAppID doesn't
-  const appStoreOverview = (globalThis as any).appStore?.GetAppOverviewByAppID?.(appId);
-  if (appStoreOverview && appStoreOverview !== steamAppsOverview) sources.push(appStoreOverview);
-
-  for (const src of sources) {
-    const candidates = [
-      src.minutes_playtime_forever,
-      src.nPlaytimeForever,
-      src.minutesPlaytimeForever,
-      src.playtime_forever,
-    ];
-    for (const v of candidates) {
-      const n = typeof v === 'number' ? v : Number(v);
-      if (Number.isFinite(n) && n > 0) return Math.round(n);
-    }
+function extractPlaytimeMinutes(src: any): number {
+  if (!src || typeof src !== 'object') return 0;
+  for (const field of PLAYTIME_FIELDS) {
+    const v = src[field];
+    const n = typeof v === 'number' ? v : Number(v);
+    if (Number.isFinite(n) && n > 0) return Math.round(n);
   }
   return 0;
+}
+
+// Lifetime playtime in minutes from Steam. Fast path reads the in-memory
+// overview (synchronous); slow path uses RegisterForAppDetails so we always
+// get a value even if the overview cache hasn't loaded the game yet.
+export async function getSteamPlaytimeForeverMinutes(appId: number): Promise<number> {
+  // Fast path: overview sources
+  const steamAppsOverview = getSteamAppOverview(appId);
+  const appStoreOverview = (globalThis as any).appStore?.GetAppOverviewByAppID?.(appId);
+  for (const src of [steamAppsOverview, appStoreOverview]) {
+    const n = extractPlaytimeMinutes(src);
+    if (n > 0) {
+      void logFrontendEvent('DEBUG', 'getSteamPlaytimeForeverMinutes: found via overview', { appId, minutes: n });
+      return n;
+    }
+  }
+
+  // Slow path: RegisterForAppDetails
+  const { details } = await getSteamAppDetails(appId, 2000);
+  const n = extractPlaytimeMinutes(details);
+  void logFrontendEvent('DEBUG', 'getSteamPlaytimeForeverMinutes: details path', { appId, minutes: n, timedOut: !details });
+  return n;
 }

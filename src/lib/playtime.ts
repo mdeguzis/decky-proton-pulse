@@ -281,10 +281,12 @@ export interface EffectivePlaytime {
 
 export async function getEffectivePlaytimeMinutes(appId: string | number): Promise<EffectivePlaytime> {
   const numericAppId = typeof appId === 'number' ? appId : Number(appId);
-  const trackedMinutes = await getMyAccumulatedMinutes(appId);
-  const steamMinutes = Number.isFinite(numericAppId) && numericAppId > 0
-    ? getSteamPlaytimeForeverMinutes(numericAppId)
-    : 0;
+  const [trackedMinutes, steamMinutes] = await Promise.all([
+    getMyAccumulatedMinutes(appId),
+    Number.isFinite(numericAppId) && numericAppId > 0
+      ? getSteamPlaytimeForeverMinutes(numericAppId)
+      : Promise.resolve(0),
+  ]);
   return {
     minutes: Math.max(trackedMinutes, steamMinutes),
     trackedMinutes,
