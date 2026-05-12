@@ -633,12 +633,18 @@ if [[ -n "$STORE_MODE" ]]; then
     # force-push and rewrite history (reviewers need to see incremental commits).
     # If it doesn't exist yet, start fresh from upstream/main.
     cd "$PLUGIN_DB_DIR"
+    git remote get-url fork >/dev/null 2>&1 || git remote add fork "$PLUGIN_DB_ORIGIN"
+    git remote set-url fork "$PLUGIN_DB_ORIGIN"
     git fetch origin "$BRANCH" 2>/dev/null || true
-    if git ls-remote --exit-code origin "refs/heads/${BRANCH}" >/dev/null 2>&1; then
-      echo "Branch $BRANCH already exists on origin -- checking out to add a new commit."
+    git fetch fork "$BRANCH" 2>/dev/null || true
+    if git ls-remote --exit-code fork "refs/heads/${BRANCH}" >/dev/null 2>&1; then
+      echo "Branch $BRANCH already exists on fork -- checking out to add a new commit."
+      git checkout -B "$BRANCH" "fork/${BRANCH}"
+    elif git ls-remote --exit-code origin "refs/heads/${BRANCH}" >/dev/null 2>&1; then
+      echo "Branch $BRANCH exists on upstream origin -- checking out to add a new commit."
       git checkout -B "$BRANCH" "origin/${BRANCH}"
     else
-      echo "Branch $BRANCH does not exist on origin -- creating from upstream/main."
+      echo "Branch $BRANCH does not exist -- creating from upstream/main."
       git checkout -B "$BRANCH" upstream/main
     fi
     if ! git config --file .gitmodules --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep -Fxq "$SUBMODULE"; then
@@ -677,11 +683,7 @@ if [[ -n "$STORE_MODE" ]]; then
     echo ""
     read -r -p "$_push_prompt" _push_confirm
     if [[ "$_push_confirm" =~ ^[Yy]$ ]]; then
-      git -C "$PLUGIN_DB_DIR" remote get-url fork >/dev/null 2>&1 || \
-        git -C "$PLUGIN_DB_DIR" remote add fork "$PLUGIN_DB_ORIGIN"
-      git -C "$PLUGIN_DB_DIR" remote set-url fork "$PLUGIN_DB_ORIGIN"
-      git -C "$PLUGIN_DB_DIR" fetch fork "$BRANCH" 2>/dev/null || true
-      git -C "$PLUGIN_DB_DIR" push fork "$BRANCH" --force-with-lease="${BRANCH}:fork/${BRANCH}"
+      git -C "$PLUGIN_DB_DIR" push fork "$BRANCH"
       echo ""
       if [[ -n "$ACTIVE_PR_URL" ]]; then
         echo "PR updated: $ACTIVE_PR_URL"
