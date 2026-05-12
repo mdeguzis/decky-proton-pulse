@@ -156,10 +156,13 @@ function extractPlaytimeMinutes(src: any): number {
 // overview (synchronous); slow path uses RegisterForAppDetails so we always
 // get a value even if the overview cache hasn't loaded the game yet.
 export async function getSteamPlaytimeForeverMinutes(appId: number): Promise<number> {
-  // Fast path: overview sources
+  // Fast path: overview sources. GetAppOverviewByGameID is used by NonSteamPlaytime
+  // and some client builds; GetAppOverviewByAppID is the more common name.
   const steamAppsOverview = getSteamAppOverview(appId);
-  const appStoreOverview = (globalThis as any).appStore?.GetAppOverviewByAppID?.(appId);
-  for (const src of [steamAppsOverview, appStoreOverview]) {
+  const appStore = (globalThis as any).appStore;
+  const appStoreById   = appStore?.GetAppOverviewByAppID?.(appId);
+  const appStoreByGame = appStore?.GetAppOverviewByGameID?.(appId);
+  for (const src of [steamAppsOverview, appStoreById, appStoreByGame]) {
     const n = extractPlaytimeMinutes(src);
     if (n > 0) {
       void logFrontendEvent('DEBUG', 'getSteamPlaytimeForeverMinutes: found via overview', { appId, minutes: n });
