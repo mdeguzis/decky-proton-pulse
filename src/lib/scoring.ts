@@ -33,6 +33,13 @@ export const WEIGHTS = {
   PROTON_MATCH: 8,         // bonus for same Proton major version as user's build
   PROTON_CLOSE: 4,         // bonus for adjacent Proton major version
   SOURCE_PULSE_PENALTY: -5, // native Pulse reports are weighted below ProtonDB CDN/live reports
+  // Playtime confidence: reports with real play hours are more credible.
+  // Bonus applies inside the GPU/OS/kernel multiplier so it scales with system match.
+  // underOneHour gets a small bump; meaningful confidence starts at 2h (oneToFourHours).
+  PLAYTIME_UNDER_ONE_HOUR: 3,
+  PLAYTIME_ONE_TO_FOUR_HOURS: 6,
+  PLAYTIME_FOUR_TO_TEN_HOURS: 9,
+  PLAYTIME_OVER_TEN_HOURS: 12,
 } as const;
 
 const RATING_SCORES: Record<string, number> = {
@@ -112,6 +119,21 @@ export function deriveRating(r: ReportResponses): ProtonRating | null {
   if (faultCount === 1) return 'gold';
   if (r.verdictOob === 'yes' || r.triedOob === 'yes') return 'platinum';
   return 'gold';
+}
+
+// Returns extra points for reports that declare actual playtime. A reporter
+// who played 2+ hours is much more likely to have hit real compatibility
+// issues than someone who launched the game once. Confidence ramps up with
+// playtime. The bonus is applied inside the GPU/OS multiplier bracket so it
+// scales proportionally with how closely the reporter's system matches yours.
+function playtimeConfidenceBonus(duration: string | undefined | null): number {
+  switch (duration) {
+    case 'overTenHours':      return WEIGHTS.PLAYTIME_OVER_TEN_HOURS;
+    case 'fourToTenHours':    return WEIGHTS.PLAYTIME_FOUR_TO_TEN_HOURS;
+    case 'oneToFourHours':    return WEIGHTS.PLAYTIME_ONE_TO_FOUR_HOURS;
+    case 'underOneHour':      return WEIGHTS.PLAYTIME_UNDER_ONE_HOUR;
+    default:                  return 0;
+  }
 }
 
 const CUSTOM_PROTON_MARKERS = ['ge', 'cachyos', 'tkg', 'protonplus', 'experimental'];
@@ -982,7 +1004,8 @@ export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredRepor
   // has a much larger report base and higher aggregate confidence. This penalty
   // is temporary -- see scoring-info.json SOURCE_PULSE_PENALTY note.
   const sourcePenalty = report.source === 'user' ? WEIGHTS.SOURCE_PULSE_PENALTY : 0;
-  const raw = (ratingScore + recencyBonus + customBonus + protonBonus) * gpuMult * distroMult * kernelMult + notesModifier + sourcePenalty;
+  const playtimeBonus = playtimeConfidenceBonus(report.duration);
+  const raw = (ratingScore + recencyBonus + customBonus + protonBonus + playtimeBonus) * gpuMult * distroMult * kernelMult + notesModifier + sourcePenalty;
 
   return {
     ...report,

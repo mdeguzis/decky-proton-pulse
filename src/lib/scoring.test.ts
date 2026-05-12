@@ -190,6 +190,36 @@ describe('scoreReport', () => {
       scoreReport(diffProton, nvidiaSystem).score
     );
   });
+
+  // --- playtime confidence ---
+
+  it('overTenHours scores higher than fourToTenHours', () => {
+    const long   = makeCdnReport({ duration: 'overTenHours' });
+    const medium = makeCdnReport({ duration: 'fourToTenHours' });
+    expect(scoreReport(long, nvidiaSystem).score).toBeGreaterThan(
+      scoreReport(medium, nvidiaSystem).score
+    );
+  });
+
+  it('oneToFourHours scores higher than underOneHour', () => {
+    const twoHour = makeCdnReport({ duration: 'oneToFourHours' });
+    const brief   = makeCdnReport({ duration: 'underOneHour' });
+    expect(scoreReport(twoHour, nvidiaSystem).score).toBeGreaterThan(
+      scoreReport(brief, nvidiaSystem).score
+    );
+  });
+
+  it('any playtime bucket scores higher than unreported', () => {
+    const played     = makeCdnReport({ duration: 'underOneHour' });
+    const unreported = makeCdnReport({ duration: 'unreported' });
+    const noField    = makeCdnReport({ duration: '' });
+    expect(scoreReport(played, nvidiaSystem).score).toBeGreaterThan(
+      scoreReport(unreported, nvidiaSystem).score
+    );
+    expect(scoreReport(played, nvidiaSystem).score).toBeGreaterThan(
+      scoreReport(noField, nvidiaSystem).score
+    );
+  });
 });
 
 describe('scoreToMatchTier', () => {

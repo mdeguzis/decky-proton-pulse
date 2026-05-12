@@ -21,7 +21,11 @@
     "NOTES_MAX": 10,
     "PROTON_MATCH": 8,
     "PROTON_CLOSE": 4,
-    "SOURCE_PULSE_PENALTY": -5
+    "SOURCE_PULSE_PENALTY": -5,
+    "PLAYTIME_UNDER_ONE_HOUR": 3,
+    "PLAYTIME_ONE_TO_FOUR_HOURS": 6,
+    "PLAYTIME_FOUR_TO_TEN_HOURS": 9,
+    "PLAYTIME_OVER_TEN_HOURS": 12
   },
   "ratingScores": {
     "platinum": 1.0,
@@ -53,8 +57,9 @@
     "perfect", "flawless", "works great", "no issues", "out of the box",
     "excellent", "runs perfectly", "zero issues", "works flawlessly"
   ],
-  "formula": "(rating + recency + customProton + protonMatch) * gpuMult * osMult * kernelMult + notesSentiment + sourcePenalty",
+  "formula": "(rating + recency + customProton + protonMatch + playtimeConfidence) * gpuMult * osMult * kernelMult + notesSentiment + sourcePenalty",
   "sourcePenaltyNote": "Native Pulse reports (source='user') receive SOURCE_PULSE_PENALTY=-5 until the Pulse report base grows enough to match ProtonDB's confidence. ProtonDB CDN and live reports receive no penalty. See Architecture.md for details.",
+  "playtimeConfidenceNote": "Reports that declare actual playtime earn a confidence bonus applied inside the GPU/OS/kernel multiplier bracket. Meaningful confidence starts at 2h (oneToFourHours=+6). Buckets: underOneHour=+3, oneToFourHours=+6, fourToTenHours=+9, overTenHours=+12. Reports with no playtime (unreported/empty) receive no bonus.",
   "ratingDerivation": {
     "_note": "Canonical algorithm in src/lib/scoring.ts:deriveRating(). Mirrors ProtonDB's inferLiveRating exactly. Rating is never chosen manually -- always derived from structured form answers.",
     "_source": "src/lib/scoring.ts deriveRating (canonical) -- imported by NativePulseReportModal and protondb.ts inferLiveRating",
