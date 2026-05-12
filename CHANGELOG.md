@@ -4,9 +4,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.2.1
 
-- Use plain push, no force flags
-- Fetch fork branch before push so --force-with-lease has current info
-- Blank line before prompt, use --force for fork push
+- Fetch and rebase fork branch before push to avoid non-fast-forward rejection
 - Decky Loader release submission.
 
 ## v1.2.0
