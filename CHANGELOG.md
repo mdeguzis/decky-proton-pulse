@@ -4,7 +4,9 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.2.1
 
-- Print PR title and author immediately before the y/n prompt
+- Use plain push, no force flags
+- Fetch fork branch before push so --force-with-lease has current info
+- Blank line before prompt, use --force for fork push
 - Decky Loader release submission.
 
 ## v1.2.0
