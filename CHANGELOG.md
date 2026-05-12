@@ -4,7 +4,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.2.1
 
-- Print PR title and author when existing PR detected
+- Use --jq directly for PR fields to avoid python3 parse failures
 - Decky Loader release submission.
 
 ## v1.2.0
