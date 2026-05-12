@@ -677,9 +677,11 @@ if [[ -n "$STORE_MODE" ]]; then
     echo ""
     read -r -p "$_push_prompt" _push_confirm
     if [[ "$_push_confirm" =~ ^[Yy]$ ]]; then
-      git -C "$PLUGIN_DB_DIR" fetch "$PLUGIN_DB_ORIGIN" "$BRANCH"
-      git -C "$PLUGIN_DB_DIR" rebase FETCH_HEAD
-      git -C "$PLUGIN_DB_DIR" push "$PLUGIN_DB_ORIGIN" "$BRANCH"
+      git -C "$PLUGIN_DB_DIR" remote get-url fork >/dev/null 2>&1 || \
+        git -C "$PLUGIN_DB_DIR" remote add fork "$PLUGIN_DB_ORIGIN"
+      git -C "$PLUGIN_DB_DIR" remote set-url fork "$PLUGIN_DB_ORIGIN"
+      git -C "$PLUGIN_DB_DIR" fetch fork "$BRANCH" 2>/dev/null || true
+      git -C "$PLUGIN_DB_DIR" push fork "$BRANCH" --force-with-lease="${BRANCH}:fork/${BRANCH}"
       echo ""
       if [[ -n "$ACTIVE_PR_URL" ]]; then
         echo "PR updated: $ACTIVE_PR_URL"
