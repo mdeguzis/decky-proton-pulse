@@ -25,6 +25,10 @@
   "protonVersionPattern": "^(Proton |GE-Proton|Proton-)\\d",
   "knownProtonVersions": [
     "Proton Experimental",
+    "Proton 10.0-4",
+    "Proton 10.0-3",
+    "Proton 10.0-2",
+    "Proton 10.0-1",
     "Proton 9.0-4",
     "Proton 9.0-3",
     "Proton 9.0-2",
