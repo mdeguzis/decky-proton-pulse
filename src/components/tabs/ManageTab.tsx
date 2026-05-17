@@ -663,12 +663,21 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           {restoring ? t().configManager.restoringFromCloud : t().configManager.restoreFromCloud}
         </DialogButton>
         <DialogButton
-          onClick={() => { setCloudLoading(true); setCloudOffline(false); void refreshCloud(); }}
+          onClick={async () => {
+            setCloudLoading(true);
+            setCloudOffline(false);
+            try {
+              await refreshCloud();
+              toaster.toast({ title: 'Proton Pulse', body: 'Sync status refreshed.' });
+            } catch {
+              toaster.toast({ title: 'Proton Pulse', body: 'Sync check failed -- offline?' });
+            }
+          }}
           disabled={cloudLoading || syncing || restoring}
-          style={{ flex: '0 0 auto', fontSize: 11, padding: '6px 8px', whiteSpace: 'nowrap' }}
+          style={{ width: 36, minWidth: 36, maxWidth: 36, fontSize: 16, padding: '4px 0', textAlign: 'center' }}
           title="Refresh sync status"
         >
-          {cloudLoading ? '...' : '\u21BB'}
+          {cloudLoading ? '…' : '\u21BB'}
         </DialogButton>
       </Focusable>
       <PpTextField
