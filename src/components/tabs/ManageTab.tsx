@@ -110,13 +110,15 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
       return result?.details?.strDisplayName || `App ${entry.appId}`;
     } catch { return `App ${entry.appId}`; }
   };
-  const refreshCloud = async () => {
+  const refreshCloud = async (): Promise<boolean> => {
     try {
       const rows = await fetchCloudConfigs();
       setCloudConfigs(rows);
       setCloudOffline(false);
+      return true;
     } catch {
       setCloudOffline(true);
+      return false;
     } finally {
       setCloudLoading(false);
     }
@@ -666,12 +668,11 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           onClick={async () => {
             setCloudLoading(true);
             setCloudOffline(false);
-            try {
-              await refreshCloud();
-              toaster.toast({ title: 'Proton Pulse', body: 'Sync status refreshed.' });
-            } catch {
-              toaster.toast({ title: 'Proton Pulse', body: 'Device offline -- sync unavailable.' });
-            }
+            const ok = await refreshCloud();
+            toaster.toast({
+              title: 'Proton Pulse',
+              body: ok ? 'Sync status refreshed.' : 'Device offline -- sync unavailable.',
+            });
           }}
           disabled={cloudLoading || syncing || restoring}
           style={{ width: 36, minWidth: 36, maxWidth: 36, fontSize: 16, padding: '4px 0', textAlign: 'center' }}
