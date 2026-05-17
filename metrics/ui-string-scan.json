@@ -101,168 +101,168 @@
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 125,
+      "line": 127,
       "column": 25,
       "kind": "string",
       "text": "Yes"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 181,
+      "line": 183,
       "column": 31,
       "kind": "string",
       "text": "Default Proton (current)"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 182,
+      "line": 184,
       "column": 31,
       "kind": "string",
       "text": "Glorious Eggroll (GE)"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 183,
+      "line": 185,
       "column": 31,
       "kind": "string",
       "text": "Switched to an older version"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 184,
+      "line": 186,
       "column": 31,
       "kind": "string",
       "text": "Native - No Proton"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 185,
+      "line": 187,
       "column": 31,
       "kind": "string",
       "text": "Not Listed"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 534,
+      "line": 540,
       "column": 17,
       "kind": "jsx",
       "text": "How Scoring Works"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 547,
+      "line": 553,
       "column": 32,
       "kind": "string",
       "text": "Install and Startup"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 549,
+      "line": 555,
       "column": 19,
       "kind": "string",
       "text": "Were you able to install the game?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 557,
+      "line": 563,
       "column": 23,
       "kind": "string",
       "text": "Were you able to start up the game and view its initial menu?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 567,
+      "line": 573,
       "column": 23,
       "kind": "string",
       "text": "Were you able to begin playing?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 580,
+      "line": 586,
       "column": 17,
       "kind": "jsx",
       "text": "The game failed to install or start. Your report will be submitted as Borked."
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 584,
+      "line": 590,
       "column": 25,
       "kind": "string",
       "text": "Notes (optional)"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 585,
+      "line": 591,
       "column": 31,
       "kind": "string",
       "text": "Describe what went wrong during install or startup."
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 597,
+      "line": 603,
       "column": 36,
       "kind": "string",
       "text": "Proton and Tinkering"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 604,
+      "line": 610,
       "column": 25,
       "kind": "string",
       "text": "Which Proton version did you use?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 626,
+      "line": 632,
       "column": 19,
       "kind": "jsx",
       "text": "Are you using any of these common tinkering methods?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 640,
+      "line": 646,
       "column": 36,
       "kind": "string",
       "text": "Technical Details"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 669,
+      "line": 675,
       "column": 38,
       "kind": "string",
       "text": "Multiplayer (optional)"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 671,
+      "line": 677,
       "column": 25,
       "kind": "string",
       "text": "Did you try to play multiplayer online?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 680,
+      "line": 686,
       "column": 25,
       "kind": "string",
       "text": "Did you try to play multiplayer locally (couch play)?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 689,
+      "line": 695,
       "column": 36,
       "kind": "string",
       "text": "Verdict"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 702,
+      "line": 708,
       "column": 25,
       "kind": "string",
       "text": "Did the game run out of the box without any tweaks required?"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 712,
+      "line": 718,
       "column": 19,
       "kind": "jsx",
       "text": "Your report will be classified as a tinker report.\n                  Have you also tried playing with default Steam/Proton without any tinkering?"
@@ -276,101 +276,178 @@
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 59,
+      "line": 60,
       "column": 76,
       "kind": "jsx",
       "text": "How Scoring Works"
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 61,
+      "line": 62,
       "column": 13,
       "kind": "jsx",
       "text": "Close"
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 68,
+      "line": 69,
       "column": 13,
       "kind": "jsx",
       "text": "Your Yes/No answers determine the rating automatically."
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 77,
+      "line": 76,
       "column": 108,
       "kind": "jsx",
       "text": "Fault questions"
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 79,
+      "line": 78,
       "column": 13,
       "kind": "jsx",
-      "text": "Each \"Yes\" to a fault question (performance, graphical, windowing, audio, input, stability, save game, significant bugs) counts as 1 fault. The total determines Silver, Bronze, or Gold."
+      "text": "Each \"Yes\" to a fault question ("
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 82,
+      "line": 78,
+      "column": 91,
+      "kind": "jsx",
+      "text": ") counts as 1 fault. The total determines Silver, Bronze, or Gold."
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 81,
       "column": 108,
       "kind": "jsx",
       "text": "Out-of-the-box question"
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 84,
-      "column": 13,
-      "kind": "jsx",
-      "text": "Only shown when verdict is Yes and no faults are reported. Answering Yes elevates Gold to Platinum."
-    },
-    {
-      "file": "src/components/ScoringGuideModal.tsx",
-      "line": 87,
+      "line": 86,
       "column": 108,
       "kind": "jsx",
       "text": "Quick reference"
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 97,
+      "line": 93,
       "column": 108,
       "kind": "jsx",
       "text": "How reports are ranked"
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 99,
+      "line": 95,
       "column": 13,
       "kind": "jsx",
       "text": "Each report gets a relevance score so the most useful ones rise to the top. Factors:"
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",
-      "line": 111,
+      "line": 107,
       "column": 13,
       "kind": "jsx",
       "text": "Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours."
     },
     {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 110,
+      "column": 108,
+      "kind": "jsx",
+      "text": "Duration auto-fill"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 771,
+      "column": 19,
+      "kind": "string",
+      "text": "Auto-sync to cloud"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 772,
+      "column": 25,
+      "kind": "string",
+      "text": "Automatically back up configs and plugin settings when they change"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 784,
+      "column": 19,
+      "kind": "string",
+      "text": "Cloud sync refresh rate"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 785,
+      "column": 25,
+      "kind": "string",
+      "text": "How often to re-check cloud sync status in the background"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 790,
+      "column": 26,
+      "kind": "string",
+      "text": "Disabled"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 791,
+      "column": 26,
+      "kind": "string",
+      "text": "1 min"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 792,
+      "column": 26,
+      "kind": "string",
+      "text": "5 min"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 793,
+      "column": 26,
+      "kind": "string",
+      "text": "30 min"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 794,
+      "column": 26,
+      "kind": "string",
+      "text": "1 hour"
+    },
+    {
       "file": "src/components/tabs/ManageTab.tsx",
-      "line": 563,
+      "line": 576,
       "column": 18,
       "kind": "string",
       "text": "Active"
     },
     {
       "file": "src/components/tabs/ManageTab.tsx",
-      "line": 565,
+      "line": 578,
       "column": 18,
       "kind": "string",
       "text": "Playtime (total)"
     },
     {
       "file": "src/components/tabs/ManageTab.tsx",
-      "line": 566,
+      "line": 579,
       "column": 18,
       "kind": "string",
       "text": "Playtime (this config)"
+    },
+    {
+      "file": "src/components/tabs/ManageTab.tsx",
+      "line": 682,
+      "column": 17,
+      "kind": "string",
+      "text": "Refresh sync status"
     },
     {
       "file": "src/patches/gamePageBadge.tsx",

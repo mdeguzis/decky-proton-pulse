@@ -12,44 +12,55 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/EditReportModal.tsx` | 248 | jsx | Technical Details |
 | `src/components/EditReportModal.tsx` | 265 | jsx | Verdict |
 | `src/components/EditReportModal.tsx` | 275 | string | Does it work without any tinkering (out of the box)? |
-| `src/components/NativePulseReportModal.tsx` | 125 | string | Yes |
-| `src/components/NativePulseReportModal.tsx` | 181 | string | Default Proton (current) |
-| `src/components/NativePulseReportModal.tsx` | 182 | string | Glorious Eggroll (GE) |
-| `src/components/NativePulseReportModal.tsx` | 183 | string | Switched to an older version |
-| `src/components/NativePulseReportModal.tsx` | 184 | string | Native - No Proton |
-| `src/components/NativePulseReportModal.tsx` | 185 | string | Not Listed |
-| `src/components/NativePulseReportModal.tsx` | 534 | jsx | How Scoring Works |
-| `src/components/NativePulseReportModal.tsx` | 547 | string | Install and Startup |
-| `src/components/NativePulseReportModal.tsx` | 549 | string | Were you able to install the game? |
-| `src/components/NativePulseReportModal.tsx` | 557 | string | Were you able to start up the game and view its initial menu? |
-| `src/components/NativePulseReportModal.tsx` | 567 | string | Were you able to begin playing? |
-| `src/components/NativePulseReportModal.tsx` | 580 | jsx | The game failed to install or start. Your report will be submitted as Borked. |
-| `src/components/NativePulseReportModal.tsx` | 584 | string | Notes (optional) |
-| `src/components/NativePulseReportModal.tsx` | 585 | string | Describe what went wrong during install or startup. |
-| `src/components/NativePulseReportModal.tsx` | 597 | string | Proton and Tinkering |
-| `src/components/NativePulseReportModal.tsx` | 604 | string | Which Proton version did you use? |
-| `src/components/NativePulseReportModal.tsx` | 626 | jsx | Are you using any of these common tinkering methods? |
-| `src/components/NativePulseReportModal.tsx` | 640 | string | Technical Details |
-| `src/components/NativePulseReportModal.tsx` | 669 | string | Multiplayer (optional) |
-| `src/components/NativePulseReportModal.tsx` | 671 | string | Did you try to play multiplayer online? |
-| `src/components/NativePulseReportModal.tsx` | 680 | string | Did you try to play multiplayer locally (couch play)? |
-| `src/components/NativePulseReportModal.tsx` | 689 | string | Verdict |
-| `src/components/NativePulseReportModal.tsx` | 702 | string | Did the game run out of the box without any tweaks required? |
-| `src/components/NativePulseReportModal.tsx` | 712 | jsx | Your report will be classified as a tinker report.
+| `src/components/NativePulseReportModal.tsx` | 127 | string | Yes |
+| `src/components/NativePulseReportModal.tsx` | 183 | string | Default Proton (current) |
+| `src/components/NativePulseReportModal.tsx` | 184 | string | Glorious Eggroll (GE) |
+| `src/components/NativePulseReportModal.tsx` | 185 | string | Switched to an older version |
+| `src/components/NativePulseReportModal.tsx` | 186 | string | Native - No Proton |
+| `src/components/NativePulseReportModal.tsx` | 187 | string | Not Listed |
+| `src/components/NativePulseReportModal.tsx` | 540 | jsx | How Scoring Works |
+| `src/components/NativePulseReportModal.tsx` | 553 | string | Install and Startup |
+| `src/components/NativePulseReportModal.tsx` | 555 | string | Were you able to install the game? |
+| `src/components/NativePulseReportModal.tsx` | 563 | string | Were you able to start up the game and view its initial menu? |
+| `src/components/NativePulseReportModal.tsx` | 573 | string | Were you able to begin playing? |
+| `src/components/NativePulseReportModal.tsx` | 586 | jsx | The game failed to install or start. Your report will be submitted as Borked. |
+| `src/components/NativePulseReportModal.tsx` | 590 | string | Notes (optional) |
+| `src/components/NativePulseReportModal.tsx` | 591 | string | Describe what went wrong during install or startup. |
+| `src/components/NativePulseReportModal.tsx` | 603 | string | Proton and Tinkering |
+| `src/components/NativePulseReportModal.tsx` | 610 | string | Which Proton version did you use? |
+| `src/components/NativePulseReportModal.tsx` | 632 | jsx | Are you using any of these common tinkering methods? |
+| `src/components/NativePulseReportModal.tsx` | 646 | string | Technical Details |
+| `src/components/NativePulseReportModal.tsx` | 675 | string | Multiplayer (optional) |
+| `src/components/NativePulseReportModal.tsx` | 677 | string | Did you try to play multiplayer online? |
+| `src/components/NativePulseReportModal.tsx` | 686 | string | Did you try to play multiplayer locally (couch play)? |
+| `src/components/NativePulseReportModal.tsx` | 695 | string | Verdict |
+| `src/components/NativePulseReportModal.tsx` | 708 | string | Did the game run out of the box without any tweaks required? |
+| `src/components/NativePulseReportModal.tsx` | 718 | jsx | Your report will be classified as a tinker report.
                   Have you also tried playing with default Steam/Proton without any tinkering? |
 | `src/components/ReportDetailModal.tsx` | 1449 | jsx | Edit Responses |
-| `src/components/ScoringGuideModal.tsx` | 59 | jsx | How Scoring Works |
-| `src/components/ScoringGuideModal.tsx` | 61 | jsx | Close |
-| `src/components/ScoringGuideModal.tsx` | 68 | jsx | Your Yes/No answers determine the rating automatically. |
-| `src/components/ScoringGuideModal.tsx` | 77 | jsx | Fault questions |
-| `src/components/ScoringGuideModal.tsx` | 79 | jsx | Each "Yes" to a fault question (performance, graphical, windowing, audio, input, stability, save game, significant bugs) counts as 1 fault. The total determines Silver, Bronze, or Gold. |
-| `src/components/ScoringGuideModal.tsx` | 82 | jsx | Out-of-the-box question |
-| `src/components/ScoringGuideModal.tsx` | 84 | jsx | Only shown when verdict is Yes and no faults are reported. Answering Yes elevates Gold to Platinum. |
-| `src/components/ScoringGuideModal.tsx` | 87 | jsx | Quick reference |
-| `src/components/ScoringGuideModal.tsx` | 97 | jsx | How reports are ranked |
-| `src/components/ScoringGuideModal.tsx` | 99 | jsx | Each report gets a relevance score so the most useful ones rise to the top. Factors: |
-| `src/components/ScoringGuideModal.tsx` | 111 | jsx | Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours. |
-| `src/components/tabs/ManageTab.tsx` | 563 | string | Active |
-| `src/components/tabs/ManageTab.tsx` | 565 | string | Playtime (total) |
-| `src/components/tabs/ManageTab.tsx` | 566 | string | Playtime (this config) |
+| `src/components/ScoringGuideModal.tsx` | 60 | jsx | How Scoring Works |
+| `src/components/ScoringGuideModal.tsx` | 62 | jsx | Close |
+| `src/components/ScoringGuideModal.tsx` | 69 | jsx | Your Yes/No answers determine the rating automatically. |
+| `src/components/ScoringGuideModal.tsx` | 76 | jsx | Fault questions |
+| `src/components/ScoringGuideModal.tsx` | 78 | jsx | Each "Yes" to a fault question ( |
+| `src/components/ScoringGuideModal.tsx` | 78 | jsx | ) counts as 1 fault. The total determines Silver, Bronze, or Gold. |
+| `src/components/ScoringGuideModal.tsx` | 81 | jsx | Out-of-the-box question |
+| `src/components/ScoringGuideModal.tsx` | 86 | jsx | Quick reference |
+| `src/components/ScoringGuideModal.tsx` | 93 | jsx | How reports are ranked |
+| `src/components/ScoringGuideModal.tsx` | 95 | jsx | Each report gets a relevance score so the most useful ones rise to the top. Factors: |
+| `src/components/ScoringGuideModal.tsx` | 107 | jsx | Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours. |
+| `src/components/ScoringGuideModal.tsx` | 110 | jsx | Duration auto-fill |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 771 | string | Auto-sync to cloud |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 772 | string | Automatically back up configs and plugin settings when they change |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 784 | string | Cloud sync refresh rate |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 785 | string | How often to re-check cloud sync status in the background |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 790 | string | Disabled |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 791 | string | 1 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 792 | string | 5 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 793 | string | 30 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 794 | string | 1 hour |
+| `src/components/tabs/ManageTab.tsx` | 576 | string | Active |
+| `src/components/tabs/ManageTab.tsx` | 578 | string | Playtime (total) |
+| `src/components/tabs/ManageTab.tsx` | 579 | string | Playtime (this config) |
+| `src/components/tabs/ManageTab.tsx` | 682 | string | Refresh sync status |
 | `src/patches/gamePageBadge.tsx` | 224 | string | Native Linux build available |

@@ -27,6 +27,7 @@ import {
   deleteCloudConfig,
   type CloudConfigRow,
   type SyncStatus,
+  getSyncPollIntervalMinutes,
 } from '../../lib/cloudSync';
 import { deleteMyReport, getMyConfig, getMySubmittedAppIds } from '../../lib/userConfigs';
 import { getVoterId } from '../../lib/voting';
@@ -151,7 +152,9 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   }, []);
   useEffect(() => {
     void refreshCloud();
-    const interval = setInterval(() => { void refreshCloud(); }, 30_000);
+    const ms = getSyncPollIntervalMinutes() * 60_000;
+    if (ms === 0) return;
+    const interval = setInterval(() => { void refreshCloud(); }, ms);
     return () => clearInterval(interval);
   }, []);
 

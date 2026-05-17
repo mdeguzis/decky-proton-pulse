@@ -1,5 +1,5 @@
 // src/components/tabs/GeneralSettingsTab.tsx
-import { DropdownItem, Focusable, GamepadButton, ToggleField, SliderField, DialogButton, ConfirmModal, showModal, Navigation } from '@decky/ui';
+import { Dropdown, DropdownItem, Field, Focusable, GamepadButton, ToggleField, SliderField, DialogButton, ConfirmModal, showModal, Navigation } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { callable, openFilePicker, FileSelectionType } from '@decky/api';
 import { useEffect, useRef, useState } from 'react';
@@ -19,6 +19,9 @@ import {
   setAutoSyncEnabled,
   isPluginSettingsAutoSyncEnabled,
   setPluginSettingsAutoSyncEnabled,
+  getSyncPollIntervalMinutes,
+  setSyncPollIntervalMinutes,
+  DEFAULT_SYNC_POLL_INTERVAL_MINUTES,
 } from '../../lib/cloudSync';
 import { getVoterId } from '../../lib/voting';
 import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
@@ -291,10 +294,8 @@ export function GeneralSettingsTab() {
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
   const [toastSoundEnabled, setToastSoundEnabled] = useState(() => getSetting(TOAST_SOUND_KEY, true));
-  const [cloudAutoSync, setCloudAutoSync] = useState(() => isAutoSyncEnabled());
-  const [cloudPluginSettingsAutoSync, setCloudPluginSettingsAutoSync] = useState(
-    () => isPluginSettingsAutoSyncEnabled(),
-  );
+  const [cloudAutoSync, setCloudAutoSync] = useState(() => isAutoSyncEnabled() || isPluginSettingsAutoSyncEnabled());
+  const [syncPollInterval, setSyncPollIntervalLocal] = useState(() => getSyncPollIntervalMinutes());
   const [advancedEnabled, setAdvancedEnabled] = useState(() => getSetting(ADVANCED_SETTINGS_KEY, false));
 const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
   const [cefDebuggingBusy, setCefDebuggingBusy] = useState(false);
@@ -767,28 +768,41 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         </div>
         <div style={focusClipRowStyle()}>
           <ToggleField
-            label={t().configManager.cloudAutoSync}
-            description={t().configManager.cloudAutoSyncDescription}
+            label="Auto-sync to cloud"
+            description="Automatically back up configs and plugin settings when they change"
             checked={cloudAutoSync}
             onChange={(enabled) => {
               setCloudAutoSync(enabled);
               setAutoSyncEnabled(enabled);
+              setPluginSettingsAutoSyncEnabled(enabled);
               void logFrontendEvent('INFO', 'Cloud auto-sync toggled', { enabled });
             }}
           />
         </div>
-         <div ref={cloudPluginSettingsAutoSyncRowRef} style={focusClipRowStyle()}>
-           <ToggleField
-             label={t().settings.cloudPluginSettingsAutoSync}
-             description={t().settings.cloudPluginSettingsAutoSyncDescription}
-             checked={cloudPluginSettingsAutoSync}
-             onChange={(enabled) => {
-               setCloudPluginSettingsAutoSync(enabled);
-               setPluginSettingsAutoSyncEnabled(enabled);
-               void logFrontendEvent('INFO', 'Cloud plugin settings auto-sync toggled', { enabled });
-             }}
-           />
-         </div>
+        <div style={focusClipRowStyle()}>
+          <Field
+            label="Cloud sync refresh rate"
+            description="How often to re-check cloud sync status in the background"
+            childrenContainerWidth="min"
+          >
+            <Dropdown
+              rgOptions={[
+                { label: 'Disabled', data: 0 },
+                { label: '1 min', data: 1 },
+                { label: '5 min', data: 5 },
+                { label: '30 min', data: 30 },
+                { label: '1 hour', data: 60 },
+              ]}
+              selectedOption={syncPollInterval}
+              onChange={(opt) => {
+                const val = opt.data as number;
+                setSyncPollIntervalLocal(val);
+                setSyncPollIntervalMinutes(val);
+                void logFrontendEvent('INFO', 'Cloud sync refresh rate changed', { minutes: val });
+              }}
+            />
+          </Field>
+        </div>
          <div style={focusClipRowStyle()}>
            <ToggleField
              label={t().settings.gamePageBadge}
@@ -801,7 +815,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
              }}
            />
          </div>
-         <div style={focusClipRowStyle()}>
+         <div ref={cloudPluginSettingsAutoSyncRowRef} style={focusClipRowStyle()}>
            <ToggleField
              label={t().settings.doubleBToExit}
              description={t().settings.doubleBToExitDescription}

@@ -2,14 +2,29 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.4.4
+
+- fix(settings): replace sync interval slider with dropdown (Disabled / 1 min / 5 min / 30 min / 1 hour)
+- fix(settings): rename label to "Cloud sync refresh rate"
+- fix(settings): merge "Auto-sync configs" and "Auto-sync plugin settings" toggles into one "Auto-sync to cloud"
+- fix(manage): skip background poll when refresh rate is Disabled
+
+## v1.4.3
+
+- feat(settings): configurable cloud sync refresh rate (default 1 min)
+- fix(manage): offline toast never shown -- refreshCloud swallowed error
+- fix(manage): improve offline toast to say "Device offline -- sync unavailable"
+- fix(manage): fix refresh button width
+
 ## v1.4.2
 
 - fix(manage): show "Local only" badge instead of "Not synced" when cloud is unreachable
-- fix(manage): refresh sync status every 30s while on the Manage Configurations tab
+- fix(manage): refresh sync status every 30s while on Manage Configurations tab
+- fix(manage): add manual refresh button with toast feedback
 
 ## v1.4.1
 
-- Add Proton 10.0-1 through 10.0-4 to known Proton versions in form-schema.json.
+- fix(schema): add Proton 10.0-1 through 10.0-4 to knownProtonVersions
 
 ## v1.2.1
 
@@ -50,6 +65,10 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Offline toast was never shown -- refreshCloud swallowed error
+- Improve offline toast message to 'Device offline -- sync unavailable'
+- Fix refresh button width and add toast on manual refresh
+- Show 'Local only' badge offline, add refresh button and 30s auto-refresh
 - Add Proton 10.0-x to knownProtonVersions
 - Make ScoringGuideModal data-driven from scoring-info.json
 - Store exact duration_minutes alongside duration bucket on submit

@@ -12,6 +12,16 @@ import {
 
 const AUTO_SYNC_KEY = 'cloud-auto-sync';
 const AUTO_SYNC_PLUGIN_SETTINGS_KEY = 'cloud-plugin-settings-auto-sync';
+const SYNC_POLL_INTERVAL_KEY = 'cloud-sync-poll-interval-minutes';
+export const DEFAULT_SYNC_POLL_INTERVAL_MINUTES = 1;
+
+export function getSyncPollIntervalMinutes(): number {
+  return getSetting<number>(SYNC_POLL_INTERVAL_KEY, DEFAULT_SYNC_POLL_INTERVAL_MINUTES);
+}
+
+export function setSyncPollIntervalMinutes(minutes: number): void {
+  setSetting(SYNC_POLL_INTERVAL_KEY, minutes);
+}
 const PLUGIN_ID = 'proton-pulse';
 let teardownAutoSyncListener: (() => void) | null = null;
 let teardownPluginSettingsListener: (() => void) | null = null;
