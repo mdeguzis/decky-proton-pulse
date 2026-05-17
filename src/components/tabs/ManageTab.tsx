@@ -670,7 +670,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
               await refreshCloud();
               toaster.toast({ title: 'Proton Pulse', body: 'Sync status refreshed.' });
             } catch {
-              toaster.toast({ title: 'Proton Pulse', body: 'Sync check failed -- offline?' });
+              toaster.toast({ title: 'Proton Pulse', body: 'Device offline -- sync unavailable.' });
             }
           }}
           disabled={cloudLoading || syncing || restoring}
