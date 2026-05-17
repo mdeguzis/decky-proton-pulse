@@ -2,6 +2,11 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.4.2
+
+- fix(manage): show "Local only" badge instead of "Not synced" when cloud is unreachable
+- fix(manage): refresh sync status every 30s while on the Manage Configurations tab
+
 ## v1.4.1
 
 - Add Proton 10.0-1 through 10.0-4 to known Proton versions in form-schema.json.
@@ -45,6 +50,10 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Add Proton 10.0-x to knownProtonVersions
+- Make ScoringGuideModal data-driven from scoring-info.json
+- Store exact duration_minutes alongside duration bucket on submit
+- Store config_key on user_configs at report submission
 - Add duration auto-fill and 1.25x config weighting to scoring guide modal
 - Event-based session tracking and config playtime weighting
 - Bump to v1.3.0

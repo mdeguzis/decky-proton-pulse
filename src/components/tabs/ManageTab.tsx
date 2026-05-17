@@ -90,6 +90,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   const [resolvedNames, setResolvedNames] = useState<Record<number, string>>({});
   const [cloudConfigs, setCloudConfigs] = useState<CloudConfigRow[]>([]);
   const [cloudLoading, setCloudLoading] = useState(true);
+  const [cloudOffline, setCloudOffline] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [filterText, setFilterText] = useState('');
@@ -113,6 +114,9 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
     try {
       const rows = await fetchCloudConfigs();
       setCloudConfigs(rows);
+      setCloudOffline(false);
+    } catch {
+      setCloudOffline(true);
     } finally {
       setCloudLoading(false);
     }
@@ -145,6 +149,8 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   }, []);
   useEffect(() => {
     void refreshCloud();
+    const interval = setInterval(() => { void refreshCloud(); }, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -530,12 +536,14 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
 
   const openActionsMenu = (config: TrackedConfig, e: MouseEvent) => {
     const isShortcut = isSteamShortcutApp(config.appId);
-    const menuSyncStatus: SyncStatus = cloudLoading
+    const menuSyncStatus: SyncStatus = (cloudLoading || cloudOffline)
       ? 'not-synced'
       : getCloudSyncStatus(config.appId, cloudConfigs);
     const syncLabel = cloudLoading
       ? t().configManager.syncingCloud
-      : (menuSyncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced);
+      : cloudOffline
+        ? 'Local only (offline)'
+        : (menuSyncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced);
     const menuCloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
     const menuIsPublished = menuCloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
 
@@ -654,6 +662,14 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         <DialogButton onClick={handleRestoreCloud} disabled={syncing || restoring} style={{ flex: 1, fontSize: 11, padding: '6px 4px', whiteSpace: 'nowrap' }}>
           {restoring ? t().configManager.restoringFromCloud : t().configManager.restoreFromCloud}
         </DialogButton>
+        <DialogButton
+          onClick={() => { setCloudLoading(true); setCloudOffline(false); void refreshCloud(); }}
+          disabled={cloudLoading || syncing || restoring}
+          style={{ flex: '0 0 auto', fontSize: 11, padding: '6px 8px', whiteSpace: 'nowrap' }}
+          title="Refresh sync status"
+        >
+          {cloudLoading ? '...' : '\u21BB'}
+        </DialogButton>
       </Focusable>
       <PpTextField
         placeholder={t().configManager.filterGames}
@@ -666,7 +682,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           const isCurrent = appId === config.appId;
           const name = displayName(config);
           const isShortcut = isSteamShortcutApp(config.appId);
-          const syncStatus: SyncStatus = cloudLoading ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
+          const syncStatus: SyncStatus = (cloudLoading || cloudOffline) ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
           const cloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
           const isPublished = cloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
           const appIdLabel = isShortcut
@@ -708,13 +724,15 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
                         borderRadius: 999,
                         marginLeft: 6,
                         verticalAlign: 'middle',
-                        background: syncStatus === 'synced' ? 'rgba(76,175,80,0.18)' : 'rgba(245,158,11,0.18)',
-                        color: syncStatus === 'synced' ? '#4caf50' : '#f59e0b',
+                        background: cloudOffline
+                          ? 'rgba(120,120,120,0.18)'
+                          : syncStatus === 'synced' ? 'rgba(76,175,80,0.18)' : 'rgba(245,158,11,0.18)',
+                        color: cloudOffline ? '#888' : (syncStatus === 'synced' ? '#4caf50' : '#f59e0b'),
                         textTransform: 'uppercase',
                         letterSpacing: 0.3,
                       }}
                     >
-                      {syncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced}
+                      {cloudOffline ? 'Local only' : (syncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced)}
                     </span>
                   )}
                   {!isShortcut && (

@@ -351,18 +351,18 @@ describe('fetchCloudConfigs', () => {
     expect(result[0].config.appId).toBe(12345);
   });
 
-  it('returns empty array on error', async () => {
+  it('throws on error response', async () => {
     mockRestRequest.mockResolvedValueOnce({ data: null, error: 'broken', status: 500 });
 
     const { fetchCloudConfigs } = await import('./cloudSync');
-    expect(await fetchCloudConfigs()).toEqual([]);
+    await expect(fetchCloudConfigs()).rejects.toThrow();
   });
 
-  it('returns empty array when fetch throws', async () => {
+  it('throws when fetch throws', async () => {
     mockRestRequest.mockRejectedValueOnce(new Error('offline'));
 
     const { fetchCloudConfigs } = await import('./cloudSync');
-    expect(await fetchCloudConfigs()).toEqual([]);
+    await expect(fetchCloudConfigs()).rejects.toThrow();
   });
 });
 
@@ -453,13 +453,11 @@ describe('restoreCloudConfigs', () => {
     expect(mockAddTrackedConfig).not.toHaveBeenCalled();
   });
 
-  it('returns zeros when cloud fetch fails', async () => {
+  it('throws when cloud fetch fails', async () => {
     mockRestRequest.mockResolvedValueOnce({ data: null, error: 'offline', status: 500 });
 
     const { restoreCloudConfigs } = await import('./cloudSync');
-    const result = await restoreCloudConfigs();
-
-    expect(result).toEqual({ restored: 0, skipped: 0, failed: 0 });
+    await expect(restoreCloudConfigs()).rejects.toThrow();
   });
 
   it('counts failed restores when a local insert throws', async () => {

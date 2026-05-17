@@ -140,28 +140,21 @@ export interface CloudPluginSettingsRow {
 export type SyncStatus = 'synced' | 'not-synced';
 
 export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
-  try {
-    const voterId = await getVoterId();
-    const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', {
-      method: 'GET',
-    }, {
-      select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,config,updated_at,is_published',
-      voter_id: `eq.${voterId}`,
-    });
+  const voterId = await getVoterId();
+  const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', {
+    method: 'GET',
+  }, {
+    select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,config,updated_at,is_published',
+    voter_id: `eq.${voterId}`,
+  });
 
-    if (error || !data) {
-      void logFrontendEvent('ERROR', 'Cloud sync: fetch failed', { error });
-      return [];
-    }
-
-    void logFrontendEvent('DEBUG', 'Cloud sync: fetched configs', { count: data.length });
-    return data;
-  } catch (err) {
-    void logFrontendEvent('ERROR', 'Cloud sync: fetch threw', {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return [];
+  if (error || !data) {
+    void logFrontendEvent('ERROR', 'Cloud sync: fetch failed', { error });
+    throw new Error(typeof error === 'string' ? error : 'fetch failed');
   }
+
+  void logFrontendEvent('DEBUG', 'Cloud sync: fetched configs', { count: data.length });
+  return data;
 }
 
 export async function deleteCloudConfig(appId: number): Promise<boolean> {
