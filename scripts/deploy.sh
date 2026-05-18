@@ -14,6 +14,8 @@
 #   --github-release      Create or update a GitHub release only
 #   --github-prerelease   Create or update a GitHub pre-release only
 #   --store-submit          Prep store submission for latest release tag
+#   --dry-run      Simulate release actions without making live changes (default: true)
+#   --no-dry-run   Disable dry-run and apply live changes
 #   -h, --help     Show this help message
 
 set -euo pipefail
@@ -26,7 +28,7 @@ DECK_PLUGIN_DIR=""
 SKIP_BUILD=0
 GH_RELEASE=""
 STORE_MODE=""
-DRY_RUN="${DRY_RUN:-true}"
+DRY_RUN="true"
 PLUGIN_DIRTY_STATE="clean"
 PLUGIN_SOURCE_STATUS=""
 PLUGIN_GENERATED_STATUS=""
@@ -365,6 +367,8 @@ while [[ $# -gt 0 ]]; do
     --github-release) GH_RELEASE="release"; shift ;;
     --github-prerelease) GH_RELEASE="prerelease"; shift ;;
     --store-submit) STORE_MODE="release"; shift ;;
+    --dry-run)      DRY_RUN="true";  shift ;;
+    --no-dry-run)   DRY_RUN="false"; shift ;;
     -h|--help)      usage ;;
     *) echo "Unknown arg: $1  (use -h for help)"; exit 1 ;;
   esac

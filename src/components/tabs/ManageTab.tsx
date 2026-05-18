@@ -679,7 +679,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           }}
           disabled={cloudLoading || syncing || restoring}
           style={{ width: 36, minWidth: 36, maxWidth: 36, fontSize: 16, padding: '4px 0', textAlign: 'center' }}
-          title="Refresh sync status"
+
         >
           {cloudLoading ? '…' : '\u21BB'}
         </DialogButton>

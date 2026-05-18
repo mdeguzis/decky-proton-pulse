@@ -28,6 +28,7 @@ endif
 
 DECK_HOST ?= $(DECK_IP)
 TARGET    ?= stable
+_DRY_RUN_FLAG := $(if $(filter false,$(DRY_RUN)),--no-dry-run,--dry-run)
 DRY_RUN ?= true
 IS_TERMUX := $(if $(findstring com.termux,$(PREFIX)),1,)
 ifeq ($(IS_TERMUX),1)
@@ -115,11 +116,11 @@ help:
 	@printf "  %-27s %s\n" "build-and-deploy-local" "Force a local clean/test/build/deploy flow"
 	@printf "  %-27s %s\n" "package" "Build and create the local release zip for the current VERSION"
 	@printf "  %-27s %s\n" "release" "Build, package, and prepare a GitHub release using CHANGELOG.md notes"
-	@printf "  %-27s %s\n" "" "Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
+	@printf "  %-27s %s\n" "" "Safe by default: pass DRY_RUN=false to apply live changes"
 	@printf "  %-27s %s\n" "github-release" "GitHub-only release flow (no Decky database submission)"
-	@printf "  %-27s %s\n" "" "Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
+	@printf "  %-27s %s\n" "" "Safe by default: pass DRY_RUN=false to apply live changes"
 	@printf "  %-27s %s\n" "github-pre-release" "GitHub-only pre-release flow (no Decky database submission)"
-	@printf "  %-27s %s\n" "" "Safe by default: DRY_RUN=true (set DRY_RUN=false for live changes)"
+	@printf "  %-27s %s\n" "" "Safe by default: pass DRY_RUN=false to apply live changes"
 	@printf "  %-27s %s\n" "clean" "Remove build output (dist/) and generated release archives"
 	@echo ""
 	@echo "============= device targets ============= "
@@ -325,13 +326,13 @@ $(RELEASE_NOTES_FILE): CHANGELOG.md VERSION scripts/release-notes.mjs
 	node scripts/release-notes.mjs > $(RELEASE_NOTES_FILE)
 
 release: package
-	DRY_RUN=$(DRY_RUN) bash scripts/deploy.sh --skip-build --release
+	bash scripts/deploy.sh --skip-build --release $(_DRY_RUN_FLAG)
 
 github-release: package
-	DRY_RUN=$(DRY_RUN) bash scripts/deploy.sh --skip-build --github-release
+	bash scripts/deploy.sh --skip-build --github-release $(_DRY_RUN_FLAG)
 
 github-pre-release: package
-	DRY_RUN=$(DRY_RUN) bash scripts/deploy.sh --skip-build --github-prerelease
+	bash scripts/deploy.sh --skip-build --github-prerelease $(_DRY_RUN_FLAG)
 
 clean:
 	rm -rf dist/

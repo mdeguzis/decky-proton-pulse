@@ -21,7 +21,6 @@ import {
   setPluginSettingsAutoSyncEnabled,
   getSyncPollIntervalMinutes,
   setSyncPollIntervalMinutes,
-  DEFAULT_SYNC_POLL_INTERVAL_MINUTES,
 } from '../../lib/cloudSync';
 import { getVoterId } from '../../lib/voting';
 import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
