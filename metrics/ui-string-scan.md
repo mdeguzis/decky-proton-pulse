@@ -50,17 +50,16 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/ScoringGuideModal.tsx` | 95 | jsx | Each report gets a relevance score so the most useful ones rise to the top. Factors: |
 | `src/components/ScoringGuideModal.tsx` | 107 | jsx | Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours. |
 | `src/components/ScoringGuideModal.tsx` | 110 | jsx | Duration auto-fill |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 771 | string | Auto-sync to cloud |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 772 | string | Automatically back up configs and plugin settings when they change |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 784 | string | Cloud sync refresh rate |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 785 | string | How often to re-check cloud sync status in the background |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 790 | string | Disabled |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 791 | string | 1 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 792 | string | 5 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 793 | string | 30 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 794 | string | 1 hour |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 770 | string | Auto-sync to cloud |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 771 | string | Automatically back up configs and plugin settings when they change |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 783 | string | Cloud sync refresh rate |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 784 | string | How often to re-check cloud sync status in the background |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 789 | string | Disabled |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 790 | string | 1 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 791 | string | 5 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 792 | string | 30 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 793 | string | 1 hour |
 | `src/components/tabs/ManageTab.tsx` | 576 | string | Active |
 | `src/components/tabs/ManageTab.tsx` | 578 | string | Playtime (total) |
 | `src/components/tabs/ManageTab.tsx` | 579 | string | Playtime (this config) |
-| `src/components/tabs/ManageTab.tsx` | 682 | string | Refresh sync status |
 | `src/patches/gamePageBadge.tsx` | 224 | string | Native Linux build available |

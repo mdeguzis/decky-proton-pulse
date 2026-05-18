@@ -360,63 +360,63 @@
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 771,
+      "line": 770,
       "column": 19,
       "kind": "string",
       "text": "Auto-sync to cloud"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 772,
+      "line": 771,
       "column": 25,
       "kind": "string",
       "text": "Automatically back up configs and plugin settings when they change"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 784,
+      "line": 783,
       "column": 19,
       "kind": "string",
       "text": "Cloud sync refresh rate"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 785,
+      "line": 784,
       "column": 25,
       "kind": "string",
       "text": "How often to re-check cloud sync status in the background"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 790,
+      "line": 789,
       "column": 26,
       "kind": "string",
       "text": "Disabled"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 791,
+      "line": 790,
       "column": 26,
       "kind": "string",
       "text": "1 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 792,
+      "line": 791,
       "column": 26,
       "kind": "string",
       "text": "5 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 793,
+      "line": 792,
       "column": 26,
       "kind": "string",
       "text": "30 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 794,
+      "line": 793,
       "column": 26,
       "kind": "string",
       "text": "1 hour"
@@ -441,13 +441,6 @@
       "column": 18,
       "kind": "string",
       "text": "Playtime (this config)"
-    },
-    {
-      "file": "src/components/tabs/ManageTab.tsx",
-      "line": 682,
-      "column": 17,
-      "kind": "string",
-      "text": "Refresh sync status"
     },
     {
       "file": "src/patches/gamePageBadge.tsx",

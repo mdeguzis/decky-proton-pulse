@@ -65,6 +65,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Remove unused import and invalid title prop; fix deploy.sh dry-run
+- Configurable cloud sync refresh rate and simplified auto-sync toggle
 - Offline toast was never shown -- refreshCloud swallowed error
 - Improve offline toast message to 'Device offline -- sync unavailable'
 - Fix refresh button width and add toast on manual refresh
