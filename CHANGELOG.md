@@ -4,24 +4,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.4.4
 
-- Remove unused import and invalid title prop; fix deploy.sh dry-run
-- Configurable cloud sync refresh rate and simplified auto-sync toggle
-- Offline toast was never shown -- refreshCloud swallowed error
-- Improve offline toast message to 'Device offline -- sync unavailable'
-- Fix refresh button width and add toast on manual refresh
-- Show 'Local only' badge offline, add refresh button and 30s auto-refresh
-- Add Proton 10.0-x to knownProtonVersions
-- Make ScoringGuideModal data-driven from scoring-info.json
-- Store exact duration_minutes alongside duration bucket on submit
-- Store config_key on user_configs at report submission
-- Add duration auto-fill and 1.25x config weighting to scoring guide modal
-- Event-based session tracking and config playtime weighting
-- Bump to v1.3.0
-- Add playtime confidence bonus to report ranking
-- Log source name and field in getSteamPlaytimeForeverMinutes
-- Bump to v1.2.2
-- Also try appStore.GetAppOverviewByGameID per NonSteamPlaytime plugin pattern
-- Make getSteamPlaytimeForeverMinutes async with RegisterForAppDetails fallback so playtime is always fetched
+- Sync release-derived files for 1.4.4
 
 ## v1.4.3
 
