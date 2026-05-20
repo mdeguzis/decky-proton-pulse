@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-# Strip Co-Authored-By trailers from commit messages
-sed -i '/^Co-Authored-By:/d' "$1"
