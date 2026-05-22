@@ -44,7 +44,7 @@ If you find Proton Pulse useful, please consider starring or contributing to the
 
 ---
 
-## What it does
+## How Proton Pulse Works -- Apply ProtonDB Launch Options Without Copy/Paste
 
 Getting Proton launch options right usually means opening ProtonDB, reading a pile of reports, guessing which ones match your hardware, and then copying flags into Steam by hand. Proton Pulse handles that from the Steam Deck UI:
 
@@ -70,8 +70,8 @@ After linking, uploads from that Decky install can show up as yours on the websi
 
 * **ProtonDB report fetching** - pulls from cached, mirrored, and live ProtonDB sources so the plugin still has something useful to show when one source comes up empty
 * **Native Pulse reports** - submit your own compatibility report directly from the plugin; hardware (CPU, GPU, RAM, VRAM, driver, kernel, OS, resolution) is captured automatically so you only need to pick a rating and Proton version
-* **Hardware-aware scoring** - ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier
-* **Launch option management** - apply, review, edit, and clear launch options directly from the Steam Deck UI
+* **Dynamic ProtonDB hardware scoring & filtering** - ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier so results match your exact setup, not just the general tier
+* **Steam Proton launch option management (no copy/paste)** - apply, review, edit, and clear launch options directly from the Steam Deck UI without a keyboard
 * **Saved configurations** - keep reusable per-game setups with custom variables and a live launch preview
 * **Compatibility tool management** - browse, install, refresh, and manage Proton and GE versions without leaving the plugin
 * **Detailed report browsing** - open full report cards with filters, diagnostics, vote counts, and score breakdowns
@@ -118,7 +118,7 @@ Proton Pulse supports 19 languages. Translation coverage is measured during buil
 
 Want to help translate? See `src/lib/translations/` for the translation files.
 
-## Installation
+## Installation -- Decky Loader Plugin Setup for Steam Deck
 
 Proton Pulse currently supports two installation routes:
 
