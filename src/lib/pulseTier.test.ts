@@ -52,14 +52,14 @@ describe('computePulseTier', () => {
   });
 
   it('returns pending/none when there are no rows', () => {
-    expect(computePulseTier([])).toEqual({ tier: 'pending', count: 0, confidence: 'none' });
+    expect(computePulseTier([])).toEqual({ tier: 'pending', count: 0, confidence: 'none', confidencePct: 0 });
   });
 
   it('scores a single fresh platinum as platinum + low confidence', () => {
     // 1 row, all platinum, < 30 days old -> recency 1.0, score 1.0 -> avg 1.0
     // tier=platinum. count=1 -> confidence=low
     expect(computePulseTier([row('platinum', 5)])).toEqual({
-      tier: 'platinum', count: 1, confidence: 'low',
+      tier: 'platinum', count: 1, confidence: 'low', confidencePct: 30,
     });
   });
 
@@ -152,7 +152,7 @@ describe('computeCombinedTier', () => {
   }
 
   it('returns pending when both arrays are empty', () => {
-    expect(computeCombinedTier([], [])).toEqual({ tier: 'pending', count: 0, confidence: 'none' });
+    expect(computeCombinedTier([], [])).toEqual({ tier: 'pending', count: 0, confidence: 'none', confidencePct: 0 });
   });
 
   it('scores a single fresh platinum CDN report as platinum', () => {

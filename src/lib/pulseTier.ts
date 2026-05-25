@@ -7,6 +7,19 @@ export interface PulseTierResult {
   tier: string;
   count: number;
   confidence: PulseConfidence;
+  // Numeric per-game confidence (0-100). Same shape used by scoring.ts
+  // aggregatePerGame() so the badge UI can render a percentage chip without
+  // doing its own math
+  confidencePct: number;
+}
+
+// Map sample count to a baseline confidence percentage, then nudge based on
+// the qualitative 'none'/'low'/'medium'/'high' bucket so existing tests
+// (which assert on the bucket) still hold
+function confidencePercentFromCount(count: number): number {
+  if (count <= 0) return 0;
+  // Log-scale baseline: 1 -> 30, 5 -> 60, 20 -> 85, 50+ -> ~95
+  return Math.min(95, Math.round(30 + Math.log2(count) * 18));
 }
 
 const RATING_SCORE: Record<string, number> = {
@@ -18,7 +31,7 @@ const RATING_SCORE: Record<string, number> = {
 };
 
 export function computePulseTier(rows: UserConfigRow[]): PulseTierResult {
-  if (rows.length === 0) return { tier: 'pending', count: 0, confidence: 'none' };
+  if (rows.length === 0) return { tier: 'pending', count: 0, confidence: 'none', confidencePct: 0 };
 
   const now = Date.now() / 1000;
   let wSum = 0;
@@ -47,8 +60,9 @@ export function computePulseTier(rows: UserConfigRow[]): PulseTierResult {
   const count = rows.length;
   const confidence: PulseConfidence =
     count >= 5 ? 'high' : count >= 2 ? 'medium' : 'low';
+  const confidencePct = confidencePercentFromCount(count);
 
-  return { tier, count, confidence };
+  return { tier, count, confidence, confidencePct };
 }
 
 export function computeCombinedTier(
@@ -62,7 +76,7 @@ export function computeCombinedTier(
     ...pulseReports.map(r => ({ rating: r.rating, ts: r.created_at ? new Date(r.created_at).getTime() / 1000 : 0 })),
   ];
 
-  if (entries.length === 0) return { tier: 'pending', count: 0, confidence: 'none' };
+  if (entries.length === 0) return { tier: 'pending', count: 0, confidence: 'none', confidencePct: 0 };
 
   let wSum = 0;
   let wTotal = 0;
@@ -89,6 +103,7 @@ export function computeCombinedTier(
   const count = entries.length;
   const confidence: PulseConfidence =
     count >= 5 ? 'high' : count >= 2 ? 'medium' : 'low';
+  const confidencePct = confidencePercentFromCount(count);
 
-  return { tier, count, confidence };
+  return { tier, count, confidence, confidencePct };
 }

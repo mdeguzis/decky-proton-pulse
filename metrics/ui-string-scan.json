@@ -269,7 +269,7 @@
     },
     {
       "file": "src/components/ReportDetailModal.tsx",
-      "line": 1449,
+      "line": 1457,
       "column": 13,
       "kind": "jsx",
       "text": "Edit Responses"
@@ -357,6 +357,20 @@
       "column": 108,
       "kind": "jsx",
       "text": "Duration auto-fill"
+    },
+    {
+      "file": "src/components/tabs/AboutTab.tsx",
+      "line": 83,
+      "column": 20,
+      "kind": "string",
+      "text": "Proton Pulse Website"
+    },
+    {
+      "file": "src/components/tabs/ConfigureTab.tsx",
+      "line": 412,
+      "column": 45,
+      "kind": "jsx",
+      "text": "% conf"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",

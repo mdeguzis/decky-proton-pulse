@@ -436,7 +436,10 @@ function HardwareCompareModal({
   // called `cappedScore` because the field was named `.score`; renamed to
   // match the new confidence naming
   const cappedConfidence = Math.min(100, report.confidence);
-  const confScore = (cappedConfidence / 10).toFixed(1);
+  // Show as a percentage (integer 0-100). Earlier this was X.X/10 which read
+  // like a user-facing star score; percent reads correctly as a relevance
+  // qualifier next to the rating badge
+  const confScore = String(Math.round(cappedConfidence));
 
   // GPU tier match: same vendor = 100%, unknown = 50%, mismatch = 0%
   const reportTier = report.gpuTier.toLowerCase();
@@ -993,7 +996,10 @@ export function ReportDetailModal({
   const downvoteButtonRef = useRef<HTMLElement | null>(null);
   const hardwareSectionRef = useRef<HTMLDivElement>(null);
   const cappedConfidence = Math.min(100, report.confidence);
-  const confScore = (cappedConfidence / 10).toFixed(1);
+  // Show as a percentage (integer 0-100). Earlier this was X.X/10 which read
+  // like a user-facing star score; percent reads correctly as a relevance
+  // qualifier next to the rating badge
+  const confScore = String(Math.round(cappedConfidence));
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
 
   // Scroll to top on mount so D-pad scrolling starts from a known position
@@ -1619,7 +1625,7 @@ export function ReportDetailModal({
 
             <InfoSection title={t().detail.report}>
               <InfoRow label={t().detail.source} value={sourceLabel} />
-              <InfoRow label={t().reports.confidence} value={`${confScore}/10`} />
+              <InfoRow label={t().reports.confidence} value={`${confScore}%`} />
               <InfoRow label={t().detail.gpuTier} value={report.gpuTier.toUpperCase()} />
               <InfoRow label={t().reports.votes} value={`+${localUpvotes} / -${localDownvotes}`} />
               <InfoRow label={t().reports.submitted} value={formatTimestamp(report.timestamp)} />

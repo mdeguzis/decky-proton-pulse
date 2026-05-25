@@ -38,7 +38,10 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
   const displayRating = report.rating;
   const ratingColor = RATING_COLORS[displayRating] ?? '#888';
   const cappedConfidence = Math.min(100, report.confidence);
-  const confScore = (cappedConfidence / 10).toFixed(1);
+  // Show as a percentage. Earlier this was an X.X/10 score which read like a
+  // user-facing rating instead of a relevance qualifier; the percent format
+  // tracks better with the new rating/confidence split
+  const confLabel = `${Math.round(cappedConfidence)}%`;
   const confColor = confidenceColor(cappedConfidence);
   const highlighted = selected || focused;
   const notesPreview = buildNotesPreview(report.notes);
@@ -176,7 +179,7 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
             {report.gpuTier.toUpperCase()}
           </span>
           <span style={{ fontSize: 12, fontWeight: 700, color: confColor }}>
-            {confScore}/10
+            {confLabel}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
             <span

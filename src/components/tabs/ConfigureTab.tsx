@@ -380,20 +380,39 @@ function GameSummaryHeader({
           </span>
         )}
         {tierColor && combinedTier && (
-          <span
-            style={{
-              background: tierColor,
-              color: '#111',
-              borderRadius: 999,
-              padding: '3px 10px',
-              fontWeight: 700,
-              fontSize: 11,
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
-            }}
-          >
-            {(t().ratings as Record<string, string>)[combinedTier.tier] ?? combinedTier.tier}
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+            <span
+              style={{
+                background: tierColor,
+                color: '#111',
+                borderRadius: 999,
+                padding: '3px 10px',
+                fontWeight: 700,
+                fontSize: 11,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+              }}
+            >
+              {(t().ratings as Record<string, string>)[combinedTier.tier] ?? combinedTier.tier}
+            </span>
+            {combinedTier.confidencePct > 0 && (
+              <span
+                title={`${combinedTier.confidencePct}% confidence across ${combinedTier.count} report${combinedTier.count === 1 ? '' : 's'}`}
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: 9.5,
+                  fontWeight: 700,
+                  color: combinedTier.confidencePct >= 70 ? '#4ade80'
+                       : combinedTier.confidencePct >= 50 ? '#facc15'
+                       : combinedTier.confidencePct >= 30 ? '#fb923c'
+                       : '#f87171',
+                  letterSpacing: 0.4,
+                }}
+              >
+                {combinedTier.confidencePct}% conf
+              </span>
+            )}
+          </div>
         )}
       </div>
     </div>
