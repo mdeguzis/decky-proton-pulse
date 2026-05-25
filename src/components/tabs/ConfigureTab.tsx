@@ -578,8 +578,15 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       } catch { return false; }
     })()
   ) : true);
-  // When appName prop is empty for a non-Steam shortcut, try collectionStore
-  const effectiveAppName = (appName || (appId && isShortcut ? lookupAppNameFromCollection(appId) : '')) ?? '';
+  // When appName prop is empty, fall back to Steam's app overview for the
+  // real title (covers entries from search results / deep links where the
+  // navigation event didn't carry a display name). For non-Steam shortcuts
+  // we additionally try collectionStore since BIsShortcut returns no name.
+  const effectiveAppName = (
+    appName
+    || (appId ? (getSteamAppOverview(appId)?.display_name ?? '') : '')
+    || (appId && isShortcut ? lookupAppNameFromCollection(appId) : '')
+  ) ?? '';
   // null = resolution pending, 'none' = tried but no Steam match, number = resolved ID
   const [resolvedSteamAppId, setResolvedSteamAppId] = useState<number | 'none' | null>(null);
   const [demoFullGameAppId, setDemoFullGameAppId] = useState<number | null>(null);
@@ -1286,7 +1293,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <GameSummaryHeader appId={appId} appName={appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} isInLibrary={isInLibrary} demoFullGameAppId={demoFullGameAppId} demoFullGameName={demoFullGameName} />
+      <GameSummaryHeader appId={appId} appName={effectiveAppName || appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} isInLibrary={isInLibrary} demoFullGameAppId={demoFullGameAppId} demoFullGameName={demoFullGameName} />
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
           <SteamSpinner />

@@ -63,6 +63,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Confidence: pill-ify the per-report chip on ReportCard too
 - Confidence: pill-ify in detail modal + Configure header
 - Confidence display: percent format, under-badge in Configure tab
 - Badge: show per-game confidence percentage next to the tier

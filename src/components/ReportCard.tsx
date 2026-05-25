@@ -160,38 +160,43 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
             flexShrink: 0,
           }}
         >
-          <span
-            title={gpuMismatch ? strings.reports.gpuMismatchBadgeHint(report.gpuTier) : undefined}
-            style={{
-              background: ratingColor,
-              color: '#111',
-              borderRadius: 999,
-              padding: '2px 9px',
-              fontWeight: 700,
-              fontSize: 10,
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {(strings.ratings as Record<string, string>)[displayRating]}
-          </span>
+          {/* Rating badge + per-report confidence pill on the same row so they
+              read as a pair: "PLATINUM 100%". GPU tier sits on its own row
+              below, votes underneath that */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span
+              title={gpuMismatch ? strings.reports.gpuMismatchBadgeHint(report.gpuTier) : undefined}
+              style={{
+                background: ratingColor,
+                color: '#111',
+                borderRadius: 999,
+                padding: '2px 9px',
+                fontWeight: 700,
+                fontSize: 10,
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {(strings.ratings as Record<string, string>)[displayRating]}
+            </span>
+            <span
+              title={`Per-report confidence: ${confLabel}`}
+              style={{
+                background: confColor,
+                color: '#111',
+                borderRadius: 999,
+                padding: '1px 8px',
+                fontWeight: 700,
+                fontSize: 10,
+                whiteSpace: 'nowrap',
+                letterSpacing: 0.3,
+              }}
+            >
+              {confLabel}
+            </span>
+          </div>
           <span style={{ fontSize: 11, color: gpuMismatch ? '#f59e0b' : '#d9e8f4' }}>
             {report.gpuTier.toUpperCase()}
-          </span>
-          <span
-            title={`Per-report confidence: ${confLabel}`}
-            style={{
-              background: confColor,
-              color: '#111',
-              borderRadius: 999,
-              padding: '1px 8px',
-              fontWeight: 700,
-              fontSize: 10,
-              whiteSpace: 'nowrap',
-              letterSpacing: 0.3,
-            }}
-          >
-            {confLabel}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
             <span
