@@ -23,13 +23,6 @@ interface Props {
   onDownvote?: (report: DisplayReportCard) => void;
 }
 
-function confidenceColor(confidence: number): string {
-  if (confidence >= 80) return '#4caf50';
-  if (confidence >= 60) return '#ffeb3b';
-  if (confidence >= 40) return '#ff9800';
-  return '#f44336';
-}
-
 export function ReportCard({ report, selected, focused = false, systemGpuVendor, onSelect, onFocus, onUpvote }: Props) {
   const strings = t();
   // Badge shows the report's actual rating (derived from yes/no answers).
@@ -37,12 +30,6 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
   // report into bronze based on hardware/recency - that hid signal.
   const displayRating = report.rating;
   const ratingColor = RATING_COLORS[displayRating] ?? '#888';
-  const cappedConfidence = Math.min(100, report.confidence);
-  // Show as a percentage. Earlier this was an X.X/10 score which read like a
-  // user-facing rating instead of a relevance qualifier; the percent format
-  // tracks better with the new rating/confidence split
-  const confLabel = `${Math.round(cappedConfidence)}%`;
-  const confColor = confidenceColor(cappedConfidence);
   const highlighted = selected || focused;
   const notesPreview = buildNotesPreview(report.notes);
   const gpuMismatch =
@@ -160,41 +147,25 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
             flexShrink: 0,
           }}
         >
-          {/* Rating badge + per-report confidence pill on the same row so they
-              read as a pair: "PLATINUM 100%". GPU tier sits on its own row
-              below, votes underneath that */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span
-              title={gpuMismatch ? strings.reports.gpuMismatchBadgeHint(report.gpuTier) : undefined}
-              style={{
-                background: ratingColor,
-                color: '#111',
-                borderRadius: 999,
-                padding: '2px 9px',
-                fontWeight: 700,
-                fontSize: 10,
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {(strings.ratings as Record<string, string>)[displayRating]}
-            </span>
-            <span
-              title={`Per-report confidence: ${confLabel}`}
-              style={{
-                background: confColor,
-                color: '#111',
-                borderRadius: 999,
-                padding: '1px 8px',
-                fontWeight: 700,
-                fontSize: 10,
-                whiteSpace: 'nowrap',
-                letterSpacing: 0.3,
-              }}
-            >
-              {confLabel}
-            </span>
-          </div>
+          {/* Rating badge only on the card. Per-report confidence used to
+              live here too but lived too close to the per-game pill at the
+              top of the screen; it now sits inside the report detail modal
+              alongside Proton Version / Source pills */}
+          <span
+            title={gpuMismatch ? strings.reports.gpuMismatchBadgeHint(report.gpuTier) : undefined}
+            style={{
+              background: ratingColor,
+              color: '#111',
+              borderRadius: 999,
+              padding: '2px 9px',
+              fontWeight: 700,
+              fontSize: 10,
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {(strings.ratings as Record<string, string>)[displayRating]}
+          </span>
           <span style={{ fontSize: 11, color: gpuMismatch ? '#f59e0b' : '#d9e8f4' }}>
             {report.gpuTier.toUpperCase()}
           </span>

@@ -399,7 +399,9 @@ function GameSummaryHeader({
               <span
                 title={`${combinedTier.confidencePct}% confidence across ${combinedTier.count} report${combinedTier.count === 1 ? '' : 's'}`}
                 style={{
-                  background: combinedTier.confidencePct >= 70 ? '#4ade80'
+                  // Steam install-button green for high confidence (darker /
+                  // Steam-paletted - matches the per-report pill in ReportCard)
+                  background: combinedTier.confidencePct >= 70 ? '#5ba32b'
                              : combinedTier.confidencePct >= 50 ? '#facc15'
                              : combinedTier.confidencePct >= 30 ? '#fb923c'
                              : '#f87171',

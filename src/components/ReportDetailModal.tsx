@@ -1004,7 +1004,8 @@ export function ReportDetailModal({
   // ReportCard uses so the chip and modal pill read the same at a glance.
   // Light text-on-color for readability; the pill itself uses background.
   const confColor =
-    cappedConfidence >= 80 ? '#4ade80' :
+    // Steam install-button green for high confidence (darker / Steam-paletted)
+    cappedConfidence >= 80 ? '#5ba32b' :
     cappedConfidence >= 60 ? '#facc15' :
     cappedConfidence >= 40 ? '#fb923c' : '#f87171';
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
