@@ -1,0 +1,56 @@
+name: Website Feedback
+description: Bug, design tweak, or feature idea for the proton-pulse.com web UI (NOT the Decky plugin)
+labels: ["website", "feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. This template is for feedback on
+        **https://www.proton-pulse.com** specifically -- if you're filing
+        something about the Decky Loader plugin, use the Plugin Issue
+        template instead.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of feedback
+      options:
+        - Bug (something broken or rendering wrong)
+        - Design / UX tweak
+        - Feature idea
+        - Data issue (missing / wrong info on a game page)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page URL
+      description: which page on the site? Paste the full URL so we can jump straight to it
+      placeholder: https://www.proton-pulse.com/app.html#/app/1091500
+  - type: textarea
+    id: description
+    attributes:
+      label: What did you see?
+      description: For bugs include what you expected vs what happened. For design tweaks, what felt off and what would feel better.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce (bugs only)
+      description: optional - skip if it's a design tweak or feature idea
+      placeholder: |
+        1. Open https://www.proton-pulse.com/app.html#/app/...
+        2. Click the X button
+        3. Notice Y
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / device
+      description: optional - helpful for layout bugs
+      placeholder: Firefox 134 on Steam Deck, or Chrome 132 on desktop
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (optional)
+      description: drag and drop an image here, or paste a URL
