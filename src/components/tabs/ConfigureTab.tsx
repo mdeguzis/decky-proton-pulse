@@ -399,17 +399,20 @@ function GameSummaryHeader({
               <span
                 title={`${combinedTier.confidencePct}% confidence across ${combinedTier.count} report${combinedTier.count === 1 ? '' : 's'}`}
                 style={{
-                  fontFamily: 'monospace',
-                  fontSize: 9.5,
+                  background: combinedTier.confidencePct >= 70 ? '#4ade80'
+                             : combinedTier.confidencePct >= 50 ? '#facc15'
+                             : combinedTier.confidencePct >= 30 ? '#fb923c'
+                             : '#f87171',
+                  color: '#111',
+                  borderRadius: 999,
+                  padding: '1px 7px',
                   fontWeight: 700,
-                  color: combinedTier.confidencePct >= 70 ? '#4ade80'
-                       : combinedTier.confidencePct >= 50 ? '#facc15'
-                       : combinedTier.confidencePct >= 30 ? '#fb923c'
-                       : '#f87171',
+                  fontSize: 9,
+                  whiteSpace: 'nowrap',
                   letterSpacing: 0.4,
                 }}
               >
-                {combinedTier.confidencePct}% conf
+                {t().reports.confidence}: {combinedTier.confidencePct}%
               </span>
             )}
           </div>

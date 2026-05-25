@@ -1000,6 +1000,13 @@ export function ReportDetailModal({
   // like a user-facing star score; percent reads correctly as a relevance
   // qualifier next to the rating badge
   const confScore = String(Math.round(cappedConfidence));
+  // Color for the confidence pill - green/yellow/orange/red bands. Same scale
+  // ReportCard uses so the chip and modal pill read the same at a glance.
+  // Light text-on-color for readability; the pill itself uses background.
+  const confColor =
+    cappedConfidence >= 80 ? '#4ade80' :
+    cappedConfidence >= 60 ? '#facc15' :
+    cappedConfidence >= 40 ? '#fb923c' : '#f87171';
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
 
   // Scroll to top on mount so D-pad scrolling starts from a known position
@@ -1372,8 +1379,11 @@ export function ReportDetailModal({
             </div>
           </div>
 
-          {/* Proton version line + availability status */}
-          <div style={{ fontSize: 11, color: '#ccc', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Proton version line + availability status. Confidence used to sit
+              as inline text after "Matches your GPU" - it's now a pill on the
+              right next to Proton Version and Source so the three metadata
+              pills stay grouped */}
+          <div style={{ fontSize: 11, color: '#ccc', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span>
               {formatProtonLabel(report.protonVersion)}
               {' . '}
@@ -1382,8 +1392,6 @@ export function ReportDetailModal({
                 : report.gpuTier === sysInfo.gpu_vendor
                   ? t().detail.matchesGpu
                   : t().detail.differentGpu}
-              {' . '}
-              {extras.confidenceOutOfTen(confScore)}
             </span>
             {statusEntry && (
               <span
@@ -1412,6 +1420,20 @@ export function ReportDetailModal({
               }}
             >
               {t().detail.source}: {sourceLabel}
+            </span>
+            <span
+              title={`Per-report confidence: how trustworthy this single report is for your situation`}
+              style={{
+                background: confColor,
+                color: '#111',
+                borderRadius: 999,
+                padding: '1px 7px',
+                fontWeight: 700,
+                fontSize: 9,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t().reports.confidence}: {confScore}%
             </span>
             {versionStatus === 'loading' && (
               <span style={{ fontSize: 9, color: '#7a9bb5' }}>{t().detail.checking}</span>
