@@ -432,9 +432,11 @@ function HardwareCompareModal({
     showModal(<MatchingRulesModal />);
   };
 
-  // confidence score for this report (same as the card shows)
-  const cappedScore = Math.min(100, report.score);
-  const confScore = (cappedScore / 10).toFixed(1);
+  // confidence for this report (same as the card shows). Earlier this was
+  // called `cappedScore` because the field was named `.score`; renamed to
+  // match the new confidence naming
+  const cappedConfidence = Math.min(100, report.confidence);
+  const confScore = (cappedConfidence / 10).toFixed(1);
 
   // GPU tier match: same vendor = 100%, unknown = 50%, mismatch = 0%
   const reportTier = report.gpuTier.toLowerCase();
@@ -990,8 +992,8 @@ export function ReportDetailModal({
   const upvoteButtonRef = useRef<HTMLElement | null>(null);
   const downvoteButtonRef = useRef<HTMLElement | null>(null);
   const hardwareSectionRef = useRef<HTMLDivElement>(null);
-  const cappedScore = Math.min(100, report.score);
-  const confScore = (cappedScore / 10).toFixed(1);
+  const cappedConfidence = Math.min(100, report.confidence);
+  const confScore = (cappedConfidence / 10).toFixed(1);
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
 
   // Scroll to top on mount so D-pad scrolling starts from a known position

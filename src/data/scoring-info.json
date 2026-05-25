@@ -18,6 +18,7 @@
     "KERNEL_PATCH_CLOSE": 1.08,
     "KERNEL_MINOR_CLOSE": 1.04,
     "BORKED_DECAY_DAYS": 365,
+    "BORKED_STALENESS_PENALTY": -20,
     "NOTES_MAX": 10,
     "PROTON_MATCH": 8,
     "PROTON_CLOSE": 4,
@@ -34,12 +35,7 @@
     "bronze": 0.4,
     "borked": 0.0
   },
-  "scoreTiers": {
-    "platinum": 80,
-    "gold": 60,
-    "silver": 40,
-    "bronze": 20
-  },
+  "_deprecated_note_scoreTiers": "scoreTiers (was a score-to-tier mapping) is removed. Rating is never derived from a numeric score; it always comes from deriveRating(yes/no answers). See model.rating + perGameAggregation.rating for the current behavior.",
   "customProtonMarkers": ["ge", "cachyos", "tkg", "protonplus", "experimental"],
   "osFamilies": {
     "steamos": ["steamos", "holoiso", "chimeraos"],
@@ -97,5 +93,98 @@
       "faults_0_without_oob": "gold"
     },
     "tinkeringNote": "Tinkering (GE proton, winetricks, etc.) does not cap the rating by itself. A tinker report can still reach platinum if verdictOob='yes' (the user confirmed it also works without tinkering)."
+  },
+
+  "model": {
+    "_note": "Proton Pulse tracks two distinct numbers per report and per game: a RATING (the badge) and a CONFIDENCE (how reliable that rating is).",
+    "rating": {
+      "definition": "Derived purely from the report's yes/no answers. Nothing else changes it - not your hardware, not how old the report is. Same report yields the same rating for everyone.",
+      "perGame": "Per-game rating is the recency-weighted mean of per-report ratings. Active games where recent reports trend platinum will read platinum, even if old borked reports exist."
+    },
+    "confidence": {
+      "definition": "A 0-100% qualifier shown next to the badge. Confidence answers: 'how much should I trust this rating for my situation?' Lower confidence does not change the badge - it just adds a caveat next to it.",
+      "perGame": "Per-game confidence is a function of sample size, freshness of the newest report, and consensus among recent reports. The plugin and signed-in webui add hardware-match factors on top."
+    },
+    "exampleLines": [
+      "GOLD - 78% confidence - based on 12 recent reports, hardware closely matches yours",
+      "PLATINUM - 92% confidence - 30+ reports in the last year, broad consensus",
+      "BORKED - 14% confidence - based on a 4-year-old report, the game has been updated since"
+    ]
+  },
+
+  "confidenceFactors": {
+    "_note": "Each group below maps onto entries in WEIGHTS. Together they form the per-report confidence. Anonymous web visitors drop the hardware-match groups; signed-in plugin/webui sessions use everything.",
+    "groups": [
+      {
+        "id": "recency",
+        "label": "Recency",
+        "description": "Newer reports are more reliable. Old reports lose ground; very old ones become weakly informative.",
+        "weightKeys": ["RECENCY_RECENT", "RECENCY_MID", "RECENCY_OLD"],
+        "appliesToAnonymous": true
+      },
+      {
+        "id": "hardwareMatch",
+        "label": "Hardware match",
+        "description": "When you're signed in or running the plugin, reports from hardware close to yours count more. GPU vendor, driver, kernel, and OS all contribute.",
+        "weightKeys": ["GPU_MATCH", "GPU_MISMATCH", "GPU_UNKNOWN", "GPU_DRIVER_EXACT", "GPU_DRIVER_CLOSE", "OS_EXACT", "OS_FAMILY_MATCH", "KERNEL_EXACT", "KERNEL_PATCH_CLOSE", "KERNEL_MINOR_CLOSE"],
+        "appliesToAnonymous": false
+      },
+      {
+        "id": "protonMatch",
+        "label": "Proton version match",
+        "description": "Reports from the same Proton version (or close) carry more weight. Custom Proton builds (GE, CachyOS, TKG) get a small additional credit for going off the official path.",
+        "weightKeys": ["PROTON_MATCH", "PROTON_CLOSE", "CUSTOM_PROTON"],
+        "appliesToAnonymous": false
+      },
+      {
+        "id": "playtime",
+        "label": "Playtime depth",
+        "description": "Reports declaring real playtime earn confidence. The longer the session, the bigger the boost. Reports with no playtime stay neutral.",
+        "weightKeys": ["PLAYTIME_UNDER_ONE_HOUR", "PLAYTIME_ONE_TO_FOUR_HOURS", "PLAYTIME_FOUR_TO_TEN_HOURS", "PLAYTIME_OVER_TEN_HOURS"],
+        "appliesToAnonymous": true
+      },
+      {
+        "id": "notes",
+        "label": "Notes quality",
+        "description": "Free-form notes swing confidence within +/- NOTES_MAX based on positive/negative keywords. Short or vague notes have little effect.",
+        "weightKeys": ["NOTES_MAX"],
+        "appliesToAnonymous": true
+      },
+      {
+        "id": "source",
+        "label": "Source",
+        "description": "ProtonDB CDN reports currently carry slightly more confidence than native Pulse reports until the Pulse corpus grows. This penalty is temporary.",
+        "weightKeys": ["SOURCE_PULSE_PENALTY"],
+        "appliesToAnonymous": true
+      },
+      {
+        "id": "stalenessFlag",
+        "label": "Old-borked staleness flag",
+        "description": "Borked reports older than BORKED_DECAY_DAYS no longer auto-bump to bronze (that conflated rating with confidence). Instead, old borked reports drop their confidence by BORKED_STALENESS_PENALTY and surface a 'worth re-testing' caveat in the UI.",
+        "weightKeys": ["BORKED_DECAY_DAYS", "BORKED_STALENESS_PENALTY"],
+        "appliesToAnonymous": true
+      }
+    ]
+  },
+
+  "perGameAggregation": {
+    "rating": {
+      "method": "recency-weighted mean",
+      "description": "Each report's rating contributes a numeric score (platinum=1.0, ... borked=0.0) weighted by report age. The final number maps back to the closest tier.",
+      "recencyWeights": {
+        "lastYear": 1.0,
+        "oneToTwoYears": 0.5,
+        "twoToFiveYears": 0.25,
+        "fivePlusYears": 0.1
+      }
+    },
+    "confidence": {
+      "factors": [
+        "Sample size - more reports raise confidence on a log scale (1 -> 30%, 5 -> 60%, 20+ -> 85%, 50+ -> 95%)",
+        "Freshness of newest report - a report from the last 6 months keeps confidence high",
+        "Consensus - tight agreement (low spread between report ratings) lifts confidence; mixed signal lowers it",
+        "Hardware match (signed-in only) - average of per-report hardware-match contributions"
+      ]
+    }
   }
 }

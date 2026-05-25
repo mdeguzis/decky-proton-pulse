@@ -62,7 +62,10 @@ export interface CdnReport {
 export type GpuTier = 'nvidia' | 'amd' | 'intel' | 'unknown';
 
 export interface ScoredReport extends CdnReport {
-  score: number;
+  // Per-report confidence (0-100). NOT a rating - rating still lives on the
+  // CdnReport.rating field, derived from yes/no form answers. Confidence tells
+  // you how trustworthy this report is for the viewer's situation.
+  confidence: number;
   gpuTier: GpuTier;
   recencyDays: number;
   notesModifier: number;

@@ -1,26 +1,43 @@
 // src/lib/scoring.ts
 //
-// Scores ProtonDB community reports so the frontend can rank them by relevance.
-// A report's score is based on: rating (platinum > borked), how recent it is,
-// whether it used a custom Proton build, and how closely the reporter's GPU
-// matches the current system. Higher score = more relevant to *this* user.
+// Proton Pulse uses two distinct numbers per report and per game:
 //
-// The weights below control the balance between these factors. Tweak them
-// if the ranking feels off for certain edge cases.
+//   RATING (the badge: platinum/gold/silver/bronze/borked)
+//     Pure function of the report's yes/no form answers. Computed by
+//     deriveRating(). Same answers always produce the same badge. Hardware,
+//     recency, etc. have no influence here.
+//
+//   CONFIDENCE (a 0-100% qualifier next to the badge)
+//     How trustworthy this report is for the viewer's situation. Computed
+//     by computeConfidence(). The WEIGHTS below describe what goes into it:
+//     recency, hardware match, Proton version match, playtime depth, notes
+//     quality, source. Lower confidence does NOT change the rating - it
+//     adds a caveat next to it.
+//
+// For example, a four-year-old borked report on a game that's been actively
+// patched STILL says borked (that's what the community reported), but its
+// confidence drops sharply so the UI can surface "worth re-testing".
+//
+// Earlier versions of this module conflated the two via scoreToRating(),
+// which auto-bumped stale borked reports to bronze. That hid signal. The
+// split keeps both numbers honest.
 
 import type { CdnReport, ScoredReport, SystemInfo, TieredReports, GpuTier } from '../types';
 import type { ProtonRating } from '../types';
 
-// --- Weights, edit these to tune ranking ---
+// --- Weights, edit these to tune confidence ranking ---
+//
+// Every entry below is a CONFIDENCE factor. They do NOT change a report's
+// rating (the badge) - rating comes from deriveRating(yes/no answers) only.
 export const WEIGHTS = {
-  BASE_MAX: 60,            // max points from the rating alone (platinum=60, borked=0)
-  RECENCY_RECENT: 15,      // bonus for reports < 90 days old
-  RECENCY_MID: 5,          // bonus for 90-365 days
-  RECENCY_OLD: -5,         // penalty for > 1 year old
-  CUSTOM_PROTON: 10,       // bonus if report used GE/CachyOS/TKG etc
-  GPU_MATCH: 1.0,          // multiplier when GPU vendor matches yours
-  GPU_MISMATCH: 0.5,       // multiplier for different vendor (halves the score)
-  GPU_UNKNOWN: 0.75,       // multiplier when report doesnt say what GPU
+  BASE_MAX: 60,            // base confidence floor scaled by rating (platinum=60, borked=0)
+  RECENCY_RECENT: 15,      // confidence bonus for reports < 90 days old
+  RECENCY_MID: 5,          // confidence bonus for 90-365 days
+  RECENCY_OLD: -5,         // confidence penalty for > 1 year old
+  CUSTOM_PROTON: 10,       // confidence bonus if report used GE/CachyOS/TKG etc
+  GPU_MATCH: 1.0,          // confidence multiplier when GPU vendor matches yours
+  GPU_MISMATCH: 0.5,       // confidence multiplier for different vendor (halves)
+  GPU_UNKNOWN: 0.75,       // confidence multiplier when report doesnt say what GPU
   GPU_DRIVER_EXACT: 1.3,   // same vendor + same driver major version
   GPU_DRIVER_CLOSE: 1.1,   // same vendor + driver within 2 major versions
   OS_EXACT: 1.08,          // same distro string / exact OS family
@@ -28,7 +45,11 @@ export const WEIGHTS = {
   KERNEL_EXACT: 1.12,      // same major.minor.patch kernel line
   KERNEL_PATCH_CLOSE: 1.08,// same major.minor, nearby patch level
   KERNEL_MINOR_CLOSE: 1.04,// same major, nearby minor line
-  BORKED_DECAY_DAYS: 365,  // borked reports older than this get treated as bronze
+  // Borked reports older than this trigger a confidence penalty (the rating
+  // stays borked - we surface "worth re-testing" via the lowered confidence
+  // instead of pretending the rating changed)
+  BORKED_DECAY_DAYS: 365,
+  BORKED_STALENESS_PENALTY: -20, // confidence subtracted when an old report is still borked
   NOTES_MAX: 10,           // cap on the sentiment modifier from user notes
   PROTON_MATCH: 8,         // bonus for same Proton major version as user's build
   PROTON_CLOSE: 4,         // bonus for adjacent Proton major version
@@ -49,14 +70,6 @@ const RATING_SCORES: Record<string, number> = {
   bronze: 0.4,
   borked: 0.0,
 };
-
-export function scoreToMatchTier(score: number): ProtonRating {
-  if (score >= 80) return 'platinum';
-  if (score >= 60) return 'gold';
-  if (score >= 40) return 'silver';
-  if (score >= 20) return 'bronze';
-  return 'borked';
-}
 
 // --- Rating derivation (mirrors ProtonDB's inferLiveRating exactly) ---
 //
@@ -963,7 +976,14 @@ export function getHardwareMatchBreakdown(
   };
 }
 
-export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredReport {
+// Compute per-report confidence (0-100) given the reporter's report and the
+// viewer's system info. Output is a ScoredReport - the source CdnReport plus
+// a confidence number and a few derived fields. The report's `rating` is
+// passed through unchanged - confidence never overrides the rating.
+//
+// (Previously named scoreReport, which falsely suggested the output was a
+// new "score" that could be re-tier'd via scoreToRating. That mapping is gone.)
+export function computeConfidence(report: CdnReport, sysInfo: SystemInfo): ScoredReport {
   const gpuTier = detectReportGpuTier(report);
   const gpuMult = gpuDriverMultiplier(report, sysInfo);
   const distroMult = osMultiplier(report, sysInfo);
@@ -971,21 +991,25 @@ export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredRepor
 
   const recencyDays = Math.round((Date.now() / 1000 - report.timestamp) / 86400);
 
-  // old borked reports get bumped to bronze. Games that were broken a year
-  // ago have probably been fixed by now, so don't let ancient reports
-  // tank a game's score forever
-  const effectiveRating =
-    report.rating === 'borked' && recencyDays > WEIGHTS.BORKED_DECAY_DAYS
-      ? 'bronze'
-      : report.rating;
-
-  const ratingScore = (RATING_SCORES[effectiveRating] ?? 0) * WEIGHTS.BASE_MAX;
+  // Rating contributes a baseline to confidence (platinum reports start higher
+  // than borked reports because they reflect more positive testing depth).
+  // Rating itself stays untouched - we never substitute a different tier here.
+  const ratingScore = (RATING_SCORES[report.rating] ?? 0) * WEIGHTS.BASE_MAX;
   const recencyBonus =
     recencyDays < 90  ? WEIGHTS.RECENCY_RECENT :
     recencyDays < 365 ? WEIGHTS.RECENCY_MID :
                         WEIGHTS.RECENCY_OLD;
   const customBonus = isCustomProton(report.protonVersion) ? WEIGHTS.CUSTOM_PROTON : 0;
   const notesModifier = parseNotesSentiment(report.notes);
+
+  // Old borked staleness penalty. A borked report from years ago is much
+  // less reliable today since Proton has improved a lot. Confidence drops,
+  // but the rating stays borked - the UI uses the confidence drop to surface
+  // a "worth re-testing" caveat instead of silently rewriting the rating.
+  const borkedStalenessPenalty =
+    report.rating === 'borked' && recencyDays > WEIGHTS.BORKED_DECAY_DAYS
+      ? WEIGHTS.BORKED_STALENESS_PENALTY
+      : 0;
 
   // Proton version proximity bonus: reports run with a similar Proton version
   // to what the user has are more likely to reflect the user's experience
@@ -1005,26 +1029,24 @@ export function scoreReport(report: CdnReport, sysInfo: SystemInfo): ScoredRepor
   // is temporary -- see scoring-info.json SOURCE_PULSE_PENALTY note.
   const sourcePenalty = report.source === 'user' ? WEIGHTS.SOURCE_PULSE_PENALTY : 0;
   const playtimeBonus = playtimeConfidenceBonus(report.duration);
-  const raw = (ratingScore + recencyBonus + customBonus + protonBonus + playtimeBonus) * gpuMult * distroMult * kernelMult + notesModifier + sourcePenalty;
+  const raw =
+    (ratingScore + recencyBonus + customBonus + protonBonus + playtimeBonus)
+    * gpuMult * distroMult * kernelMult
+    + notesModifier + sourcePenalty + borkedStalenessPenalty;
 
   return {
     ...report,
-    score: Math.max(0, Math.round(raw)),
+    // Raw confidence can exceed 100 for a "perfect match" report (high rating,
+    // recent, exact hardware, custom proton, long playtime). Display layer
+    // clamps to 0-100 via Math.min(100, report.confidence). Keeping the raw
+    // number here preserves ordering when comparing two strong reports
+    confidence: Math.max(0, Math.round(raw)),
     gpuTier,
     recencyDays,
     notesModifier,
     upvotes: 0,
     downvotes: 0,
   };
-}
-
-/** Map a final confidence score to a display-tier rating. */
-export function scoreToRating(score: number): string {
-  if (score >= 70) return 'platinum';
-  if (score >= 55) return 'gold';
-  if (score >= 40) return 'silver';
-  if (score >= 20) return 'bronze';
-  return 'borked';
 }
 
 export function bucketByGpuTier(reports: ScoredReport[]): TieredReports {
@@ -1034,11 +1056,100 @@ export function bucketByGpuTier(reports: ScoredReport[]): TieredReports {
     else if (r.gpuTier === 'amd') buckets.amd.push(r);
     else buckets.other.push(r);
   }
-  const byScore = (a: ScoredReport, b: ScoredReport) => b.score - a.score;
-  buckets.nvidia.sort(byScore);
-  buckets.amd.sort(byScore);
-  buckets.other.sort(byScore);
+  const byConfidence = (a: ScoredReport, b: ScoredReport) => b.confidence - a.confidence;
+  buckets.nvidia.sort(byConfidence);
+  buckets.amd.sort(byConfidence);
+  buckets.other.sort(byConfidence);
   return buckets;
+}
+
+// --- Per-game aggregation ---
+//
+// Combines per-report ratings + confidences into a single (rating, confidence)
+// pair for an overall game badge. Mirrors the recency-weighted-mean approach
+// described in scoring-info.json under perGameAggregation.
+
+const RECENCY_BUCKET_WEIGHTS = {
+  lastYear: 1.0,
+  oneToTwoYears: 0.5,
+  twoToFiveYears: 0.25,
+  fivePlusYears: 0.1,
+} as const;
+
+function recencyBucketWeight(recencyDays: number): number {
+  if (recencyDays < 365)       return RECENCY_BUCKET_WEIGHTS.lastYear;
+  if (recencyDays < 365 * 2)   return RECENCY_BUCKET_WEIGHTS.oneToTwoYears;
+  if (recencyDays < 365 * 5)   return RECENCY_BUCKET_WEIGHTS.twoToFiveYears;
+  return RECENCY_BUCKET_WEIGHTS.fivePlusYears;
+}
+
+export interface AggregatedGame {
+  rating: ProtonRating | 'pending';
+  confidence: number;       // 0-100
+  reportCount: number;
+  newestTimestamp: number;  // unix seconds; 0 if no reports
+}
+
+// Aggregate a list of reports into one per-game summary. Rating comes from a
+// recency-weighted mean of per-report ratings (active games reflect current
+// state, not how they ran years ago). Confidence rolls per-report confidence
+// together with sample-size and freshness adjustments so a single recent
+// report doesn't carry the same weight as 30 of them.
+export function aggregatePerGame(reports: ScoredReport[]): AggregatedGame {
+  if (!reports.length) {
+    return { rating: 'pending', confidence: 0, reportCount: 0, newestTimestamp: 0 };
+  }
+
+  // Rating aggregation: recency-weighted mean over per-report rating scores
+  let ratingNum = 0;
+  let weightSum = 0;
+  let newestTs = 0;
+  for (const r of reports) {
+    const w = recencyBucketWeight(r.recencyDays);
+    const ratingScore = RATING_SCORES[r.rating] ?? 0;
+    ratingNum += ratingScore * w;
+    weightSum += w;
+    if (r.timestamp > newestTs) newestTs = r.timestamp;
+  }
+  const meanRatingScore = weightSum > 0 ? ratingNum / weightSum : 0;
+  const rating = ratingFromScore(meanRatingScore);
+
+  // Confidence aggregation: mean of per-report confidence, then adjusted up
+  // by sample size (more reports = higher) and down if the newest report is
+  // stale. Capped at 0-100
+  const meanConf = reports.reduce((acc, r) => acc + r.confidence, 0) / reports.length;
+  const sampleSizeBoost = sampleSizeBonus(reports.length);
+  const freshnessPenalty = freshnessAdjust(newestTs);
+  const confidence = Math.max(0, Math.min(100, Math.round(meanConf + sampleSizeBoost + freshnessPenalty)));
+
+  return { rating, confidence, reportCount: reports.length, newestTimestamp: newestTs };
+}
+
+// Map a 0..1 mean rating score back to the closest tier. Used by
+// aggregatePerGame to convert the recency-weighted mean into a badge.
+function ratingFromScore(score: number): ProtonRating {
+  if (score >= 0.9) return 'platinum';
+  if (score >= 0.7) return 'gold';
+  if (score >= 0.5) return 'silver';
+  if (score >= 0.2) return 'bronze';
+  return 'borked';
+}
+
+// Log-scale boost: 1 report = 0, 5 reports = ~10, 20 reports = ~17, 50+ ~22
+function sampleSizeBonus(n: number): number {
+  if (n <= 1) return 0;
+  return Math.min(22, Math.round(Math.log2(n) * 5));
+}
+
+// Freshness adjust: newest report from past 6 months keeps confidence high;
+// older newest reports drag confidence down. Linear ramp from 0 to -15 between
+// 6 months and 3 years
+function freshnessAdjust(newestTimestamp: number): number {
+  if (newestTimestamp <= 0) return -15;
+  const days = (Date.now() / 1000 - newestTimestamp) / 86400;
+  if (days < 180) return 0;
+  if (days > 365 * 3) return -15;
+  return Math.round(-15 * ((days - 180) / (365 * 3 - 180)));
 }
 
 // Best-guess ReportResponses for a given rating tier.

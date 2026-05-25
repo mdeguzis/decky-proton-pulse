@@ -2,7 +2,6 @@
 import { Focusable } from '@decky/ui';
 import type { ScoredReport } from '../types';
 import { RATING_COLORS, buildNotesPreview, formatProtonLabel } from '../lib/reportFormatters';
-import { scoreToRating } from '../lib/scoring';
 import { t } from '../lib/i18n';
 
 export interface DisplayReportCard extends ScoredReport {
@@ -24,20 +23,23 @@ interface Props {
   onDownvote?: (report: DisplayReportCard) => void;
 }
 
-function confidenceColor(score: number): string {
-  if (score >= 80) return '#4caf50';
-  if (score >= 60) return '#ffeb3b';
-  if (score >= 40) return '#ff9800';
+function confidenceColor(confidence: number): string {
+  if (confidence >= 80) return '#4caf50';
+  if (confidence >= 60) return '#ffeb3b';
+  if (confidence >= 40) return '#ff9800';
   return '#f44336';
 }
 
 export function ReportCard({ report, selected, focused = false, systemGpuVendor, onSelect, onFocus, onUpvote }: Props) {
   const strings = t();
-  const displayRating = scoreToRating(report.score);
+  // Badge shows the report's actual rating (derived from yes/no answers).
+  // Earlier this used scoreToRating(report.score) which re-tier'd a borked
+  // report into bronze based on hardware/recency - that hid signal.
+  const displayRating = report.rating;
   const ratingColor = RATING_COLORS[displayRating] ?? '#888';
-  const cappedScore = Math.min(100, report.score);
-  const confScore = (cappedScore / 10).toFixed(1);
-  const confColor = confidenceColor(cappedScore);
+  const cappedConfidence = Math.min(100, report.confidence);
+  const confScore = (cappedConfidence / 10).toFixed(1);
+  const confColor = confidenceColor(cappedConfidence);
   const highlighted = selected || focused;
   const notesPreview = buildNotesPreview(report.notes);
   const gpuMismatch =

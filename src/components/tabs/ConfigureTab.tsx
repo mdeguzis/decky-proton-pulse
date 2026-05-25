@@ -3,7 +3,7 @@ import { Component, type ErrorInfo, type ReactNode, useState, useEffect, useMemo
 import { Focusable, GamepadButton, DialogButton, ConfirmModal, showModal, Dropdown, SteamSpinner } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { toaster } from '../../lib/notify';
-import { scoreReport, bucketByGpuTier } from '../../lib/scoring';
+import { computeConfidence, bucketByGpuTier } from '../../lib/scoring';
 import {
   getProtonDBReportsWithDiagnostics,
   type ReportFetchDiagnostics,
@@ -593,14 +593,14 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   );
 
   const baseDisplayReports: DisplayReportCard[] = reports.map(r => ({
-    ...scoreReport(r, scoreContext),
+    ...computeConfidence(r, scoreContext),
     upvotes: votes[reportKey(r)]?.upvotes ?? 0,
     downvotes: votes[reportKey(r)]?.downvotes ?? 0,
     displayKey: `cdn:${reportKey(r)}`,
   }));
 
   const editedDisplayReports: DisplayReportCard[] = editedReports.map((entry) => ({
-    ...scoreReport(entry.report, scoreContext),
+    ...computeConfidence(entry.report, scoreContext),
     upvotes: votes[reportKey(entry.report)]?.upvotes ?? 0,
     downvotes: votes[reportKey(entry.report)]?.downvotes ?? 0,
     displayKey: `edited:${entry.id}`,
@@ -609,7 +609,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   }));
 
   const pulseDisplayReports: DisplayReportCard[] = pulseReports.map(row => ({
-    ...scoreReport(pulseRowToCdnReport(row), scoreContext),
+    ...computeConfidence(pulseRowToCdnReport(row), scoreContext),
     upvotes:    0,
     downvotes:  0,
     displayKey: `pulse:${row.id}`,

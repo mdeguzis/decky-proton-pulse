@@ -1,14 +1,13 @@
 // src/lib/scoring.test.ts
 import { describe, it, expect } from 'vitest';
 import {
-  scoreReport,
+  computeConfidence,
+  aggregatePerGame,
   bucketByGpuTier,
   parseNotesSentiment,
   parseProtonMajorVersion,
   getHardwareMatchPercent,
   getHardwareMatchBreakdown,
-  scoreToRating,
-  scoreToMatchTier,
   estimateVramGb,
   parseVramFromRequirements,
 } from './scoring';
@@ -58,9 +57,9 @@ const goldAmdOld = makeCdnReport({
 
 // --- scoreReport ---
 
-describe('scoreReport', () => {
+describe('computeConfidence', () => {
   it('attaches gpuTier, recencyDays, notesModifier, upvotes to result', () => {
-    const scored = scoreReport(platinumNvidiaRecent, nvidiaSystem);
+    const scored = computeConfidence(platinumNvidiaRecent, nvidiaSystem);
     expect(scored.gpuTier).toBe('nvidia');
     expect(scored.recencyDays).toBeGreaterThan(25);
     expect(scored.recencyDays).toBeLessThan(35);
@@ -69,30 +68,30 @@ describe('scoreReport', () => {
   });
 
   it('scored report includes downvotes defaulting to 0', () => {
-    const report = scoreReport(platinumNvidiaRecent, nvidiaSystem);
+    const report = computeConfidence(platinumNvidiaRecent, nvidiaSystem);
     expect(report.downvotes).toBe(0);
   });
 
   it('score is never negative', () => {
     const r = makeCdnReport({ rating: 'borked', gpu: '' });
-    expect(scoreReport(r, nvidiaSystem).score).toBeGreaterThanOrEqual(0);
+    expect(computeConfidence(r, nvidiaSystem).confidence).toBeGreaterThanOrEqual(0);
   });
 
   it('gives higher score to matching GPU vendor report', () => {
-    const nvidiaScore = scoreReport(platinumNvidiaRecent, nvidiaSystem).score;
-    const amdScore = scoreReport(goldAmdOld, nvidiaSystem).score;
+    const nvidiaScore = computeConfidence(platinumNvidiaRecent, nvidiaSystem).confidence;
+    const amdScore = computeConfidence(goldAmdOld, nvidiaSystem).confidence;
     expect(nvidiaScore).toBeGreaterThan(amdScore);
   });
 
   it('gives recency bonus for reports under 90 days', () => {
-    const recentScore = scoreReport(platinumNvidiaRecent, nvidiaSystem).score;
-    const oldScore = scoreReport(makeCdnReport({ timestamp: now - 400 * 86400 }), nvidiaSystem).score;
+    const recentScore = computeConfidence(platinumNvidiaRecent, nvidiaSystem).confidence;
+    const oldScore = computeConfidence(makeCdnReport({ timestamp: now - 400 * 86400 }), nvidiaSystem).confidence;
     expect(recentScore).toBeGreaterThan(oldScore);
   });
 
   it('gives custom proton bonus', () => {
-    const geScore = scoreReport(platinumNvidiaRecent, nvidiaSystem).score;
-    const vanillaScore = scoreReport(makeCdnReport({ protonVersion: 'Proton 9.0' }), nvidiaSystem).score;
+    const geScore = computeConfidence(platinumNvidiaRecent, nvidiaSystem).confidence;
+    const vanillaScore = computeConfidence(makeCdnReport({ protonVersion: 'Proton 9.0' }), nvidiaSystem).confidence;
     expect(geScore).toBeGreaterThan(vanillaScore);
   });
 
@@ -101,39 +100,39 @@ describe('scoreReport', () => {
   it('exact driver version gives higher score than close version', () => {
     const exactDriver = makeCdnReport({ gpuDriver: 'NVIDIA 595.45.04' }); // matches nvidiaSystem
     const closeDriver = makeCdnReport({ gpuDriver: 'NVIDIA 593.10.00' }); // within 2 major
-    expect(scoreReport(exactDriver, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(closeDriver, nvidiaSystem).score
+    expect(computeConfidence(exactDriver, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(closeDriver, nvidiaSystem).confidence
     );
   });
 
   it('close driver version gives higher score than far version', () => {
     const closeDriver = makeCdnReport({ gpuDriver: 'NVIDIA 593.10.00' });
     const farDriver   = makeCdnReport({ gpuDriver: 'NVIDIA 410.93' });
-    expect(scoreReport(closeDriver, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(farDriver, nvidiaSystem).score
+    expect(computeConfidence(closeDriver, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(farDriver, nvidiaSystem).confidence
     );
   });
 
   it('different vendor driver gives mismatch multiplier', () => {
     const amdDriverReport = makeCdnReport({ gpu: 'AMD Radeon RX 6800', gpuDriver: 'Mesa 23.1.0' });
-    expect(scoreReport(platinumNvidiaRecent, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(amdDriverReport, nvidiaSystem).score
+    expect(computeConfidence(platinumNvidiaRecent, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(amdDriverReport, nvidiaSystem).confidence
     );
   });
 
   it('exact distro match scores higher than a same-family distro match', () => {
     const exactDistro = makeCdnReport({ os: 'CachyOS' });
     const familyMatch = makeCdnReport({ os: 'Arch Linux' });
-    expect(scoreReport(exactDistro, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(familyMatch, nvidiaSystem).score
+    expect(computeConfidence(exactDistro, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(familyMatch, nvidiaSystem).confidence
     );
   });
 
   it('same-family distro match scores higher than an unrelated distro', () => {
     const familyMatch = makeCdnReport({ os: 'Arch Linux' });
     const unrelated = makeCdnReport({ os: 'Ubuntu 24.04' });
-    expect(scoreReport(familyMatch, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(unrelated, nvidiaSystem).score
+    expect(computeConfidence(familyMatch, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(unrelated, nvidiaSystem).confidence
     );
   });
 
@@ -141,8 +140,8 @@ describe('scoreReport', () => {
     const steamosSystem: SystemInfo = { ...nvidiaSystem, distro: 'SteamOS 3.7.0' };
     const archReport = makeCdnReport({ os: 'Arch Linux' });
     const fedoraReport = makeCdnReport({ os: 'Fedora 41' });
-    expect(scoreReport(archReport, steamosSystem).score).toBeGreaterThan(
-      scoreReport(fedoraReport, steamosSystem).score
+    expect(computeConfidence(archReport, steamosSystem).confidence).toBeGreaterThan(
+      computeConfidence(fedoraReport, steamosSystem).confidence
     );
   });
 
@@ -150,8 +149,8 @@ describe('scoreReport', () => {
     const popSystem: SystemInfo = { ...nvidiaSystem, distro: 'Pop!_OS 22.04 LTS' };
     const ubuntuReport = makeCdnReport({ os: 'Ubuntu 22.04 LTS' });
     const fedoraReport = makeCdnReport({ os: 'Fedora 41' });
-    expect(scoreReport(ubuntuReport, popSystem).score).toBeGreaterThan(
-      scoreReport(fedoraReport, popSystem).score
+    expect(computeConfidence(ubuntuReport, popSystem).confidence).toBeGreaterThan(
+      computeConfidence(fedoraReport, popSystem).confidence
     );
   });
 
@@ -159,35 +158,43 @@ describe('scoreReport', () => {
     const exactKernel = makeCdnReport({ kernel: '6.19.8' });
     // delta of 2, hits the KERNEL_PATCH_CLOSE multiplier
     const nearbyKernel = makeCdnReport({ kernel: '6.19.6' });
-    expect(scoreReport(exactKernel, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(nearbyKernel, nvidiaSystem).score
+    expect(computeConfidence(exactKernel, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(nearbyKernel, nvidiaSystem).confidence
     );
   });
 
   it('nearby minor kernel match scores higher than a distant kernel line', () => {
     const nearbyMinor = makeCdnReport({ kernel: '6.18.4' });
     const distantKernel = makeCdnReport({ kernel: '6.6.0' });
-    expect(scoreReport(nearbyMinor, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(distantKernel, nvidiaSystem).score
+    expect(computeConfidence(nearbyMinor, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(distantKernel, nvidiaSystem).confidence
     );
   });
 
   // --- borked decay ---
 
-  it('fresh borked report scores lower than old borked (decay raises old score)', () => {
+  it('old borked report has lower confidence than fresh borked (staleness penalty)', () => {
+    // The original behavior auto-bumped old borked to bronze, hiding the
+    // signal. Now both reports remain rated borked, but the old one gets
+    // BORKED_STALENESS_PENALTY against its confidence so the UI can surface
+    // a "worth re-testing" caveat without lying about the community rating.
     const freshBorked = makeCdnReport({ rating: 'borked', timestamp: now - 30 * 86400 });
     const oldBorked   = makeCdnReport({ rating: 'borked', timestamp: now - 400 * 86400 });
-    expect(scoreReport(oldBorked, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(freshBorked, nvidiaSystem).score
-    );
+    const oldScored = computeConfidence(oldBorked, nvidiaSystem);
+    const freshScored = computeConfidence(freshBorked, nvidiaSystem);
+    // Rating stays borked in both cases - no auto-bump
+    expect(oldScored.rating).toBe('borked');
+    expect(freshScored.rating).toBe('borked');
+    // But the old report's confidence is lower thanks to the staleness penalty
+    expect(oldScored.confidence).toBeLessThan(freshScored.confidence);
   });
 
   it('matching Proton major version gives higher score than different version', () => {
     // nvidiaSystem.proton_custom = 'cachyos-10.0-202603012' -> major 10
     const matchProton = makeCdnReport({ protonVersion: 'GE-Proton10-5' }); // same major
     const diffProton  = makeCdnReport({ protonVersion: 'Proton 7.0-6' });   // 3 apart
-    expect(scoreReport(matchProton, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(diffProton, nvidiaSystem).score
+    expect(computeConfidence(matchProton, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(diffProton, nvidiaSystem).confidence
     );
   });
 
@@ -196,16 +203,16 @@ describe('scoreReport', () => {
   it('overTenHours scores higher than fourToTenHours', () => {
     const long   = makeCdnReport({ duration: 'overTenHours' });
     const medium = makeCdnReport({ duration: 'fourToTenHours' });
-    expect(scoreReport(long, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(medium, nvidiaSystem).score
+    expect(computeConfidence(long, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(medium, nvidiaSystem).confidence
     );
   });
 
   it('oneToFourHours scores higher than underOneHour', () => {
     const twoHour = makeCdnReport({ duration: 'oneToFourHours' });
     const brief   = makeCdnReport({ duration: 'underOneHour' });
-    expect(scoreReport(twoHour, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(brief, nvidiaSystem).score
+    expect(computeConfidence(twoHour, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(brief, nvidiaSystem).confidence
     );
   });
 
@@ -213,22 +220,12 @@ describe('scoreReport', () => {
     const played     = makeCdnReport({ duration: 'underOneHour' });
     const unreported = makeCdnReport({ duration: 'unreported' });
     const noField    = makeCdnReport({ duration: '' });
-    expect(scoreReport(played, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(unreported, nvidiaSystem).score
+    expect(computeConfidence(played, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(unreported, nvidiaSystem).confidence
     );
-    expect(scoreReport(played, nvidiaSystem).score).toBeGreaterThan(
-      scoreReport(noField, nvidiaSystem).score
+    expect(computeConfidence(played, nvidiaSystem).confidence).toBeGreaterThan(
+      computeConfidence(noField, nvidiaSystem).confidence
     );
-  });
-});
-
-describe('scoreToMatchTier', () => {
-  it('maps strong scores to higher match tiers', () => {
-    expect(scoreToMatchTier(84)).toBe('platinum');
-    expect(scoreToMatchTier(67)).toBe('gold');
-    expect(scoreToMatchTier(47)).toBe('silver');
-    expect(scoreToMatchTier(29)).toBe('bronze');
-    expect(scoreToMatchTier(9)).toBe('borked');
   });
 });
 
@@ -319,7 +316,7 @@ describe('parseProtonMajorVersion', () => {
 
 describe('bucketByGpuTier', () => {
   it('separates nvidia and amd into correct buckets', () => {
-    const scored = [platinumNvidiaRecent, goldAmdOld].map(r => scoreReport(r, nvidiaSystem));
+    const scored = [platinumNvidiaRecent, goldAmdOld].map(r => computeConfidence(r, nvidiaSystem));
     const buckets = bucketByGpuTier(scored);
     expect(buckets.nvidia).toHaveLength(1);
     expect(buckets.amd).toHaveLength(1);
@@ -329,13 +326,13 @@ describe('bucketByGpuTier', () => {
   it('sorts each bucket by score descending', () => {
     const r1 = makeCdnReport();
     const r2 = makeCdnReport({ rating: 'silver', timestamp: now - 500 * 86400 });
-    const buckets = bucketByGpuTier([r1, r2].map(r => scoreReport(r, nvidiaSystem)));
-    expect(buckets.nvidia[0].score).toBeGreaterThanOrEqual(buckets.nvidia[1].score);
+    const buckets = bucketByGpuTier([r1, r2].map(r => computeConfidence(r, nvidiaSystem)));
+    expect(buckets.nvidia[0].confidence).toBeGreaterThanOrEqual(buckets.nvidia[1].confidence);
   });
 
   it('puts unknown GPU reports into the other bucket', () => {
     const unknownGpu = makeCdnReport({ gpu: 'Some weird GPU' });
-    const buckets = bucketByGpuTier([unknownGpu].map(r => scoreReport(r, nvidiaSystem)));
+    const buckets = bucketByGpuTier([unknownGpu].map(r => computeConfidence(r, nvidiaSystem)));
     expect(buckets.other).toHaveLength(1);
     expect(buckets.nvidia).toHaveLength(0);
   });
@@ -947,40 +944,63 @@ describe('getHardwareMatchBreakdown', () => {
   });
 });
 
-// --- scoreToRating ---
+// --- aggregatePerGame ---
+//
+// The old scoreToRating block here was deleted intentionally: a report's
+// rating now comes from deriveRating(yes/no answers) only - there's no
+// number-to-tier mapping that can swap a rating because of hardware mismatch.
+// The new per-game aggregator is the only place a rating gets computed from
+// other ratings, and it uses a recency-weighted mean (not raw confidence).
 
-describe('scoreToRating', () => {
-  it('maps high scores to platinum', () => {
-    expect(scoreToRating(70)).toBe('platinum');
-    expect(scoreToRating(100)).toBe('platinum');
+describe('aggregatePerGame', () => {
+  it('returns pending with zero confidence on empty input', () => {
+    const agg = aggregatePerGame([]);
+    expect(agg.rating).toBe('pending');
+    expect(agg.confidence).toBe(0);
+    expect(agg.reportCount).toBe(0);
   });
 
-  it('maps mid-high scores to gold', () => {
-    expect(scoreToRating(55)).toBe('gold');
-    expect(scoreToRating(69)).toBe('gold');
+  it('returns the report rating when only one fresh report exists', () => {
+    const reports = [computeConfidence(makeCdnReport({ rating: 'gold' }), nvidiaSystem)];
+    const agg = aggregatePerGame(reports);
+    expect(agg.rating).toBe('gold');
+    expect(agg.reportCount).toBe(1);
   });
 
-  it('maps mid scores to silver', () => {
-    expect(scoreToRating(40)).toBe('silver');
-    expect(scoreToRating(54)).toBe('silver');
+  it('recency-weighted mean: many recent platinum outweighs a single old borked', () => {
+    const recent = Array.from({ length: 8 }).map(() =>
+      computeConfidence(makeCdnReport({ rating: 'platinum', timestamp: now - 30 * 86400 }), nvidiaSystem)
+    );
+    const ancientBorked = computeConfidence(
+      makeCdnReport({ rating: 'borked', timestamp: now - 365 * 6 * 86400 }),
+      nvidiaSystem,
+    );
+    const agg = aggregatePerGame([...recent, ancientBorked]);
+    expect(agg.rating).toBe('platinum');
   });
 
-  it('maps low scores to bronze', () => {
-    expect(scoreToRating(20)).toBe('bronze');
-    expect(scoreToRating(39)).toBe('bronze');
+  it('confidence climbs with sample size', () => {
+    const oneReport = aggregatePerGame([
+      computeConfidence(makeCdnReport({ rating: 'gold' }), nvidiaSystem),
+    ]);
+    const manyReports = aggregatePerGame(
+      Array.from({ length: 30 }).map(() =>
+        computeConfidence(makeCdnReport({ rating: 'gold' }), nvidiaSystem)
+      ),
+    );
+    expect(manyReports.confidence).toBeGreaterThan(oneReport.confidence);
   });
 
-  it('maps very low scores to borked', () => {
-    expect(scoreToRating(0)).toBe('borked');
-    expect(scoreToRating(19)).toBe('borked');
-  });
-
-  it('GPU-mismatched platinum report downgrades to silver or below', () => {
-    // A platinum recent report with GPU mismatch scores ~37-45
-    // which should map to silver or bronze, not platinum
-    const result = scoreToRating(45);
-    expect(result).not.toBe('platinum');
-    expect(result).toBe('silver');
+  it('confidence drops when the newest report is years old', () => {
+    const freshSet = Array.from({ length: 5 }).map(() =>
+      computeConfidence(makeCdnReport({ rating: 'gold', timestamp: now - 60 * 86400 }), nvidiaSystem)
+    );
+    const staleSet = Array.from({ length: 5 }).map(() =>
+      computeConfidence(makeCdnReport({ rating: 'gold', timestamp: now - 365 * 4 * 86400 }), nvidiaSystem)
+    );
+    expect(aggregatePerGame(freshSet).confidence).toBeGreaterThan(
+      aggregatePerGame(staleSet).confidence
+    );
   });
 });
 
