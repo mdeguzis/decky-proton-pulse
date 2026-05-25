@@ -35,10 +35,11 @@ Proton Pulse would not exist without the open-source projects below. Many pieces
 
 | Project | Author | License |
 |---|---|---|
-| [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) | OMGDuke | - |
-| [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) | moi952 | - |
+| [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) | OMGDuke | GPL-3.0 |
+| [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) | moi952 | BSD-3-Clause |
 | [Wine Cellar (decky-wine-cellar)](https://github.com/FlashyReese/decky-wine-cellar) | FlashyReese | MIT |
 | [SteamGridDB Decky Plugin (decky-steamgriddb)](https://github.com/SteamGridDB/decky-steamgriddb) | SteamGridDB | GPL-3.0-or-later |
+| [Decky Plugin Template](https://github.com/SteamDeckHomebrew/decky-plugin-template) | SteamDeckHomebrew | BSD-3-Clause |
 
 If you find Proton Pulse useful, please consider starring or contributing to these upstream projects as well.
 
@@ -217,4 +218,4 @@ Tips:
 
 ## License
 
-See [LICENSE](https://github.com/mdeguzis/decky-proton-pulse/blob/main/LICENSE).
+This project is licensed under the [GNU General Public License v3.0](https://github.com/mdeguzis/decky-proton-pulse/blob/main/LICENSE) or later. Upstream license copies are in the [LICENSES/](https://github.com/mdeguzis/decky-proton-pulse/tree/main/LICENSES) directory.
