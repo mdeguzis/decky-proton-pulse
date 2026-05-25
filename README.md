@@ -31,7 +31,7 @@ see: [UI screenshot gallery](https://github.com/mdeguzis/decky-proton-pulse/wiki
 
 ## Acknowledgments & Credits
 
-Proton Pulse would not exist without the open-source projects below. Parts of this plugin were borrowed from them directly, and plenty more was shaped by their ideas and prior work.
+Proton Pulse would not exist without the open-source projects below. Many pieces of this project were inspired by their work. 
 
 | Project | Author | License |
 |---|---|---|
