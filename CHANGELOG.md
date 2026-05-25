@@ -63,6 +63,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Confidence: pill-ify in detail modal + Configure header
+- Confidence display: percent format, under-badge in Configure tab
 - Badge: show per-game confidence percentage next to the tier
 - Scoring: split rating from confidence, add per-game aggregation
 - About: add Proton Pulse website link and D-pad-focusable wrappers

@@ -178,7 +178,19 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
           <span style={{ fontSize: 11, color: gpuMismatch ? '#f59e0b' : '#d9e8f4' }}>
             {report.gpuTier.toUpperCase()}
           </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: confColor }}>
+          <span
+            title={`Per-report confidence: ${confLabel}`}
+            style={{
+              background: confColor,
+              color: '#111',
+              borderRadius: 999,
+              padding: '1px 8px',
+              fontWeight: 700,
+              fontSize: 10,
+              whiteSpace: 'nowrap',
+              letterSpacing: 0.3,
+            }}
+          >
             {confLabel}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
