@@ -72,30 +72,9 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
         </style>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          {report.isPulse && (
-            <div style={{ marginBottom: 8 }}>
-              <span
-                style={{
-                  display: 'inline-block',
-                  padding: '2px 8px',
-                  borderRadius: 999,
-                  background: 'rgba(74,159,208,0.22)',
-                  border: '1px solid rgba(74,159,208,0.55)',
-                  color: '#7ec8f0',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: 0.3,
-                }}
-              >
-                {`⚡ ${t().reports.pulseBadge}`}
-              </span>
-              {report.pulseTitle ? (
-                <span style={{ marginLeft: 8, fontSize: 10, color: '#7ec8f0' }}>
-                  {report.pulseTitle}
-                </span>
-              ) : null}
-            </div>
-          )}
+          {/* Pulse badge removed - source is already implicit (transparent on
+              the card) and the Filter dropdown lets users narrow to Pulse-only
+              when they want. The duplicate pill just added visual noise. */}
           {report.isEdited && (
             <div style={{ marginBottom: 8 }}>
               <span

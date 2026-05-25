@@ -411,6 +411,15 @@ export function NativePulseReportModal({
       return;
     }
 
+    // Title is required so reports always carry the human-readable game name.
+    // Steam usually gives us appName via GetAppOverviewByAppID, but the lookup
+    // can fall back to empty for unrecognized shortcuts. Block submission with
+    // a clear message rather than uploading a title-less row
+    if (!appName || !appName.trim()) {
+      setError('Game title is missing - this usually means Steam did not recognize the game. Go back, ensure the title is set on the game properties, then re-try.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 

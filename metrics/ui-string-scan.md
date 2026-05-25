@@ -37,7 +37,7 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/NativePulseReportModal.tsx` | 708 | string | Did the game run out of the box without any tweaks required? |
 | `src/components/NativePulseReportModal.tsx` | 718 | jsx | Your report will be classified as a tinker report.
                   Have you also tried playing with default Steam/Proton without any tinkering? |
-| `src/components/ReportDetailModal.tsx` | 1479 | jsx | Edit Responses |
+| `src/components/ReportDetailModal.tsx` | 1480 | jsx | Edit Responses |
 | `src/components/ScoringGuideModal.tsx` | 60 | jsx | How Scoring Works |
 | `src/components/ScoringGuideModal.tsx` | 62 | jsx | Close |
 | `src/components/ScoringGuideModal.tsx` | 69 | jsx | Your Yes/No answers determine the rating automatically. |
