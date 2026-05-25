@@ -1,0 +1,10 @@
+# pnpm 11+ moved settings out of package.json's "pnpm" field. This file is
+# the new home. We're not actually using workspaces here, but pnpm reads
+# peerDependencyRules from here even in single-package repos.
+#
+# ignoreMissing: react / react-dom are provided by @decky/ui at runtime on
+# the Steam Deck, so silence the "peer dep missing" warning during install.
+peerDependencyRules:
+  ignoreMissing:
+    - react
+    - react-dom
