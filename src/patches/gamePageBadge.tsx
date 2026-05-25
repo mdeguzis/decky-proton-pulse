@@ -47,11 +47,40 @@ const BADGE_ID = 'proton-pulse-game-badge';
 const PATCHED_FLAG = '__pp_badge_patched__';
 
 
+// Map ProtonDB summary (tier + sample count + own confidence string) to a 0-100
+// percentage for the badge chip. This is a lightweight cousin of
+// aggregatePerGame() that runs without an extra reports fetch - good enough
+// for an at-a-glance badge; the full per-report confidence still lives in
+// ConfigureTab. Keep the formula here predictable, not a black box
+function estimatePerGameConfidence(summary: { total: number; confidence: string } | null): number {
+  if (!summary || !summary.total) return 0;
+  const stringConf = (summary.confidence || '').toLowerCase();
+  let base = 50;
+  if (stringConf.includes('strong'))        base = 80;
+  else if (stringConf.includes('good'))     base = 70;
+  else if (stringConf.includes('moderate')) base = 55;
+  else if (stringConf.includes('low'))      base = 35;
+  // Sample-size bonus on a log scale (1 report = 0, 10 = ~10, 100 = ~20)
+  const sampleBonus = Math.min(20, Math.round(Math.log2(Math.max(1, summary.total)) * 3));
+  return Math.max(0, Math.min(100, base + sampleBonus));
+}
+
+function confidenceColorRgb(confidence: number): string {
+  if (confidence >= 80) return '#4ade80';
+  if (confidence >= 60) return '#facc15';
+  if (confidence >= 40) return '#fb923c';
+  return '#f87171';
+}
+
 function BadgeIcon({ appId }: { appId: number }) {
   // pos drives both visibility (null = hidden) and position via React state,
   // so the Focusable's rendered DOM coords are correct when the navmesh scans.
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [tier, setTier] = useState<string | null>(null);
+  // Per-game confidence percentage shown alongside the tier badge. Comes from
+  // the same summary that gives us the tier, so no extra network call
+  const [confidence, setConfidence] = useState<number | null>(null);
+  const [reportCount, setReportCount] = useState<number>(0);
   const [sourceInfo, setSourceInfo] = useState<GameSourceInfo | null>(null);
   const [isNativeLinux, setIsNativeLinux] = useState(false);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -66,6 +95,10 @@ function BadgeIcon({ appId }: { appId: number }) {
     void logFrontendEvent('DEBUG', 'gamePageBadge: platform_list', { appId, platformList, native });
     getProtonDBSummary(String(appId)).then((summary) => {
       if (summary?.tier) setTier(summary.tier);
+      if (summary) {
+        setConfidence(estimatePerGameConfidence(summary));
+        setReportCount(summary.total ?? 0);
+      }
     }).catch(() => {/* show icon fallback */});
     void getGameSource(appId, appName).then((info) => { if (info) setSourceInfo(info); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -79,6 +112,10 @@ function BadgeIcon({ appId }: { appId: number }) {
     if (!protonId) return;
     getProtonDBSummary(protonId).then((summary) => {
       if (summary?.tier) setTier(summary.tier);
+      if (summary) {
+        setConfidence(estimatePerGameConfidence(summary));
+        setReportCount(summary.total ?? 0);
+      }
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceInfo?.full_game_app_id, sourceInfo?.steam_app_id_match]);
@@ -242,7 +279,9 @@ function BadgeIcon({ appId }: { appId: number }) {
       {showTierBadge && (
         <div
           ref={innerRef}
-          title={t().common.openInProtonPulse}
+          title={confidence != null
+            ? `${tier?.toUpperCase() ?? ''} - ${confidence}% confidence (based on ${reportCount} report${reportCount === 1 ? '' : 's'})`
+            : t().common.openInProtonPulse}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -260,6 +299,22 @@ function BadgeIcon({ appId }: { appId: number }) {
         >
           <BrandGlyph size={16} />
           {tier && <span>{tier.toUpperCase()}</span>}
+          {confidence != null && (
+            <span
+              style={{
+                marginLeft: 4,
+                padding: '1px 5px',
+                borderRadius: 3,
+                background: 'rgba(0,0,0,0.55)',
+                color: confidenceColorRgb(confidence),
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+              }}
+            >
+              {confidence}%
+            </span>
+          )}
         </div>
       )}
       {showSourceBadge && (

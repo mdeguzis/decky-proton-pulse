@@ -64,6 +64,7 @@ All notable changes to Proton Pulse should be recorded here.
 ## Unreleased
 
 - Split scoring into rating (from yes/no answers) and confidence (0-100% qualifier). The badge no longer gets re-tier'd from the score, so a four-year-old borked report on an actively patched game stays borked but with low confidence and a "worth re-testing" caveat instead of silently auto-bumping to bronze
+- Show per-game confidence percentage alongside the tier on the game library badge - GOLD + 78% means "Gold rating, fairly trustworthy"; BORKED + 14% means "Borked but data is thin or stale"
 - Add aggregatePerGame helper for combining per-report ratings into a single per-game rating + confidence pair (recency-weighted mean for rating, sample size + freshness for confidence)
 - Add Proton Pulse website link to the About tab and wrap the external links in Focusable so they're reachable via D-pad in Game Mode
 - Structural merge on append, dedupe runtime (#68)
