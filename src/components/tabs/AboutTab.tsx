@@ -71,22 +71,34 @@ export function AboutTab() {
       <div style={{ marginBottom: 16, lineHeight: 1.5 }}>
         {aboutStrings.description}
       </div>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+      {/* External links. Plain <a> tags aren't reachable with the D-pad in
+          Game Mode, so each link is wrapped in a Focusable that calls
+          window.open on activation. Steam intercepts target=_blank too,
+          so we open the URL imperatively. */}
+      <Focusable
+        style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}
+        flow-children="horizontal"
+      >
         {[
+          { label: 'Proton Pulse Website', url: 'https://www.proton-pulse.com' },
           { label: aboutStrings.github, url: 'https://github.com/mdeguzis/decky-proton-pulse' },
           { label: aboutStrings.protondb, url: 'https://www.protondb.com' },
         ].map(({ label, url }) => (
-          <a
+          <Focusable
             key={url}
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: '#4c9eff', textDecoration: 'none' }}
+            onActivate={() => { try { window.open(url, '_blank'); } catch { /* noop */ } }}
+            style={{
+              color: '#4c9eff',
+              padding: '4px 8px',
+              borderRadius: 3,
+              cursor: 'pointer',
+              outline: 'none',
+            }}
           >
-            {label} ↗
-          </a>
+            {label} {'↗'}
+          </Focusable>
         ))}
-      </div>
+      </Focusable>
 
       {/* --- Submit Issue --- */}
       <div
