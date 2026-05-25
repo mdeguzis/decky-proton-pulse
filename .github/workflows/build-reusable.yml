@@ -60,7 +60,7 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -118,7 +118,7 @@ jobs:
         if: ${{ inputs.bootstrap_cmd == '' }}
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Set up Node.js
         if: ${{ inputs.bootstrap_cmd == '' }}
