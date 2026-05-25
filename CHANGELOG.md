@@ -63,6 +63,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Issues: add Website Feedback template for proton-pulse.com
+- Report card + submit: drop pulse pill, require title at submit
 - Confidence: drop per-report pill from card list, Steam-tone the green
 - Manage tab: show real game title plus inline confidence on report cards
 - Migrate pnpm config out of package.json to pnpm-workspace.yaml

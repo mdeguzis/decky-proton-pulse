@@ -125,7 +125,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
+          # no cache in containers: store doesn't exist before pnpm install
+          # and ephemeral containers don't persist it between runs
 
       - name: Install frontend dependencies
         if: ${{ inputs.bootstrap_cmd == '' }}
