@@ -162,8 +162,8 @@ help:
 
 build: clean test
 	@COMMIT=$$(git rev-parse --short HEAD 2>/dev/null || echo "unknown"); \
-	DIRTY=$$(git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null || echo "-dirty"); \
-	echo "$${COMMIT}$${DIRTY}" > .build-commit
+	UNCOMMITTED=$$(git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null || echo "+uncommitted"); \
+	echo "$${COMMIT}$${UNCOMMITTED}" > .build-commit
 	$(PNPM) build
 	@echo ""
 	@echo "Build complete."
