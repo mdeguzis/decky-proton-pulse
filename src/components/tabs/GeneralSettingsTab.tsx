@@ -296,13 +296,13 @@ export function GeneralSettingsTab() {
   const aboutStrings = t().about;
   const cacheStats = getCacheStats();
 
-  // plugin version + self-update
+  // plugin version + update check
   const [currentVersion, setCurrentVersion] = useState('...');
   const [buildCommit, setBuildCommit] = useState('');
-  const [updateChannel, setUpdateChannelState] = useState<'release' | 'pre-release' | 'latest'>(
-    () => (getSetting('updateChannel', 'release') as 'release' | 'pre-release' | 'latest'),
+  const [updateChannel, setUpdateChannelState] = useState<'release' | 'pre-release'>(
+    () => (getSetting('updateChannel', 'release') as 'release' | 'pre-release'),
   );
-  const setUpdateChannel = (ch: 'release' | 'pre-release' | 'latest') => {
+  const setUpdateChannel = (ch: 'release' | 'pre-release') => {
     setUpdateChannelState(ch);
     setSetting('updateChannel', ch);
   };
@@ -321,10 +321,8 @@ export function GeneralSettingsTab() {
       setCheckingUpdate(false);
     }
   };
-  const handleApplyUpdate = () => {
-    // open the GitHub release page so the user can download the zip
-    // and install via Decky Loader's normal sideload flow
-    const url = checkResult?.release_url || `https://github.com/mdeguzis/decky-proton-pulse/releases`;
+  const handleOpenRelease = () => {
+    const url = checkResult?.release_url || 'https://github.com/mdeguzis/decky-proton-pulse/releases';
     try { window.open(url, '_blank'); } catch {}
     toaster.toast({
       title: 'Proton Pulse',
@@ -332,7 +330,6 @@ export function GeneralSettingsTab() {
     });
   };
   useEffect(() => {
-    void logFrontendEvent('DEBUG', 'GeneralSettingsTab: update section mounted', { channel: updateChannel });
     void callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000)
       .then(setCurrentVersion)
       .catch(() => setCurrentVersion('?'));
@@ -786,63 +783,34 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         {checkResult && !checkResult.success && (
           <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{checkResult.error ?? aboutStrings.checkUpdateFailed}</div>
         )}
-        {checkResult?.success && !checkResult.has_update && (() => {
-          const local = checkResult.current_version ?? '';
-          const remote = checkResult.latest_version ?? '';
-          const ahead = local > remote && local !== remote;
-          const commitLabel = buildCommit ? ` (${buildCommit})` : '';
-          return (
-            <div style={{ fontSize: 11, color: ahead ? '#64b5f6' : '#4caf50', marginBottom: 8 }}>
-              {ahead
-                ? `Ahead of latest ${updateChannel} (v${remote}) - dev build${commitLabel}`
-                : `Up to date (latest ${updateChannel}: v${remote})`}
-            </div>
-          );
-        })()}
-        {checkResult?.success && checkResult.has_update && (
-          <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
-            Update available: v{checkResult.current_version} → {checkResult.latest_version}
+        {checkResult?.success && !checkResult.has_update && (
+          <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>
+            Up to date (latest {updateChannel}: v{checkResult.latest_version})
           </div>
         )}
-        <Focusable
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
-          flow-children="horizontal"
-        >
-          {(
-            <Dropdown
-              rgOptions={[
-                { data: 'release', label: 'Release' },
-                { data: 'pre-release', label: 'Pre-release' },
-              ]}
-              selectedOption={updateChannel === 'latest' ? 'release' : updateChannel}
-              onChange={(opt) => setUpdateChannel(opt.data as any)}
-            />
+        {checkResult?.success && checkResult.has_update && (
+          <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
+            Update available: v{checkResult.current_version} → v{checkResult.latest_version}
+          </div>
+        )}
+        <Focusable style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} flow-children="horizontal">
+          <Dropdown
+            rgOptions={[
+              { data: 'release', label: 'Release' },
+              { data: 'pre-release', label: 'Pre-release' },
+            ]}
+            selectedOption={updateChannel}
+            onChange={(opt) => setUpdateChannel(opt.data as any)}
+          />
+          {checkResult?.success && checkResult.has_update ? (
+            <DialogButton onClick={handleOpenRelease} style={{ fontSize: 12 }}>
+              View v{checkResult.latest_version} release
+            </DialogButton>
+          ) : (
+            <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate} style={{ fontSize: 12 }}>
+              {checkingUpdate ? aboutStrings.checkingForUpdates : aboutStrings.checkForUpdates}
+            </DialogButton>
           )}
-          {(() => {
-            const hasUpdate = checkResult?.success && checkResult.has_update;
-            const isAhead = checkResult?.success && !checkResult.has_update
-              && (checkResult.current_version ?? '') > (checkResult.latest_version ?? '')
-              && checkResult.current_version !== checkResult.latest_version;
-            if (hasUpdate) {
-              return (
-                <DialogButton onClick={handleApplyUpdate} style={{ fontSize: 12 }}>
-                  View v{checkResult!.latest_version} release
-                </DialogButton>
-              );
-            }
-            if (isAhead) {
-              return (
-                <DialogButton onClick={handleApplyUpdate} style={{ fontSize: 12, color: '#fb923c' }}>
-                  Downgrade to v{checkResult!.latest_version}
-                </DialogButton>
-              );
-            }
-            return (
-              <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate} style={{ fontSize: 12 }}>
-                {checkingUpdate ? aboutStrings.checkingForUpdates : aboutStrings.checkForUpdates}
-              </DialogButton>
-            );
-          })()}
         </Focusable>
       </div>
 
