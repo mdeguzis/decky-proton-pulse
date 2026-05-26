@@ -57,16 +57,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
-        with:
-          version: 10
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
+
+      - name: Set up pnpm
+        run: npm install -g pnpm@10
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
@@ -114,17 +111,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up pnpm
-        if: ${{ inputs.bootstrap_cmd == '' }}
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093
-        with:
-          version: 10
-
       - name: Set up Node.js
         if: ${{ inputs.bootstrap_cmd == '' }}
         uses: actions/setup-node@v4
         with:
           node-version: 24
+
+      - name: Set up pnpm
+        if: ${{ inputs.bootstrap_cmd == '' }}
+        run: npm install -g pnpm@10
           # no cache in containers: store doesn't exist before pnpm install
           # and ephemeral containers don't persist it between runs
 
