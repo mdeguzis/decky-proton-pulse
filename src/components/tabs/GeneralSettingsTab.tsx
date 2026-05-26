@@ -798,12 +798,12 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         )}
         {checkResult?.success && !checkResult.has_update && !isUpdRunning && !isUpdDone && (
           <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>
-            v{checkResult.current_version} is the latest ({checkResult.latest_version})
+            Up to date (latest {updateChannel}: v{checkResult.latest_version})
           </div>
         )}
         {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
           <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
-            Local: v{checkResult.current_version} → Remote: v{checkResult.latest_version}
+            Update available: v{checkResult.current_version} → {checkResult.latest_version}
           </div>
         )}
         <Focusable style={{ display: 'flex', gap: 10, alignItems: 'stretch' }} flow-children="horizontal">
