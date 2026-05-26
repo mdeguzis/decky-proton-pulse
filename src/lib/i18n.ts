@@ -945,7 +945,7 @@ export const en: TranslationTree = {
     checkingForUpdates: 'Checking...',
     updateAvailable: (v) => `Update available: v${v}`,
     upToDate: 'Plugin is up to date.',
-    applyUpdate: (v) => `Update to v${v}`,
+    applyUpdate: (v) => `Update to ${/^\d/.test(v) ? 'v' : ''}${v}`,
     applyingUpdate: 'Downloading...',
     downloadingUpdate: 'Downloading...',
     extractingUpdate: 'Extracting...',
