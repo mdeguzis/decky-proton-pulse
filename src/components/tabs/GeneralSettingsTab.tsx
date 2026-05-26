@@ -827,12 +827,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
           </div>
         )}
         <Focusable
-          style={{
-            display: 'grid',
-            gridTemplateColumns: checkResult?.has_update && !isUpdRunning && !isUpdDone
-              ? '1fr 1fr 1fr' : '1fr 1fr',
-            gap: 10,
-          }}
+          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
           flow-children="horizontal"
         >
           {!isUpdDone && !isUpdRunning && (
@@ -846,7 +841,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
               onChange={(opt) => setUpdateChannel(opt.data as any)}
             />
           )}
-          {!isUpdDone && (
+          {!isUpdDone && !checkResult?.has_update && (
             <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate || isUpdRunning} style={{ fontSize: 12 }}>
               {checkingUpdate ? aboutStrings.checkingForUpdates : aboutStrings.checkForUpdates}
             </DialogButton>
