@@ -399,17 +399,16 @@ function GameSummaryHeader({
               <span
                 title={`${combinedTier.confidencePct}% confidence across ${combinedTier.count} report${combinedTier.count === 1 ? '' : 's'}`}
                 style={{
-                  // Steam install-button green for high confidence (darker /
-                  // Steam-paletted - matches the per-report pill in ReportCard)
-                  background: combinedTier.confidencePct >= 70 ? '#5ba32b'
-                             : combinedTier.confidencePct >= 50 ? '#facc15'
-                             : combinedTier.confidencePct >= 30 ? '#fb923c'
-                             : '#f87171',
-                  color: '#111',
-                  borderRadius: 999,
-                  padding: '1px 7px',
+                  // cyan-blue confidence palette, matches proton-pulse.com
+                  background: combinedTier.confidencePct >= 80 ? '#66c0f4'
+                             : combinedTier.confidencePct >= 60 ? '#4a90b8'
+                             : combinedTier.confidencePct >= 40 ? '#3a6680'
+                             : '#4a5a6a',
+                  color: combinedTier.confidencePct >= 60 ? '#0a1a24' : '#e8f4ff',
+                  borderRadius: 3,
+                  padding: '2px 8px',
                   fontWeight: 700,
-                  fontSize: 9,
+                  fontSize: 10,
                   whiteSpace: 'nowrap',
                   letterSpacing: 0.4,
                 }}

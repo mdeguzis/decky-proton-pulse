@@ -1003,11 +1003,12 @@ export function ReportDetailModal({
   // Color for the confidence pill - green/yellow/orange/red bands. Same scale
   // ReportCard uses so the chip and modal pill read the same at a glance.
   // Light text-on-color for readability; the pill itself uses background.
+  // cyan-blue confidence palette, same as proton-pulse.com
   const confColor =
-    // Steam install-button green for high confidence (darker / Steam-paletted)
-    cappedConfidence >= 80 ? '#5ba32b' :
-    cappedConfidence >= 60 ? '#facc15' :
-    cappedConfidence >= 40 ? '#fb923c' : '#f87171';
+    cappedConfidence >= 80 ? '#66c0f4' :
+    cappedConfidence >= 60 ? '#4a90b8' :
+    cappedConfidence >= 40 ? '#3a6680' : '#4a5a6a';
+  const confTextColor = cappedConfidence >= 60 ? '#0a1a24' : '#e8f4ff';
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
 
   // Scroll to top on mount so D-pad scrolling starts from a known position
@@ -1426,12 +1427,13 @@ export function ReportDetailModal({
               title={`Per-report confidence: how trustworthy this single report is for your situation`}
               style={{
                 background: confColor,
-                color: '#111',
-                borderRadius: 999,
-                padding: '1px 7px',
+                color: confTextColor,
+                borderRadius: 3,
+                padding: '2px 8px',
                 fontWeight: 700,
-                fontSize: 9,
+                fontSize: 10,
                 whiteSpace: 'nowrap',
+                letterSpacing: 0.4,
               }}
             >
               {t().reports.confidence}: {confScore}%
