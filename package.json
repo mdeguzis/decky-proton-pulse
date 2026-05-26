@@ -1,6 +1,6 @@
 {
   "name": "decky-proton-pulse",
-  "version": "1.4.4",
+  "version": "1.5.0",
   "description": "Decky plugin that ranks ProtonDB reports by system compatibility and applies launch options.",
   "type": "module",
   "scripts": {

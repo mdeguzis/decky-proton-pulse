@@ -58,6 +58,11 @@ from lib.proton_ge import (
 import lib.lsfg_vk as _lsfg_vk_mod
 from lib.metrics_export import export_metrics_to_disk
 from lib.protondb_systeminfo import generate_system_info
+from lib.plugin_updater import (
+    check_for_update as _updater_check,
+    make_initial_status as _updater_make_status,
+    start_apply_update as _updater_start,
+)
 from lib.steam_paths import compat_tools_dir, compat_tools_dirs
 from lib.system_info import collect_system_info
 # pylint: enable=wrong-import-position
@@ -82,6 +87,9 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         self._proton_ge_install_process: subprocess.Popen[str] | None = None
         self._proton_ge_install_process_ref: list[subprocess.Popen[str] | None] = [None]
         self._proton_ge_install_status: dict[str, Any] = make_initial_status()
+        self._update_status: dict[str, Any] = _updater_make_status()
+        self._update_lock = threading.Lock()
+        self._update_cancel = threading.Event()
         self._prefetch_cancel = threading.Event()
         self._prefetch_thread: threading.Thread | None = None
         self._lsfg_vk_install_lock = threading.Lock()
@@ -244,6 +252,41 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     async def get_plugin_version(self) -> str:
         """Hand back the plugin version string that Decky knows about."""
         return getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
+
+    async def check_for_update(self) -> dict:
+        """Compare the installed version against the latest GitHub release."""
+        current = getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
+        return _updater_check(current)
+
+    async def apply_update(self, zip_url: str, version: str) -> dict:
+        """Start a background download+extract of the release ZIP.
+
+        Returns immediately; poll get_update_status() for progress.
+        """
+        with self._update_lock:
+            if self._update_status.get("state") == "running":
+                return {"success": False, "error": "Update already in progress"}
+        self._update_cancel.clear()
+        _updater_start(
+            zip_url,
+            version,
+            decky.DECKY_PLUGIN_DIR,
+            self._update_status,
+            self._update_lock,
+            self._update_cancel,
+        )
+        return {"success": True}
+
+    async def get_update_status(self) -> dict:
+        """Return a snapshot of the current update download/extract progress."""
+        with self._update_lock:
+            return dict(self._update_status)
+
+    async def cancel_update(self) -> dict:
+        """Signal the in-progress update download to stop."""
+        self._update_cancel.set()
+        decky.logger.info("cancel_update: cancel signal sent")
+        return {"success": True}
 
     async def get_protondb_systeminfo(self) -> str:
         """Build the system-info blob that ProtonDB submissions need."""

@@ -1,3 +1,5 @@
+allowBuilds:
+  esbuild: set this to true or false
 # pnpm 11+ moved settings out of package.json's "pnpm" field. This file is
 # the new home. We're not actually using workspaces here, but pnpm reads
 # peerDependencyRules from here even in single-package repos.

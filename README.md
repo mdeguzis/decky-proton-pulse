@@ -153,6 +153,17 @@ Use this route if you just want a published build and do not need the source tre
 3. Use Decky Loader's manual ZIP install flow and select the downloaded release archive.
 4. Restart Decky Loader or Steam if the plugin does not appear immediately.
 
+### Updating the Plugin
+
+Proton Pulse has a built-in updater on the **About** tab (the last tab in the plugin sidebar).
+
+1. Open the plugin and navigate to the About tab.
+2. Press **Check for Updates** -- the plugin queries the GitHub Releases API and shows the latest version.
+3. If an update is available, press **Update to vX.Y.Z** -- the ZIP downloads in the background with a live progress bar (percentage, bytes transferred, and ETA), identical to the Proton-GE installer in the Compatibility Tools tab.
+4. When the download and extraction finish, press **Reload Plugin** -- the plugin attempts a hot-reload via Decky Loader first (no Steam restart needed); if that is unavailable it falls back to a full Steam restart.
+
+> **Note:** Because Proton Pulse is not in the Decky store, it cannot use the store's automatic update path. The built-in updater provides an equivalent experience from within the plugin itself.
+
 ### Quick Start
 
 ```bash
@@ -166,6 +177,17 @@ Versioning uses a single source of truth:
 - `VERSION`
 
 Normal build and deploy commands sync that value into `package.json` and `pyproject.toml` automatically.
+
+### Plugin Loader Compatibility
+
+Proton Pulse is built for [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader). Other plugin loaders for the Steam Deck ecosystem are listed below.
+
+| Loader | Platform | Status | Notes |
+|---|---|---|---|
+| [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) | SteamOS / Linux | Yes | Primary target |
+| [Decky Loader for Windows](https://github.com/ACCESS-DENIIED/Decky-Loader-For-Windows) | Windows | Yes (AFAIK) | Community port; not officially tested |
+| [Condenser](https://github.com/kmturley/condenser) | TBD | WIP | Plugin API not yet finalized |
+| [Millennium](https://github.com/SteamClientHomebrew/Millennium) | SteamOS / Windows | No | Different plugin model; not compatible |
 
 ### Requirements
 

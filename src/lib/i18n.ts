@@ -320,6 +320,19 @@ export interface TranslationTree {
     issueTemplatePluginIssue: string;
     issueTemplateOther: string;
     openingIssue: string;
+    checkForUpdates: string;
+    checkingForUpdates: string;
+    updateAvailable: (version: string) => string;
+    upToDate: string;
+    applyUpdate: (version: string) => string;
+    applyingUpdate: string;
+    downloadingUpdate: string;
+    extractingUpdate: string;
+    updateApplied: string;
+    updateFailed: (error: string) => string;
+    checkUpdateFailed: string;
+    reloadPlugin: string;
+    reloading: string;
   };
   configManager: {
     title: string;
@@ -928,6 +941,19 @@ export const en: TranslationTree = {
     issueTemplatePluginIssue: 'Plugin Issue',
     issueTemplateOther: 'General Feedback',
     openingIssue: 'Opening issue...',
+    checkForUpdates: 'Check for Updates',
+    checkingForUpdates: 'Checking...',
+    updateAvailable: (v) => `Update available: v${v}`,
+    upToDate: 'Plugin is up to date.',
+    applyUpdate: (v) => `Update to v${v}`,
+    applyingUpdate: 'Downloading...',
+    downloadingUpdate: 'Downloading...',
+    extractingUpdate: 'Extracting...',
+    updateApplied: 'Update applied!',
+    updateFailed: (e) => `Update failed: ${e}`,
+    checkUpdateFailed: 'Failed to check for updates.',
+    reloadPlugin: 'Reload Plugin',
+    reloading: 'Reloading...',
   },
   configManager: {
     title: 'Configurations',
