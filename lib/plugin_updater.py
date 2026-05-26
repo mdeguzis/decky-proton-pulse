@@ -223,22 +223,49 @@ def _run(
         else:
             final_staging = extracted_dir
 
-        # use sudo to replace the plugin dir (it's root-owned on SteamOS)
+        # try to replace the plugin dir. plugins run as deck user but the
+        # dir may be root-owned (make deploy uses sudo rsync). try direct
+        # replacement first, fall back to sudo, and as a last resort just
+        # leave the staging dir for manual swap
         decky.logger.info(
-            f"plugin_updater: installing to {target_path} (sudo)"
+            f"plugin_updater: installing to {target_path}"
         )
-        subprocess.run(
-            ["sudo", "rm", "-rf", str(target_path)],
-            check=True, timeout=10,
-        )
-        subprocess.run(
-            ["sudo", "mv", str(final_staging), str(target_path)],
-            check=True, timeout=10,
-        )
-        subprocess.run(
-            ["sudo", "chown", "-R", "root:root", str(target_path)],
-            check=False, timeout=10,
-        )
+        installed = False
+        # attempt 1: direct python (works if dir is user-owned)
+        try:
+            if target_path.exists():
+                shutil.rmtree(target_path)
+            shutil.move(str(final_staging), str(target_path))
+            installed = True
+        except PermissionError:
+            decky.logger.info("plugin_updater: direct replace failed (root-owned), trying sudo")
+
+        # attempt 2: sudo (works if passwordless sudo is configured)
+        if not installed:
+            try:
+                subprocess.run(["sudo", "-n", "rm", "-rf", str(target_path)], check=True, timeout=10)
+                subprocess.run(["sudo", "-n", "mv", str(final_staging), str(target_path)], check=True, timeout=10)
+                installed = True
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                decky.logger.info("plugin_updater: sudo replace failed, trying rsync")
+
+        # attempt 3: rsync over existing dir (preserves what we can)
+        if not installed:
+            try:
+                subprocess.run(
+                    ["rsync", "-a", "--delete", str(final_staging) + "/", str(target_path) + "/"],
+                    check=True, timeout=30,
+                )
+                installed = True
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                decky.logger.warning("plugin_updater: rsync failed too")
+
+        if not installed:
+            raise RuntimeError(
+                f"Could not replace {target_path} (root-owned). "
+                "Try restarting Decky Loader or running: "
+                f"sudo rm -rf {target_path} && sudo mv {final_staging} {target_path}"
+            )
 
         _set(state="success", stage=None, finished_at=int(time.time()))
         decky.logger.info(
