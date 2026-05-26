@@ -58,7 +58,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
         with:
           version: 10
 
@@ -116,7 +116,7 @@ jobs:
 
       - name: Set up pnpm
         if: ${{ inputs.bootstrap_cmd == '' }}
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
         with:
           version: 10
 
