@@ -25,7 +25,16 @@ import {
 import { getVoterId } from '../../lib/voting';
 import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
 import { buildPluginLinkProfileUrl } from '../../lib/protonPulseLinkUrl';
+import {
+  shouldPollUpdateStatus,
+  triggerReload,
+  type UpdateCheckResult,
+  type UpdateStatusResult,
+} from './aboutTabUpdate';
 
+const checkForUpdate = callable<[string], UpdateCheckResult>('check_for_update');
+const applyUpdate = callable<[string, string], { success: boolean; error?: string }>('apply_update');
+const getUpdateStatus = callable<[], UpdateStatusResult>('get_update_status');
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getInstalledGameStatsCallable = callable<[], {
   installed_steam_games: number;
@@ -289,7 +298,54 @@ function MetricsInfoBox() {
 
 export function GeneralSettingsTab() {
   const extras = t().extras!;
+  const aboutStrings = t().about;
   const cacheStats = getCacheStats();
+
+  // plugin self-update
+  const [updateChannel, setUpdateChannel] = useState<'release' | 'pre-release' | 'latest'>('release');
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatusResult | null>(null);
+  const [reloadingPlugin, setReloadingPlugin] = useState(false);
+  const isUpdRunning = updateStatus?.state === 'running';
+  const isUpdDone = updateStatus?.state === 'success';
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    setCheckResult(null);
+    try {
+      const result = await callWithTimeout(() => checkForUpdate(updateChannel), 'check_for_update', 20000);
+      setCheckResult(result);
+    } catch {
+      setCheckResult({ success: false, error: aboutStrings.checkUpdateFailed });
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+  const handleApplyUpdate = async () => {
+    if (!checkResult?.zip_url || !checkResult.latest_version) return;
+    const result = await callWithTimeout(
+      () => applyUpdate(checkResult.zip_url!, checkResult.latest_version!),
+      'apply_update', 10000,
+    );
+    if (!result.success) toaster.toast({ title: 'Proton Pulse', body: aboutStrings.updateFailed(result.error ?? '') });
+    try { setUpdateStatus(await getUpdateStatus()); } catch {}
+  };
+  const handleReloadPlugin = async () => {
+    setReloadingPlugin(true);
+    await triggerReload('Proton Pulse');
+    setReloadingPlugin(false);
+  };
+  useEffect(() => {
+    if (!shouldPollUpdateStatus(updateStatus)) return;
+    const id = window.setInterval(async () => {
+      try { setUpdateStatus(await getUpdateStatus()); } catch {}
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [updateStatus]);
+  useEffect(() => {
+    void logFrontendEvent('DEBUG', 'GeneralSettingsTab: update section mounted', { channel: updateChannel });
+  }, []);
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
   const [toastSoundEnabled, setToastSoundEnabled] = useState(() => getSetting(TOAST_SOUND_KEY, true));
@@ -722,6 +778,52 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
 
   return (
     <Focusable onGamepadDirection={handleRootDirection}>
+      {/* --- Plugin Update --- */}
+      <div style={sectionStyle()}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
+          {aboutStrings.checkForUpdates}
+        </div>
+        {checkResult && !checkResult.success && !isUpdRunning && !isUpdDone && (
+          <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{checkResult.error ?? aboutStrings.checkUpdateFailed}</div>
+        )}
+        {checkResult?.success && !checkResult.has_update && !isUpdRunning && !isUpdDone && (
+          <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>{aboutStrings.upToDate}</div>
+        )}
+        {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
+          <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>{aboutStrings.updateAvailable(checkResult.latest_version!)}</div>
+        )}
+        <Focusable style={{ display: 'flex', gap: 10, alignItems: 'stretch' }} flow-children="horizontal">
+          {!isUpdDone && !isUpdRunning && (
+            <div style={{ flex: 1 }}>
+              <Dropdown
+                rgOptions={[
+                  { data: 'release', label: 'Release' },
+                  { data: 'pre-release', label: 'Pre-release' },
+                  { data: 'latest', label: 'Latest commit' },
+                ]}
+                selectedOption={updateChannel}
+                onChange={(opt) => setUpdateChannel(opt.data as any)}
+              />
+            </div>
+          )}
+          {!isUpdDone && (
+            <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate || isUpdRunning} style={{ flex: 1, fontSize: 12 }}>
+              {checkingUpdate ? aboutStrings.checkingForUpdates : aboutStrings.checkForUpdates}
+            </DialogButton>
+          )}
+          {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
+            <DialogButton onClick={handleApplyUpdate} style={{ flex: 1, fontSize: 12 }}>
+              {aboutStrings.applyUpdate(checkResult.latest_version!)}
+            </DialogButton>
+          )}
+          {isUpdDone && (
+            <DialogButton onClick={handleReloadPlugin} disabled={reloadingPlugin} style={{ flex: 1, fontSize: 12 }}>
+              {reloadingPlugin ? 'Reloading...' : aboutStrings.reloadPlugin}
+            </DialogButton>
+          )}
+        </Focusable>
+      </div>
+
       <div style={sectionStyle()}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
           {t().settings.general}

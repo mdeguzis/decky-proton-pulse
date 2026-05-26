@@ -1,27 +1,16 @@
 // src/components/tabs/SettingsTab.tsx
 import { useEffect, useRef, useMemo, useState } from 'react';
-import { ToggleField, Focusable, GamepadButton, DialogButton, Dropdown, ConfirmModal, ModalRoot, showModal, Menu, MenuItem, showContextMenu } from '@decky/ui';
+import { ToggleField, Focusable, GamepadButton, DialogButton, ConfirmModal, ModalRoot, showModal, Menu, MenuItem, showContextMenu } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
-import { openFilePicker, FileSelectionType, callable } from '@decky/api';
+import { openFilePicker, FileSelectionType } from '@decky/api';
 import { toaster } from '../../lib/notify';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
 import { cancelProtonGeInstall, getProtonGeManagerState, installCompatibilityToolArchive, installProtonGe, uninstallCompatibilityTool } from '../../lib/compatTools';
 import type { CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { t } from '../../lib/i18n';
-import { callWithTimeout } from '../../lib/logger';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
 import { buildInstallProgressDetails, shouldPollInstallStatus, shouldShowInstallStatusToast } from './settingsTabProgress';
-import {
-  shouldPollUpdateStatus,
-  triggerReload,
-  type UpdateCheckResult,
-  type UpdateStatusResult,
-} from './aboutTabUpdate';
-
-const checkForUpdate = callable<[string], UpdateCheckResult>('check_for_update');
-const applyUpdate = callable<[string, string], { success: boolean; error?: string }>('apply_update');
-const getUpdateStatus = callable<[], UpdateStatusResult>('get_update_status');
 
 const AUTO_UPDATE_KEY = 'compat-auto-update-proton-ge';
 const RESTART_HINT = ' Steam may need a restart before the new compatibility tool appears everywhere.';
@@ -572,60 +561,6 @@ export function SettingsTab() {
   const [autoUpdateTriggered, setAutoUpdateTriggered] = useState(false);
   const [focusedMenuKey, setFocusedMenuKey] = useState<string | null>(null);
 
-  // plugin self-update state
-  const [updateChannel, setUpdateChannel] = useState<'release' | 'pre-release' | 'latest'>('release');
-  const [checkingUpdate, setCheckingUpdate] = useState(false);
-  const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
-  const [updateStatus, setUpdateStatus] = useState<UpdateStatusResult | null>(null);
-  const [reloadingPlugin, setReloadingPlugin] = useState(false);
-  const aboutStrings = t().about;
-  const isUpdRunning = updateStatus?.state === 'running';
-  const isUpdDone = updateStatus?.state === 'success';
-
-  const handleCheckUpdate = async () => {
-    setCheckingUpdate(true);
-    setCheckResult(null);
-    try {
-      const result = await callWithTimeout(() => checkForUpdate(updateChannel), 'check_for_update', 20000);
-      setCheckResult(result);
-    } catch {
-      setCheckResult({ success: false, error: aboutStrings.checkUpdateFailed });
-    } finally {
-      setCheckingUpdate(false);
-    }
-  };
-
-  const handleApplyUpdate = async () => {
-    if (!checkResult?.zip_url || !checkResult.latest_version) return;
-    const result = await callWithTimeout(
-      () => applyUpdate(checkResult.zip_url!, checkResult.latest_version!),
-      'apply_update',
-      10000,
-    );
-    if (!result.success) {
-      toaster.toast({ title: 'Proton Pulse', body: aboutStrings.updateFailed(result.error ?? '') });
-    }
-    try {
-      const status = await getUpdateStatus();
-      setUpdateStatus(status);
-    } catch { /* poll will catch it */ }
-  };
-
-  const handleReloadPlugin = async () => {
-    setReloadingPlugin(true);
-    await triggerReload('Proton Pulse');
-    setReloadingPlugin(false);
-  };
-
-  // poll update status while running
-  useEffect(() => {
-    if (!shouldPollUpdateStatus(updateStatus)) return;
-    const id = window.setInterval(async () => {
-      try { setUpdateStatus(await getUpdateStatus()); } catch {}
-    }, 3000);
-    return () => window.clearInterval(id);
-  }, [updateStatus]);
-
   const installedReleaseTags = useMemo(() => {
     const tags = new Set<string>();
     if (!managerState) return tags;
@@ -1040,73 +975,6 @@ export function SettingsTab() {
           transition: width 240ms ease;
         }
       `}</style>
-      {/* --- Plugin Update --- */}
-      <div style={sectionStyle()}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
-          {aboutStrings.checkForUpdates}
-        </div>
-
-        {/* status messages */}
-        {checkResult && !checkResult.success && !isUpdRunning && !isUpdDone && (
-          <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>
-            {checkResult.error ?? aboutStrings.checkUpdateFailed}
-          </div>
-        )}
-        {checkResult?.success && !checkResult.has_update && !isUpdRunning && !isUpdDone && (
-          <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>
-            {aboutStrings.upToDate}
-          </div>
-        )}
-        {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
-          <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
-            {aboutStrings.updateAvailable(checkResult.latest_version!)}
-          </div>
-        )}
-
-        {/* channel + buttons */}
-        <Focusable style={{ display: 'flex', gap: 10, alignItems: 'stretch' }} flow-children="horizontal">
-          {!isUpdDone && !isUpdRunning && (
-            <div style={{ flex: 1 }}>
-              <Dropdown
-                rgOptions={[
-                  { data: 'release', label: 'Release' },
-                  { data: 'pre-release', label: 'Pre-release' },
-                  { data: 'latest', label: 'Latest commit' },
-                ]}
-                selectedOption={updateChannel}
-                onChange={(opt) => setUpdateChannel(opt.data as any)}
-              />
-            </div>
-          )}
-          {!isUpdDone && (
-            <DialogButton
-              onClick={handleCheckUpdate}
-              disabled={checkingUpdate || isUpdRunning}
-              style={{ flex: 1, fontSize: 12 }}
-            >
-              {checkingUpdate ? aboutStrings.checkingForUpdates : aboutStrings.checkForUpdates}
-            </DialogButton>
-          )}
-          {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
-            <DialogButton
-              onClick={handleApplyUpdate}
-              style={{ flex: 1, fontSize: 12 }}
-            >
-              {aboutStrings.applyUpdate(checkResult.latest_version!)}
-            </DialogButton>
-          )}
-          {isUpdDone && (
-            <DialogButton
-              onClick={handleReloadPlugin}
-              disabled={reloadingPlugin}
-              style={{ flex: 1, fontSize: 12 }}
-            >
-              {reloadingPlugin ? 'Reloading...' : aboutStrings.reloadPlugin}
-            </DialogButton>
-          )}
-        </Focusable>
-      </div>
-
       {/* --- Compatibility Tools --- */}
       <div style={sectionStyle()}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'start', gap: 16, marginBottom: 14 }}>
