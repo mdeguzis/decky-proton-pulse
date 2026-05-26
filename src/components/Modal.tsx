@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { SidebarNavigation, Focusable, Navigation, Router } from '@decky/ui';
 import type { SidebarNavigationPage } from '@decky/ui';
 import { callable } from '@decky/api';
+import { LoggingErrorBoundary } from './LoggingErrorBoundary';
 import { pageState, NAVIGATE_EVENT, normalizeDeckRoutePath, toNavigationPath } from '../lib/pageState';
 import type { NavigatePayload, PageId } from '../lib/pageState';
 import { toaster } from '../lib/notify';
@@ -229,31 +230,31 @@ export function ProtonPulsePage() {
       title: t().nav.manageConfigurations,
       identifier: 'manage',
       route: 'manage',
-      content: <ManageTab appId={appId} appName={appName} gpuVendor={sysInfo?.gpu_vendor ?? null} sysInfo={sysInfo} />,
+      content: <LoggingErrorBoundary name="ManageTab"><ManageTab appId={appId} appName={appName} gpuVendor={sysInfo?.gpu_vendor ?? null} sysInfo={sysInfo} /></LoggingErrorBoundary>,
     },
     {
       title: t().nav.compatibilityTools,
       identifier: 'compatibility-tools',
       route: 'compatibility-tools',
-      content: <CompatibilityToolsTab />,
+      content: <LoggingErrorBoundary name="CompatibilityTools"><CompatibilityToolsTab /></LoggingErrorBoundary>,
     },
     {
       title: t().nav.logs,
       identifier: 'logs',
       route: 'logs',
-      content: <LogsTab />,
+      content: <LoggingErrorBoundary name="Logs"><LogsTab /></LoggingErrorBoundary>,
     },
     {
       title: t().nav.settings,
       identifier: 'settings',
       route: 'settings',
-      content: <GeneralSettingsTab />,
+      content: <LoggingErrorBoundary name="Settings"><GeneralSettingsTab /></LoggingErrorBoundary>,
     },
     {
       title: t().nav.about,
       identifier: 'about',
       route: 'about',
-      content: <AboutTab />,
+      content: <LoggingErrorBoundary name="About"><AboutTab /></LoggingErrorBoundary>,
     },
   ];
 
