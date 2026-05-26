@@ -401,6 +401,19 @@ def generate_system_info(home: str | None = None) -> str:
         if lspci_name:
             gpu_renderer = lspci_name
 
+    # same fallback for driver version: glxinfo can't probe in game mode,
+    # but vulkaninfo or DRM sysfs usually can. system_info.read_driver_version
+    # already chains nvidia-smi -> vulkaninfo -> DRM sysfs
+    if glx["version_long"] == "Unknown":
+        from .system_info import read_driver_version
+        fallback_drv = None
+        try:
+            fallback_drv = read_driver_version()
+        except Exception:
+            pass
+        if fallback_drv:
+            glx["version_long"] = fallback_drv
+
     # Steam reports CPU family/model/stepping as hex, so convert them
     cpu_family = cpu.get("cpu_family", "0")
     cpu_model = cpu.get("model", "0")
