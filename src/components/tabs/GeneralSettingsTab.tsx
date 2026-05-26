@@ -783,7 +783,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             {buildCommit && <div style={{ fontSize: 10, color: '#5a7a8f' }}>{buildCommit}</div>}
           </div>
         </div>
-        {checkResult && !checkResult.success && !isUpdRunning && !isUpdDone && (
+        {checkResult && !checkResult.success && (
           <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{checkResult.error ?? aboutStrings.checkUpdateFailed}</div>
         )}
         {checkResult?.success && !checkResult.has_update && (() => {
@@ -799,7 +799,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             </div>
           );
         })()}
-        {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
+        {checkResult?.success && checkResult.has_update && (
           <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
             Update available: v{checkResult.current_version} → {checkResult.latest_version}
           </div>
@@ -808,7 +808,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
           style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
           flow-children="horizontal"
         >
-          {!isUpdDone && !isUpdRunning && (
+          {(
             <Dropdown
               rgOptions={[
                 { data: 'release', label: 'Release' },
