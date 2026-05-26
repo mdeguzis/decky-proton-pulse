@@ -261,10 +261,16 @@ def _run(
                 decky.logger.warning("plugin_updater: rsync failed too")
 
         if not installed:
+            # last resort: leave the staging dir and give the user a one-liner
+            # they can run from the Deck's desktop terminal
+            staging_left = str(final_staging)
+            decky.logger.error(
+                f"plugin_updater: all install methods failed. staged at {staging_left}"
+            )
             raise RuntimeError(
-                f"Could not replace {target_path} (root-owned). "
-                "Try restarting Decky Loader or running: "
-                f"sudo rm -rf {target_path} && sudo mv {final_staging} {target_path}"
+                f"Plugin dir is root-owned. Run this on the Deck terminal:\n"
+                f"sudo rm -rf {target_path} && sudo mv {staging_left} {target_path} "
+                f"&& sudo systemctl restart plugin_loader"
             )
 
         _set(state="success", stage=None, finished_at=int(time.time()))
