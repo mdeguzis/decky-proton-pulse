@@ -32,6 +32,7 @@ import {
   type UpdateStatusResult,
 } from './aboutTabUpdate';
 
+const getPluginVersion = callable<[], string>('get_plugin_version');
 const checkForUpdate = callable<[string], UpdateCheckResult>('check_for_update');
 const applyUpdate = callable<[string, string], { success: boolean; error?: string }>('apply_update');
 const getUpdateStatus = callable<[], UpdateStatusResult>('get_update_status');
@@ -301,7 +302,8 @@ export function GeneralSettingsTab() {
   const aboutStrings = t().about;
   const cacheStats = getCacheStats();
 
-  // plugin self-update
+  // plugin version + self-update
+  const [currentVersion, setCurrentVersion] = useState('...');
   const [updateChannel, setUpdateChannel] = useState<'release' | 'pre-release' | 'latest'>('release');
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
@@ -345,6 +347,9 @@ export function GeneralSettingsTab() {
   }, [updateStatus]);
   useEffect(() => {
     void logFrontendEvent('DEBUG', 'GeneralSettingsTab: update section mounted', { channel: updateChannel });
+    void callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000)
+      .then(setCurrentVersion)
+      .catch(() => setCurrentVersion('?'));
   }, []);
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
@@ -780,17 +785,26 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
     <Focusable onGamepadDirection={handleRootDirection}>
       {/* --- Plugin Update --- */}
       <div style={sectionStyle()}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
-          {aboutStrings.checkForUpdates}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff' }}>
+            {aboutStrings.checkForUpdates}
+          </div>
+          <div style={{ fontSize: 11, color: '#7a9bb5', fontFamily: 'monospace' }}>
+            v{currentVersion}
+          </div>
         </div>
         {checkResult && !checkResult.success && !isUpdRunning && !isUpdDone && (
           <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{checkResult.error ?? aboutStrings.checkUpdateFailed}</div>
         )}
         {checkResult?.success && !checkResult.has_update && !isUpdRunning && !isUpdDone && (
-          <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>{aboutStrings.upToDate}</div>
+          <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>
+            v{checkResult.current_version} is the latest ({checkResult.latest_version})
+          </div>
         )}
         {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
-          <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>{aboutStrings.updateAvailable(checkResult.latest_version!)}</div>
+          <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
+            Local: v{checkResult.current_version} → Remote: v{checkResult.latest_version}
+          </div>
         )}
         <Focusable style={{ display: 'flex', gap: 10, alignItems: 'stretch' }} flow-children="horizontal">
           {!isUpdDone && !isUpdRunning && (

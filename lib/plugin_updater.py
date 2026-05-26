@@ -56,11 +56,21 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
     """
     try:
         if channel == "latest":
-            # latest commit on main, no version comparison needed
+            # grab the latest commit SHA from the GitHub API
+            commit_sha = "HEAD"
+            try:
+                commit_data = curl_json(
+                    f"https://api.github.com/repos/{GITHUB_REPO}/commits/main",
+                    headers=["Accept: application/vnd.github.v3+json"],
+                    timeout=10,
+                )
+                commit_sha = str(commit_data.get("sha", "HEAD"))[:7]
+            except Exception:
+                pass
             return {
                 "success": True,
                 "current_version": current_version,
-                "latest_version": "main (latest commit)",
+                "latest_version": f"main ({commit_sha})",
                 "has_update": True,
                 "zip_url": _LATEST_COMMIT_ZIP,
                 "asset_size": None,
