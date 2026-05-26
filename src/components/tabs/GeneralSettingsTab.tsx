@@ -25,18 +25,11 @@ import {
 import { getVoterId } from '../../lib/voting';
 import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
 import { buildPluginLinkProfileUrl } from '../../lib/protonPulseLinkUrl';
-import {
-  shouldPollUpdateStatus,
-  triggerReload,
-  type UpdateCheckResult,
-  type UpdateStatusResult,
-} from './aboutTabUpdate';
+import { type UpdateCheckResult } from './aboutTabUpdate';
 
 const getPluginVersion = callable<[], string>('get_plugin_version');
 const getBuildCommit = callable<[], string>('get_build_commit');
 const checkForUpdate = callable<[string], UpdateCheckResult>('check_for_update');
-const applyUpdate = callable<[string, string], { success: boolean; error?: string }>('apply_update');
-const getUpdateStatus = callable<[], UpdateStatusResult>('get_update_status');
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getInstalledGameStatsCallable = callable<[], {
   installed_steam_games: number;
@@ -315,10 +308,6 @@ export function GeneralSettingsTab() {
   };
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
-  const [updateStatus, setUpdateStatus] = useState<UpdateStatusResult | null>(null);
-  const [reloadingPlugin, setReloadingPlugin] = useState(false);
-  const isUpdRunning = updateStatus?.state === 'running';
-  const isUpdDone = updateStatus?.state === 'success';
 
   const handleCheckUpdate = async () => {
     setCheckingUpdate(true);
@@ -332,27 +321,16 @@ export function GeneralSettingsTab() {
       setCheckingUpdate(false);
     }
   };
-  const handleApplyUpdate = async () => {
-    if (!checkResult?.zip_url || !checkResult.latest_version) return;
-    const result = await callWithTimeout(
-      () => applyUpdate(checkResult.zip_url!, checkResult.latest_version!),
-      'apply_update', 10000,
-    );
-    if (!result.success) toaster.toast({ title: 'Proton Pulse', body: aboutStrings.updateFailed(result.error ?? '') });
-    try { setUpdateStatus(await getUpdateStatus()); } catch {}
+  const handleApplyUpdate = () => {
+    // open the GitHub release page so the user can download the zip
+    // and install via Decky Loader's normal sideload flow
+    const url = checkResult?.release_url || `https://github.com/mdeguzis/decky-proton-pulse/releases`;
+    try { window.open(url, '_blank'); } catch {}
+    toaster.toast({
+      title: 'Proton Pulse',
+      body: 'Opening release page. Download the .zip and install via Decky Loader.',
+    });
   };
-  const handleReloadPlugin = async () => {
-    setReloadingPlugin(true);
-    await triggerReload('Proton Pulse');
-    setReloadingPlugin(false);
-  };
-  useEffect(() => {
-    if (!shouldPollUpdateStatus(updateStatus)) return;
-    const id = window.setInterval(async () => {
-      try { setUpdateStatus(await getUpdateStatus()); } catch {}
-    }, 3000);
-    return () => window.clearInterval(id);
-  }, [updateStatus]);
   useEffect(() => {
     void logFrontendEvent('DEBUG', 'GeneralSettingsTab: update section mounted', { channel: updateChannel });
     void callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000)
@@ -808,7 +786,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         {checkResult && !checkResult.success && !isUpdRunning && !isUpdDone && (
           <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{checkResult.error ?? aboutStrings.checkUpdateFailed}</div>
         )}
-        {checkResult?.success && !checkResult.has_update && !isUpdRunning && !isUpdDone && (() => {
+        {checkResult?.success && !checkResult.has_update && (() => {
           const local = checkResult.current_version ?? '';
           const remote = checkResult.latest_version ?? '';
           const ahead = local > remote && local !== remote;
@@ -835,27 +813,36 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
               rgOptions={[
                 { data: 'release', label: 'Release' },
                 { data: 'pre-release', label: 'Pre-release' },
-                { data: 'latest', label: 'Latest commit' },
               ]}
-              selectedOption={updateChannel}
+              selectedOption={updateChannel === 'latest' ? 'release' : updateChannel}
               onChange={(opt) => setUpdateChannel(opt.data as any)}
             />
           )}
-          {!isUpdDone && !checkResult?.has_update && (
-            <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate || isUpdRunning} style={{ fontSize: 12 }}>
-              {checkingUpdate ? aboutStrings.checkingForUpdates : aboutStrings.checkForUpdates}
-            </DialogButton>
-          )}
-          {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
-            <DialogButton onClick={handleApplyUpdate} style={{ fontSize: 12 }}>
-              {aboutStrings.applyUpdate(checkResult.latest_version!)}
-            </DialogButton>
-          )}
-          {isUpdDone && (
-            <DialogButton onClick={handleReloadPlugin} disabled={reloadingPlugin} style={{ fontSize: 12 }}>
-              {reloadingPlugin ? 'Reloading...' : aboutStrings.reloadPlugin}
-            </DialogButton>
-          )}
+          {(() => {
+            const hasUpdate = checkResult?.success && checkResult.has_update;
+            const isAhead = checkResult?.success && !checkResult.has_update
+              && (checkResult.current_version ?? '') > (checkResult.latest_version ?? '')
+              && checkResult.current_version !== checkResult.latest_version;
+            if (hasUpdate) {
+              return (
+                <DialogButton onClick={handleApplyUpdate} style={{ fontSize: 12 }}>
+                  View v{checkResult!.latest_version} release
+                </DialogButton>
+              );
+            }
+            if (isAhead) {
+              return (
+                <DialogButton onClick={handleApplyUpdate} style={{ fontSize: 12, color: '#fb923c' }}>
+                  Downgrade to v{checkResult!.latest_version}
+                </DialogButton>
+              );
+            }
+            return (
+              <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate} style={{ fontSize: 12 }}>
+                {checkingUpdate ? aboutStrings.checkingForUpdates : aboutStrings.checkForUpdates}
+              </DialogButton>
+            );
+          })()}
         </Focusable>
       </div>
 
