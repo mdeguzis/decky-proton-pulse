@@ -306,7 +306,13 @@ export function GeneralSettingsTab() {
   // plugin version + self-update
   const [currentVersion, setCurrentVersion] = useState('...');
   const [buildCommit, setBuildCommit] = useState('');
-  const [updateChannel, setUpdateChannel] = useState<'release' | 'pre-release' | 'latest'>('release');
+  const [updateChannel, setUpdateChannelState] = useState<'release' | 'pre-release' | 'latest'>(
+    () => (getSetting('updateChannel', 'release') as 'release' | 'pre-release' | 'latest'),
+  );
+  const setUpdateChannel = (ch: 'release' | 'pre-release' | 'latest') => {
+    setUpdateChannelState(ch);
+    setSetting('updateChannel', ch);
+  };
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatusResult | null>(null);
