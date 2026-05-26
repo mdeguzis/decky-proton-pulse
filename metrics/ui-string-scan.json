@@ -8,6 +8,7 @@
     "src/components/LaunchOptionConflictModal.tsx",
     "src/components/LogViewer.tsx",
     "src/components/LogViewerModal.tsx",
+    "src/components/LoggingErrorBoundary.tsx",
     "src/components/Modal.tsx",
     "src/components/MyHardwareModal.tsx",
     "src/components/NativePulseReportModal.tsx",
@@ -23,6 +24,7 @@
     "src/components/tabs/ManageTab.tsx",
     "src/components/tabs/SettingsTab.tsx",
     "src/components/tabs/SystemRequirementsTab.tsx",
+    "src/components/tabs/aboutTabUpdate.ts",
     "src/components/tabs/settingsTabProgress.ts",
     "src/patches/gameContextMenu.tsx",
     "src/patches/gamePageBadge.tsx",
@@ -269,7 +271,7 @@
     },
     {
       "file": "src/components/ReportDetailModal.tsx",
-      "line": 1480,
+      "line": 1482,
       "column": 13,
       "kind": "jsx",
       "text": "Edit Responses"
@@ -360,70 +362,133 @@
     },
     {
       "file": "src/components/tabs/AboutTab.tsx",
-      "line": 83,
+      "line": 80,
       "column": 20,
       "kind": "string",
       "text": "Proton Pulse Website"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 770,
+      "line": 329,
+      "column": 13,
+      "kind": "string",
+      "text": "Opening release page. Download the .zip and install via Decky Loader."
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 788,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Up to date (latest"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 788,
+      "column": 47,
+      "kind": "jsx",
+      "text": ": v"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 793,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Update available: v"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 793,
+      "column": 62,
+      "kind": "jsx",
+      "text": "→ v"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 799,
+      "column": 41,
+      "kind": "string",
+      "text": "Release"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 800,
+      "column": 45,
+      "kind": "string",
+      "text": "Pre-release"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 807,
+      "column": 15,
+      "kind": "jsx",
+      "text": "View v"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 807,
+      "column": 50,
+      "kind": "jsx",
+      "text": "release"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 862,
       "column": 19,
       "kind": "string",
       "text": "Auto-sync to cloud"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 771,
+      "line": 863,
       "column": 25,
       "kind": "string",
       "text": "Automatically back up configs and plugin settings when they change"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 783,
+      "line": 875,
       "column": 19,
       "kind": "string",
       "text": "Cloud sync refresh rate"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 784,
+      "line": 876,
       "column": 25,
       "kind": "string",
       "text": "How often to re-check cloud sync status in the background"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 789,
+      "line": 881,
       "column": 26,
       "kind": "string",
       "text": "Disabled"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 790,
+      "line": 882,
       "column": 26,
       "kind": "string",
       "text": "1 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 791,
+      "line": 883,
       "column": 26,
       "kind": "string",
       "text": "5 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 792,
+      "line": 884,
       "column": 26,
       "kind": "string",
       "text": "30 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 793,
+      "line": 885,
       "column": 26,
       "kind": "string",
       "text": "1 hour"
