@@ -225,7 +225,7 @@ check-ui-strings: node_modules
 translate: check-translations
 
 node_modules: package.json
-	$(PNPM) i
+	CI=true $(PNPM) i
 
 test-ts: node_modules
 	$(PNPM) test
