@@ -19,6 +19,9 @@ logs
 results
 tmp
 
+# Plugin temp bits
+.build-commit
+
 # Python bits
 py_modules
 
@@ -58,7 +61,6 @@ yalc.lock
 docs/superpowers/specs/
 
 # Ignore output folder
-
 backend/out
 
 # Make sure to ignore any instance of the loader's decky_plugin.py
