@@ -21,6 +21,8 @@ from .http_client import curl_download, curl_json
 
 GITHUB_REPO = "mdeguzis/decky-proton-pulse"
 _RELEASES_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+_ALL_RELEASES_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases?per_page=10"
+_LATEST_COMMIT_ZIP = f"https://github.com/{GITHUB_REPO}/archive/refs/heads/main.zip"
 
 
 def _ver(v: str) -> tuple:
@@ -44,14 +46,44 @@ def make_initial_status() -> dict[str, Any]:
     }
 
 
-def check_for_update(current_version: str) -> dict[str, Any]:
-    """Fetch the latest GitHub release and compare against current_version."""
+def check_for_update(current_version: str, channel: str = "release") -> dict[str, Any]:
+    """Fetch an update based on the chosen channel and compare versions.
+
+    channel values:
+      "release"     - latest stable GitHub release (no prereleases)
+      "pre-release" - latest GitHub release including prereleases
+      "latest"      - latest main branch commit (always "has update")
+    """
     try:
-        data = curl_json(
-            _RELEASES_URL,
-            headers=["Accept: application/vnd.github.v3+json"],
-            timeout=15,
-        )
+        if channel == "latest":
+            # latest commit on main, no version comparison needed
+            return {
+                "success": True,
+                "current_version": current_version,
+                "latest_version": "main (latest commit)",
+                "has_update": True,
+                "zip_url": _LATEST_COMMIT_ZIP,
+                "asset_size": None,
+                "release_url": f"https://github.com/{GITHUB_REPO}/tree/main",
+                "channel": channel,
+            }
+
+        if channel == "pre-release":
+            # grab first release from the list (includes prereleases)
+            releases = curl_json(
+                _ALL_RELEASES_URL,
+                headers=["Accept: application/vnd.github.v3+json"],
+                timeout=15,
+            )
+            data = releases[0] if releases else {}
+        else:
+            # stable release only
+            data = curl_json(
+                _RELEASES_URL,
+                headers=["Accept: application/vnd.github.v3+json"],
+                timeout=15,
+            )
+
         latest = str(data.get("tag_name", "")).lstrip("v")
         zip_asset = next(
             (a for a in data.get("assets", []) if a["name"].endswith(".zip")),
@@ -61,8 +93,8 @@ def check_for_update(current_version: str) -> dict[str, Any]:
         asset_size: int | None = zip_asset.get("size") if zip_asset else None
         has_update = bool(latest and zip_url and _ver(latest) > _ver(current_version))
         decky.logger.debug(
-            f"check_for_update: current={current_version} latest={latest}"
-            f" has_update={has_update} zip_url={zip_url} asset_size={asset_size}"
+            f"check_for_update({channel}): current={current_version} latest={latest}"
+            f" has_update={has_update} zip_url={zip_url}"
         )
         return {
             "success": True,
@@ -72,9 +104,10 @@ def check_for_update(current_version: str) -> dict[str, Any]:
             "zip_url": zip_url,
             "asset_size": asset_size,
             "release_url": str(data.get("html_url", "")),
+            "channel": channel,
         }
     except Exception as e:
-        decky.logger.error(f"check_for_update: failed: {e}")
+        decky.logger.error(f"check_for_update({channel}): failed: {e}")
         return {"success": False, "error": str(e), "current_version": current_version}
 
 

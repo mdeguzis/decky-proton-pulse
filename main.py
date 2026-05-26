@@ -253,10 +253,13 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         """Hand back the plugin version string that Decky knows about."""
         return getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
 
-    async def check_for_update(self) -> dict:
-        """Compare the installed version against the latest GitHub release."""
+    async def check_for_update(self, channel: str = "release") -> dict:
+        """Compare the installed version against a GitHub release.
+
+        channel: "release" (stable), "pre-release", or "latest" (main branch)
+        """
         current = getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
-        return _updater_check(current)
+        return _updater_check(current, channel=channel)
 
     async def apply_update(self, zip_url: str, version: str) -> dict:
         """Start a background download+extract of the release ZIP.

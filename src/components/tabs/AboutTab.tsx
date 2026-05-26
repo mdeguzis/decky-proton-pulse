@@ -21,7 +21,7 @@ const getPluginVersion = callable<[], string>('get_plugin_version');
 const getPluginVersionSafe = () =>
   callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000);
 
-const checkForUpdate = callable<[], UpdateCheckResult>('check_for_update');
+const checkForUpdate = callable<[string], UpdateCheckResult>('check_for_update');
 const applyUpdate = callable<[string, string], { success: boolean; error?: string }>('apply_update');
 const getUpdateStatus = callable<[], UpdateStatusResult>('get_update_status');
 
@@ -40,6 +40,7 @@ export function AboutTab() {
   const templatePickerRef = useRef<HTMLDivElement>(null);
 
   // Update flow state
+  const [updateChannel, setUpdateChannel] = useState<'release' | 'pre-release' | 'latest'>('release');
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatusResult | null>(null);
@@ -77,7 +78,7 @@ export function AboutTab() {
     setCheckingUpdate(true);
     setCheckResult(null);
     try {
-      const result = await callWithTimeout(() => checkForUpdate(), 'check_for_update', 20000);
+      const result = await callWithTimeout(() => checkForUpdate(updateChannel), 'check_for_update', 20000);
       setCheckResult(result);
     } catch {
       setCheckResult({ success: false, error: aboutStrings.checkUpdateFailed });
@@ -233,8 +234,23 @@ export function AboutTab() {
           </div>
         )}
 
-        {/* Action buttons */}
-        <Focusable style={{ display: 'flex', gap: 10 }} flow-children="horizontal">
+        {/* Channel selector + action buttons */}
+        <Focusable style={{ display: 'flex', gap: 10, alignItems: 'center' }} flow-children="horizontal">
+          {!isDone && !isRunning && (
+            <select
+              value={updateChannel}
+              onChange={e => setUpdateChannel(e.target.value as any)}
+              style={{
+                background: 'rgba(11,17,22,0.6)', border: '1px solid #2f4a63',
+                color: '#c7d5e0', fontSize: 11, padding: '6px 8px', borderRadius: 3,
+                minWidth: 100,
+              }}
+            >
+              <option value="release">Release</option>
+              <option value="pre-release">Pre-release</option>
+              <option value="latest">Latest commit</option>
+            </select>
+          )}
           {!isDone && (
             <DialogButton
               onClick={handleCheckUpdate}
