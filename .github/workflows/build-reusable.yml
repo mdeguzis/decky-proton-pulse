@@ -74,7 +74,7 @@ jobs:
           python-version: "3.11"
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        run: pip install uv
 
       - name: Sync Python dependencies
         run: uv sync --group dev
@@ -135,7 +135,7 @@ jobs:
 
       - name: Set up uv
         if: ${{ inputs.bootstrap_cmd == '' }}
-        uses: astral-sh/setup-uv@v5
+        run: pip install uv
 
       - name: Sync Python dependencies
         if: ${{ inputs.bootstrap_cmd == '' }}
