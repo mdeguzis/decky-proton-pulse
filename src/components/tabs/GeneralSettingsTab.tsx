@@ -820,32 +820,38 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             Update available: v{checkResult.current_version} → {checkResult.latest_version}
           </div>
         )}
-        <Focusable style={{ display: 'flex', gap: 10, alignItems: 'stretch' }} flow-children="horizontal">
+        <Focusable
+          style={{
+            display: 'grid',
+            gridTemplateColumns: checkResult?.has_update && !isUpdRunning && !isUpdDone
+              ? '1fr 1fr 1fr' : '1fr 1fr',
+            gap: 10,
+          }}
+          flow-children="horizontal"
+        >
           {!isUpdDone && !isUpdRunning && (
-            <div style={{ flex: 1 }}>
-              <Dropdown
-                rgOptions={[
-                  { data: 'release', label: 'Release' },
-                  { data: 'pre-release', label: 'Pre-release' },
-                  { data: 'latest', label: 'Latest commit' },
-                ]}
-                selectedOption={updateChannel}
-                onChange={(opt) => setUpdateChannel(opt.data as any)}
-              />
-            </div>
+            <Dropdown
+              rgOptions={[
+                { data: 'release', label: 'Release' },
+                { data: 'pre-release', label: 'Pre-release' },
+                { data: 'latest', label: 'Latest commit' },
+              ]}
+              selectedOption={updateChannel}
+              onChange={(opt) => setUpdateChannel(opt.data as any)}
+            />
           )}
           {!isUpdDone && (
-            <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate || isUpdRunning} style={{ flex: 1, fontSize: 12 }}>
+            <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate || isUpdRunning} style={{ fontSize: 12 }}>
               {checkingUpdate ? aboutStrings.checkingForUpdates : aboutStrings.checkForUpdates}
             </DialogButton>
           )}
           {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
-            <DialogButton onClick={handleApplyUpdate} style={{ flex: 1, fontSize: 12 }}>
+            <DialogButton onClick={handleApplyUpdate} style={{ fontSize: 12 }}>
               {aboutStrings.applyUpdate(checkResult.latest_version!)}
             </DialogButton>
           )}
           {isUpdDone && (
-            <DialogButton onClick={handleReloadPlugin} disabled={reloadingPlugin} style={{ flex: 1, fontSize: 12 }}>
+            <DialogButton onClick={handleReloadPlugin} disabled={reloadingPlugin} style={{ fontSize: 12 }}>
               {reloadingPlugin ? 'Reloading...' : aboutStrings.reloadPlugin}
             </DialogButton>
           )}
