@@ -33,6 +33,7 @@ import {
 } from './aboutTabUpdate';
 
 const getPluginVersion = callable<[], string>('get_plugin_version');
+const getBuildCommit = callable<[], string>('get_build_commit');
 const checkForUpdate = callable<[string], UpdateCheckResult>('check_for_update');
 const applyUpdate = callable<[string, string], { success: boolean; error?: string }>('apply_update');
 const getUpdateStatus = callable<[], UpdateStatusResult>('get_update_status');
@@ -304,6 +305,7 @@ export function GeneralSettingsTab() {
 
   // plugin version + self-update
   const [currentVersion, setCurrentVersion] = useState('...');
+  const [buildCommit, setBuildCommit] = useState('');
   const [updateChannel, setUpdateChannel] = useState<'release' | 'pre-release' | 'latest'>('release');
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
@@ -350,6 +352,9 @@ export function GeneralSettingsTab() {
     void callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000)
       .then(setCurrentVersion)
       .catch(() => setCurrentVersion('?'));
+    void callWithTimeout(() => getBuildCommit(), 'get_build_commit', 5000)
+      .then(setBuildCommit)
+      .catch(() => setBuildCommit(''));
   }, []);
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
@@ -789,18 +794,26 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
           <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff' }}>
             {aboutStrings.checkForUpdates}
           </div>
-          <div style={{ fontSize: 11, color: '#7a9bb5', fontFamily: 'monospace' }}>
-            v{currentVersion}
+          <div style={{ fontSize: 11, color: '#7a9bb5', fontFamily: 'monospace', textAlign: 'right' }}>
+            <div>v{currentVersion}</div>
+            {buildCommit && <div style={{ fontSize: 10, color: '#5a7a8f' }}>{buildCommit}</div>}
           </div>
         </div>
         {checkResult && !checkResult.success && !isUpdRunning && !isUpdDone && (
           <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{checkResult.error ?? aboutStrings.checkUpdateFailed}</div>
         )}
-        {checkResult?.success && !checkResult.has_update && !isUpdRunning && !isUpdDone && (
-          <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>
-            Up to date (latest {updateChannel}: v{checkResult.latest_version})
-          </div>
-        )}
+        {checkResult?.success && !checkResult.has_update && !isUpdRunning && !isUpdDone && (() => {
+          const local = checkResult.current_version ?? '';
+          const remote = checkResult.latest_version ?? '';
+          const ahead = local > remote && local !== remote;
+          return (
+            <div style={{ fontSize: 11, color: ahead ? '#64b5f6' : '#4caf50', marginBottom: 8 }}>
+              {ahead
+                ? `Ahead of latest ${updateChannel} (v${remote}) - running dev build`
+                : `Up to date (latest ${updateChannel}: v${remote})`}
+            </div>
+          );
+        })()}
         {checkResult?.success && checkResult.has_update && !isUpdRunning && !isUpdDone && (
           <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
             Update available: v{checkResult.current_version} → {checkResult.latest_version}

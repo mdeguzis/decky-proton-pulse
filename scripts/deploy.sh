@@ -405,6 +405,8 @@ mkdir -p "${STAGING_DIR}/${PLUGIN_NAME}/dist"
 cp dist/index.js             "${STAGING_DIR}/${PLUGIN_NAME}/dist/"
 cp main.py plugin.json LICENSE package.json README.md \
    "${STAGING_DIR}/${PLUGIN_NAME}/"
+# bake build commit SHA so the plugin knows what it's running
+cp .build-commit "${STAGING_DIR}/${PLUGIN_NAME}/" 2>/dev/null || true
 
 if [[ -d lib ]]; then
   rsync -a --exclude='__pycache__' lib/ "${STAGING_DIR}/${PLUGIN_NAME}/lib/"

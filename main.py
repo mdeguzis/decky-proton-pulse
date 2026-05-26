@@ -253,6 +253,14 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         """Hand back the plugin version string that Decky knows about."""
         return getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
 
+    async def get_build_commit(self) -> str:
+        """Return the git commit SHA baked in at build time."""
+        commit_file = Path(decky.DECKY_PLUGIN_DIR) / ".build-commit"
+        try:
+            return commit_file.read_text().strip() if commit_file.is_file() else "dev"
+        except OSError:
+            return "unknown"
+
     async def check_for_update(self, channel: str = "release") -> dict:
         """Compare the installed version against a GitHub release.
 
