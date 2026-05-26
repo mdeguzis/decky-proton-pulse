@@ -127,15 +127,11 @@ jobs:
         if: ${{ inputs.bootstrap_cmd == '' }}
         run: pnpm install --frozen-lockfile
 
-      - name: Set up Python
-        if: ${{ inputs.bootstrap_cmd == '' }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
       - name: Set up uv
         if: ${{ inputs.bootstrap_cmd == '' }}
-        run: python3 -m pip install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
       - name: Sync Python dependencies
         if: ${{ inputs.bootstrap_cmd == '' }}
