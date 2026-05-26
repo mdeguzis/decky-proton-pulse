@@ -161,7 +161,9 @@ help:
 	@printf "  %-27s %s\n" "live-reload-enable" "Configure LIVE_RELOAD=1 on plugin_loader service"
 
 build: clean test
-	@git rev-parse --short HEAD > .build-commit 2>/dev/null || echo "unknown" > .build-commit
+	@COMMIT=$$(git rev-parse --short HEAD 2>/dev/null || echo "unknown"); \
+	DIRTY=$$(git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null || echo "-dirty"); \
+	echo "$${COMMIT}$${DIRTY}" > .build-commit
 	$(PNPM) build
 	@echo ""
 	@echo "Build complete."

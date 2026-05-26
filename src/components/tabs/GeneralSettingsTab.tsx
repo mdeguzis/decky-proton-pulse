@@ -806,10 +806,11 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
           const local = checkResult.current_version ?? '';
           const remote = checkResult.latest_version ?? '';
           const ahead = local > remote && local !== remote;
+          const commitLabel = buildCommit ? ` (${buildCommit})` : '';
           return (
             <div style={{ fontSize: 11, color: ahead ? '#64b5f6' : '#4caf50', marginBottom: 8 }}>
               {ahead
-                ? `Ahead of latest ${updateChannel} (v${remote}) - running dev build`
+                ? `Ahead of latest ${updateChannel} (v${remote}) - dev build${commitLabel}`
                 : `Up to date (latest ${updateChannel}: v${remote})`}
             </div>
           );
