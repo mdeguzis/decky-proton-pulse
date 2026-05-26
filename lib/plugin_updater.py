@@ -9,6 +9,8 @@ get_update_status().
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
 import threading
 import time
 import zipfile
@@ -171,7 +173,7 @@ def _run(
 
     try:
         decky.logger.info(
-            f"plugin_updater: downloading v{version}"
+            f"plugin_updater: downloading {version}"
             f" | url={zip_url} dest={tmp_path}"
         )
         curl_download(
@@ -187,16 +189,60 @@ def _run(
 
         size = tmp_path.stat().st_size
         _set(stage="extracting", progress_fraction=1.0)
+
+        # extract to a temp dir first so we can handle wrong dir names
+        # (github archive zips use repo-branch/ not the plugin name)
+        tmp_extract = Path(f"/tmp/pp-update-extract-{os.getpid()}")
+        if tmp_extract.exists():
+            shutil.rmtree(tmp_extract)
+        tmp_extract.mkdir(parents=True)
+
         decky.logger.info(
             f"plugin_updater: extracting {size} bytes"
-            f" to {plugin_parent_dir} | version={version}"
+            f" to {tmp_extract} | version={version}"
         )
         with zipfile.ZipFile(tmp_path) as zf:
-            zf.extractall(plugin_parent_dir)
+            zf.extractall(tmp_extract)
+
+        # find the top-level dir inside the zip (could be anything)
+        extracted_dirs = [d for d in tmp_extract.iterdir() if d.is_dir()]
+        if len(extracted_dirs) != 1:
+            raise RuntimeError(f"Expected 1 top-level dir in zip, found {len(extracted_dirs)}")
+
+        extracted_dir = extracted_dirs[0]
+        plugin_name = os.path.basename(plugin_dir)
+        target_path = Path(plugin_parent_dir) / plugin_name
+
+        # rename to match the expected plugin dir name
+        final_staging = tmp_extract / plugin_name
+        if extracted_dir.name != plugin_name:
+            decky.logger.info(
+                f"plugin_updater: renaming {extracted_dir.name} -> {plugin_name}"
+            )
+            extracted_dir.rename(final_staging)
+        else:
+            final_staging = extracted_dir
+
+        # use sudo to replace the plugin dir (it's root-owned on SteamOS)
+        decky.logger.info(
+            f"plugin_updater: installing to {target_path} (sudo)"
+        )
+        subprocess.run(
+            ["sudo", "rm", "-rf", str(target_path)],
+            check=True, timeout=10,
+        )
+        subprocess.run(
+            ["sudo", "mv", str(final_staging), str(target_path)],
+            check=True, timeout=10,
+        )
+        subprocess.run(
+            ["sudo", "chown", "-R", "root:root", str(target_path)],
+            check=False, timeout=10,
+        )
 
         _set(state="success", stage=None, finished_at=int(time.time()))
         decky.logger.info(
-            f"plugin_updater: done | version={version} dest={plugin_parent_dir}"
+            f"plugin_updater: done | version={version} dest={target_path}"
         )
     except Exception as e:
         _set(state="error", error=str(e), finished_at=int(time.time()))
@@ -205,4 +251,9 @@ def _run(
         try:
             tmp_path.unlink(missing_ok=True)
         except OSError:
+            pass
+        try:
+            if tmp_extract.exists():
+                shutil.rmtree(tmp_extract, ignore_errors=True)
+        except Exception:
             pass
