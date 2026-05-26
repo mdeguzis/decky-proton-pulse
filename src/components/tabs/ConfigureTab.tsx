@@ -380,7 +380,7 @@ function GameSummaryHeader({
           </span>
         )}
         {tierColor && combinedTier && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, marginBottom: 6 }}>
             <span
               style={{
                 background: tierColor,
