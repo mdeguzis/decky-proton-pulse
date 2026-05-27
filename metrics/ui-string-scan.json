@@ -428,7 +428,7 @@
       "line": 842,
       "column": 15,
       "kind": "jsx",
-      "text": "Installed - restart to apply"
+      "text": "Restart plugin"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",

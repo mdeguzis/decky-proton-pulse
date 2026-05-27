@@ -59,7 +59,7 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/tabs/GeneralSettingsTab.tsx` | 828 | jsx | Update installed. Restart Decky Loader or Steam to load the new version. |
 | `src/components/tabs/GeneralSettingsTab.tsx` | 834 | string | Release |
 | `src/components/tabs/GeneralSettingsTab.tsx` | 835 | string | Pre-release |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 842 | jsx | Installed - restart to apply |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 842 | jsx | Restart plugin |
 | `src/components/tabs/GeneralSettingsTab.tsx` | 907 | string | Auto-sync to cloud |
 | `src/components/tabs/GeneralSettingsTab.tsx` | 908 | string | Automatically back up configs and plugin settings when they change |
 | `src/components/tabs/GeneralSettingsTab.tsx` | 920 | string | Cloud sync refresh rate |
