@@ -30,6 +30,7 @@ import { type UpdateCheckResult } from './aboutTabUpdate';
 const getPluginVersion = callable<[], string>('get_plugin_version');
 const getBuildCommit = callable<[], string>('get_build_commit');
 const checkForUpdate = callable<[string], UpdateCheckResult>('check_for_update');
+const applyUpdate = callable<[string, string], { success: boolean; error?: string }>('apply_update');
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getInstalledGameStatsCallable = callable<[], {
   installed_steam_games: number;
@@ -321,13 +322,31 @@ export function GeneralSettingsTab() {
       setCheckingUpdate(false);
     }
   };
-  const handleOpenRelease = () => {
-    const url = checkResult?.release_url || 'https://github.com/mdeguzis/decky-proton-pulse/releases';
-    try { window.open(url, '_blank'); } catch {}
-    toaster.toast({
-      title: 'Proton Pulse',
-      body: 'Opening release page. Download the .zip and install via Decky Loader.',
-    });
+  const handleInstallUpdate = async () => {
+    if (!checkResult?.zip_url || !checkResult.latest_version) return;
+    try {
+      void logFrontendEvent('INFO', 'Starting plugin update', {
+        version: checkResult.latest_version,
+        zip_url: checkResult.zip_url,
+      });
+      toaster.toast({ title: 'Proton Pulse', body: `Downloading v${checkResult.latest_version}...` });
+      // backend runs as root (plugin.json flags:["root"]) so it can
+      // write directly to the root-owned plugin directory
+      const result = await callWithTimeout(
+        () => applyUpdate(checkResult.zip_url!, checkResult.latest_version!),
+        'apply_update', 120000,
+      );
+      if (result.success) {
+        toaster.toast({ title: 'Proton Pulse', body: 'Update installed! Reloading plugin...' });
+        setTimeout(() => { window.location.reload(); }, 2000);
+      } else {
+        void logFrontendEvent('ERROR', 'Update failed', { error: result.error });
+        toaster.toast({ title: 'Proton Pulse', body: `Update failed: ${result.error}` });
+      }
+    } catch (err: any) {
+      void logFrontendEvent('ERROR', 'Update exception', { error: err?.message || String(err) });
+      toaster.toast({ title: 'Proton Pulse', body: `Update failed: ${err?.message || 'unknown error'}` });
+    }
   };
   useEffect(() => {
     void callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000)
@@ -803,8 +822,14 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             onChange={(opt) => setUpdateChannel(opt.data as any)}
           />
           {checkResult?.success && checkResult.has_update ? (
-            <DialogButton onClick={handleOpenRelease} style={{ fontSize: 12 }}>
-              View v{checkResult.latest_version} release
+            <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12 }}>
+              Update to v{checkResult.latest_version}
+            </DialogButton>
+          ) : checkResult?.success && !checkResult.has_update
+              && (checkResult.current_version ?? '') > (checkResult.latest_version ?? '')
+              && checkResult.current_version !== checkResult.latest_version ? (
+            <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12, color: '#fb923c' }}>
+              Downgrade to v{checkResult.latest_version}
             </DialogButton>
           ) : (
             <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate} style={{ fontSize: 12 }}>

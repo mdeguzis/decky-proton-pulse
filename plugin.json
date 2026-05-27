@@ -1,7 +1,7 @@
 {
   "name": "Proton Pulse",
   "author": "mdeguzis",
-  "flags": [""],
+  "flags": ["root"],
   "api_version": 1,
   "image": "https://raw.githubusercontent.com/mdeguzis/decky-proton-pulse/main/assets/logo.png",
   "publish": {
