@@ -881,12 +881,6 @@ export function SettingsTab() {
     }
   };
 
-  const handleRootDirection = (evt: GamepadEvent) => {
-    if (evt.detail.button === GamepadButton.DIR_LEFT) {
-      evt.preventDefault();
-    }
-  };
-
   const handleOpenVersionBrowser = () => {
     const modal = showModal(
       <VersionBrowserModal
@@ -960,7 +954,7 @@ export function SettingsTab() {
   }), [managerState]);
 
   return (
-    <Focusable onGamepadDirection={handleRootDirection}>
+    <Focusable>
       <style>{`
         .pp-progress-track {
           position: relative;

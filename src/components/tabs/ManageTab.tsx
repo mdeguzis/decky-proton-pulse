@@ -1,7 +1,6 @@
 // src/components/tabs/ManageTab.tsx
 import { useState, useEffect, useRef } from 'react';
-import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, GamepadButton, TextField } from '@decky/ui';
-import type { GamepadEvent } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, TextField } from '@decky/ui';
 import { toaster } from '../../lib/notify';
 import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
@@ -499,12 +498,6 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
     );
   };
 
-  const handleRootDirection = (evt: GamepadEvent) => {
-    if (evt.detail.button === GamepadButton.DIR_LEFT) {
-      evt.preventDefault();
-    }
-  };
-
   const handleUploadOne = (config: TrackedConfig) => {
     void pushConfig(config)
       .then(async (ok) => {
@@ -637,7 +630,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
 
   if (sorted.length === 0) {
     return (
-      <Focusable onGamepadDirection={handleRootDirection} style={{ padding: 16 }}>
+      <Focusable style={{ padding: 16 }}>
         <div style={{ color: '#888', fontSize: 12, lineHeight: 1.6, marginBottom: 16 }}>
           {t().configManager.emptyState}
         </div>
@@ -656,7 +649,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   }
 
   return (
-    <Focusable onGamepadDirection={handleRootDirection} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Focusable flow-children="horizontal" style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
         <DialogButton onClick={handleCreate} style={{ flex: 1, fontSize: 11, padding: '6px 4px', whiteSpace: 'nowrap' }}>
           {t().configManager.createConfig}

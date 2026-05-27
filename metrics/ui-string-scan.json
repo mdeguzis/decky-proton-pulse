@@ -369,147 +369,147 @@
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 813,
+      "line": 422,
+      "column": 52,
+      "kind": "string",
+      "text": "Could not auto-restart. Restart Decky Loader or Steam manually."
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 876,
+      "column": 76,
+      "kind": "jsx",
+      "text": "Update failed:"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 880,
       "column": 13,
       "kind": "jsx",
       "text": "Up to date (latest"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 813,
+      "line": 880,
       "column": 47,
       "kind": "jsx",
       "text": ": v"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 818,
+      "line": 885,
       "column": 13,
       "kind": "jsx",
       "text": "Update available: v"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 818,
-      "column": 62,
+      "line": 909,
+      "column": 38,
       "kind": "jsx",
-      "text": "→ v"
+      "text": "installed. Restart Decky Loader or Steam to apply."
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 823,
-      "column": 13,
-      "kind": "jsx",
-      "text": "Downloading and installing..."
-    },
-    {
-      "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 828,
-      "column": 13,
-      "kind": "jsx",
-      "text": "Update installed. Restart Decky Loader or Steam to load the new version."
-    },
-    {
-      "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 834,
+      "line": 915,
       "column": 41,
       "kind": "string",
       "text": "Release"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 835,
+      "line": 916,
       "column": 45,
       "kind": "string",
       "text": "Pre-release"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 842,
-      "column": 15,
+      "line": 927,
+      "column": 61,
       "kind": "jsx",
-      "text": "Restart plugin"
+      "text": "Installing..."
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 907,
+      "line": 991,
       "column": 19,
       "kind": "string",
       "text": "Auto-sync to cloud"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 908,
+      "line": 992,
       "column": 25,
       "kind": "string",
       "text": "Automatically back up configs and plugin settings when they change"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 920,
+      "line": 1004,
       "column": 19,
       "kind": "string",
       "text": "Cloud sync refresh rate"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 921,
+      "line": 1005,
       "column": 25,
       "kind": "string",
       "text": "How often to re-check cloud sync status in the background"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 926,
+      "line": 1010,
       "column": 26,
       "kind": "string",
       "text": "Disabled"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 927,
+      "line": 1011,
       "column": 26,
       "kind": "string",
       "text": "1 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 928,
+      "line": 1012,
       "column": 26,
       "kind": "string",
       "text": "5 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 929,
+      "line": 1013,
       "column": 26,
       "kind": "string",
       "text": "30 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 930,
+      "line": 1014,
       "column": 26,
       "kind": "string",
       "text": "1 hour"
     },
     {
       "file": "src/components/tabs/ManageTab.tsx",
-      "line": 576,
+      "line": 569,
       "column": 18,
       "kind": "string",
       "text": "Active"
     },
     {
       "file": "src/components/tabs/ManageTab.tsx",
-      "line": 578,
+      "line": 571,
       "column": 18,
       "kind": "string",
       "text": "Playtime (total)"
     },
     {
       "file": "src/components/tabs/ManageTab.tsx",
-      "line": 579,
+      "line": 572,
       "column": 18,
       "kind": "string",
       "text": "Playtime (this config)"

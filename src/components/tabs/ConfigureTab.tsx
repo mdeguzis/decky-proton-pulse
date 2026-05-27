@@ -1,7 +1,6 @@
 // src/components/tabs/ConfigureTab.tsx
 import { Component, type ErrorInfo, type ReactNode, useState, useEffect, useMemo } from 'react';
-import { Focusable, GamepadButton, DialogButton, ConfirmModal, showModal, Dropdown, SteamSpinner } from '@decky/ui';
-import type { GamepadEvent } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, showModal, Dropdown, SteamSpinner } from '@decky/ui';
 import { toaster } from '../../lib/notify';
 import { computeConfidence, bucketByGpuTier } from '../../lib/scoring';
 import {
@@ -1252,12 +1251,6 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     );
   }), [appName]);
 
-  const handleRootDirection = (evt: GamepadEvent) => {
-    if (evt.detail.button === GamepadButton.DIR_LEFT) {
-      evt.preventDefault();
-    }
-  };
-
   if (!appId) {
     return (
       <div style={{ padding: 16, color: '#888', fontSize: 12, textAlign: 'center' }}>
@@ -1328,7 +1321,6 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         </>
       ) : (
         <Focusable
-          onGamepadDirection={handleRootDirection}
           style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}
         >
           <div

@@ -51,25 +51,25 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/ScoringGuideModal.tsx` | 107 | jsx | Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours. |
 | `src/components/ScoringGuideModal.tsx` | 110 | jsx | Duration auto-fill |
 | `src/components/tabs/AboutTab.tsx` | 81 | string | Proton Pulse Website |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 813 | jsx | Up to date (latest |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 813 | jsx | : v |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 818 | jsx | Update available: v |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 818 | jsx | → v |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 823 | jsx | Downloading and installing... |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 828 | jsx | Update installed. Restart Decky Loader or Steam to load the new version. |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 834 | string | Release |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 835 | string | Pre-release |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 842 | jsx | Restart plugin |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 907 | string | Auto-sync to cloud |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 908 | string | Automatically back up configs and plugin settings when they change |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 920 | string | Cloud sync refresh rate |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 921 | string | How often to re-check cloud sync status in the background |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 926 | string | Disabled |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 927 | string | 1 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 928 | string | 5 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 929 | string | 30 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 930 | string | 1 hour |
-| `src/components/tabs/ManageTab.tsx` | 576 | string | Active |
-| `src/components/tabs/ManageTab.tsx` | 578 | string | Playtime (total) |
-| `src/components/tabs/ManageTab.tsx` | 579 | string | Playtime (this config) |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 422 | string | Could not auto-restart. Restart Decky Loader or Steam manually. |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 876 | jsx | Update failed: |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 880 | jsx | Up to date (latest |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 880 | jsx | : v |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 885 | jsx | Update available: v |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 909 | jsx | installed. Restart Decky Loader or Steam to apply. |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 915 | string | Release |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 916 | string | Pre-release |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 927 | jsx | Installing... |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 991 | string | Auto-sync to cloud |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 992 | string | Automatically back up configs and plugin settings when they change |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 1004 | string | Cloud sync refresh rate |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 1005 | string | How often to re-check cloud sync status in the background |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 1010 | string | Disabled |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 1011 | string | 1 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 1012 | string | 5 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 1013 | string | 30 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 1014 | string | 1 hour |
+| `src/components/tabs/ManageTab.tsx` | 569 | string | Active |
+| `src/components/tabs/ManageTab.tsx` | 571 | string | Playtime (total) |
+| `src/components/tabs/ManageTab.tsx` | 572 | string | Playtime (this config) |
 | `src/patches/gamePageBadge.tsx` | 224 | string | Native Linux build available |
