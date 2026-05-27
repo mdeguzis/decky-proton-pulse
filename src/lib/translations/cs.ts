@@ -168,6 +168,8 @@ export const cs: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Zobrazí zkratku Proton Pulse vedle tlačítek akcí na stránce hry. Experimentální, ve výchozím nastavení zakázáno.',
     gamePageBadge: 'Odznak ProtonDB na stránce hry',
     gamePageBadgeDescription: 'Zobrazit odznak úrovně kompatibility ProtonDB na stránce hry.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Dvojitym B ukoncit',
     doubleBToExitDescription: 'Vyzadovat druhe stisknuti B do 3 sekund pro ukonceni Proton Pulse. Kdyz je vypnuto, B okamzite ukonci.',
   },

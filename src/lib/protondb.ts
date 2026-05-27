@@ -77,6 +77,10 @@ export async function getProtonDBSummary(
     }
     const summary = (await resp.json()) as ProtonDBSummary;
     span.end(true, { total: summary.total, tier: summary.tier });
+    // Persist to main cache so repeated loads and offline sessions serve from cache.
+    // Preserve any existing reports/votes already in cache rather than overwriting them.
+    const existing = getCached(appId);
+    setCache(appId, existing?.reports ?? [], summary, existing?.votes ?? {}, existing?.source ?? 'cdn');
     await logFrontendEvent("DEBUG", "Fetched ProtonDB summary", {
       appId,
       url,

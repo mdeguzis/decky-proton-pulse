@@ -168,6 +168,8 @@ export const zhCN: TranslationTree = {
     experimentalGamePageShortcutDescription: '在游戏页面操作按钮旁显示 Proton Pulse 快捷入口。该功能为实验性质，默认关闭。',
     gamePageBadge: '在游戏页面显示 ProtonDB 徽章',
     gamePageBadgeDescription: '在游戏页面显示 ProtonDB 兼容性等级徽章。',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: '双击 B 键退出',
     doubleBToExitDescription: '需要在 3 秒内再次按下 B 键以退出 Proton Pulse。关闭时，按 B 键立即退出。',
   },

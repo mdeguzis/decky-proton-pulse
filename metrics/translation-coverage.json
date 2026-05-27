@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 90,
-  "totalKeys": 570,
+  "totalKeys": 572,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 570,
-      "total": 570,
+      "translated": 572,
+      "total": 572,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -16,181 +16,217 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "it",
       "name": "Italiano",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "nl",
       "name": "Nederlands",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pl",
       "name": "Polski",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "uk",
       "name": "Українська",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "sv",
       "name": "Svenska",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "cs",
       "name": "Čeština",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "th",
       "name": "ภาษาไทย",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "vi",
       "name": "Tiếng Việt",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     },
     {
       "code": "zh-TW",
       "name": "繁體中文",
-      "translated": 570,
-      "total": 570,
-      "coveragePercent": 100,
+      "translated": 571,
+      "total": 572,
+      "coveragePercent": 99.8,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "settings.libraryBadges"
+      ],
       "typeMismatches": []
     }
   ]

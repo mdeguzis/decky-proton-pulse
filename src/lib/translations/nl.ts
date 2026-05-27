@@ -168,6 +168,8 @@ export const nl: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Toont een Proton Pulse-snelkoppeling naast de actieknoppen van de spelpagina. Experimenteel en standaard uitgeschakeld.',
     gamePageBadge: 'ProtonDB-badge op spelpagina',
     gamePageBadgeDescription: 'Toon de ProtonDB-compatibiliteitsniveaubadge op de spelpagina.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Dubbel B om te sluiten',
     doubleBToExitDescription: 'Vereist een tweede B-druk binnen 3 seconden om Proton Pulse te sluiten. Als uitgeschakeld, sluit B onmiddellijk.',
   },

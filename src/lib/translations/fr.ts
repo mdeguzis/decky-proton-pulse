@@ -168,6 +168,8 @@ export const fr: TranslationTree = {
     experimentalGamePageShortcutDescription: "Affiche un raccourci Proton Pulse à côté des boutons d’action de la page du jeu. Fonction expérimentale désactivée par défaut.",
     gamePageBadge: 'Badge ProtonDB sur la page du jeu',
     gamePageBadgeDescription: 'Afficher le badge de compatibilité ProtonDB sur la page du jeu.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Double B pour quitter',
     doubleBToExitDescription: 'Necessite une deuxieme pression de B dans les 3 secondes pour quitter Proton Pulse. Si desactive, B quitte immediatement.',
   },

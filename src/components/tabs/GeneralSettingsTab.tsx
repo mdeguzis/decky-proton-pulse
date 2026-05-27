@@ -26,6 +26,7 @@ import { getVoterId } from '../../lib/voting';
 import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
 import { buildPluginLinkProfileUrl } from '../../lib/protonPulseLinkUrl';
 import { type UpdateCheckResult, type UpdateStatusResult, triggerReload } from './aboutTabUpdate';
+import { refreshLibraryGridBadges } from '../../patches/libraryGridBadges';
 
 const getPluginVersion = callable<[], string>('get_plugin_version');
 const getBuildCommit = callable<[], string>('get_build_commit');
@@ -441,6 +442,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
   const [cefDebuggingBusy, setCefDebuggingBusy] = useState(false);
   const [cefDebuggingStatus, setCefDebuggingStatus] = useState<CefDebuggingStatus | null>(null);
   const [badgeEnabled, setBadgeEnabled] = useState(() => getSetting('showGamePageBadge', true));
+  const [libraryBadgesEnabled, setLibraryBadgesEnabled] = useState(() => getSetting('showLibraryBadges', true));
   const [doubleBToExit, setDoubleBToExit] = useState(() => getSetting('doubleBToExit', false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
@@ -1032,6 +1034,19 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
                setBadgeEnabled(enabled);
                setSetting('showGamePageBadge', enabled);
                void logFrontendEvent('INFO', 'Game page badge toggled', { enabled });
+             }}
+           />
+         </div>
+         <div style={focusClipRowStyle()}>
+           <ToggleField
+             label={t().settings.libraryBadges}
+             description={t().settings.libraryBadgesDescription}
+             checked={libraryBadgesEnabled}
+             onChange={(enabled) => {
+               setLibraryBadgesEnabled(enabled);
+               setSetting('showLibraryBadges', enabled);
+               refreshLibraryGridBadges(enabled);
+               void logFrontendEvent('INFO', 'Library grid badges toggled', { enabled });
              }}
            />
          </div>

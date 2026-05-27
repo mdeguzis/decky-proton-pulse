@@ -2,6 +2,18 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.7.0
+
+- feat: show ProtonDB tier badges on library grid tiles (home page and installed/all games views)
+- feat: wide capsules show full tier name (PLATINUM/GOLD/SILVER/BRONZE/BORKED), portrait capsules show abbreviated form
+- feat: badge display is toggleable via Settings > Library grid badges (on by default)
+- fix: persist ProtonDB summary to localStorage cache after network fetch so badges survive restarts and offline sessions
+- fix(updater): use sudo -n to restart plugin_loader service (root flag does not grant passwordless systemctl)
+
+## v1.6.8
+
+- fix(updater): use sudo -n to restart plugin_loader service (root flag does not grant passwordless systemctl)
+
 ## v1.6.7
 
 - fix(updater): restart plugin_loader service after update so backend picks up new version

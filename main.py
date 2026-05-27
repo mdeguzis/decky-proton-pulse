@@ -312,7 +312,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             decky.logger.info("restart_plugin_loader: restarting plugin_loader service")
             try:
                 subprocess.run(
-                    ["systemctl", "restart", "plugin_loader"],
+                    ["sudo", "-n", "/usr/bin/systemctl", "restart", "plugin_loader"],
                     timeout=10,
                     check=True,
                 )

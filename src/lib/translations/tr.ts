@@ -168,6 +168,8 @@ export const tr: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Oyun sayfasındaki eylem düğmelerinin yanında Proton Pulse kısayolu gösterir. Deneyseldir ve varsayılan olarak kapalıdır.',
     gamePageBadge: 'Oyun sayfasında ProtonDB rozeti',
     gamePageBadgeDescription: 'Oyun sayfasında ProtonDB uyumluluk rozeti göster.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Cikmak icin B\'ye iki kez basin',
     doubleBToExitDescription: 'Proton Pulse\'dan cikmak icin 3 saniye icerisinde B\'ye ikinci kez basilmasi gerekir. Kapali oldugunda B hemen cikis yapar.',
   },

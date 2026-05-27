@@ -168,6 +168,8 @@ export const es: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Muestra un acceso directo de Proton Pulse junto a los botones de acción de la página del juego. Es experimental y viene desactivado.',
     gamePageBadge: 'Insignia de ProtonDB en la página del juego',
     gamePageBadgeDescription: 'Mostrar la insignia de compatibilidad de ProtonDB en la página del juego.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Doble B para salir',
     doubleBToExitDescription: 'Requiere una segunda pulsacion de B en 3 segundos para salir de Proton Pulse. Si esta desactivado, B sale inmediatamente.',
   },

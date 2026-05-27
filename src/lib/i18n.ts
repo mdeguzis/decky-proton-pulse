@@ -210,6 +210,8 @@ export interface TranslationTree {
     experimentalGamePageShortcutDescription: string;
     gamePageBadge: string;
     gamePageBadgeDescription: string;
+    libraryBadges: string;
+    libraryBadgesDescription: string;
     doubleBToExit: string;
     doubleBToExitDescription: string;
   };
@@ -831,6 +833,8 @@ export const en: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Show a best-effort Proton Pulse shortcut next to the game page action buttons. Experimental and off by default.',
     gamePageBadge: 'Proton Pulse badge on game page',
     gamePageBadgeDescription: 'Show a Proton Pulse icon badge in the top-left corner of the game page. Click it to open Proton Pulse for that game.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges (PLAT/GOLD/SILV/BRNZ) on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Press B twice to exit',
     doubleBToExitDescription: 'Require a second B press within 3 seconds to exit Proton Pulse. When off, B exits immediately.',
   },

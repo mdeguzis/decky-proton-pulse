@@ -168,6 +168,8 @@ export const ko: TranslationTree = {
     experimentalGamePageShortcutDescription: '게임 페이지 동작 버튼 옆에 Proton Pulse 바로가기를 표시합니다. 실험 기능이며 기본값은 꺼짐입니다.',
     gamePageBadge: '게임 페이지에 ProtonDB 배지 표시',
     gamePageBadgeDescription: '게임 페이지에 ProtonDB 호환성 등급 배지를 표시합니다.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'B 두 번 눌러 종료',
     doubleBToExitDescription: 'Proton Pulse를 종료하려면 3초 이내에 B를 한 번 더 눌러야 합니다. 꺼져 있으면 B를 누르면 즉시 종료됩니다.',
   },

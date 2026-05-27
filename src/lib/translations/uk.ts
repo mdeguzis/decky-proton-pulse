@@ -168,6 +168,8 @@ export const uk: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Відображає ярлик Proton Pulse поряд з кнопками дій на сторінці гри. Експериментальна функція, вимкнена за замовчуванням.',
     gamePageBadge: 'Значок ProtonDB на сторінці гри',
     gamePageBadgeDescription: 'Відображати значок рівня сумісності ProtonDB на сторінці гри.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Подвiйне B для виходу',
     doubleBToExitDescription: 'Потребує другого натискання B протягом 3 секунд для виходу з Proton Pulse. Якщо вимкнено, B виходить негайно.',
   },

@@ -168,6 +168,8 @@ export const th: TranslationTree = {
     experimentalGamePageShortcutDescription: 'แสดงทางลัด Proton Pulse ถัดจากปุ่มการดำเนินการในหน้าเกม ทดลองใช้และปิดใช้งานโดยค่าเริ่มต้น',
     gamePageBadge: 'ป้าย ProtonDB ในหน้าเกม',
     gamePageBadgeDescription: 'แสดงป้ายระดับความเข้ากันได้ของ ProtonDB ในหน้าเกม',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'กด B สองครั้งเพื่อออก',
     doubleBToExitDescription: 'ต้องกด B ครั้งที่สองภายใน 3 วินาทีเพื่อออกจาก Proton Pulse เมื่อปิดใช้งาน B จะออกทันที',
   },

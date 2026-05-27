@@ -168,6 +168,8 @@ export const sv: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Visar en Proton Pulse-genväg bredvid åtgärdsknapparna på spelsidan. Experimentellt och inaktiverat som standard.',
     gamePageBadge: 'ProtonDB-märke på spelsida',
     gamePageBadgeDescription: 'Visa ProtonDB-kompatibilitetsnivåmärket på spelsidan.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Dubbel B for att avsluta',
     doubleBToExitDescription: 'Kraver ett andra B-tryck inom 3 sekunder for att avsluta Proton Pulse. Nar av, avslutar B omedelbart.',
   },

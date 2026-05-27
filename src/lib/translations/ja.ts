@@ -168,6 +168,8 @@ export const ja: TranslationTree = {
     experimentalGamePageShortcutDescription: 'ゲームページのアクションボタンの横に Proton Pulse のショートカットを表示します。実験機能のため既定ではオフです。',
     gamePageBadge: 'ゲームページにProtonDBバッジを表示',
     gamePageBadgeDescription: 'ゲームページにProtonDB互換性バッジを表示します。',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Bボタン2回押しで終了',
     doubleBToExitDescription: 'Proton Pulseを終了するには、3秒以内にBボタンをもう一度押す必要があります。オフの場合、Bを押すとすぐに終了します。',
   },

@@ -24,6 +24,7 @@ import type { PageId } from './lib/pageState';
 import { LibraryContextMenu, patchGameContextMenu } from './patches/gameContextMenu';
 import { setupGamePageBadge } from './patches/gamePageBadge';
 import { setupSearchResultsHint, teardownSearchResultsHint } from './patches/searchResultsHint';
+import { setupLibraryGridBadges, teardownLibraryGridBadges } from './patches/libraryGridBadges';
 import { getSetting, setSetting } from './lib/settings';
 import { NOTIFICATIONS_ENABLED_KEY } from './lib/notify';
 import { logFrontendEvent, callWithTimeout } from './lib/logger';
@@ -338,6 +339,7 @@ export default definePlugin(() => {
     return tree;
   });
   setupSearchResultsHint();
+  setupLibraryGridBadges();
   const menuPatch = patchGameContextMenu(LibraryContextMenu);
 
   return {
@@ -366,6 +368,7 @@ export default definePlugin(() => {
       routerHook.removeRoute('/proton-pulse');
       routerHook.removePatch('/library/app/:appid', gamePagePatch);
       teardownSearchResultsHint();
+      teardownLibraryGridBadges();
       clearInterval(focusedGamePoll);
       menuPatch.unpatch();
       teardownScreenshotAutomation();

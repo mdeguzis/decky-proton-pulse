@@ -168,6 +168,8 @@ export const de: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Zeigt eine Proton-Pulse-Verknüpfung neben den Aktionsschaltflächen der Spielseite an. Experimentell und standardmäßig deaktiviert.',
     gamePageBadge: 'ProtonDB-Abzeichen auf der Spielseite',
     gamePageBadgeDescription: 'Das ProtonDB-Kompatibilitätsstufen-Abzeichen auf der Spielseite anzeigen.',
+    libraryBadges: 'Library grid badges',
+    libraryBadgesDescription: 'Show small ProtonDB tier badges on each game tile in the library grid. Off by default.',
     doubleBToExit: 'Doppeltes B zum Beenden',
     doubleBToExitDescription: 'Erfordert einen zweiten B-Druck innerhalb von 3 Sekunden, um Proton Pulse zu beenden. Wenn deaktiviert, beendet B sofort.',
   },
