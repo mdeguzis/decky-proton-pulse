@@ -73,6 +73,10 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+## v1.6.5 pre-release
+
+- Restart plugin button: clickable reload after update installed
+
 ## v1.6.3 pre-release
 
 - Reset check result when switching update channel
