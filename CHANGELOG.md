@@ -75,58 +75,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.6.1 pre-release
 
-- Simplify updater: release/pre-release only, show commit, open release page
-- Add LoggingErrorBoundary: log React render crashes to plugin backend
-- Fix settings crash: remove refs to deleted isUpdRunning/isUpdDone state
-- Updater: drop latest-commit, open release page, add downgrade option
-- Updater: better error when root-owned dir blocks install
-- Fix update buttons: always 2-column grid, swap check->apply in place
-- Fix updater install: try direct, sudo -n, rsync fallback chain
-- Fix updater: extract to temp dir, rename, sudo install
-- Add spacing below confidence pill in header
-- Confidence pills: switch to cyan-blue palette matching proton-pulse.com
-- Dont prepend v to non-version strings like 'main (abc1234)'
-- Persist update channel selection across tab switches and restarts
-- Fix update buttons: use equal-width grid instead of flex
-- Use +uncommitted suffix instead of -dirty in build commit
-- Show build commit in update status + dirty flag for uncommitted deploys
-- Settings updater: show build commit + ahead-of-release status
-- Fix update status wording: show channel + clearer local vs remote
-- Settings updater: show current version + local vs remote comparison
-- Move updater to GeneralSettingsTab (the actual Settings tab)
-- Move update section from About tab to Settings tab
-- About tab: add release channel dropdown for updates
-- Fix pnpm 10 build: move onlyBuiltDependencies to pnpm-workspace.yaml
-- Fix local deploy: suppress pnpm prompts + approve esbuild builds
-- Fix ci: use uv standalone installer in container jobs to avoid glibc mismatch
-- Fix ci: use python3 -m pip install uv to avoid bad shebang in containers
-- Fix ci: replace astral-sh/setup-uv action with pip install uv
-- Fix ci: replace pnpm/action-setup action with npm install -g pnpm@10
-- Fix ci: pin pnpm/action-setup to node24-compatible commit
-- Fix ci: update pnpm/action-setup SHA after upstream force-push
-- Update uv.lock
-- Built-in self-updater with progress tracking (v1.5.0)
-- Fall back to vulkaninfo for driver version in game mode
-- Fix ci: bump pnpm 9 to 10 in coverage-badges workflow
-- License: switch from BSD-3-Clause to GPL-3.0-or-later
-- Revise acknowledgment wording in README.md
-- Fix ci: bump pnpm 9 to 10 in build-reusable workflow
-- Reusable build yml updates
-- Issues: add Website Feedback template for proton-pulse.com
-- Report card + submit: drop pulse pill, require title at submit
-- Confidence: drop per-report pill from card list, Steam-tone the green
-- Manage tab: show real game title plus inline confidence on report cards
-- Migrate pnpm config out of package.json to pnpm-workspace.yaml
-- Confidence: pill-ify the per-report chip on ReportCard too
-- Confidence: pill-ify in detail modal + Configure header
-- Confidence display: percent format, under-badge in Configure tab
-- Badge: show per-game confidence percentage next to the tier
-- Scoring: split rating from confidence, add per-game aggregation
-- About: add Proton Pulse website link and D-pad-focusable wrappers
-- Structural merge on append, dedupe runtime (#68)
-- Skip re-announce when log level is unchanged (#67)
-- Update README headings to target high-intent search phrases
-- Consolidate docs into wiki
+- Sync release-derived files for 1.6.1
 
 ## v1.0.0
 
