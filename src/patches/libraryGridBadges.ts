@@ -46,7 +46,17 @@ const TIER_TEXT_COLOR: Record<string, string> = {
 };
 
 function getTierLabel(tier: string, cover: HTMLElement): string {
-  const isWide = cover.offsetWidth > cover.offsetHeight;
+  // Determine orientation from the cover image URL first -- more reliable than DOM dimensions
+  // because Steam may render the selected tile's container wider than the actual image.
+  // library_hero / header images are landscape; library_600x900 and others are portrait.
+  const img = cover.querySelector('img') as HTMLImageElement | null;
+  const src = img?.getAttribute('src') ?? img?.src ?? '';
+  let isWide: boolean;
+  if (src) {
+    isWide = src.includes('library_hero') || src.includes('library_header') || src.includes('header_capsule');
+  } else {
+    isWide = cover.offsetWidth > cover.offsetHeight * 1.3;
+  }
   const map = isWide ? TIER_FULL : TIER_ABBREV;
   return map[tier] ?? tier.toUpperCase();
 }
