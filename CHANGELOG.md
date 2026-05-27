@@ -84,6 +84,10 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+## v1.6.7 pre-release
+
+- Restart plugin_loader service so backend reloads after update
+
 ## v1.6.6 pre-release
 
 - Sync release-derived files for 1.6.6
