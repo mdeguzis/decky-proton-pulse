@@ -362,133 +362,133 @@
     },
     {
       "file": "src/components/tabs/AboutTab.tsx",
-      "line": 80,
+      "line": 81,
       "column": 20,
       "kind": "string",
       "text": "Proton Pulse Website"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 329,
-      "column": 13,
-      "kind": "string",
-      "text": "Opening release page. Download the .zip and install via Decky Loader."
-    },
-    {
-      "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 788,
+      "line": 813,
       "column": 13,
       "kind": "jsx",
       "text": "Up to date (latest"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 788,
+      "line": 813,
       "column": 47,
       "kind": "jsx",
       "text": ": v"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 793,
+      "line": 818,
       "column": 13,
       "kind": "jsx",
       "text": "Update available: v"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 793,
+      "line": 818,
       "column": 62,
       "kind": "jsx",
       "text": "→ v"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 799,
+      "line": 823,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Downloading and installing..."
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 828,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Update installed. Restart Decky Loader or Steam to load the new version."
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 834,
       "column": 41,
       "kind": "string",
       "text": "Release"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 800,
+      "line": 835,
       "column": 45,
       "kind": "string",
       "text": "Pre-release"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 807,
+      "line": 842,
       "column": 15,
       "kind": "jsx",
-      "text": "View v"
+      "text": "Installed - restart to apply"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 807,
-      "column": 50,
-      "kind": "jsx",
-      "text": "release"
-    },
-    {
-      "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 862,
+      "line": 907,
       "column": 19,
       "kind": "string",
       "text": "Auto-sync to cloud"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 863,
+      "line": 908,
       "column": 25,
       "kind": "string",
       "text": "Automatically back up configs and plugin settings when they change"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 875,
+      "line": 920,
       "column": 19,
       "kind": "string",
       "text": "Cloud sync refresh rate"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 876,
+      "line": 921,
       "column": 25,
       "kind": "string",
       "text": "How often to re-check cloud sync status in the background"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 881,
+      "line": 926,
       "column": 26,
       "kind": "string",
       "text": "Disabled"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 882,
+      "line": 927,
       "column": 26,
       "kind": "string",
       "text": "1 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 883,
+      "line": 928,
       "column": 26,
       "kind": "string",
       "text": "5 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 884,
+      "line": 929,
       "column": 26,
       "kind": "string",
       "text": "30 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 885,
+      "line": 930,
       "column": 26,
       "kind": "string",
       "text": "1 hour"

@@ -50,25 +50,25 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/ScoringGuideModal.tsx` | 95 | jsx | Each report gets a relevance score so the most useful ones rise to the top. Factors: |
 | `src/components/ScoringGuideModal.tsx` | 107 | jsx | Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours. |
 | `src/components/ScoringGuideModal.tsx` | 110 | jsx | Duration auto-fill |
-| `src/components/tabs/AboutTab.tsx` | 80 | string | Proton Pulse Website |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 329 | string | Opening release page. Download the .zip and install via Decky Loader. |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 788 | jsx | Up to date (latest |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 788 | jsx | : v |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 793 | jsx | Update available: v |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 793 | jsx | → v |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 799 | string | Release |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 800 | string | Pre-release |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 807 | jsx | View v |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 807 | jsx | release |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 862 | string | Auto-sync to cloud |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 863 | string | Automatically back up configs and plugin settings when they change |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 875 | string | Cloud sync refresh rate |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 876 | string | How often to re-check cloud sync status in the background |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 881 | string | Disabled |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 882 | string | 1 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 883 | string | 5 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 884 | string | 30 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 885 | string | 1 hour |
+| `src/components/tabs/AboutTab.tsx` | 81 | string | Proton Pulse Website |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 813 | jsx | Up to date (latest |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 813 | jsx | : v |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 818 | jsx | Update available: v |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 818 | jsx | → v |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 823 | jsx | Downloading and installing... |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 828 | jsx | Update installed. Restart Decky Loader or Steam to load the new version. |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 834 | string | Release |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 835 | string | Pre-release |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 842 | jsx | Installed - restart to apply |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 907 | string | Auto-sync to cloud |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 908 | string | Automatically back up configs and plugin settings when they change |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 920 | string | Cloud sync refresh rate |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 921 | string | How often to re-check cloud sync status in the background |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 926 | string | Disabled |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 927 | string | 1 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 928 | string | 5 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 929 | string | 30 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 930 | string | 1 hour |
 | `src/components/tabs/ManageTab.tsx` | 576 | string | Active |
 | `src/components/tabs/ManageTab.tsx` | 578 | string | Playtime (total) |
 | `src/components/tabs/ManageTab.tsx` | 579 | string | Playtime (this config) |
