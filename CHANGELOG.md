@@ -73,6 +73,9 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+## v1.6.3 pre-release
+
+- Reset check result when switching update channel
 - Updater: show restart message instead of force-reloading
 - Enable root flag for self-update, use backend apply_update
 - Restore toaster import in AboutTab, remove mise hardcoding from Makefile
