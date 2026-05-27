@@ -306,6 +306,8 @@ export function GeneralSettingsTab() {
   const setUpdateChannel = (ch: 'release' | 'pre-release') => {
     setUpdateChannelState(ch);
     setSetting('updateChannel', ch);
+    setCheckResult(null);
+    setUpdateApplied(false);
   };
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
