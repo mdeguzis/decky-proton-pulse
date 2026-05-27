@@ -73,6 +73,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+## v1.6.1 pre-release
+
 - Simplify updater: release/pre-release only, show commit, open release page
 - Add LoggingErrorBoundary: log React render crashes to plugin backend
 - Fix settings crash: remove refs to deleted isUpdRunning/isUpdDone state
