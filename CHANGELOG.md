@@ -2,6 +2,12 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.6.6
+
+- fix: force sidebar focus on plugin open so D-pad can navigate tabs in SJC (quick-access) context
+- fix: show clearer error when self-update callable is unavailable on old installs
+- fix(updater): progress bar in Settings tab instead of toast during update install
+
 ## v1.5.0
 
 - feat(about): built-in self-updater with progress bar for non-store installs

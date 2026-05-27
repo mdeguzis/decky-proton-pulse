@@ -25,12 +25,13 @@ import {
 import { getVoterId } from '../../lib/voting';
 import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
 import { buildPluginLinkProfileUrl } from '../../lib/protonPulseLinkUrl';
-import { type UpdateCheckResult } from './aboutTabUpdate';
+import { type UpdateCheckResult, type UpdateStatusResult, triggerReload } from './aboutTabUpdate';
 
 const getPluginVersion = callable<[], string>('get_plugin_version');
 const getBuildCommit = callable<[], string>('get_build_commit');
 const checkForUpdate = callable<[string], UpdateCheckResult>('check_for_update');
 const applyUpdate = callable<[string, string], { success: boolean; error?: string }>('apply_update');
+const getUpdateStatus = callable<[], UpdateStatusResult>('get_update_status');
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getInstalledGameStatsCallable = callable<[], {
   installed_steam_games: number;
@@ -126,6 +127,15 @@ function formatCacheTtl(hours: number): string {
   const days = Math.floor(hours / 24);
   const remainingHours = hours % 24;
   return remainingHours === 0 ? `${days}d` : `${days}d ${remainingHours}h`;
+}
+
+function formatBytes(value: number): string {
+  if (value <= 0) return '0 B';
+  const units = ['B', 'KiB', 'MiB', 'GiB'];
+  let size = value;
+  let i = 0;
+  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+  return `${size >= 100 ? size.toFixed(0) : size >= 10 ? size.toFixed(1) : size.toFixed(2)} ${units[i]}`;
 }
 
 function stripUnitHint(label: string): string {
@@ -307,12 +317,47 @@ export function GeneralSettingsTab() {
     setUpdateChannelState(ch);
     setSetting('updateChannel', ch);
     setCheckResult(null);
-    setUpdateApplied(false);
+    setUpdateStatus(null);
   };
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
-  const [updateApplied, setUpdateApplied] = useState(false);
-  const [updating, setUpdating] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatusResult | null>(null);
+  const [reloading, setReloading] = useState(false);
+  const updatePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const updating = updateStatus?.state === 'running';
+  const updateApplied = updateStatus?.state === 'success';
+
+  const stopUpdatePoll = () => {
+    if (updatePollRef.current !== null) {
+      clearInterval(updatePollRef.current);
+      updatePollRef.current = null;
+    }
+  };
+
+  const startUpdatePoll = () => {
+    stopUpdatePoll();
+    updatePollRef.current = setInterval(async () => {
+      try {
+        const status = await getUpdateStatus();
+        setUpdateStatus(status);
+        if (status.state !== 'running') {
+          stopUpdatePoll();
+          if (status.state === 'error') {
+            void logFrontendEvent('ERROR', 'Plugin update failed (polled)', { error: status.error });
+            toaster.toast({ title: 'Proton Pulse', body: `Update failed: ${status.error}` });
+          } else if (status.state === 'success') {
+            void logFrontendEvent('INFO', 'Plugin update complete (polled)', { version: status.version });
+          }
+        }
+      } catch (err: any) {
+        void logFrontendEvent('WARNING', 'get_update_status poll error', { error: err?.message || String(err) });
+      }
+    }, 2000);
+  };
+
+  // clean up poll on unmount
+  useEffect(() => () => { stopUpdatePoll(); }, []);
 
   const handleCheckUpdate = async () => {
     setCheckingUpdate(true);
@@ -320,39 +365,63 @@ export function GeneralSettingsTab() {
     try {
       const result = await callWithTimeout(() => checkForUpdate(updateChannel), 'check_for_update', 20000);
       setCheckResult(result);
-    } catch {
-      setCheckResult({ success: false, error: aboutStrings.checkUpdateFailed });
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      const isCallableMissing = msg.includes('not found') || msg.includes('callable') || msg.includes('undefined');
+      void logFrontendEvent('WARNING', 'check_for_update callable failed', { error: msg, isCallableMissing });
+      setCheckResult({
+        success: false,
+        error: isCallableMissing
+          ? 'This version cannot self-update. Install the latest release manually from the Decky Store or GitHub.'
+          : aboutStrings.checkUpdateFailed,
+      });
     } finally {
       setCheckingUpdate(false);
     }
   };
+
   const handleInstallUpdate = async () => {
     if (!checkResult?.zip_url || !checkResult.latest_version) return;
-    try {
-      void logFrontendEvent('INFO', 'Starting plugin update', {
-        version: checkResult.latest_version,
-        zip_url: checkResult.zip_url,
-      });
-      setUpdating(true);
-      toaster.toast({ title: 'Proton Pulse', body: `Downloading v${checkResult.latest_version}...` });
-      // backend runs as root (plugin.json flags:["root"]) so it can
-      // write directly to the root-owned plugin directory
-      const result = await callWithTimeout(
-        () => applyUpdate(checkResult.zip_url!, checkResult.latest_version!),
-        'apply_update', 120000,
-      );
-      setUpdating(false);
-      if (result.success) {
-        setUpdateApplied(true);
-        toaster.toast({ title: 'Proton Pulse', body: `v${checkResult.latest_version} installed. Restart the plugin to apply.` });
-      } else {
-        void logFrontendEvent('ERROR', 'Update failed', { error: result.error });
-        toaster.toast({ title: 'Proton Pulse', body: `Update failed: ${result.error}` });
-      }
-    } catch (err: any) {
-      void logFrontendEvent('ERROR', 'Update exception', { error: err?.message || String(err) });
-      toaster.toast({ title: 'Proton Pulse', body: `Update failed: ${err?.message || 'unknown error'}` });
+    void logFrontendEvent('INFO', 'Starting plugin update', {
+      version: checkResult.latest_version,
+      zip_url: checkResult.zip_url,
+    });
+    // apply_update starts a background thread and returns immediately
+    const result = await callWithTimeout(
+      () => applyUpdate(checkResult.zip_url!, checkResult.latest_version!),
+      'apply_update', 10000,
+    ).catch((err: any) => ({ success: false, error: err?.message || String(err) }));
+
+    if (!result.success) {
+      void logFrontendEvent('ERROR', 'apply_update rejected', { error: result.error });
+      toaster.toast({ title: 'Proton Pulse', body: `Update failed: ${result.error}` });
+      return;
     }
+    // set running state immediately so the UI shows the progress bar right away
+    setUpdateStatus({
+      state: 'running',
+      stage: 'downloading',
+      downloaded_bytes: 0,
+      total_bytes: null,
+      progress_fraction: null,
+      version: checkResult.latest_version,
+      error: null,
+      started_at: Math.round(Date.now() / 1000),
+      finished_at: null,
+    });
+    startUpdatePoll();
+  };
+
+  const handleRestartPlugin = async () => {
+    setReloading(true);
+    void logFrontendEvent('INFO', 'Triggering plugin reload after update', {});
+    const outcome = await triggerReload('decky-proton-pulse');
+    void logFrontendEvent('INFO', 'triggerReload outcome', { outcome });
+    if (outcome === 'failed') {
+      setReloading(false);
+      toaster.toast({ title: 'Proton Pulse', body: 'Could not auto-restart. Restart Decky Loader or Steam manually.' });
+    }
+    // if 'reloaded' or 'restarting', the page will go away on its own
   };
   useEffect(() => {
     void callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000)
@@ -489,11 +558,6 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
     ...LANGUAGES.map((code) => ({ data: code, label: LANGUAGE_NAMES[code] })),
   ];
 
-  const handleRootDirection = (evt: GamepadEvent) => {
-    if (evt.detail.button === GamepadButton.DIR_LEFT) {
-      evt.preventDefault();
-    }
-  };
 
   const focusSiblingButton = (
     evt: GamepadEvent,
@@ -793,7 +857,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
     : '';
 
   return (
-    <Focusable onGamepadDirection={handleRootDirection}>
+    <Focusable>
       {/* --- Plugin Update --- */}
       <div style={sectionStyle()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
@@ -805,27 +869,44 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             {buildCommit && <div style={{ fontSize: 10, color: '#5a7a8f' }}>{buildCommit}</div>}
           </div>
         </div>
-        {checkResult && !checkResult.success && (
+        {checkResult && !checkResult.success && !updating && (
           <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{checkResult.error ?? aboutStrings.checkUpdateFailed}</div>
         )}
-        {checkResult?.success && !checkResult.has_update && (
+        {updateStatus?.state === 'error' && (
+          <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>Update failed: {updateStatus.error}</div>
+        )}
+        {checkResult?.success && !checkResult.has_update && !updating && !updateApplied && (
           <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>
             Up to date (latest {updateChannel}: v{checkResult.latest_version})
           </div>
         )}
-        {checkResult?.success && checkResult.has_update && !updateApplied && (
+        {checkResult?.success && checkResult.has_update && !updating && !updateApplied && (
           <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
-            Update available: v{checkResult.current_version} → v{checkResult.latest_version}
+            Update available: v{checkResult.current_version} -{`>`} v{checkResult.latest_version}
           </div>
         )}
-        {updating && (
-          <div style={{ fontSize: 11, color: '#64b5f6', marginBottom: 8 }}>
-            Downloading and installing...
+        {updating && updateStatus && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#7f9bb2', marginBottom: 4 }}>
+              <span>{updateStatus.stage === 'extracting' ? 'Extracting...' : 'Downloading...'}</span>
+              {updateStatus.downloaded_bytes !== null && updateStatus.total_bytes ? (
+                <span>{formatBytes(updateStatus.downloaded_bytes)} / {formatBytes(updateStatus.total_bytes)}</span>
+              ) : null}
+            </div>
+            <div style={{ height: 8, borderRadius: 999, background: 'rgba(111,198,255,0.12)', overflow: 'hidden' }}>
+              <div style={{
+                width: `${Math.max(4, Math.round(Math.max(0, Math.min(100, (updateStatus.progress_fraction ?? 0.04) * 100))))}%`,
+                height: '100%',
+                borderRadius: 999,
+                background: 'linear-gradient(90deg, rgba(82,173,235,0.9) 0%, rgba(122,213,255,0.98) 100%)',
+                transition: 'width 300ms ease',
+              }} />
+            </div>
           </div>
         )}
         {updateApplied && (
           <div style={{ fontSize: 12, color: '#4caf50', marginBottom: 8, padding: '8px 12px', background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.3)', borderRadius: 4 }}>
-            Update installed. Restart Decky Loader or Steam to load the new version.
+            v{updateStatus?.version} installed. Restart Decky Loader or Steam to apply.
           </div>
         )}
         <Focusable style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} flow-children="horizontal">
@@ -836,20 +917,23 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             ]}
             selectedOption={updateChannel}
             onChange={(opt) => setUpdateChannel(opt.data as any)}
+            disabled={updating}
           />
           {updateApplied ? (
-            <DialogButton onClick={() => { window.location.reload(); }} style={{ fontSize: 12, color: '#4caf50' }}>
-              Restart plugin
+            <DialogButton onClick={handleRestartPlugin} disabled={reloading} style={{ fontSize: 12, color: '#4caf50' }}>
+              {reloading ? 'Restarting...' : 'Restart plugin'}
             </DialogButton>
+          ) : updating ? (
+            <DialogButton disabled style={{ fontSize: 12 }}>Installing...</DialogButton>
           ) : checkResult?.success && checkResult.has_update ? (
-            <DialogButton onClick={handleInstallUpdate} disabled={updating} style={{ fontSize: 12 }}>
-              {updating ? 'Installing...' : `Update to v${checkResult.latest_version}`}
+            <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12 }}>
+              {`Update to v${checkResult.latest_version}`}
             </DialogButton>
           ) : checkResult?.success && !checkResult.has_update
               && (checkResult.current_version ?? '') > (checkResult.latest_version ?? '')
               && checkResult.current_version !== checkResult.latest_version ? (
-            <DialogButton onClick={handleInstallUpdate} disabled={updating} style={{ fontSize: 12, color: '#fb923c' }}>
-              {updating ? 'Installing...' : `Downgrade to v${checkResult.latest_version}`}
+            <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12, color: '#fb923c' }}>
+              {`Downgrade to v${checkResult.latest_version}`}
             </DialogButton>
           ) : (
             <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate} style={{ fontSize: 12 }}>

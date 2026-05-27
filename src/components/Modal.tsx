@@ -34,6 +34,7 @@ export function ProtonPulsePage() {
 
   const [backendError, setBackendError] = useState<string | null>(null);
   const appliedPendingVersionRef = useRef(pageState.pendingNavigateVersion);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const applyNavigation = useCallback((payload: NavigatePayload) => {
     setAppId(payload.appId);
@@ -55,6 +56,29 @@ export function ProtonPulsePage() {
         void logFrontendEvent('ERROR', 'Failed to load system info', { error: msg });
         setBackendError(msg);
       });
+  }, []);
+
+  // Force focus to the sidebar tab list on mount so D-pad can navigate tabs
+  // when entering via the Decky quick-access panel (SJC context).
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (!globalThis.location?.pathname?.includes('/proton-pulse')) return;
+      if (!containerRef.current) return;
+      // Sidebar items render before content in DOM order; first tabindex="0" is a sidebar tab.
+      const firstSidebarTab = containerRef.current.querySelector<HTMLElement>(
+        '.Panel.Focusable [tabindex="0"], [tabindex="0"]'
+      );
+      if (firstSidebarTab) {
+        firstSidebarTab.focus();
+        void logFrontendEvent('DEBUG', 'Modal: forced focus to sidebar tab on mount', {
+          tag: firstSidebarTab.tagName,
+          text: firstSidebarTab.textContent?.trim().slice(0, 40) ?? '',
+        });
+      } else {
+        void logFrontendEvent('DEBUG', 'Modal: no sidebar tab found to focus on mount', {});
+      }
+    }, 200);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // React to re-navigation while the component is already mounted.
@@ -259,7 +283,7 @@ export function ProtonPulsePage() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       {backendError && (
         <div style={{
           background: '#4a1c1c',
