@@ -4,6 +4,7 @@ import { callable } from '@decky/api';
 import { Focusable, DialogButton, Dropdown, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { BrandLogo } from '../BrandLogo';
+import { toaster } from '../../lib/notify';
 import { t } from '../../lib/i18n';
 import { openIssue, type IssueTemplate } from '../../lib/issueReport';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';

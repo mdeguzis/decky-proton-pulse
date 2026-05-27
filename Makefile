@@ -55,7 +55,8 @@ SCREENSHOT_MATCH ?=
 SCREENSHOT_MANIFEST ?= config/ui_screenshot_manifest.json
 SCREENSHOT_TARGET ?=
 SCREENSHOT_DIR ?= $(HOME)/storage/screenshots
-PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
+# find pnpm: check mise path, then PATH, then npx fallback
+PNPM ?= $(shell command -v pnpm 2>/dev/null || echo "npx pnpm")
 
 # On old-glibc systems (e.g. AL2 with glibc 2.26), official Node 24 binaries
 # require glibc >= 2.28.  When Linuxbrew's node@24 is present, prepend it to
@@ -63,8 +64,7 @@ PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
 BREW_NODE := /home/linuxbrew/.linuxbrew/opt/node@24/bin
 ifneq ($(wildcard $(BREW_NODE)/node),)
   export PATH := $(BREW_NODE):$(PATH)
-  # Re-evaluate PNPM now that brew node is on PATH
-  PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx --yes pnpm")
+  PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx pnpm")
 endif
 
 .PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise setup-remote-dev deploy deploy-local deploy-reload deploy-reload-local build-and-deploy build-and-deploy-local clean \
