@@ -35,17 +35,30 @@ export function shouldPollUpdateStatus(status: UpdateStatusResult | null): boole
 
 /**
  * Attempt a hot-reload of the named plugin via DeckyPluginLoader.
- * Falls back to a full Steam restart if the loader API is unavailable.
+ * Falls back to restarting the plugin_loader systemd service (via a backend
+ * callable), which properly reloads the Python backend with new files.
+ * Last resort: full Steam client restart.
  */
-export async function triggerReload(pluginName: string): Promise<'reloaded' | 'restarting' | 'failed'> {
+export async function triggerReload(_pluginName: string): Promise<'reloaded' | 'restarting' | 'failed'> {
   try {
     const loader = (window as any).DeckyPluginLoader;
     if (typeof loader?.reloadPlugin === 'function') {
-      await loader.reloadPlugin(pluginName);
+      await loader.reloadPlugin(_pluginName);
       return 'reloaded';
     }
   } catch {
-    // fall through
+    // fall through to service restart
+  }
+  // Restart plugin_loader service -- this reloads the Python backend with the
+  // newly installed files. The callable fires a delayed subprocess and returns
+  // immediately; the backend dies ~1.5s later and Decky revives it.
+  try {
+    const { callable } = await import('@decky/api');
+    const restartLoader = callable<[], { success: boolean }>('restart_plugin_loader');
+    await restartLoader();
+    return 'restarting';
+  } catch {
+    // fall through to Steam restart
   }
   try {
     (window as any).SteamClient?.System?.RestartSteamClient?.();

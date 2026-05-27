@@ -2,6 +2,11 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.6.7
+
+- fix(updater): restart plugin_loader service after update so backend picks up new version
+- fix(updater): triggerReload now calls restart_plugin_loader callable before falling back to Steam restart
+
 ## v1.6.6
 
 - fix: force sidebar focus on plugin open so D-pad can navigate tabs in SJC (quick-access) context

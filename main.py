@@ -299,6 +299,31 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         decky.logger.info("cancel_update: cancel signal sent")
         return {"success": True}
 
+    async def restart_plugin_loader(self) -> dict:
+        """Restart the plugin_loader systemd service after a short delay.
+
+        Returns immediately so the frontend can show a spinner. The service
+        restart kills and relaunches the Python backend, which picks up the
+        newly installed plugin files. Requires the 'root' plugin flag.
+        """
+        def _do_restart() -> None:
+            import time as _time
+            _time.sleep(1.5)
+            decky.logger.info("restart_plugin_loader: restarting plugin_loader service")
+            try:
+                subprocess.run(
+                    ["systemctl", "restart", "plugin_loader"],
+                    timeout=10,
+                    check=True,
+                )
+            except Exception as exc:
+                decky.logger.error(f"restart_plugin_loader: failed: {exc}")
+
+        t = threading.Thread(target=_do_restart, daemon=True, name="pp-restart-loader")
+        t.start()
+        decky.logger.info("restart_plugin_loader: restart scheduled in 1.5s")
+        return {"success": True}
+
     async def get_protondb_systeminfo(self) -> str:
         """Build the system-info blob that ProtonDB submissions need."""
         try:
