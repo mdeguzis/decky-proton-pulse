@@ -838,8 +838,8 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             onChange={(opt) => setUpdateChannel(opt.data as any)}
           />
           {updateApplied ? (
-            <DialogButton disabled style={{ fontSize: 12, color: '#4caf50' }}>
-              Installed - restart to apply
+            <DialogButton onClick={() => { window.location.reload(); }} style={{ fontSize: 12, color: '#4caf50' }}>
+              Restart plugin
             </DialogButton>
           ) : checkResult?.success && checkResult.has_update ? (
             <DialogButton onClick={handleInstallUpdate} disabled={updating} style={{ fontSize: 12 }}>
