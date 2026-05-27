@@ -309,6 +309,8 @@ export function GeneralSettingsTab() {
   };
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [checkResult, setCheckResult] = useState<UpdateCheckResult | null>(null);
+  const [updateApplied, setUpdateApplied] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   const handleCheckUpdate = async () => {
     setCheckingUpdate(true);
@@ -329,6 +331,7 @@ export function GeneralSettingsTab() {
         version: checkResult.latest_version,
         zip_url: checkResult.zip_url,
       });
+      setUpdating(true);
       toaster.toast({ title: 'Proton Pulse', body: `Downloading v${checkResult.latest_version}...` });
       // backend runs as root (plugin.json flags:["root"]) so it can
       // write directly to the root-owned plugin directory
@@ -336,9 +339,10 @@ export function GeneralSettingsTab() {
         () => applyUpdate(checkResult.zip_url!, checkResult.latest_version!),
         'apply_update', 120000,
       );
+      setUpdating(false);
       if (result.success) {
-        toaster.toast({ title: 'Proton Pulse', body: 'Update installed! Reloading plugin...' });
-        setTimeout(() => { window.location.reload(); }, 2000);
+        setUpdateApplied(true);
+        toaster.toast({ title: 'Proton Pulse', body: `v${checkResult.latest_version} installed. Restart the plugin to apply.` });
       } else {
         void logFrontendEvent('ERROR', 'Update failed', { error: result.error });
         toaster.toast({ title: 'Proton Pulse', body: `Update failed: ${result.error}` });
@@ -807,9 +811,19 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             Up to date (latest {updateChannel}: v{checkResult.latest_version})
           </div>
         )}
-        {checkResult?.success && checkResult.has_update && (
+        {checkResult?.success && checkResult.has_update && !updateApplied && (
           <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
             Update available: v{checkResult.current_version} → v{checkResult.latest_version}
+          </div>
+        )}
+        {updating && (
+          <div style={{ fontSize: 11, color: '#64b5f6', marginBottom: 8 }}>
+            Downloading and installing...
+          </div>
+        )}
+        {updateApplied && (
+          <div style={{ fontSize: 12, color: '#4caf50', marginBottom: 8, padding: '8px 12px', background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.3)', borderRadius: 4 }}>
+            Update installed. Restart Decky Loader or Steam to load the new version.
           </div>
         )}
         <Focusable style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} flow-children="horizontal">
@@ -821,15 +835,19 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             selectedOption={updateChannel}
             onChange={(opt) => setUpdateChannel(opt.data as any)}
           />
-          {checkResult?.success && checkResult.has_update ? (
-            <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12 }}>
-              Update to v{checkResult.latest_version}
+          {updateApplied ? (
+            <DialogButton disabled style={{ fontSize: 12, color: '#4caf50' }}>
+              Installed - restart to apply
+            </DialogButton>
+          ) : checkResult?.success && checkResult.has_update ? (
+            <DialogButton onClick={handleInstallUpdate} disabled={updating} style={{ fontSize: 12 }}>
+              {updating ? 'Installing...' : `Update to v${checkResult.latest_version}`}
             </DialogButton>
           ) : checkResult?.success && !checkResult.has_update
               && (checkResult.current_version ?? '') > (checkResult.latest_version ?? '')
               && checkResult.current_version !== checkResult.latest_version ? (
-            <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12, color: '#fb923c' }}>
-              Downgrade to v{checkResult.latest_version}
+            <DialogButton onClick={handleInstallUpdate} disabled={updating} style={{ fontSize: 12, color: '#fb923c' }}>
+              {updating ? 'Installing...' : `Downgrade to v${checkResult.latest_version}`}
             </DialogButton>
           ) : (
             <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate} style={{ fontSize: 12 }}>
