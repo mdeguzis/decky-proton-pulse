@@ -130,14 +130,6 @@ function formatCacheTtl(hours: number): string {
   return remainingHours === 0 ? `${days}d` : `${days}d ${remainingHours}h`;
 }
 
-function formatBytes(value: number): string {
-  if (value <= 0) return '0 B';
-  const units = ['B', 'KiB', 'MiB', 'GiB'];
-  let size = value;
-  let i = 0;
-  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
-  return `${size >= 100 ? size.toFixed(0) : size >= 10 ? size.toFixed(1) : size.toFixed(2)} ${units[i]}`;
-}
 
 function stripUnitHint(label: string): string {
   return label.replace(/[\s\u3000]*[(（][^)）]+[)）]\s*$/u, '').trim();
@@ -888,22 +880,8 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
           </div>
         )}
         {updating && updateStatus && (
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#7f9bb2', marginBottom: 4 }}>
-              <span>{updateStatus.stage === 'extracting' ? 'Extracting...' : 'Downloading...'}</span>
-              {updateStatus.downloaded_bytes !== null && updateStatus.total_bytes ? (
-                <span>{formatBytes(updateStatus.downloaded_bytes)} / {formatBytes(updateStatus.total_bytes)}</span>
-              ) : null}
-            </div>
-            <div style={{ height: 8, borderRadius: 999, background: 'rgba(111,198,255,0.12)', overflow: 'hidden' }}>
-              <div style={{
-                width: `${Math.max(4, Math.round(Math.max(0, Math.min(100, (updateStatus.progress_fraction ?? 0.04) * 100))))}%`,
-                height: '100%',
-                borderRadius: 999,
-                background: 'linear-gradient(90deg, rgba(82,173,235,0.9) 0%, rgba(122,213,255,0.98) 100%)',
-                transition: 'width 300ms ease',
-              }} />
-            </div>
+          <div style={{ fontSize: 11, color: '#7f9bb2', marginBottom: 8 }}>
+            {updateStatus.stage === 'extracting' ? t().about.extractingUpdate : t().about.downloadingUpdate}
           </div>
         )}
         {updateApplied && (

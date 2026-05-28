@@ -2,6 +2,10 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.7.3
+
+- fix(updater): remove download progress bar -- updates are fast enough that a simple status text suffices
+
 ## v1.7.2
 
 - fix(updater): pre-release channel now finds the newest actual pre-release entry instead of the newest release overall, preventing false "downgrade" suggestions when the latest overall release is a stable build
