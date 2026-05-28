@@ -2,6 +2,13 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.8.0
+
+- feat(i18n): add 10 new translation languages (bg, da, el, es-419, fi, hu, no, pt, ro, sl) -- 29 total
+- feat(i18n): raise minimum translation coverage from 90% to 95%; all languages now at 100%
+- fix(i18n): report flow buttons now say "Submit" instead of "Upload"
+- fix(readme): correct comparison table -- decky-proton-launch writes directly to Steam; bschelst opens browser for submission
+
 ## v1.7.3
 
 - Sync ui-string-scan metrics
@@ -118,6 +125,17 @@ All notable changes to Proton Pulse should be recorded here.
 - chore(deploy): y/n prompt for PR push, detect existing PR title/author, clean fork sync
 
 ## Unreleased
+
+- Rename Upload to Submit in report flow; correct README comparison table
+- Shorten names for MD table
+- Remove Wine Cellar column, expand Proton Pulse badge descriptions from v1.7.0 commits
+- Expand comparison table -- add Wine Cellar and Decky Proton Launch columns, link all headers
+- Update comparison table to active fork bschelst/protondb-decky
+- Reorder README -- badges/intro, install, features, comparison, credits last
+- Reorder README sections logically -- features before installation, credits last
+- Move comparison table to top of README, directly after title
+- Move comparison table above screenshots, credits after license
+- Add plugin comparison table and move credits to end of README
 
 ## v1.7.2 pre-release
 

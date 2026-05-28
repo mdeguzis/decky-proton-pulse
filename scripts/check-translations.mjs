@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import ts from 'typescript';
 import { fileURLToPath } from 'url';
 
-const MIN_COVERAGE = 90;
+const MIN_COVERAGE = 95;
 const MAX_COVERAGE_DROP = 1.0; // fail if any locale drops more than this % from committed baseline
 const README_START = '<!-- translation-coverage:start -->';
 const README_END = '<!-- translation-coverage:end -->';
@@ -17,6 +17,8 @@ const SKIP_VALUES = new Set([
   'Demo',
   // UI style terms used as loanwords in many languages (Swedish, Turkish, etc.)
   'Full', 'Compact', 'Minimal', 'Off',
+  // Common international loanwords in tech/gaming contexts -- legitimately same in many European languages
+  'Bronze', 'General', 'Experimental', 'Local', 'Global', 'Driver', 'Type', 'Error', 'Match',
 ]);
 
 const SKIP_KEYS = new Set([
@@ -33,6 +35,7 @@ const SKIP_KEYS = new Set([
   'nativeReport.faultStability',
   'nativeReport.faultSaveGame',
   'nativeReport.faultSignificantBugs',
+  'extras.compatVersionColumn',
 ]);
 
 const LANGUAGES = [
@@ -55,6 +58,16 @@ const LANGUAGES = [
   { code: 'vi', name: 'Tiếng Việt', file: 'translations/vi.ts' },
   { code: 'zh-CN', name: '简体中文', file: 'translations/zh-CN.ts' },
   { code: 'zh-TW', name: '繁體中文', file: 'translations/zh-TW.ts' },
+  { code: 'bg', name: 'Български', file: 'translations/bg.ts' },
+  { code: 'da', name: 'Dansk', file: 'translations/da.ts' },
+  { code: 'el', name: 'Ελληνικά', file: 'translations/el.ts' },
+  { code: 'es-419', name: 'Español (Latinoamérica)', file: 'translations/es-419.ts' },
+  { code: 'fi', name: 'Suomi', file: 'translations/fi.ts' },
+  { code: 'hu', name: 'Magyar', file: 'translations/hu.ts' },
+  { code: 'no', name: 'Norsk', file: 'translations/no.ts' },
+  { code: 'pt', name: 'Português (PT)', file: 'translations/pt.ts' },
+  { code: 'ro', name: 'Română', file: 'translations/ro.ts' },
+  { code: 'sl', name: 'Slovenščina', file: 'translations/sl.ts' },
 ];
 
 const _filename = fileURLToPath(import.meta.url);

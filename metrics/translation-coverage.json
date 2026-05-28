@@ -1,5 +1,5 @@
 {
-  "minimumCoveragePercent": 90,
+  "minimumCoveragePercent": 95,
   "totalKeys": 576,
   "languages": [
     {
@@ -186,6 +186,106 @@
     {
       "code": "zh-TW",
       "name": "繁體中文",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "bg",
+      "name": "Български",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "da",
+      "name": "Dansk",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "el",
+      "name": "Ελληνικά",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "es-419",
+      "name": "Español (Latinoamérica)",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "fi",
+      "name": "Suomi",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "hu",
+      "name": "Magyar",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "no",
+      "name": "Norsk",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "pt",
+      "name": "Português (PT)",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "ro",
+      "name": "Română",
+      "translated": 576,
+      "total": 576,
+      "coveragePercent": 100,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "sl",
+      "name": "Slovenščina",
       "translated": 576,
       "total": 576,
       "coveragePercent": 100,

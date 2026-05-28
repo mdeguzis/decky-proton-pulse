@@ -6,7 +6,7 @@ import { getSetting, setSetting } from './settings';
 // Language registry
 // ---------------------------------------------------------------------------
 
-export const LANGUAGES = ['en', 'zh-CN', 'zh-TW', 'ru', 'pt-BR', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'nl', 'pl', 'sv', 'tr', 'uk', 'cs', 'th', 'vi'] as const;
+export const LANGUAGES = ['en', 'zh-CN', 'zh-TW', 'ru', 'pt-BR', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'nl', 'pl', 'sv', 'tr', 'uk', 'cs', 'th', 'vi', 'bg', 'da', 'el', 'es-419', 'fi', 'hu', 'no', 'pt', 'ro', 'sl'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 export const LANGUAGE_NAMES: Record<Language, string> = {
@@ -29,6 +29,16 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   'cs': 'Čeština',
   'th': 'ภาษาไทย',
   'vi': 'Tiếng Việt',
+  'bg': 'Български',
+  'da': 'Dansk',
+  'el': 'Ελληνικά',
+  'es-419': 'Español (Latinoamérica)',
+  'fi': 'Suomi',
+  'hu': 'Magyar',
+  'no': 'Norsk',
+  'pt': 'Português (PT)',
+  'ro': 'Română',
+  'sl': 'Slovenščina',
 };
 
 const LANGUAGE_ALIASES: Record<string, Language> = {

@@ -1,6 +1,6 @@
 Generated from [metrics/translation-coverage.json](metrics/translation-coverage.json) during `pnpm run build`.
 
-Proton Pulse supports 19 languages. Translation coverage is measured during build and can be enforced with `pnpm run check-translations` (90% minimum).
+Proton Pulse supports 29 languages. Translation coverage is measured during build and can be enforced with `pnpm run check-translations` (95% minimum).
 
 | Language | Code | Coverage | Status |
 |---|---|---|---|
@@ -23,3 +23,13 @@ Proton Pulse supports 19 languages. Translation coverage is measured during buil
 | Tiếng Việt | vi | 100.0% | pass |
 | 简体中文 | zh-CN | 100.0% | pass |
 | 繁體中文 | zh-TW | 100.0% | pass |
+| Български | bg | 100.0% | pass |
+| Dansk | da | 100.0% | pass |
+| Ελληνικά | el | 100.0% | pass |
+| Español (Latinoamérica) | es-419 | 100.0% | pass |
+| Suomi | fi | 100.0% | pass |
+| Magyar | hu | 100.0% | pass |
+| Norsk | no | 100.0% | pass |
+| Português (PT) | pt | 100.0% | pass |
+| Română | ro | 100.0% | pass |
+| Slovenščina | sl | 100.0% | pass |
