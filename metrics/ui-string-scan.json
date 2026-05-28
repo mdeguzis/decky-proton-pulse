@@ -517,7 +517,7 @@
     },
     {
       "file": "src/patches/gamePageBadge.tsx",
-      "line": 224,
+      "line": 249,
       "column": 17,
       "kind": "string",
       "text": "Native Linux build available"

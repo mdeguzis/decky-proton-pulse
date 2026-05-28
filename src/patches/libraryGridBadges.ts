@@ -2,12 +2,12 @@
 // Injects ProtonDB tier badges onto game tiles in Steam's library grid view.
 // Uses DOM scanning + MutationObserver on BPM's document (same cross-frame pattern
 // as searchResultsHint.tsx). Fetches tiers via getProtonDBSummary with rate limiting.
-// On by default -- toggle via showLibraryBadges setting.
+// Badge style controlled by libraryBadgeStyle setting: full | compact | minimal | off.
 //
 // Design: Steam re-renders library tiles frequently (virtual DOM), so we cannot
 // rely on stable DOM node refs. Instead we maintain a session-level _tierCache
-// (appId -> tier) and re-apply badges to all visible [data-id] tiles on every
-// scan tick. Tiles already badged (PP_BADGE_EL_ATTR present) are skipped cheaply.
+// (appId -> tier) and re-apply badges to all visible tiles on every scan tick.
+import { appDetailsClasses } from '@decky/ui';
 import { getProtonDBSummary } from '../lib/protondb';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { getSetting } from '../lib/settings';
@@ -16,7 +16,8 @@ import { getCached } from '../lib/cache';
 
 const PP_BADGE_EL_ATTR = 'data-pp-lib-badge';
 
-// Full tier labels for wide/landscape capsules
+export type LibraryBadgeStyle = 'full' | 'compact' | 'minimal' | 'off';
+
 const TIER_FULL: Record<string, string> = {
   platinum: 'PLATINUM',
   gold: 'GOLD',
@@ -26,8 +27,7 @@ const TIER_FULL: Record<string, string> = {
   pending: '?',
 };
 
-// Abbreviated tier labels for portrait capsules
-const TIER_ABBREV: Record<string, string> = {
+const TIER_COMPACT: Record<string, string> = {
   platinum: 'PLAT',
   gold: 'GOLD',
   silver: 'SILV',
@@ -45,20 +45,21 @@ const TIER_TEXT_COLOR: Record<string, string> = {
   pending: '#ccc',
 };
 
-function getTierLabel(tier: string, cover: HTMLElement): string {
-  // Determine orientation from the cover image URL first -- more reliable than DOM dimensions
-  // because Steam may render the selected tile's container wider than the actual image.
-  // library_hero / header images are landscape; library_600x900 and others are portrait.
-  const img = cover.querySelector('img') as HTMLImageElement | null;
-  const src = img?.getAttribute('src') ?? img?.src ?? '';
-  let isWide: boolean;
-  if (src) {
-    isWide = src.includes('library_hero') || src.includes('library_header') || src.includes('header_capsule');
-  } else {
-    isWide = cover.offsetWidth > cover.offsetHeight * 1.3;
+// Minimal badge atom icon. Adjust width/height to match the Steam Deck Verified badge
+// circle size (~28px outer). SVG 15px + padding 4px each side = ~23px outer.
+const BADGE_ICON_SVG = '<svg width="15" height="15" viewBox="0 0 36 36" fill="none" aria-hidden="true"><ellipse cx="18" cy="18" rx="15" ry="5.5" stroke="currentColor" stroke-width="1.8"/><ellipse cx="18" cy="18" rx="15" ry="5.5" stroke="currentColor" stroke-width="1.8" transform="rotate(60 18 18)"/><ellipse cx="18" cy="18" rx="15" ry="5.5" stroke="currentColor" stroke-width="1.8" transform="rotate(-60 18 18)"/><circle cx="18" cy="18" r="2.6" fill="currentColor"/></svg>';
+
+function getLibraryBadgeStyle(): LibraryBadgeStyle {
+  return getSetting('libraryBadgeStyle', 'full') as LibraryBadgeStyle;
+}
+
+function getBadgeContent(style: LibraryBadgeStyle, tier: string): { html: string; text: string } {
+  if (style === 'minimal') {
+    return { html: BADGE_ICON_SVG, text: '' };
   }
-  const map = isWide ? TIER_FULL : TIER_ABBREV;
-  return map[tier] ?? tier.toUpperCase();
+  const map = style === 'compact' ? TIER_COMPACT : TIER_FULL;
+  const label = map[tier] ?? tier.toUpperCase();
+  return { html: '', text: label };
 }
 
 // Session-level tier cache: appId -> tier string | null (null = no ProtonDB data)
@@ -133,7 +134,15 @@ function findCoverContainer(el: HTMLElement): HTMLElement {
 // .src property (absolute CDN URLs like steamstatic.com/.../apps/<id>/).
 function extractFromImg(img: HTMLImageElement): { appId: string; cover: HTMLElement } | null {
   const attr = img.getAttribute('src') ?? '';
-  const appId = extractAppIdFromUrl(attr) ?? extractAppIdFromUrl(img.src ?? '');
+  const src = img.src ?? '';
+  // Skip game page hero/header images -- full-screen artwork shown on the game details page,
+  // not grid tiles. Confirmed in logs: library_hero.jpg and library_header*.jpg appear in
+  // findVisibleTiles scans when the user is on the game page, causing lib badges to be
+  // injected into the game page InnerContainer and removed alongside real lib badges on
+  // toggle-off, making the game page badge appear to respond to the library grid setting.
+  const urlToCheck = attr || src;
+  if (urlToCheck.includes('library_hero') || urlToCheck.includes('library_header')) return null;
+  const appId = extractAppIdFromUrl(attr) ?? extractAppIdFromUrl(src);
   if (!appId) return null;
   return { appId, cover: findCoverContainer(img) };
 }
@@ -146,7 +155,9 @@ function extractFromBgEl(el: HTMLElement): { appId: string; cover: HTMLElement }
   if (!bg || !bg.includes('url(')) return null;
   const urlMatch = bg.match(/url\(['"]?([^'")\s]+)['"]?\)/);
   if (!urlMatch) return null;
-  const appId = extractAppIdFromUrl(urlMatch[1]);
+  const url = urlMatch[1];
+  if (url.includes('library_hero') || url.includes('library_header')) return null;
+  const appId = extractAppIdFromUrl(url);
   if (!appId) return null;
   return { appId, cover: el };
 }
@@ -194,36 +205,55 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   return results;
 }
 
-function applyBadgeToCover(cover: HTMLElement, tier: string | null): void {
-  if (!tier) return;
+function applyBadgeToCover(cover: HTMLElement, tier: string | null, style: LibraryBadgeStyle): void {
+  if (!tier || style === 'off') return;
   const doc = cover.ownerDocument ?? getBpmDocument();
+  const bg = RATING_COLORS[tier] ?? '#888';
+  const color = TIER_TEXT_COLOR[tier] ?? '#fff';
+  const { html, text } = getBadgeContent(style, tier);
+  const isMinimal = style === 'minimal';
 
   const existing = cover.querySelector(`[${PP_BADGE_EL_ATTR}]`) as HTMLElement | null;
   if (existing) {
-    existing.textContent = getTierLabel(tier, cover);
-    existing.style.background = RATING_COLORS[tier] ?? '#888';
-    existing.style.color = TIER_TEXT_COLOR[tier] ?? '#fff';
+    if (isMinimal) {
+      existing.innerHTML = html;
+      existing.style.padding = '4px';
+    } else {
+      existing.textContent = text;
+      existing.style.padding = '2px 5px';
+    }
+    existing.style.background = bg;
+    existing.style.color = color;
     return;
   }
 
   const badge = doc.createElement('div');
   badge.setAttribute(PP_BADGE_EL_ATTR, '1');
-  badge.textContent = getTierLabel(tier, cover);
+  if (isMinimal) {
+    badge.innerHTML = html;
+  } else {
+    badge.textContent = text;
+  }
+  // Badge position: bottom-left corner of the cover tile.
+  // minimal padding (4px) sizes the outer box to match the Deck Verified circles.
+  // full/compact font-size (9px) keeps text readable at grid tile scale.
   badge.style.cssText = [
     'position:absolute',
     'bottom:4px',
     'left:4px',
     'z-index:10',
-    'padding:2px 5px',
+    isMinimal ? 'padding:4px' : 'padding:2px 5px',
     'border-radius:3px',
     'font-size:9px',
     'font-weight:700',
     'letter-spacing:0.04em',
     'pointer-events:none',
     'white-space:nowrap',
-    'line-height:1.4',
-    `background:${RATING_COLORS[tier] ?? '#888'}`,
-    `color:${TIER_TEXT_COLOR[tier] ?? '#fff'}`,
+    'line-height:1',
+    'display:flex',
+    'align-items:center',
+    `background:${bg}`,
+    `color:${color}`,
   ].join(';');
 
   const cs = doc.defaultView?.getComputedStyle(cover);
@@ -253,15 +283,21 @@ async function processFetchQueue(): Promise<void> {
           const tier = summary?.tier ?? null;
           // Store in session cache so future scan ticks can apply without re-fetching
           _tierCache.set(appId, tier);
-          // Apply immediately to any currently visible covers with this appId
+          // Apply immediately to any currently visible covers with this appId,
+          // but skip if the user navigated to a game details page while the fetch was in flight.
           const doc = getBpmDocument();
-          const visible = findVisibleTiles(doc).filter((t) => t.appId === appId);
-          for (const { cover } of visible) applyBadgeToCover(cover, tier);
+          const style = getLibraryBadgeStyle();
+          let coversUpdatedNow = 0;
+          if (!isOnGameDetailsPage()) {
+            const visible = findVisibleTiles(doc).filter((t) => t.appId === appId);
+            for (const { cover } of visible) applyBadgeToCover(cover, tier, style);
+            coversUpdatedNow = visible.length;
+          }
           void logFrontendEvent('DEBUG', 'libraryGridBadges: tier fetched', {
             appId,
             tier,
             source: wasCached ? 'cache' : (summary ? 'network' : 'none'),
-            coversUpdatedNow: visible.length,
+            coversUpdatedNow,
           });
         } catch (err) {
           void logFrontendEvent('WARNING', 'libraryGridBadges: fetch failed', {
@@ -302,10 +338,35 @@ function runDiagnostic(doc: Document): void {
   });
 }
 
+// Detect game details page by checking for InnerContainer in the BPM DOM.
+// URL-based detection is unreliable because Steam uses client-side routing and
+// the BPM window's location.pathname does not change on in-app navigation.
+function isOnGameDetailsPage(): boolean {
+  try {
+    const bpmDoc = getBpmDocument();
+    const cls = (appDetailsClasses as any)?.InnerContainer;
+    if (!cls) return false;
+    return !!bpmDoc.querySelector(`.${cls}`);
+  } catch {
+    return false;
+  }
+}
+
 function scanAndQueue(): void {
-  if (!getSetting('showLibraryBadges', true)) return;
+  const style = getLibraryBadgeStyle();
+  if (style === 'off') return;
 
   const doc = getBpmDocument();
+
+  // Do not scan the game details page -- its capsule/thumbnail images match our tile
+  // selectors, causing lib badges to bleed into the game page hero area. Clear any
+  // stale lib badges that may have been applied before navigation and bail out.
+  if (isOnGameDetailsPage()) {
+    doc.querySelectorAll(`[${PP_BADGE_EL_ATTR}]`).forEach((el) => el.remove());
+    void logFrontendEvent('DEBUG', 'libraryGridBadges: skipping scan on game details page');
+    return;
+  }
+
   runDiagnostic(doc);
   const tiles = findVisibleTiles(doc);
 
@@ -315,7 +376,7 @@ function scanAndQueue(): void {
   for (const { appId, cover } of tiles) {
     if (_tierCache.has(appId)) {
       const tier = _tierCache.get(appId) ?? null;
-      if (tier) { applyBadgeToCover(cover, tier); badgedNow++; }
+      if (tier) { applyBadgeToCover(cover, tier, style); badgedNow++; }
     } else if (!_fetchQueue.has(appId)) {
       _fetchQueue.add(appId);
       queued++;
@@ -338,13 +399,12 @@ function removeAllBadges(): void {
   doc.querySelectorAll(`[${PP_BADGE_EL_ATTR}]`).forEach((el) => el.remove());
 }
 
-export function refreshLibraryGridBadges(enabled: boolean): void {
-  void logFrontendEvent('INFO', 'libraryGridBadges: refreshLibraryGridBadges', { enabled });
-  if (!enabled) {
-    removeAllBadges();
-  } else {
-    scanAndQueue();
-  }
+// Call after changing the libraryBadgeStyle setting -- removes stale badges and re-applies.
+export function refreshLibraryGridBadges(): void {
+  const style = getLibraryBadgeStyle();
+  void logFrontendEvent('INFO', 'libraryGridBadges: refreshLibraryGridBadges', { style });
+  removeAllBadges();
+  if (style !== 'off') scanAndQueue();
 }
 
 export function setupLibraryGridBadges(): void {

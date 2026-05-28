@@ -5,9 +5,15 @@ All notable changes to Proton Pulse should be recorded here.
 ## v1.7.0
 
 - feat: show ProtonDB tier badges on library grid tiles (home page and installed/all games views)
-- feat: wide capsules show full tier name (PLATINUM/GOLD/SILVER/BRONZE/BORKED), portrait capsules show abbreviated form
-- feat: badge display is toggleable via Settings > Library grid badges (on by default)
+- feat: game page and library grid badges each have a three-way style selector -- Full (PLATINUM/GOLD/...), Compact (PLAT/GOLD/...), Minimal (atom icon in tier color only), or Off
+- feat: game page badge uses 3-ring atom icon matching the Proton Pulse brand mark
+- feat: Native Linux badge shown on game page when platform_list includes Linux (EAppPlatform 16)
+- feat: non-Steam shortcuts show source badge (Heroic, Epic, GOG, Lutris, Bottles, itch.io) and resolve ProtonDB tier from matched Steam store ID
+- feat: QAM menu icon updated to 3-ring atom variant
 - fix: persist ProtonDB summary to localStorage cache after network fetch so badges survive restarts and offline sessions
+- fix(game-page-badge): useLayoutEffect dedup hides secondary React fiber badge instances before paint -- keeps lowest-on-screen badge as primary
+- fix(library-grid-badges): skip scan when game details page is open (detected via appDetailsClasses.InnerContainer in BPM DOM) -- prevents tile scanner from stamping lib badges onto game page capsule images
+- fix(library-grid-badges): filter library_hero and library_header image URLs from tile scan to prevent hero artwork matching grid tile selectors
 - fix(updater): use sudo -n to restart plugin_loader service (root flag does not grant passwordless systemctl)
 
 ## v1.6.8
@@ -95,6 +101,11 @@ All notable changes to Proton Pulse should be recorded here.
 - chore(deploy): y/n prompt for PR push, detect existing PR title/author, clean fork sync
 
 ## Unreleased
+
+- Use image URL to detect portrait vs wide tiles
+- Add library grid ProtonDB tier badges with persistent cache
+- Sync release-derived files for 1.6.8
+- Sync version metadata
 
 ## v1.6.8 pre-release
 

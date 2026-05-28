@@ -441,8 +441,8 @@ export function GeneralSettingsTab() {
 const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
   const [cefDebuggingBusy, setCefDebuggingBusy] = useState(false);
   const [cefDebuggingStatus, setCefDebuggingStatus] = useState<CefDebuggingStatus | null>(null);
-  const [badgeEnabled, setBadgeEnabled] = useState(() => getSetting('showGamePageBadge', true));
-  const [libraryBadgesEnabled, setLibraryBadgesEnabled] = useState(() => getSetting('showLibraryBadges', true));
+  const [gamePageBadgeStyle, setGamePageBadgeStyle] = useState<string>(() => getSetting('gamePageBadgeStyle', 'full'));
+  const [libraryBadgeStyle, setLibraryBadgeStyle] = useState<string>(() => getSetting('libraryBadgeStyle', 'full'));
   const [doubleBToExit, setDoubleBToExit] = useState(() => getSetting('doubleBToExit', false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
@@ -1026,27 +1026,41 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
           </Field>
         </div>
          <div style={focusClipRowStyle()}>
-           <ToggleField
-             label={t().settings.gamePageBadge}
-             description={t().settings.gamePageBadgeDescription}
-             checked={badgeEnabled}
-             onChange={(enabled) => {
-               setBadgeEnabled(enabled);
-               setSetting('showGamePageBadge', enabled);
-               void logFrontendEvent('INFO', 'Game page badge toggled', { enabled });
+           <DropdownItem
+             label={t().settings.gamePageBadgeStyle}
+             description={t().settings.gamePageBadgeStyleDescription}
+             rgOptions={[
+               { data: 'full', label: t().settings.badgeStyleFull },
+               { data: 'compact', label: t().settings.badgeStyleCompact },
+               { data: 'minimal', label: t().settings.badgeStyleMinimal },
+               { data: 'off', label: t().settings.badgeStyleOff },
+             ]}
+             selectedOption={gamePageBadgeStyle}
+             onChange={(opt) => {
+               const style = opt.data as string;
+               setGamePageBadgeStyle(style);
+               setSetting('gamePageBadgeStyle', style);
+               void logFrontendEvent('INFO', 'Game page badge style changed', { style });
              }}
            />
          </div>
          <div style={focusClipRowStyle()}>
-           <ToggleField
-             label={t().settings.libraryBadges}
-             description={t().settings.libraryBadgesDescription}
-             checked={libraryBadgesEnabled}
-             onChange={(enabled) => {
-               setLibraryBadgesEnabled(enabled);
-               setSetting('showLibraryBadges', enabled);
-               refreshLibraryGridBadges(enabled);
-               void logFrontendEvent('INFO', 'Library grid badges toggled', { enabled });
+           <DropdownItem
+             label={t().settings.libraryBadgeStyle}
+             description={t().settings.libraryBadgeStyleDescription}
+             rgOptions={[
+               { data: 'full', label: t().settings.badgeStyleFull },
+               { data: 'compact', label: t().settings.badgeStyleCompact },
+               { data: 'minimal', label: t().settings.badgeStyleMinimal },
+               { data: 'off', label: t().settings.badgeStyleOff },
+             ]}
+             selectedOption={libraryBadgeStyle}
+             onChange={(opt) => {
+               const style = opt.data as string;
+               setLibraryBadgeStyle(style);
+               setSetting('libraryBadgeStyle', style);
+               refreshLibraryGridBadges();
+               void logFrontendEvent('INFO', 'Library badge style changed', { style });
              }}
            />
          </div>

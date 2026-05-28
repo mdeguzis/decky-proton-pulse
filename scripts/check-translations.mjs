@@ -15,6 +15,8 @@ const SKIP_VALUES = new Set([
   'Kernel', 'Valve Proton',
   'VRAM', 'PASS', 'FAIL', 'MAYBE', 'Info', 'Status', 'Platform', 'No',
   'Demo',
+  // UI style terms used as loanwords in many languages (Swedish, Turkish, etc.)
+  'Full', 'Compact', 'Minimal', 'Off',
 ]);
 
 const SKIP_KEYS = new Set([

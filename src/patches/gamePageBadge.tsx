@@ -45,16 +45,39 @@ const TIER_TEXT_COLOR: Record<string, string> = {
 
 const BADGE_ID = 'proton-pulse-game-badge';
 const PATCHED_FLAG = '__pp_badge_patched__';
-
+const BADGE_DOM_ATTR = 'data-pp-game-badge';
 
 function BadgeIcon({ appId }: { appId: number }) {
   // pos drives both visibility (null = hidden) and position via React state,
   // so the Focusable's rendered DOM coords are correct when the navmesh scans.
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  // isHidden: true when this BadgeIcon is a duplicate (not the highest on screen).
+  // Set in useLayoutEffect (before paint) so the user never sees the extra badge.
+  const [isHidden, setIsHidden] = useState(false);
   const [tier, setTier] = useState<string | null>(null);
   const [sourceInfo, setSourceInfo] = useState<GameSourceInfo | null>(null);
   const [isNativeLinux, setIsNativeLinux] = useState(false);
   const innerRef = useRef<HTMLDivElement>(null);
+
+  // Dedup: multiple InnerContainer fiber instances each inject a BadgeIcon.
+  // After commit, check if there are other badges higher on screen -- if so, hide ours.
+  // useLayoutEffect fires synchronously before paint, so the user never sees duplicates.
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const doc = el.ownerDocument;
+    if (!doc) return;
+    const badges = Array.from(doc.querySelectorAll(`[${BADGE_DOM_ATTR}]`)) as HTMLElement[];
+    void logFrontendEvent('DEBUG', 'gamePageBadge: dedup check', { appId, badgeCount: badges.length, myTop: Math.round(el.getBoundingClientRect().top) });
+    if (badges.length <= 1) return;
+    badges.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+    const isPrimary = badges[0] === el;
+    if (!isPrimary) {
+      void logFrontendEvent('DEBUG', 'gamePageBadge: hiding duplicate badge', { appId, myTop: Math.round(el.getBoundingClientRect().top), primaryTop: Math.round(badges[0].getBoundingClientRect().top) });
+      setIsHidden(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appId]);
 
   useEffect(() => {
     const overview = (globalThis as any).SteamClient?.Apps?.GetAppOverviewByAppID?.(appId);
@@ -177,6 +200,8 @@ function BadgeIcon({ appId }: { appId: number }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (isHidden) return null;
+
   const isNonSteam = sourceInfo !== null && !sourceInfo.is_steam;
   const sourceLabel = sourceInfo?.source ?? null;
   const sourceColors = sourceLabel ? (SOURCE_COLORS[sourceLabel] ?? SOURCE_COLORS['Non-Steam']) : null;
@@ -242,6 +267,7 @@ function BadgeIcon({ appId }: { appId: number }) {
       {showTierBadge && (
         <div
           ref={innerRef}
+          {...{ [BADGE_DOM_ATTR]: 'true' }}
           title={t().common.openInProtonPulse}
           style={{
             display: 'flex',
@@ -258,8 +284,14 @@ function BadgeIcon({ appId }: { appId: number }) {
             whiteSpace: 'nowrap',
           }}
         >
-          <BrandGlyph size={16} />
-          {tier && <span>{tier.toUpperCase()}</span>}
+          <BrandGlyph size={15} variant="atom" />
+          {tier && (getSetting('gamePageBadgeStyle', 'full') as string) !== 'minimal' && (
+            <span>
+              {(getSetting('gamePageBadgeStyle', 'full') as string) === 'compact'
+                ? ({ platinum: 'PLAT', gold: 'GOLD', silver: 'SILV', bronze: 'BRNZ', borked: 'BORK' } as Record<string,string>)[tier] ?? tier.toUpperCase()
+                : tier.toUpperCase()}
+            </span>
+          )}
         </div>
       )}
       {showSourceBadge && (
@@ -292,7 +324,9 @@ function BadgeIcon({ appId }: { appId: number }) {
  * Guard prevents stacking multiple patches on the same routeProps object.
  */
 export function setupGamePageBadge(routeProps: any) {
-  if (routeProps[PATCHED_FLAG]) return;
+  const alreadyPatched = !!routeProps[PATCHED_FLAG];
+  void logFrontendEvent('DEBUG', 'gamePageBadge: setupGamePageBadge called', { alreadyPatched });
+  if (alreadyPatched) return;
   routeProps[PATCHED_FLAG] = true;
 
   const patchHandler = createReactTreePatcher(
@@ -325,14 +359,19 @@ export function setupGamePageBadge(routeProps: any) {
 
         const children = (container as any).props.children as any[];
 
-        // Inject tier badge (PLATINUM/GOLD) in the top-left of the hero image
-        if (getSetting('showGamePageBadge', true) && !children.some((c: any) => c?.key === BADGE_ID)) {
+        // Always inject into every InnerContainer render so each fiber instance
+        // keeps its BadgeIcon alive in the virtual DOM. React reconciles by key
+        // within each fiber -- no duplicate within a single fiber. Post-commit,
+        // BadgeIcon.useEffect removes any extra DOM nodes from secondary fibers.
+        if ((getSetting('gamePageBadgeStyle', 'full') as string) !== 'off') {
+          const staleIdx = children.findIndex((c: any) => c?.key === BADGE_ID);
+          if (staleIdx !== -1) children.splice(staleIdx, 1);
           (container as any).props.style = {
             ...((container as any).props.style ?? {}),
             position: (container as any).props.style?.position ?? 'relative',
           };
           children.splice(1, 0, <BadgeIcon key={BADGE_ID} appId={appId} />);
-          void logFrontendEvent('DEBUG', 'gamePageBadge: injected', { appId });
+          void logFrontendEvent('DEBUG', 'gamePageBadge: injected', { appId, childrenLen: children.length });
         }
 
       } catch (e) {

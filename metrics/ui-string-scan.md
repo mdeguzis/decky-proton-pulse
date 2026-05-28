@@ -72,4 +72,4 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/tabs/ManageTab.tsx` | 569 | string | Active |
 | `src/components/tabs/ManageTab.tsx` | 571 | string | Playtime (total) |
 | `src/components/tabs/ManageTab.tsx` | 572 | string | Playtime (this config) |
-| `src/patches/gamePageBadge.tsx` | 224 | string | Native Linux build available |
+| `src/patches/gamePageBadge.tsx` | 249 | string | Native Linux build available |

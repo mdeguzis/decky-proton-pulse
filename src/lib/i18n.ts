@@ -208,10 +208,14 @@ export interface TranslationTree {
     experimental: string;
     experimentalGamePageShortcut: string;
     experimentalGamePageShortcutDescription: string;
-    gamePageBadge: string;
-    gamePageBadgeDescription: string;
-    libraryBadges: string;
-    libraryBadgesDescription: string;
+    gamePageBadgeStyle: string;
+    gamePageBadgeStyleDescription: string;
+    libraryBadgeStyle: string;
+    libraryBadgeStyleDescription: string;
+    badgeStyleFull: string;
+    badgeStyleCompact: string;
+    badgeStyleMinimal: string;
+    badgeStyleOff: string;
     doubleBToExit: string;
     doubleBToExitDescription: string;
   };
@@ -831,10 +835,14 @@ export const en: TranslationTree = {
     experimental: 'Experimental',
     experimentalGamePageShortcut: 'Game page shortcut button',
     experimentalGamePageShortcutDescription: 'Show a best-effort Proton Pulse shortcut next to the game page action buttons. Experimental and off by default.',
-    gamePageBadge: 'Proton Pulse badge on game page',
-    gamePageBadgeDescription: 'Show a Proton Pulse icon badge in the top-left corner of the game page. Click it to open Proton Pulse for that game.',
-    libraryBadges: 'Library grid badges',
-    libraryBadgesDescription: 'Show small ProtonDB tier badges (PLAT/GOLD/SILV/BRNZ) on each game tile in the library grid. Off by default.',
+    gamePageBadgeStyle: 'Game page badge style',
+    gamePageBadgeStyleDescription: 'Badge shown in the top-left of the game page header. Full shows the tier name, Compact abbreviates it, Minimal shows only the icon.',
+    libraryBadgeStyle: 'Library grid badge style',
+    libraryBadgeStyleDescription: 'ProtonDB tier badge on each game tile in the library grid. Full shows the tier name, Compact abbreviates it, Minimal shows only the icon.',
+    badgeStyleFull: 'Full',
+    badgeStyleCompact: 'Compact',
+    badgeStyleMinimal: 'Minimal',
+    badgeStyleOff: 'Off',
     doubleBToExit: 'Press B twice to exit',
     doubleBToExitDescription: 'Require a second B press within 3 seconds to exit Proton Pulse. When off, B exits immediately.',
   },

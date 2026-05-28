@@ -353,7 +353,7 @@ export default definePlugin(() => {
       </div>
     ),
     content: <Content />,
-    icon: <BrandGlyph size={20} />,
+    icon: <BrandGlyph size={20} variant="atom" />,
     onDismount() {
       void logFrontendEvent('INFO', 'Plugin frontend unloading');
       unsubCloudPush();

@@ -296,7 +296,7 @@ toml = [
 
 [[package]]
 name = "decky-proton-pulse"
-version = "1.6.8"
+version = "1.7.0"
 source = { virtual = "." }
 dependencies = [
     { name = "aiohttp" },

@@ -1,9 +1,26 @@
 interface BrandGlyphProps {
   size?: number;
-  variant?: 'default' | 'material';
+  variant?: 'default' | 'material' | 'atom';
 }
 
 export function BrandGlyph({ size = 20, variant = 'default' }: BrandGlyphProps) {
+  if (variant === 'atom') {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 36 36"
+        fill="none"
+        aria-hidden="true"
+        style={{ display: 'block', flex: '0 0 auto' }}
+      >
+        <ellipse cx="18" cy="18" rx="15" ry="5.5" stroke="currentColor" strokeWidth="1.8" />
+        <ellipse cx="18" cy="18" rx="15" ry="5.5" stroke="currentColor" strokeWidth="1.8" transform="rotate(60 18 18)" />
+        <ellipse cx="18" cy="18" rx="15" ry="5.5" stroke="currentColor" strokeWidth="1.8" transform="rotate(-60 18 18)" />
+        <circle cx="18" cy="18" r="2.6" fill="currentColor" />
+      </svg>
+    );
+  }
   if (variant === 'material') {
     // Simplified two-element icon: octagonal badge outline + pulse waveform.
     // Designed for small sizes (20-24px) as a material-style button icon.
