@@ -166,7 +166,7 @@ Several Decky plugins cover subsets of what Proton Pulse does. The table below c
 | Compatibility tool management | Yes -- install/manage Proton/GE | No | No |
 | Non-Steam game support (Heroic, GOG, etc.) | Yes -- resolves to Steam store ID | No | No |
 | Self-updater (built-in) | Yes -- GitHub Releases | No | No |
-| Decky store availability | No (not submitted) | Yes | Yes |
+| Decky store availability | No | Yes | Yes |
 | Translation support | 19 languages (build-tracked) | 32 languages | -- |
 | Active maintenance | Yes | Yes | Yes |
 
