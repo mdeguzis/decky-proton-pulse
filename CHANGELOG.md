@@ -110,6 +110,12 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+## v1.7.1 pre-release
+
+- Pre-release channel finds newest actual pre-release, not newest overall release
+- Set VERSION to 1.7.1
+- Bump to 1.7.1 for pre-release -- badge dedup and lib grid fixes
+- Game page and library grid ProtonDB tier badges (v1.7.0)
 - Use image URL to detect portrait vs wide tiles
 - Add library grid ProtonDB tier badges with persistent cache
 - Sync release-derived files for 1.6.8
