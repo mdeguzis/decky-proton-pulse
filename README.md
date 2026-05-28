@@ -1,28 +1,5 @@
 # Decky Proton Pulse
 
-## How This Compares to Other Decky Plugins
-
-The closest alternative is [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) by OMGDuke, which was archived in June 2025. Proton Pulse was inspired by that project and adds hardware-aware scoring, launch-option management, report submission, cloud sync, and more.
-
-| Feature | Proton Pulse | ProtonDB Badges (archived) |
-|---|---|---|
-| ProtonDB tier badge on game page | Yes | Yes |
-| Tier badges on library grid tiles | Yes | No |
-| Launch option apply (no copy/paste) | Yes | No |
-| Hardware-aware report scoring | Yes -- GPU, driver, Proton version, age, tier | No |
-| Native Pulse report submission | Yes | No |
-| Companion website | Yes -- proton-pulse.com | No |
-| Cloud sync (configs + reports) | Yes -- Supabase | No |
-| Saved per-game configurations | Yes | No |
-| Compatibility tool management | Yes -- install/manage Proton/GE | No |
-| Non-Steam game support (Heroic, GOG, etc.) | Yes -- resolves to Steam store ID | No |
-| Self-updater (built-in) | Yes -- GitHub Releases, no store needed | No (Decky store only) |
-| Decky store availability | No (not submitted) | Yes (was in store) |
-| Translation support | 19 languages (build-tracked) | 24+ languages (Crowdin) |
-| Active maintenance | Yes | No (archived June 2025) |
-
----
-
 | Status | OS Version |
 |---|---|
 | [![Ubuntu Build](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml/badge.svg)](https://github.com/mdeguzis/decky-proton-pulse/actions/workflows/autobuild.yml) | [![Ubuntu OS](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/os-ubuntu.json&cacheSeconds=86400)](https://mdeguzis.github.io/decky-proton-pulse/) |
@@ -47,54 +24,6 @@ Browse community reports, Pulse configs, and per-game compatibility data on the 
 Coverage policy: overall Python and TypeScript coverage must stay at or above `90%`, and pull requests must keep changed-line coverage at `95%` or higher.
 
 ---
-
-## Features
-
-* **ProtonDB report fetching** - pulls from cached, mirrored, and live ProtonDB sources so the plugin still has something useful to show when one source comes up empty
-* **Native Pulse reports** - submit your own compatibility report directly from the plugin; hardware (CPU, GPU, RAM, VRAM, driver, kernel, OS, resolution) is captured automatically so you only need to pick a rating and Proton version
-* **Dynamic ProtonDB hardware scoring & filtering** - ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier so results match your exact setup, not just the general tier
-* **Steam Proton launch option management (no copy/paste)** - apply, review, edit, and clear launch options directly from the Steam Deck UI without a keyboard
-* **Saved configurations** - keep reusable per-game setups with custom variables and a live launch preview
-* **Compatibility tool management** - browse, install, refresh, and manage Proton and GE versions without leaving the plugin
-* **Detailed report browsing** - open full report cards with filters, diagnostics, vote counts, and score breakdowns
-* **ProtonDB contribution helpers** - vote on reports and prep system info for ProtonDB submissions from inside the plugin
-* **Game library badge** - floating tier badge (PLATINUM/GOLD/etc.) injected into the game page header; for non-Steam games with a resolved Steam store match, shows the tier badge alongside the launcher source label (Heroic, Epic, GOG, etc.)
-* **Store page badge** - Proton Pulse icon badge injected into the Steam store page header when browsing a game's store page in the embedded browser
-* **Search results hint** - Y-button gamepad hint appears at the bottom of the screen when a search result tile is focused, letting you jump straight to Proton Pulse for that game without opening the library first
-* **Non-Steam game support** - resolves non-Steam shortcuts (Heroic, Lutris, Bottles, itch.io, etc.) to their matching Steam store app ID for accurate ProtonDB data and report lookup
-* **Library guard** - report action buttons (apply, edit, upload, clear, vote) are disabled for games not in the user's library, with a visible "Not in library" notice at the top of the manage-game tab
-* **System detection** - detects CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions automatically
-* **Sidebar tools** - quick access to settings, logs, cache tools, and plugin controls from the Decky panel
-* **Translations** - interface support for 19 languages, with coverage tracked in generated build metrics
-* **Diagnostics and logging** - built-in logs, cache inspection, performance metrics, and backend troubleshooting support
-
-## Screenshots
-
-see: [UI screenshot gallery](https://github.com/mdeguzis/decky-proton-pulse/wiki/UI-Screenshot-Gallery)
-
----
-
-## How Proton Pulse Works -- Apply ProtonDB Launch Options Without Copy/Paste
-
-Getting Proton launch options right usually means opening ProtonDB, reading a pile of reports, guessing which ones match your hardware, and then copying flags into Steam by hand. Proton Pulse handles that from the Steam Deck UI:
-
-1. Open the plugin from the **Quick Access sidebar**, navigate to a game in your library, or browse Steam search results -- a Y-button hint lets you jump straight to a game's Proton data without leaving search.
-2. The plugin fetches ProtonDB reports and scores them against your GPU, driver, and Proton version.
-3. Pick a report and press **Apply**. Proton Pulse writes the launch options straight to that game through Steam's CEF API.
-
-Tier badges appear directly on game library pages and Steam store pages so you know compatibility at a glance. Non-Steam games (Heroic, Lutris, Epic, GOG, etc.) are resolved to their Steam store counterpart for accurate report data.
-
-## Optional Proton Pulse Account Link
-
-Linking the Decky plugin to a Proton Pulse account is optional. The plugin works without it for local report browsing, scoring, and launch-option management.
-
-- **On the website:** Steam login is only the sign-in method for your Proton Pulse account.
-- **In the Decky plugin:** linking uses a Proton Pulse install ID plus a short link code.
-- **Privacy boundary:** the plugin does not upload Steam profile names or Steam usernames, and Steam auth is not used as the plugin identity.
-
-After linking, uploads from that Decky install can show up as yours on the website, and the website can manage synced systems and reports for the same Proton Pulse user.
-
-![Proton Pulse account linking in Decky settings](docs/assets/proton-pulse-account-linking.png)
 
 ## Installation -- Decky Loader Plugin Setup for Steam Deck
 
@@ -169,6 +98,77 @@ Proton Pulse is built for [Decky Loader](https://github.com/SteamDeckHomebrew/de
 | [Decky Loader for Windows](https://github.com/ACCESS-DENIIED/Decky-Loader-For-Windows) | Windows | Yes (AFAIK) | Community port; not officially tested |
 | [Condenser](https://github.com/kmturley/condenser) | TBD | WIP | Plugin API not yet finalized |
 | [Millennium](https://github.com/SteamClientHomebrew/Millennium) | SteamOS / Windows | No | Different plugin model; not compatible |
+
+---
+
+## Features
+
+* **ProtonDB report fetching** - pulls from cached, mirrored, and live ProtonDB sources so the plugin still has something useful to show when one source comes up empty
+* **Native Pulse reports** - submit your own compatibility report directly from the plugin; hardware (CPU, GPU, RAM, VRAM, driver, kernel, OS, resolution) is captured automatically so you only need to pick a rating and Proton version
+* **Dynamic ProtonDB hardware scoring & filtering** - ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier so results match your exact setup, not just the general tier
+* **Steam Proton launch option management (no copy/paste)** - apply, review, edit, and clear launch options directly from the Steam Deck UI without a keyboard
+* **Saved configurations** - keep reusable per-game setups with custom variables and a live launch preview
+* **Compatibility tool management** - browse, install, refresh, and manage Proton and GE versions without leaving the plugin
+* **Detailed report browsing** - open full report cards with filters, diagnostics, vote counts, and score breakdowns
+* **ProtonDB contribution helpers** - vote on reports and prep system info for ProtonDB submissions from inside the plugin
+* **Game library badge** - floating tier badge (PLATINUM/GOLD/etc.) injected into the game page header; for non-Steam games with a resolved Steam store match, shows the tier badge alongside the launcher source label (Heroic, Epic, GOG, etc.)
+* **Store page badge** - Proton Pulse icon badge injected into the Steam store page header when browsing a game's store page in the embedded browser
+* **Search results hint** - Y-button gamepad hint appears at the bottom of the screen when a search result tile is focused, letting you jump straight to Proton Pulse for that game without opening the library first
+* **Non-Steam game support** - resolves non-Steam shortcuts (Heroic, Lutris, Bottles, itch.io, etc.) to their matching Steam store app ID for accurate ProtonDB data and report lookup
+* **Library guard** - report action buttons (apply, edit, upload, clear, vote) are disabled for games not in the user's library, with a visible "Not in library" notice at the top of the manage-game tab
+* **System detection** - detects CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions automatically
+* **Sidebar tools** - quick access to settings, logs, cache tools, and plugin controls from the Decky panel
+* **Translations** - interface support for 19 languages, with coverage tracked in generated build metrics
+* **Diagnostics and logging** - built-in logs, cache inspection, performance metrics, and backend troubleshooting support
+
+## Screenshots
+
+see: [UI screenshot gallery](https://github.com/mdeguzis/decky-proton-pulse/wiki/UI-Screenshot-Gallery)
+
+## How Proton Pulse Works -- Apply ProtonDB Launch Options Without Copy/Paste
+
+Getting Proton launch options right usually means opening ProtonDB, reading a pile of reports, guessing which ones match your hardware, and then copying flags into Steam by hand. Proton Pulse handles that from the Steam Deck UI:
+
+1. Open the plugin from the **Quick Access sidebar**, navigate to a game in your library, or browse Steam search results -- a Y-button hint lets you jump straight to a game's Proton data without leaving search.
+2. The plugin fetches ProtonDB reports and scores them against your GPU, driver, and Proton version.
+3. Pick a report and press **Apply**. Proton Pulse writes the launch options straight to that game through Steam's CEF API.
+
+Tier badges appear directly on game library pages and Steam store pages so you know compatibility at a glance. Non-Steam games (Heroic, Lutris, Epic, GOG, etc.) are resolved to their Steam store counterpart for accurate report data.
+
+## Optional Proton Pulse Account Link
+
+Linking the Decky plugin to a Proton Pulse account is optional. The plugin works without it for local report browsing, scoring, and launch-option management.
+
+- **On the website:** Steam login is only the sign-in method for your Proton Pulse account.
+- **In the Decky plugin:** linking uses a Proton Pulse install ID plus a short link code.
+- **Privacy boundary:** the plugin does not upload Steam profile names or Steam usernames, and Steam auth is not used as the plugin identity.
+
+After linking, uploads from that Decky install can show up as yours on the website, and the website can manage synced systems and reports for the same Proton Pulse user.
+
+![Proton Pulse account linking in Decky settings](docs/assets/proton-pulse-account-linking.png)
+
+---
+
+## How This Compares to Other Decky Plugins
+
+The closest alternative is [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) by OMGDuke, which was archived in June 2025. Proton Pulse was inspired by that project and adds hardware-aware scoring, launch-option management, report submission, cloud sync, and more.
+
+| Feature | Proton Pulse | ProtonDB Badges (archived) |
+|---|---|---|
+| ProtonDB tier badge on game page | Yes | Yes |
+| Tier badges on library grid tiles | Yes | No |
+| Launch option apply (no copy/paste) | Yes | No |
+| Hardware-aware report scoring | Yes -- GPU, driver, Proton version, age, tier | No |
+| Native Pulse report submission | Yes | No |
+| Companion website | Yes -- proton-pulse.com | No |
+| Cloud sync (configs + reports) | Yes -- Supabase | No |
+| Saved per-game configurations | Yes | No |
+| Compatibility tool management | Yes -- install/manage Proton/GE | No |
+| Non-Steam game support (Heroic, GOG, etc.) | Yes -- resolves to Steam store ID | No |
+| Self-updater (built-in) | Yes -- GitHub Releases, no store needed | No (Decky store only) |
+| Decky store availability | No (not submitted) | Yes (was in store) |
+| Translation support | 19 languages (build-tracked) | 24+ languages (Crowdin) |
+| Active maintenance | Yes | No (archived June 2025) |
 
 ## Documentation
 
