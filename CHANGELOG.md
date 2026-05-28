@@ -2,6 +2,14 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.7.1
+
+- fix(game-page-badge): useLayoutEffect dedup eliminates duplicate hero badges from secondary React fiber instances
+- fix(library-grid-badges): skip tile scan when game details page is open (appDetailsClasses.InnerContainer detection) -- prevents lib badges bleeding onto game page
+- fix(library-grid-badges): filter library_hero and library_header URLs from tile scan
+- fix(library-grid-badges): minimal badge sized to match Steam Deck Verified badge circles (15px SVG + 4px padding)
+- feat(i18n): full translations for badge style settings across all 19 locales
+
 ## v1.7.0
 
 - feat: show ProtonDB tier badges on library grid tiles (home page and installed/all games views)
