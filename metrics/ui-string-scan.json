@@ -370,126 +370,126 @@
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 423,
+      "line": 415,
       "column": 52,
       "kind": "string",
       "text": "Could not auto-restart. Restart Decky Loader or Steam manually."
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 878,
+      "line": 870,
       "column": 76,
       "kind": "jsx",
       "text": "Update failed:"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 882,
+      "line": 874,
       "column": 13,
       "kind": "jsx",
       "text": "Up to date (latest"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 882,
+      "line": 874,
       "column": 47,
       "kind": "jsx",
       "text": ": v"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 887,
+      "line": 879,
       "column": 13,
       "kind": "jsx",
       "text": "Update available: v"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 911,
+      "line": 889,
       "column": 38,
       "kind": "jsx",
       "text": "installed. Restart Decky Loader or Steam to apply."
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 917,
+      "line": 895,
       "column": 41,
       "kind": "string",
       "text": "Release"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 918,
+      "line": 896,
       "column": 45,
       "kind": "string",
       "text": "Pre-release"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 929,
+      "line": 907,
       "column": 61,
       "kind": "jsx",
       "text": "Installing..."
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 993,
+      "line": 971,
       "column": 19,
       "kind": "string",
       "text": "Auto-sync to cloud"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 994,
+      "line": 972,
       "column": 25,
       "kind": "string",
       "text": "Automatically back up configs and plugin settings when they change"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 1006,
+      "line": 984,
       "column": 19,
       "kind": "string",
       "text": "Cloud sync refresh rate"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 1007,
+      "line": 985,
       "column": 25,
       "kind": "string",
       "text": "How often to re-check cloud sync status in the background"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 1012,
+      "line": 990,
       "column": 26,
       "kind": "string",
       "text": "Disabled"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 1013,
+      "line": 991,
       "column": 26,
       "kind": "string",
       "text": "1 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 1014,
+      "line": 992,
       "column": 26,
       "kind": "string",
       "text": "5 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 1015,
+      "line": 993,
       "column": 26,
       "kind": "string",
       "text": "30 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 1016,
+      "line": 994,
       "column": 26,
       "kind": "string",
       "text": "1 hour"
