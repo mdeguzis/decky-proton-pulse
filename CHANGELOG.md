@@ -114,6 +114,10 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+## v1.7.2 pre-release
+
+- Bump to 1.7.2 -- updater pre-release channel fix
+
 ## v1.7.1 pre-release
 
 - Pre-release channel finds newest actual pre-release, not newest overall release
