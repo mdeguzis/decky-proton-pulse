@@ -81,13 +81,16 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
             }
 
         if channel == "pre-release":
-            # grab first release from the list (includes prereleases)
+            # Find the newest release that is actually marked as a pre-release.
+            # Taking releases[0] would pick the newest overall (often a stable
+            # release) and incorrectly suggest a downgrade when no newer
+            # pre-release exists yet.
             releases = curl_json(
                 _ALL_RELEASES_URL,
                 headers=["Accept: application/vnd.github.v3+json"],
                 timeout=15,
             )
-            data = releases[0] if releases else {}
+            data = next((r for r in releases if r.get("prerelease")), releases[0] if releases else {})
         else:
             # stable release only
             data = curl_json(
