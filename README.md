@@ -46,6 +46,28 @@ Browse community reports, Pulse configs, and per-game compatibility data on the 
 
 Coverage policy: overall Python and TypeScript coverage must stay at or above `90%`, and pull requests must keep changed-line coverage at `95%` or higher.
 
+---
+
+## Features
+
+* **ProtonDB report fetching** - pulls from cached, mirrored, and live ProtonDB sources so the plugin still has something useful to show when one source comes up empty
+* **Native Pulse reports** - submit your own compatibility report directly from the plugin; hardware (CPU, GPU, RAM, VRAM, driver, kernel, OS, resolution) is captured automatically so you only need to pick a rating and Proton version
+* **Dynamic ProtonDB hardware scoring & filtering** - ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier so results match your exact setup, not just the general tier
+* **Steam Proton launch option management (no copy/paste)** - apply, review, edit, and clear launch options directly from the Steam Deck UI without a keyboard
+* **Saved configurations** - keep reusable per-game setups with custom variables and a live launch preview
+* **Compatibility tool management** - browse, install, refresh, and manage Proton and GE versions without leaving the plugin
+* **Detailed report browsing** - open full report cards with filters, diagnostics, vote counts, and score breakdowns
+* **ProtonDB contribution helpers** - vote on reports and prep system info for ProtonDB submissions from inside the plugin
+* **Game library badge** - floating tier badge (PLATINUM/GOLD/etc.) injected into the game page header; for non-Steam games with a resolved Steam store match, shows the tier badge alongside the launcher source label (Heroic, Epic, GOG, etc.)
+* **Store page badge** - Proton Pulse icon badge injected into the Steam store page header when browsing a game's store page in the embedded browser
+* **Search results hint** - Y-button gamepad hint appears at the bottom of the screen when a search result tile is focused, letting you jump straight to Proton Pulse for that game without opening the library first
+* **Non-Steam game support** - resolves non-Steam shortcuts (Heroic, Lutris, Bottles, itch.io, etc.) to their matching Steam store app ID for accurate ProtonDB data and report lookup
+* **Library guard** - report action buttons (apply, edit, upload, clear, vote) are disabled for games not in the user's library, with a visible "Not in library" notice at the top of the manage-game tab
+* **System detection** - detects CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions automatically
+* **Sidebar tools** - quick access to settings, logs, cache tools, and plugin controls from the Decky panel
+* **Translations** - interface support for 19 languages, with coverage tracked in generated build metrics
+* **Diagnostics and logging** - built-in logs, cache inspection, performance metrics, and backend troubleshooting support
+
 ## Screenshots
 
 see: [UI screenshot gallery](https://github.com/mdeguzis/decky-proton-pulse/wiki/UI-Screenshot-Gallery)
@@ -74,25 +96,90 @@ After linking, uploads from that Decky install can show up as yours on the websi
 
 ![Proton Pulse account linking in Decky settings](docs/assets/proton-pulse-account-linking.png)
 
-## Features
+## Installation -- Decky Loader Plugin Setup for Steam Deck
 
-* **ProtonDB report fetching** - pulls from cached, mirrored, and live ProtonDB sources so the plugin still has something useful to show when one source comes up empty
-* **Native Pulse reports** - submit your own compatibility report directly from the plugin; hardware (CPU, GPU, RAM, VRAM, driver, kernel, OS, resolution) is captured automatically so you only need to pick a rating and Proton version
-* **Dynamic ProtonDB hardware scoring & filtering** - ranks reports by GPU vendor, driver version, Proton build, report age, and compatibility tier so results match your exact setup, not just the general tier
-* **Steam Proton launch option management (no copy/paste)** - apply, review, edit, and clear launch options directly from the Steam Deck UI without a keyboard
-* **Saved configurations** - keep reusable per-game setups with custom variables and a live launch preview
-* **Compatibility tool management** - browse, install, refresh, and manage Proton and GE versions without leaving the plugin
-* **Detailed report browsing** - open full report cards with filters, diagnostics, vote counts, and score breakdowns
-* **ProtonDB contribution helpers** - vote on reports and prep system info for ProtonDB submissions from inside the plugin
-* **Game library badge** - floating tier badge (PLATINUM/GOLD/etc.) injected into the game page header; for non-Steam games with a resolved Steam store match, shows the tier badge alongside the launcher source label (Heroic, Epic, GOG, etc.)
-* **Store page badge** - Proton Pulse icon badge injected into the Steam store page header when browsing a game's store page in the embedded browser
-* **Search results hint** - Y-button gamepad hint appears at the bottom of the screen when a search result tile is focused, letting you jump straight to Proton Pulse for that game without opening the library first
-* **Non-Steam game support** - resolves non-Steam shortcuts (Heroic, Lutris, Bottles, itch.io, etc.) to their matching Steam store app ID for accurate ProtonDB data and report lookup
-* **Library guard** - report action buttons (apply, edit, upload, clear, vote) are disabled for games not in the user's library, with a visible "Not in library" notice at the top of the manage-game tab
-* **System detection** - detects CPU, RAM, GPU, driver, kernel, distro, and custom Proton versions automatically
-* **Sidebar tools** - quick access to settings, logs, cache tools, and plugin controls from the Decky panel
-* **Translations** - interface support for 19 languages, with coverage tracked in generated build metrics
-* **Diagnostics and logging** - built-in logs, cache inspection, performance metrics, and backend troubleshooting support
+### Requirements
+
+* Steam Deck with [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) installed
+* Node.js 24 and pnpm v9+ (for building from source)
+* Python 3.x with [uv](https://github.com/astral-sh/uv)
+
+### Install From Release ZIP
+
+Use this route if you just want a published build and do not need the source tree.
+
+1. Download the latest plugin ZIP from the [Releases page](https://github.com/mdeguzis/decky-proton-pulse/releases).
+2. Open Decky Loader on your Steam Deck.
+3. Use Decky Loader's manual ZIP install flow and select the downloaded release archive.
+4. Restart Decky Loader or Steam if the plugin does not appear immediately.
+
+### Install From Source
+
+Use this route if you want to build locally, tweak the plugin, or deploy straight to your Steam Deck.
+
+```bash
+git clone https://github.com/mdeguzis/decky-proton-pulse.git
+cd decky-proton-pulse
+make setup
+make build
+DECK_IP=192.168.1.x make deploy
+```
+
+Useful variants:
+
+```bash
+make watch
+DECK_IP=192.168.1.x make deploy-reload
+```
+
+See the [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) for the full setup and deployment workflow.
+
+### Quick Start
+
+```bash
+git clone https://github.com/mdeguzis/decky-proton-pulse.git
+cd decky-proton-pulse
+bash scripts/dev-setup.sh
+```
+
+Versioning uses a single source of truth:
+
+- `VERSION`
+
+Normal build and deploy commands sync that value into `package.json` and `pyproject.toml` automatically.
+
+### Updating the Plugin
+
+Proton Pulse has a built-in updater on the **About** tab (the last tab in the plugin sidebar).
+
+1. Open the plugin and navigate to the About tab.
+2. Press **Check for Updates** -- the plugin queries the GitHub Releases API and shows the latest version.
+3. If an update is available, press **Update to vX.Y.Z** -- the ZIP downloads in the background, identical to the Proton-GE installer in the Compatibility Tools tab.
+4. When the download and extraction finish, press **Reload Plugin** -- the plugin attempts a hot-reload via Decky Loader first (no Steam restart needed); if that is unavailable it falls back to a full Steam restart.
+
+> **Note:** Because Proton Pulse is not in the Decky store, it cannot use the store's automatic update path. The built-in updater provides an equivalent experience from within the plugin itself.
+
+### Plugin Loader Compatibility
+
+Proton Pulse is built for [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader). Other plugin loaders for the Steam Deck ecosystem are listed below.
+
+| Loader | Platform | Status | Notes |
+|---|---|---|---|
+| [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) | SteamOS / Linux | Yes | Primary target |
+| [Decky Loader for Windows](https://github.com/ACCESS-DENIIED/Decky-Loader-For-Windows) | Windows | Yes (AFAIK) | Community port; not officially tested |
+| [Condenser](https://github.com/kmturley/condenser) | TBD | WIP | Plugin API not yet finalized |
+| [Millennium](https://github.com/SteamClientHomebrew/Millennium) | SteamOS / Windows | No | Different plugin model; not compatible |
+
+## Documentation
+
+* [Proton Pulse Site](https://www.proton-pulse.com/) - browse community reports, Pulse configs, and per-game data
+* [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) - setup, build, deploy, testing, CEF debugging
+* [Architecture](https://github.com/mdeguzis/decky-proton-pulse/wiki/Architecture) - file-by-file code breakdown and ownership boundaries
+* [System Design](https://github.com/mdeguzis/decky-proton-pulse/wiki/System-Design) - end-to-end flow diagrams, data ownership, scoring model
+* [Scoring Algorithm](https://github.com/mdeguzis/decky-proton-pulse/wiki/Scoring-Algorithm) - how reports are weighted and ranked
+* [API Reference](https://github.com/mdeguzis/decky-proton-pulse/wiki/API-Reference) - Python callables and TypeScript interfaces
+* [ProtonDB Data Resolution](https://github.com/mdeguzis/decky-proton-pulse/wiki/ProtonDB-Data-Resolution) - app ID resolution, mirror misses, and live fallback
+* [Local dev notes](docs/dev/toolchain-and-ci.md) - Node 24, CI, remote Deck helpers, and CEF captures
 
 ## Translation Coverage
 
@@ -125,93 +212,6 @@ Proton Pulse supports 19 languages. Translation coverage is measured during buil
 <!-- translation-coverage:end -->
 
 Want to help translate? See `src/lib/translations/` for the translation files.
-
-## Installation -- Decky Loader Plugin Setup for Steam Deck
-
-Proton Pulse currently supports two installation routes:
-
-### Install From Source
-
-Use this route if you want to build locally, tweak the plugin, or deploy straight to your Steam Deck.
-
-```bash
-git clone https://github.com/mdeguzis/decky-proton-pulse.git
-cd decky-proton-pulse
-make setup
-make build
-DECK_IP=192.168.1.x make deploy
-```
-
-Useful variants:
-
-```bash
-make watch
-DECK_IP=192.168.1.x make deploy-reload
-```
-
-See the [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) for the full setup and deployment workflow.
-
-### Install From Release ZIP
-
-Use this route if you just want a published build and do not need the source tree.
-
-1. Download the latest plugin ZIP from the [Releases page](https://github.com/mdeguzis/decky-proton-pulse/releases).
-2. Open Decky Loader on your Steam Deck.
-3. Use Decky Loader's manual ZIP install flow and select the downloaded release archive.
-4. Restart Decky Loader or Steam if the plugin does not appear immediately.
-
-### Updating the Plugin
-
-Proton Pulse has a built-in updater on the **About** tab (the last tab in the plugin sidebar).
-
-1. Open the plugin and navigate to the About tab.
-2. Press **Check for Updates** -- the plugin queries the GitHub Releases API and shows the latest version.
-3. If an update is available, press **Update to vX.Y.Z** -- the ZIP downloads in the background with a live progress bar (percentage, bytes transferred, and ETA), identical to the Proton-GE installer in the Compatibility Tools tab.
-4. When the download and extraction finish, press **Reload Plugin** -- the plugin attempts a hot-reload via Decky Loader first (no Steam restart needed); if that is unavailable it falls back to a full Steam restart.
-
-> **Note:** Because Proton Pulse is not in the Decky store, it cannot use the store's automatic update path. The built-in updater provides an equivalent experience from within the plugin itself.
-
-### Quick Start
-
-```bash
-git clone https://github.com/mdeguzis/decky-proton-pulse.git
-cd decky-proton-pulse
-bash scripts/dev-setup.sh
-```
-
-Versioning uses a single source of truth:
-
-- `VERSION`
-
-Normal build and deploy commands sync that value into `package.json` and `pyproject.toml` automatically.
-
-### Plugin Loader Compatibility
-
-Proton Pulse is built for [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader). Other plugin loaders for the Steam Deck ecosystem are listed below.
-
-| Loader | Platform | Status | Notes |
-|---|---|---|---|
-| [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) | SteamOS / Linux | Yes | Primary target |
-| [Decky Loader for Windows](https://github.com/ACCESS-DENIIED/Decky-Loader-For-Windows) | Windows | Yes (AFAIK) | Community port; not officially tested |
-| [Condenser](https://github.com/kmturley/condenser) | TBD | WIP | Plugin API not yet finalized |
-| [Millennium](https://github.com/SteamClientHomebrew/Millennium) | SteamOS / Windows | No | Different plugin model; not compatible |
-
-### Requirements
-
-* Steam Deck with [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) installed
-* Node.js 24 and pnpm v9+ (for building from source)
-* Python 3.x with [uv](https://github.com/astral-sh/uv)
-
-## Documentation
-
-* [Proton Pulse Site](https://www.proton-pulse.com/) - browse community reports, Pulse configs, and per-game data
-* [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) - setup, build, deploy, testing, CEF debugging
-* [Architecture](https://github.com/mdeguzis/decky-proton-pulse/wiki/Architecture) - file-by-file code breakdown and ownership boundaries
-* [System Design](https://github.com/mdeguzis/decky-proton-pulse/wiki/System-Design) - end-to-end flow diagrams, data ownership, scoring model
-* [Scoring Algorithm](https://github.com/mdeguzis/decky-proton-pulse/wiki/Scoring-Algorithm) - how reports are weighted and ranked
-* [API Reference](https://github.com/mdeguzis/decky-proton-pulse/wiki/API-Reference) - Python callables and TypeScript interfaces
-* [ProtonDB Data Resolution](https://github.com/mdeguzis/decky-proton-pulse/wiki/ProtonDB-Data-Resolution) - app ID resolution, mirror misses, and live fallback
-* [Local dev notes](docs/dev/toolchain-and-ci.md) - Node 24, CI, remote Deck helpers, and CEF captures
 
 ## Troubleshooting
 
