@@ -2,6 +2,10 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.7.2
+
+- fix(updater): pre-release channel now finds the newest actual pre-release entry instead of the newest release overall, preventing false "downgrade" suggestions when the latest overall release is a stable build
+
 ## v1.7.1
 
 - fix(game-page-badge): useLayoutEffect dedup eliminates duplicate hero badges from secondary React fiber instances
