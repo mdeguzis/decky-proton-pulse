@@ -4,7 +4,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.7.3
 
-- fix(updater): remove download progress bar -- updates are fast enough that a simple status text suffices
+- Sync ui-string-scan metrics
+- Remove download progress bar, use simple status text
 
 ## v1.7.2
 
