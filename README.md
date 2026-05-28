@@ -153,7 +153,7 @@ After linking, uploads from that Decky install can show up as yours on the websi
 
 Several Decky plugins cover subsets of what Proton Pulse does. The table below covers the most relevant ones.
 
-| Feature | [Proton Pulse](https://github.com/mdeguzis/decky-proton-pulse) | [ProtonDB Badges Extended](https://github.com/bschelst/protondb-decky) | [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) |
+| Feature | [Proton Pulse](https://github.com/mdeguzis/decky-proton-pulse) | [ProtonDB Badges](https://github.com/bschelst/protondb-decky) | [Proton Launch](https://github.com/moi952/decky-proton-launch) |
 |---|---|---|---|
 | ProtonDB tier badge on game page | Yes -- Full/Compact/Minimal/Off styles, atom icon, Native Linux badge, non-Steam launcher badge | Yes -- multiple sizes and positions | No |
 | Tier badges on library grid tiles | Yes -- Full/Compact/Minimal/Off styles, persistent cache | Yes -- small atom icons (green/red/gray) | No |
