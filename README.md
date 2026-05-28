@@ -151,24 +151,26 @@ After linking, uploads from that Decky install can show up as yours on the websi
 
 ## How This Compares to Other Decky Plugins
 
-The closest active alternative is [ProtonDB Badges Extended (bschelst/protondb-decky)](https://github.com/bschelst/protondb-decky), an actively maintained fork of the original OMGDuke plugin (archived June 2025). It focuses on badge display and report browsing. Proton Pulse adds hardware-aware scoring, direct launch option management, cloud sync, saved configurations, and more.
+Several Decky plugins cover subsets of what Proton Pulse does. The table below covers the most relevant ones.
 
-| Feature | Proton Pulse | ProtonDB Badges Extended |
-|---|---|---|
-| ProtonDB tier badge on game page | Yes | Yes -- multiple sizes and positions |
-| Tier badges on library grid tiles | Yes | Yes -- small atom icons (green/red/gray) |
-| Launch option apply (no copy/paste) | Yes -- writes directly to Steam | View + clipboard copy only |
-| Hardware-aware report scoring | Yes -- GPU, driver, Proton version, age, tier | No -- no adaptive scoring |
-| Report submission from plugin | Yes -- full native Pulse report | Yes -- ProtonDB submission from Game Mode |
-| Companion website | Yes -- proton-pulse.com | Yes -- protondb.schelstraete.org |
-| Cloud sync (configs + reports) | Yes -- Supabase | No -- local cache only |
-| Saved per-game configurations | Yes | No |
-| Compatibility tool management | Yes -- install/manage Proton/GE | No |
-| Non-Steam game support (Heroic, GOG, etc.) | Yes -- resolves to Steam store ID | No |
-| Self-updater (built-in) | Yes -- GitHub Releases | No -- Decky store or manual ZIP |
-| Decky store availability | No (not submitted) | Yes |
-| Translation support | 19 languages (build-tracked) | 32 languages |
-| Active maintenance | Yes | Yes |
+| Feature | [Proton Pulse](https://github.com/mdeguzis/decky-proton-pulse) | [ProtonDB Badges Extended](https://github.com/bschelst/protondb-decky) | [Wine Cellar](https://github.com/FlashyReese/decky-wine-cellar) | [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) |
+|---|---|---|---|---|
+| ProtonDB tier badge on game page | Yes | Yes -- multiple sizes and positions | No | No |
+| Tier badges on library grid tiles | Yes | Yes -- small atom icons (green/red/gray) | No | No |
+| Launch option apply (no copy/paste) | Yes -- ProtonDB-sourced, writes to Steam | Clipboard copy only | No | Yes -- preset-based (FSR, DLSS, DXVK, etc.) |
+| Hardware-aware report scoring | Yes -- GPU, driver, Proton version, age, tier | No | No | No |
+| Report submission from plugin | Yes -- full native Pulse report | Yes -- ProtonDB submission from Game Mode | No | No |
+| Companion website | Yes -- proton-pulse.com | Yes -- protondb.schelstraete.org | No | No |
+| Cloud sync (configs + reports) | Yes -- Supabase | No -- local cache only | No | No |
+| Saved per-game configurations | Yes | No | No | Yes -- per-game profiles |
+| Compatibility tool management | Yes -- install/manage Proton/GE | No | Yes -- Proton GE, Luxtorpeda, Boxtron | No |
+| Non-Steam game support (Heroic, GOG, etc.) | Yes -- resolves to Steam store ID | No | No | No |
+| Self-updater (built-in) | Yes -- GitHub Releases | No | No | No |
+| Decky store availability | No (not submitted) | Yes | Yes | Yes |
+| Translation support | 19 languages (build-tracked) | 32 languages | -- | -- |
+| Active maintenance | Yes | Yes | Yes | Yes |
+
+> Additional forks of these plugins exist outside the Decky store and may offer further variations. The table reflects the primary/canonical repo for each project.
 
 ## Documentation
 
