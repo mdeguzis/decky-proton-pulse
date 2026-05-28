@@ -29,19 +29,26 @@ see: [UI screenshot gallery](https://github.com/mdeguzis/decky-proton-pulse/wiki
 
 ---
 
-## Acknowledgments & Credits
+## How This Compares to Other Decky Plugins
 
-Proton Pulse would not exist without the open-source projects below. Many pieces of this project were inspired by their work. 
+The closest alternative is [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) by OMGDuke, which was archived in June 2025. Proton Pulse was inspired by that project and adds hardware-aware scoring, launch-option management, report submission, cloud sync, and more.
 
-| Project | Author | License |
+| Feature | Proton Pulse | ProtonDB Badges (archived) |
 |---|---|---|
-| [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) | OMGDuke | GPL-3.0 |
-| [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) | moi952 | BSD-3-Clause |
-| [Wine Cellar (decky-wine-cellar)](https://github.com/FlashyReese/decky-wine-cellar) | FlashyReese | MIT |
-| [SteamGridDB Decky Plugin (decky-steamgriddb)](https://github.com/SteamGridDB/decky-steamgriddb) | SteamGridDB | GPL-3.0-or-later |
-| [Decky Plugin Template](https://github.com/SteamDeckHomebrew/decky-plugin-template) | SteamDeckHomebrew | BSD-3-Clause |
-
-If you find Proton Pulse useful, please consider starring or contributing to these upstream projects as well.
+| ProtonDB tier badge on game page | Yes | Yes |
+| Tier badges on library grid tiles | Yes | No |
+| Launch option apply (no copy/paste) | Yes | No |
+| Hardware-aware report scoring | Yes -- GPU, driver, Proton version, age, tier | No |
+| Native Pulse report submission | Yes | No |
+| Companion website | Yes -- proton-pulse.com | No |
+| Cloud sync (configs + reports) | Yes -- Supabase | No |
+| Saved per-game configurations | Yes | No |
+| Compatibility tool management | Yes -- install/manage Proton/GE | No |
+| Non-Steam game support (Heroic, GOG, etc.) | Yes -- resolves to Steam store ID | No |
+| Self-updater (built-in) | Yes -- GitHub Releases, no store needed | No (Decky store only) |
+| Decky store availability | No (not submitted) | Yes (was in store) |
+| Translation support | 19 languages (build-tracked) | 24+ languages (Crowdin) |
+| Active maintenance | Yes | No (archived June 2025) |
 
 ---
 
@@ -237,6 +244,20 @@ Tips:
 * Keep `make get-logs` handy in another terminal so you can compare frontend console behavior with the plugin log.
 * If you are debugging a game page patch, open the game page first, then refresh the target list so the correct CEF view is visible.
 * Use the inspector console to confirm route changes, DOM anchor selection, and injected button state when UI patches do not show up where expected.
+
+## Acknowledgments & Credits
+
+Proton Pulse would not exist without the open-source projects below. Many pieces of this project were inspired by their work.
+
+| Project | Author | License |
+|---|---|---|
+| [ProtonDB Badges (protondb-decky)](https://github.com/OMGDuke/protondb-decky) | OMGDuke | GPL-3.0 |
+| [Decky Proton Launch](https://github.com/moi952/decky-proton-launch) | moi952 | BSD-3-Clause |
+| [Wine Cellar (decky-wine-cellar)](https://github.com/FlashyReese/decky-wine-cellar) | FlashyReese | MIT |
+| [SteamGridDB Decky Plugin (decky-steamgriddb)](https://github.com/SteamGridDB/decky-steamgriddb) | SteamGridDB | GPL-3.0-or-later |
+| [Decky Plugin Template](https://github.com/SteamDeckHomebrew/decky-plugin-template) | SteamDeckHomebrew | BSD-3-Clause |
+
+If you find Proton Pulse useful, please consider starring or contributing to these upstream projects as well.
 
 ## License
 
