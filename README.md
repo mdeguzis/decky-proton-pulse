@@ -157,9 +157,9 @@ Several Decky plugins cover subsets of what Proton Pulse does. The table below c
 |---|---|---|---|
 | ProtonDB tier badge on game page | Yes -- Full/Compact/Minimal/Off styles, atom icon, Native Linux badge, non-Steam launcher badge | Yes -- multiple sizes and positions | No |
 | Tier badges on library grid tiles | Yes -- Full/Compact/Minimal/Off styles, persistent cache | Yes -- small atom icons (green/red/gray) | No |
-| Launch option apply (no copy/paste) | Yes -- ProtonDB-sourced, writes directly to Steam | Clipboard copy only | Yes -- preset-based (FSR, DLSS, DXVK, etc.) |
+| Launch option apply (no copy/paste) | Yes -- ProtonDB-sourced, writes directly to Steam | Clipboard copy only | Yes -- preset-based (FSR, DLSS, DXVK, etc.), writes directly to Steam |
 | Hardware-aware report scoring | Yes -- GPU, driver, Proton version, age, tier | No | No |
-| Report submission from plugin | Yes -- full native Pulse report | Yes -- ProtonDB submission from Game Mode | No |
+| Report submission from plugin | Yes -- full native Pulse report | Opens ProtonDB website (not native) | No |
 | Companion website | Yes -- proton-pulse.com | Yes -- protondb.schelstraete.org | No |
 | Cloud sync (configs + reports) | Yes -- Supabase | No -- local cache only | No |
 | Saved per-game configurations | Yes | No | Yes -- per-game profiles |
