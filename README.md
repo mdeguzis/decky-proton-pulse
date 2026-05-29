@@ -274,3 +274,4 @@ Proton Pulse would not exist without the open-source projects below. Many pieces
 | [Decky Plugin Template](https://github.com/SteamDeckHomebrew/decky-plugin-template) | SteamDeckHomebrew | BSD-3-Clause |
 
 If you find Proton Pulse useful, please consider starring or contributing to these upstream projects as well.
+
