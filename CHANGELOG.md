@@ -126,21 +126,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Release: open editor on generated notes before publishing
 - Dev release: name asset decky-proton-pulse-dev-<sha>.zip
-- Dont prepend 'v' to non-numeric version labels (Developer channel)
-- Trailing newline to test developer update channel
-- Add Developer rolling update channel + make github-dev-release
-- Add 10 new translation languages, raise min coverage to 95%
-- Rename Upload to Submit in report flow; correct README comparison table
-- Shorten names for MD table
-- Remove Wine Cellar column, expand Proton Pulse badge descriptions from v1.7.0 commits
-- Expand comparison table -- add Wine Cellar and Decky Proton Launch columns, link all headers
-- Update comparison table to active fork bschelst/protondb-decky
-- Reorder README -- badges/intro, install, features, comparison, credits last
-- Reorder README sections logically -- features before installation, credits last
-- Move comparison table to top of README, directly after title
-- Move comparison table above screenshots, credits after license
-- Add plugin comparison table and move credits to end of README
 
 ## v1.7.2 pre-release
 
