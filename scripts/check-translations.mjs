@@ -4,10 +4,10 @@ import { dirname, join } from 'path';
 import ts from 'typescript';
 import { fileURLToPath } from 'url';
 
-// Lowered from 95 to 90 after the 71-string backfill landed (commit c2783aa)
-// without per-language translation. Bring back to 95 once de/es/fr/ja/ko/
-// pt-BR/ru/tr/zh-CN have the new extras keys actually translated.
-const MIN_COVERAGE = 90;
+// 28-language backfill complete (commit forthcoming). All languages now at
+// 99.7-100%; the 0.3% gap on a few langs is the 2 intentionally-English
+// brand strings (Glorious Eggroll, Proton Pulse Website).
+const MIN_COVERAGE = 95;
 const MAX_COVERAGE_DROP = 1.0; // fail if any locale drops more than this % from committed baseline
 const README_START = '<!-- translation-coverage:start -->';
 const README_END = '<!-- translation-coverage:end -->';
