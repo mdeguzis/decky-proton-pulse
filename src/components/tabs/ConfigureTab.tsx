@@ -41,6 +41,30 @@ type SortMode = 'score' | 'votes';
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
+// Resolve a display name for an app id, trying every source Steam exposes.
+// Order matters: caller-supplied appName wins (it came from dispatchNavigate
+// which already did its own lookup), then SteamClient.Apps overview (real
+// Steam apps), then collectionStore (non-Steam shortcuts where
+// GetAppOverviewByAppID can return null), then a plain App <id> as last resort
+function resolveDisplayName(appId: number, appName: string): string {
+  if (appName && appName.trim()) return appName;
+  try {
+    const overview = getSteamAppOverview(appId);
+    const overviewName = overview?.display_name || overview?.strDisplayName || overview?.app_name || overview?.appname;
+    if (typeof overviewName === 'string' && overviewName.trim()) return overviewName;
+    const collection = (globalThis as any).collectionStore?.allAppsCollection;
+    const allApps = Array.isArray(collection?.allApps)
+      ? collection.allApps
+      : collection?.apps && Symbol.iterator in collection.apps
+        ? Array.from(collection.apps)
+        : [];
+    const libraryEntry = allApps.find((app: any) => Number(app?.appid) === appId);
+    const libraryName = libraryEntry?.display_name || libraryEntry?.strDisplayName || libraryEntry?.app_name || libraryEntry?.appname || libraryEntry?.name;
+    if (typeof libraryName === 'string' && libraryName.trim()) return libraryName;
+  } catch { /* steamclient not available, fall through */ }
+  return `App ${appId}`;
+}
+
 const reportKey = (r: CdnReport) => `${r.timestamp}_${r.protonVersion}`;
 
 const FILTER_ORDER: FilterTier[] = ['nvidia', 'amd', 'intel', 'other', 'all'];
@@ -326,15 +350,19 @@ function GameSummaryHeader({
   const isShortcut = isSteamShortcutApp(appId);
   const isDemo = !!demoFullGameAppId;
   const headerAppId = demoFullGameAppId ?? (isShortcut && resolvedSteamAppId ? resolvedSteamAppId : appId);
+  const resolvedName = resolveDisplayName(appId, appName);
   const displayName = isDemo
-    ? `${demoFullGameName || appName} (${t().configure.demo})`
-    : (appName || `App ${appId}`);
+    ? `${demoFullGameName || resolvedName} (${t().configure.demo})`
+    : resolvedName;
   const tierColor = combinedTier && combinedTier.count > 0 ? (RATING_COLORS[combinedTier.tier] ?? '#888') : null;
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
       <img
         src={STEAM_HEADER_URL(headerAppId)}
-        style={{ height: 40, borderRadius: 3, objectFit: 'cover' }}
+        // 50px lines up the title row + appID subtitle row with the GOLD +
+        // Confidence stack on the right side. 40px was just enough to fit the
+        // title but left the subtitle dangling below the right-side badges
+        style={{ height: 50, borderRadius: 3, objectFit: 'cover' }}
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
       <div style={{ flex: 1, minWidth: 0 }}>

@@ -338,7 +338,7 @@ export interface TranslationTree {
     openingIssue: string;
     checkForUpdates: string;
     checkingForUpdates: string;
-    updateAvailable: (version: string) => string;
+    updateAvailable: (current: string, latest: string) => string;
     upToDate: string;
     applyUpdate: (version: string) => string;
     applyingUpdate: string;

@@ -132,6 +132,13 @@ function findCoverContainer(el: HTMLElement): HTMLElement {
 //   - Library grid (Installed/All Games): bare <img> with no [data-id] ancestor.
 // Try both the HTML attribute (relative paths like /assets/<id>/) and the resolved
 // .src property (absolute CDN URLs like steamstatic.com/.../apps/<id>/).
+// Library tiles are at least ~80px tall; our plugin's Manage This Game header
+// shows a tiny 40px boxart that also matches img[src*="/apps/"], and we don't
+// want to stamp a redundant atom badge there (rating is already shown to the
+// right of the header). Skip anything below MIN_TILE_HEIGHT so small in-plugin
+// boxarts are left alone
+const MIN_TILE_HEIGHT = 60;
+
 function extractFromImg(img: HTMLImageElement): { appId: string; cover: HTMLElement } | null {
   const attr = img.getAttribute('src') ?? '';
   const src = img.src ?? '';
@@ -142,6 +149,9 @@ function extractFromImg(img: HTMLImageElement): { appId: string; cover: HTMLElem
   // toggle-off, making the game page badge appear to respond to the library grid setting.
   const urlToCheck = attr || src;
   if (urlToCheck.includes('library_hero') || urlToCheck.includes('library_header')) return null;
+  // Skip small images (eg. our own plugin's 40px header boxart)
+  const h = img.clientHeight || img.naturalHeight || 0;
+  if (h > 0 && h < MIN_TILE_HEIGHT) return null;
   const appId = extractAppIdFromUrl(attr) ?? extractAppIdFromUrl(src);
   if (!appId) return null;
   return { appId, cover: findCoverContainer(img) };
