@@ -126,6 +126,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Startup: toast a new-version-available nudge on release/pre-release channels
 - Release: open editor on generated notes before publishing
 - Dev release: name asset decky-proton-pulse-dev-<sha>.zip
 
