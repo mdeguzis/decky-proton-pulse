@@ -657,7 +657,7 @@ export const zhCN: TranslationTree = {
     reportFormMultiplayerOnline: () => "你尝试过在线多人游戏吗?",
     reportFormMultiplayerLocal: () => "你尝试过本地多人游戏 (沙发联机) 吗?",
     reportFormProtonDefault: () => "默认 Proton (当前)",
-    reportFormProtonGE: () => 'Glorious Eggroll (GE)',
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - 社区分支",
     reportFormProtonOlder: () => "切换到旧版本",
     reportFormProtonNative: () => "原生 - 无 Proton",
     reportFormProtonNotListed: () => "未列出",
@@ -697,7 +697,7 @@ export const zhCN: TranslationTree = {
     managePlaytimeTotal: () => "游戏时间 (总计)",
     managePlaytimeThisConfig: () => "游戏时间 (此配置)",
     nativeLinuxBadge: () => "可用原生 Linux 版本",
-    protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    protonPulseWebsiteLabel: () => "Proton Pulse 网站",
   },
 };
 

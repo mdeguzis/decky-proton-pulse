@@ -4,10 +4,12 @@ import { dirname, join } from 'path';
 import ts from 'typescript';
 import { fileURLToPath } from 'url';
 
-// 28-language backfill complete (commit forthcoming). All languages now at
-// 99.7-100%; the 0.3% gap on a few langs is the 2 intentionally-English
-// brand strings (Glorious Eggroll, Proton Pulse Website).
-const MIN_COVERAGE = 95;
+// Strict 100% required. Every string in every supported language must
+// differ from the canonical English. Brand names (Proton, Steam, Decky
+// Loader, Glorious Eggroll, Proton Pulse) stay in-line where they appear
+// inside translated sentences -- only standalone equals-English strings
+// fail the gate.
+const MIN_COVERAGE = 100;
 const MAX_COVERAGE_DROP = 1.0; // fail if any locale drops more than this % from committed baseline
 const README_START = '<!-- translation-coverage:start -->';
 const README_END = '<!-- translation-coverage:end -->';

@@ -657,7 +657,7 @@ export const es: TranslationTree = {
     reportFormMultiplayerOnline: () => "¿Intentaste jugar multijugador en línea?",
     reportFormMultiplayerLocal: () => "¿Intentaste jugar multijugador localmente (en el mismo sofá)?",
     reportFormProtonDefault: () => "Proton predeterminado (actual)",
-    reportFormProtonGE: () => 'Glorious Eggroll (GE)',
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - bifurcación comunitaria",
     reportFormProtonOlder: () => "Cambié a una versión anterior",
     reportFormProtonNative: () => "Nativo: sin Proton",
     reportFormProtonNotListed: () => "No aparece en la lista",
@@ -697,7 +697,7 @@ export const es: TranslationTree = {
     managePlaytimeTotal: () => "Tiempo de juego (total)",
     managePlaytimeThisConfig: () => "Tiempo de juego (esta config)",
     nativeLinuxBadge: () => "Versión nativa de Linux disponible",
-    protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    protonPulseWebsiteLabel: () => "Sitio web de Proton Pulse",
   },
 };
 

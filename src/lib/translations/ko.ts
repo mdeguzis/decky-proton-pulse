@@ -657,7 +657,7 @@ export const ko: TranslationTree = {
     reportFormMultiplayerOnline: () => "온라인 멀티플레이어를 시도해 봤나요?",
     reportFormMultiplayerLocal: () => "로컬 멀티플레이어 (소파 코업) 를 시도해 봤나요?",
     reportFormProtonDefault: () => "기본 Proton (현재)",
-    reportFormProtonGE: () => 'Glorious Eggroll (GE)',
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - 커뮤니티 포크",
     reportFormProtonOlder: () => "이전 버전으로 전환함",
     reportFormProtonNative: () => "네이티브 - Proton 없음",
     reportFormProtonNotListed: () => "목록에 없음",
@@ -697,7 +697,7 @@ export const ko: TranslationTree = {
     managePlaytimeTotal: () => "플레이 시간 (전체)",
     managePlaytimeThisConfig: () => "플레이 시간 (이 구성)",
     nativeLinuxBadge: () => "네이티브 Linux 빌드 사용 가능",
-    protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    protonPulseWebsiteLabel: () => "Proton Pulse 웹사이트",
   },
 };
 

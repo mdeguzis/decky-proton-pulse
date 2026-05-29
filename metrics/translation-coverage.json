@@ -1,5 +1,5 @@
 {
-  "minimumCoveragePercent": 95,
+  "minimumCoveragePercent": 100,
   "totalKeys": 637,
   "languages": [
     {
@@ -16,40 +16,31 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 635,
+      "translated": 637,
       "total": 637,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonGE",
-        "extras.protonPulseWebsiteLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
-      "translated": 635,
+      "translated": 637,
       "total": 637,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonGE",
-        "extras.protonPulseWebsiteLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
-      "translated": 635,
+      "translated": 637,
       "total": 637,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonGE",
-        "extras.protonPulseWebsiteLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
@@ -65,27 +56,21 @@
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 635,
+      "translated": 637,
       "total": 637,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonGE",
-        "extras.protonPulseWebsiteLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 635,
+      "translated": 637,
       "total": 637,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonGE",
-        "extras.protonPulseWebsiteLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
@@ -111,40 +96,31 @@
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 635,
+      "translated": 637,
       "total": 637,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonGE",
-        "extras.protonPulseWebsiteLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 635,
+      "translated": 637,
       "total": 637,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonGE",
-        "extras.protonPulseWebsiteLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 635,
+      "translated": 637,
       "total": 637,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonGE",
-        "extras.protonPulseWebsiteLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
@@ -200,14 +176,11 @@
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 635,
+      "translated": 637,
       "total": 637,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonGE",
-        "extras.protonPulseWebsiteLabel"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {

@@ -657,7 +657,7 @@ export const de: TranslationTree = {
     reportFormMultiplayerOnline: () => "Hast du versucht, online im Mehrspielermodus zu spielen?",
     reportFormMultiplayerLocal: () => "Hast du versucht, lokal im Mehrspielermodus zu spielen (Couch-Coop)?",
     reportFormProtonDefault: () => "Standard-Proton (aktuell)",
-    reportFormProtonGE: () => 'Glorious Eggroll (GE)',
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - Community-Fork",
     reportFormProtonOlder: () => "Auf eine ältere Version gewechselt",
     reportFormProtonNative: () => "Nativ – kein Proton",
     reportFormProtonNotListed: () => "Nicht aufgelistet",
@@ -697,7 +697,7 @@ export const de: TranslationTree = {
     managePlaytimeTotal: () => "Spielzeit (gesamt)",
     managePlaytimeThisConfig: () => "Spielzeit (diese Konfiguration)",
     nativeLinuxBadge: () => "Native Linux-Version verfügbar",
-    protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    protonPulseWebsiteLabel: () => "Proton Pulse Webseite",
   },
 };
 

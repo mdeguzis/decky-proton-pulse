@@ -657,7 +657,7 @@ export const ja: TranslationTree = {
     reportFormMultiplayerOnline: () => "オンラインマルチプレイヤーを試しましたか?",
     reportFormMultiplayerLocal: () => "ローカルマルチプレイヤー (カウチプレイ) を試しましたか?",
     reportFormProtonDefault: () => "デフォルト Proton (現在)",
-    reportFormProtonGE: () => 'Glorious Eggroll (GE)',
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - コミュニティフォーク",
     reportFormProtonOlder: () => "古いバージョンに切り替えた",
     reportFormProtonNative: () => "ネイティブ - Proton なし",
     reportFormProtonNotListed: () => "リストにない",
@@ -697,7 +697,7 @@ export const ja: TranslationTree = {
     managePlaytimeTotal: () => "プレイ時間 (合計)",
     managePlaytimeThisConfig: () => "プレイ時間 (この設定)",
     nativeLinuxBadge: () => "ネイティブ Linux ビルドが利用可能",
-    protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    protonPulseWebsiteLabel: () => "Proton Pulse ウェブサイト",
   },
 };
 

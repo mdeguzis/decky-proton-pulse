@@ -635,8 +635,8 @@ export const hu: TranslationTree = {
     lsfgVkToggleLabel: () => 'LSFG-VK engedélyezése',
     lsfgVkToggleDescription: () => 'Hozzáadja a ~/lsfg-t a Steam indítási lehetőségekhez ehhez a játékhoz. A Decky LSFG-VK bővítmény szükséges.',
     // Backfilled translations for new extras keys (run 2026-05-29)
-    reportFormProtonGE: () => "Glorious Eggroll (GE)",
-    protonPulseWebsiteLabel: () => "Proton Pulse Website",
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - közösségi fork",
+    protonPulseWebsiteLabel: () => "Proton Pulse weboldal",
     reportFormYes: () => "Igen",
     reportFormNo: () => "Nem",
     reportFormInstallStartupSection: () => "Telepítés és indítás",

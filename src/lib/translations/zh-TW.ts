@@ -635,8 +635,8 @@ export const zhTW: TranslationTree = {
     lsfgVkToggleLabel: () => '啟用 LSFG-VK',
     lsfgVkToggleDescription: () => '將 ~/lsfg 加入此遊戲的 Steam 啟動選項，需要 Decky LSFG-VK 外掛。',
     // Backfilled translations for new extras keys (run 2026-05-29)
-    reportFormProtonGE: () => "Glorious Eggroll (GE)",
-    protonPulseWebsiteLabel: () => "Proton Pulse Website",
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - 社群分支",
+    protonPulseWebsiteLabel: () => "Proton Pulse 網站",
     reportFormYes: () => "是",
     reportFormNo: () => "否",
     reportFormInstallStartupSection: () => "安裝與啟動",

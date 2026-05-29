@@ -687,7 +687,7 @@ export const ru: TranslationTree = {
     reportFormMultiplayerOnline: () => "Пробовали ли вы играть в мультиплеер онлайн?",
     reportFormMultiplayerLocal: () => "Пробовали ли вы играть в мультиплеер локально (couch play)?",
     reportFormProtonDefault: () => "Стандартный Proton (текущий)",
-    reportFormProtonGE: () => 'Glorious Eggroll (GE)',
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - сборка сообщества",
     reportFormProtonOlder: () => "Переключился на более старую версию",
     reportFormProtonNative: () => "Нативно - без Proton",
     reportFormProtonNotListed: () => "Нет в списке",
@@ -727,7 +727,7 @@ export const ru: TranslationTree = {
     managePlaytimeTotal: () => "Время игры (всего)",
     managePlaytimeThisConfig: () => "Время игры (эта конфигурация)",
     nativeLinuxBadge: () => "Доступна нативная сборка Linux",
-    protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    protonPulseWebsiteLabel: () => "Веб-сайт Proton Pulse",
   },
 };
 

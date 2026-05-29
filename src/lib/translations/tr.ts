@@ -657,7 +657,7 @@ export const tr: TranslationTree = {
     reportFormMultiplayerOnline: () => "Çevrimiçi çok oyunculu oynamayı denedin mi?",
     reportFormMultiplayerLocal: () => "Yerel çok oyunculu (kanepe modu) oynamayı denedin mi?",
     reportFormProtonDefault: () => "Varsayılan Proton (mevcut)",
-    reportFormProtonGE: () => 'Glorious Eggroll (GE)',
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - topluluk forkı",
     reportFormProtonOlder: () => "Daha eski bir sürüme geçtim",
     reportFormProtonNative: () => "Yerel - Proton yok",
     reportFormProtonNotListed: () => "Listede yok",
@@ -697,7 +697,7 @@ export const tr: TranslationTree = {
     managePlaytimeTotal: () => "Oynama süresi (toplam)",
     managePlaytimeThisConfig: () => "Oynama süresi (bu yapılandırma)",
     nativeLinuxBadge: () => "Yerel Linux yapısı mevcut",
-    protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    protonPulseWebsiteLabel: () => "Proton Pulse Web Sitesi",
   },
 };
 

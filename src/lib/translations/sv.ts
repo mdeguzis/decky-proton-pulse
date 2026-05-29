@@ -635,8 +635,8 @@ export const sv: TranslationTree = {
     lsfgVkToggleLabel: () => 'Aktivera LSFG-VK',
     lsfgVkToggleDescription: () => 'Lägger till ~/lsfg i Steam-startalternativen för det här spelet. Kräver Decky LSFG-VK-plugin.',
     // Backfilled translations for new extras keys (run 2026-05-29)
-    reportFormProtonGE: () => "Glorious Eggroll (GE)",
-    protonPulseWebsiteLabel: () => "Proton Pulse Website",
+    reportFormProtonGE: () => "Glorious Eggroll (GE) - community-fork",
+    protonPulseWebsiteLabel: () => "Proton Pulse-webbplats",
     reportFormYes: () => "Ja",
     reportFormNo: () => "Nej",
     reportFormInstallStartupSection: () => "Installation och start",
