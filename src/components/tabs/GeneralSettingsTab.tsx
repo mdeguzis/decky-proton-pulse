@@ -908,13 +908,13 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             <DialogButton disabled style={{ fontSize: 12 }}>Installing...</DialogButton>
           ) : checkResult?.success && checkResult.has_update ? (
             <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12 }}>
-              {`Update to v${checkResult.latest_version}`}
+              {`Update to ${/^\d/.test(checkResult.latest_version!) ? 'v' : ''}${checkResult.latest_version}`}
             </DialogButton>
           ) : checkResult?.success && !checkResult.has_update
               && (checkResult.current_version ?? '') > (checkResult.latest_version ?? '')
               && checkResult.current_version !== checkResult.latest_version ? (
             <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12, color: '#fb923c' }}>
-              {`Downgrade to v${checkResult.latest_version}`}
+              {`Downgrade to ${/^\d/.test(checkResult.latest_version!) ? 'v' : ''}${checkResult.latest_version}`}
             </DialogButton>
           ) : (
             <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate} style={{ fontSize: 12 }}>
