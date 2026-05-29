@@ -11,8 +11,9 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.7.3
 
-- Sync ui-string-scan metrics
-- Remove download progress bar, use simple status text
+- Startup: toast a new-version-available nudge on release/pre-release channels
+- Release: open editor on generated notes before publishing
+- Dev release: name asset decky-proton-pulse-dev-<sha>.zip
 
 ## v1.7.2
 
@@ -125,10 +126,6 @@ All notable changes to Proton Pulse should be recorded here.
 - chore(deploy): y/n prompt for PR push, detect existing PR title/author, clean fork sync
 
 ## Unreleased
-
-- Startup: toast a new-version-available nudge on release/pre-release channels
-- Release: open editor on generated notes before publishing
-- Dev release: name asset decky-proton-pulse-dev-<sha>.zip
 
 ## v1.7.2 pre-release
 
