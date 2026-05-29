@@ -501,8 +501,15 @@ if [[ "$GH_RELEASE" == "dev" ]]; then
     gh release delete "$DEV_TAG" --repo mdeguzis/decky-proton-pulse --yes --cleanup-tag
   fi
 
-  echo "Creating dev release at ${COMMIT_SHA} with ${ZIP_NAME}..."
-  gh release create "$DEV_TAG" "./${ZIP_NAME}" \
+  # Rename the asset to embed the commit sha so downloads from the release
+  # page have a unique filename per build. The plugin updater extracts based
+  # on the zip's top-level dir name (which stays "decky-proton-pulse") so
+  # renaming the outer file doesn't break install
+  DEV_ZIP_NAME="decky-proton-pulse-dev-${COMMIT_SHA}.zip"
+  cp "./${ZIP_NAME}" "./${DEV_ZIP_NAME}"
+
+  echo "Creating dev release at ${COMMIT_SHA} with ${DEV_ZIP_NAME}..."
+  gh release create "$DEV_TAG" "./${DEV_ZIP_NAME}" \
     --repo mdeguzis/decky-proton-pulse \
     --title "$DEV_TITLE" \
     --notes "$DEV_NOTES" \
