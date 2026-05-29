@@ -114,8 +114,21 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
   };
 
   if (loading) {
+    // Wrap the spinner in a Focusable that ALSO has a focusable child (DialogButton).
+    // Without a focusable child, the gamepad input has nowhere to land and
+    // gets routed to whatever Steam UI sits behind the plugin -- which is
+    // why pressing buttons here used to open Steam settings or weird routes.
+    // Adding a hidden but focusable wrapper keeps input contained
     return (
       <Focusable style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
+        <DialogButton
+          onClick={() => {}}
+          style={{
+            position: 'absolute', width: 1, height: 1,
+            padding: 0, border: 'none', background: 'transparent',
+            clip: 'rect(0 0 0 0)', overflow: 'hidden',
+          }}
+        >loading</DialogButton>
         <SteamSpinner />
       </Focusable>
     );

@@ -243,11 +243,13 @@ export function ProtonPulsePage() {
       identifier: 'system-requirements',
       route: 'system-requirements',
       content: (
-        <SystemRequirementsTab
-          appId={appId}
-          appName={appName ?? ''}
-          sysInfo={sysInfo}
-        />
+        <LoggingErrorBoundary name="SystemRequirements">
+          <SystemRequirementsTab
+            appId={appId}
+            appName={appName ?? ''}
+            sysInfo={sysInfo}
+          />
+        </LoggingErrorBoundary>
       ),
     }] : []),
     {
