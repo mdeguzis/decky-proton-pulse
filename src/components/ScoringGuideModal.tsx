@@ -5,6 +5,7 @@ import { ModalRoot, Focusable, DialogButton } from '@decky/ui';
 import { GamepadButton, GamepadEvent } from '@decky/ui';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import scoringInfo from '../data/scoring-info.json';
+import { t as i18n } from '../lib/i18n';
 
 const TIER_TEXT_COLOR: Record<string, string> = {
   platinum: '#111', gold: '#111', silver: '#111', bronze: '#fff', borked: '#fff',
@@ -57,42 +58,42 @@ export function ScoringGuideModal({ closeModal }: { closeModal?: () => void }) {
       >
         {/* header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>How Scoring Works</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>{i18n().extras!.scoringGuideTitle!()}</div>
           <DialogButton onClick={closeModal} style={{ fontSize: 10, padding: '3px 10px', minWidth: 0, width: 'auto' }}>
-            Close
+            {i18n().extras!.scoringGuideClose!()}
           </DialogButton>
         </div>
 
         {/* scroll container -- flex: 1 + minHeight: 0 inside explicit-height Focusable */}
         <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', minHeight: 0, paddingBottom: 24 }}>
           <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 10 }}>
-            Your Yes/No answers determine the rating automatically.
+            {i18n().extras!.scoringGuideIntro!()}
           </div>
 
           {scoringInfo.tiers.map(t => (
             <TierRow key={t.name} tier={t.name} rule={t.rule} />
           ))}
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 14, marginBottom: 4 }}>Fault questions</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 14, marginBottom: 4 }}>{i18n().extras!.scoringGuideFaultsTitle!()}</div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
-            Each "Yes" to a fault question ({scoringInfo.faultQuestionsDisplay.join(', ')}) counts as 1 fault. The total determines Silver, Bronze, or Gold.
+            {i18n().extras!.scoringGuideFaultsHint1!()}{scoringInfo.faultQuestionsDisplay.join(', ')}{i18n().extras!.scoringGuideFaultsHint2!()}
           </div>
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 14, marginBottom: 4 }}>Out-of-the-box question</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 14, marginBottom: 4 }}>{i18n().extras!.scoringGuideOOBTitle!()}</div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
             {scoringInfo.outOfBoxNote}
           </div>
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 14, marginBottom: 4 }}>Quick reference</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 14, marginBottom: 4 }}>{i18n().extras!.scoringGuideQuickReference!()}</div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.8 }}>
             {scoringInfo.quickReference.map((line, i) => (
               <span key={i}>{line}{i < scoringInfo.quickReference.length - 1 ? <br /> : null}</span>
             ))}
           </div>
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 18, marginBottom: 4 }}>How reports are ranked</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 18, marginBottom: 4 }}>{i18n().extras!.scoringGuideRankingTitle!()}</div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
-            Each report gets a relevance score so the most useful ones rise to the top. Factors:
+            {i18n().extras!.scoringGuideRankingIntro!()}
           </div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.8, marginTop: 6 }}>
             {'1. Rating -- Platinum=60 pts down to Borked=0'}<br />
@@ -104,10 +105,10 @@ export function ScoringGuideModal({ closeModal }: { closeModal?: () => void }) {
             {'7. Notes sentiment -- positive/negative keywords (+/-10 cap)'}
           </div>
           <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 8, lineHeight: 1.5 }}>
-            Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours.
+            {i18n().extras!.scoringGuidePlaytimeConfidence!()}
           </div>
 
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 18, marginBottom: 4 }}>Duration auto-fill</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 18, marginBottom: 4 }}>{i18n().extras!.scoringGuideDurationAutofill!()}</div>
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
             {scoringInfo.durationAutoFillNote}
           </div>

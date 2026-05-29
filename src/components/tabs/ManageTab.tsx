@@ -566,10 +566,10 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         ? `${fmtMin(minutes)} (tracked: ${fmtMin(trackedMinutes)}, Steam: ${fmtMin(steamMinutes)})`
         : '--';
       const rows = [
-        { label: 'Active', value: isActive ? t().common.yes : t().common.no },
+        { label: t().extras!.manageActive!(), value: isActive ? t().common.yes : t().common.no },
         ...infoRows,
-        { label: 'Playtime (total)', value: playtimeValue },
-        { label: 'Playtime (this config)', value: fmtMin(configMinutes) },
+        { label: t().extras!.managePlaytimeTotal!(), value: playtimeValue },
+        { label: t().extras!.managePlaytimeThisConfig!(), value: fmtMin(configMinutes) },
       ];
       showModal(
         <ConfirmModal

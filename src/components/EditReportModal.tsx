@@ -78,10 +78,11 @@ const TIER_TEXT_COLOR: Record<string, string> = {
   platinum: '#111', gold: '#111', silver: '#111', bronze: '#fff', borked: '#fff',
 };
 
-const YES_NO_OPTIONS = [
+// Function so labels stay reactive to the active language
+const yesNoOptions = () => [
   { data: '', label: '-' },
-  { data: 'yes', label: 'Yes' },
-  { data: 'no', label: 'No' },
+  { data: 'yes', label: t().common.yes },
+  { data: 'no', label: t().common.no },
 ];
 
 const FAULT_LABEL_KEY: Record<string, keyof ReturnType<typeof t>['nativeReport']> = {
@@ -190,7 +191,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
         {/* header */}
         <div style={{ flexShrink: 0, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2a3a4a' }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>Edit Responses</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#e8f4ff' }}>{t().extras!.reportFormEditResponsesTitle!()}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{
               fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
@@ -214,7 +215,7 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
                 onClick={() => showModal(<ScoringGuideModal />)}
                 style={{ fontSize: 11, padding: '2px 8px', minWidth: 0, width: 'auto', fontWeight: 700, letterSpacing: '0.03em', background: '#1e4a7a', color: '#7ec8f8', border: '1px solid #2a6aaa' }}
               >
-                How Scoring Works
+                {t().extras!.scoringGuideTitle!()}
               </DialogButton>
             </div>
           </div>
@@ -225,34 +226,34 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
           <PanelSection>
             {/* Install & Startup */}
             <PanelSectionRow>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', paddingTop: 8 }}>Install &amp; Startup</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', paddingTop: 8 }}>{t().extras!.reportFormInstallStartupSection!()}</div>
             </PanelSectionRow>
             <PanelSectionRow>
               <div ref={(el) => { questionRefs.current[0] = el; }}>
-                <DropdownItem label="Were you able to install the game?" rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(canInstall)} onChange={(opt) => { setCanInstall(asYesNo(opt.data as string)); scrollToNext(0); }} />
+                <DropdownItem label={t().extras!.reportFormInstallQuestion!()} rgOptions={yesNoOptions()} selectedOption={yesNoVal(canInstall)} onChange={(opt) => { setCanInstall(asYesNo(opt.data as string)); scrollToNext(0); }} />
               </div>
             </PanelSectionRow>
             <PanelSectionRow>
               <div ref={(el) => { questionRefs.current[1] = el; }}>
-                <DropdownItem label="Were you able to start up the game?" rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(canStart)} onChange={(opt) => { setCanStart(asYesNo(opt.data as string)); scrollToNext(1); }} />
+                <DropdownItem label={t().extras!.reportFormStartupQuestion!()} rgOptions={yesNoOptions()} selectedOption={yesNoVal(canStart)} onChange={(opt) => { setCanStart(asYesNo(opt.data as string)); scrollToNext(1); }} />
               </div>
             </PanelSectionRow>
             <PanelSectionRow>
               <div ref={(el) => { questionRefs.current[2] = el; }}>
-                <DropdownItem label="Were you able to begin playing?" rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(canPlay)} onChange={(opt) => { setCanPlay(asYesNo(opt.data as string)); scrollToNext(2); }} />
+                <DropdownItem label={t().extras!.reportFormPlayQuestion!()} rgOptions={yesNoOptions()} selectedOption={yesNoVal(canPlay)} onChange={(opt) => { setCanPlay(asYesNo(opt.data as string)); scrollToNext(2); }} />
               </div>
             </PanelSectionRow>
 
             {/* Technical Details */}
             <PanelSectionRow>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', paddingTop: 8 }}>Technical Details</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', paddingTop: 8 }}>{t().extras!.reportFormTechnicalDetails!()}</div>
             </PanelSectionRow>
             {FAULT_KEYS.map((k, i) => (
               <PanelSectionRow key={k}>
                 <div ref={(el) => { questionRefs.current[3 + i] = el; }}>
                   <DropdownItem
                     label={strings.nativeReport[FAULT_LABEL_KEY[k]]}
-                    rgOptions={YES_NO_OPTIONS}
+                    rgOptions={yesNoOptions()}
                     selectedOption={yesNoVal(faults[k])}
                     onChange={(opt) => { setFaults((prev) => ({ ...prev, [k]: asYesNo(opt.data as string) })); scrollToNext(3 + i); }}
                   />
@@ -262,17 +263,17 @@ export function EditReportModal({ closeModal, report, onSave }: EditReportModalP
 
             {/* Verdict — index 3 + FAULT_KEYS.length */}
             <PanelSectionRow>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', paddingTop: 8 }}>Verdict</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', paddingTop: 8 }}>{t().extras!.reportFormVerdictSection!()}</div>
             </PanelSectionRow>
             <PanelSectionRow>
               <div ref={(el) => { questionRefs.current[3 + FAULT_KEYS.length] = el; }}>
-                <DropdownItem label={strings.nativeReport.verdictQuestion} rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(verdict)} onChange={(opt) => { setVerdict(asYesNo(opt.data as string)); scrollToNext(3 + FAULT_KEYS.length); }} />
+                <DropdownItem label={strings.nativeReport.verdictQuestion} rgOptions={yesNoOptions()} selectedOption={yesNoVal(verdict)} onChange={(opt) => { setVerdict(asYesNo(opt.data as string)); scrollToNext(3 + FAULT_KEYS.length); }} />
               </div>
             </PanelSectionRow>
             {verdict === 'yes' && Object.values(faults).every((v) => v !== 'yes') && (
               <PanelSectionRow>
                 <div ref={(el) => { questionRefs.current[3 + FAULT_KEYS.length + 1] = el; }}>
-                  <DropdownItem label="Does it work without any tinkering (out of the box)?" rgOptions={YES_NO_OPTIONS} selectedOption={yesNoVal(verdictOob)} onChange={(opt) => setVerdictOob(asYesNo(opt.data as string))} />
+                  <DropdownItem label={t().extras!.reportFormOutOfBoxQuestion!()} rgOptions={yesNoOptions()} selectedOption={yesNoVal(verdictOob)} onChange={(opt) => setVerdictOob(asYesNo(opt.data as string))} />
                 </div>
               </PanelSectionRow>
             )}

@@ -412,7 +412,7 @@ export function GeneralSettingsTab() {
     void logFrontendEvent('INFO', 'triggerReload outcome', { outcome });
     if (outcome === 'failed') {
       setReloading(false);
-      toaster.toast({ title: 'Proton Pulse', body: 'Could not auto-restart. Restart Decky Loader or Steam manually.' });
+      toaster.toast({ title: 'Proton Pulse', body: t().extras!.updateCouldNotRestart!() });
     }
     // if 'reloaded' or 'restarting', the page will go away on its own
   };
@@ -867,16 +867,16 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
           <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{checkResult.error ?? aboutStrings.checkUpdateFailed}</div>
         )}
         {updateStatus?.state === 'error' && (
-          <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>Update failed: {updateStatus.error}</div>
+          <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{t().extras!.updateFailedPrefix!()} {updateStatus.error}</div>
         )}
         {checkResult?.success && !checkResult.has_update && !updating && !updateApplied && (
           <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>
-            Up to date (latest {updateChannel}: v{checkResult.latest_version})
+            {t().extras!.updateUpToDate!(updateChannel, checkResult.latest_version ?? '')}
           </div>
         )}
         {checkResult?.success && checkResult.has_update && !updating && !updateApplied && (
           <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
-            Update available: v{checkResult.current_version} -{`>`} v{checkResult.latest_version}
+            {t().extras!.updateAvailable!(checkResult.current_version ?? '', checkResult.latest_version ?? '')}
           </div>
         )}
         {updating && updateStatus && (
@@ -886,15 +886,15 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         )}
         {updateApplied && (
           <div style={{ fontSize: 12, color: '#4caf50', marginBottom: 8, padding: '8px 12px', background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.3)', borderRadius: 4 }}>
-            v{updateStatus?.version} installed. Restart Decky Loader or Steam to apply.
+            v{updateStatus?.version} {t().extras!.updateInstalledRestart!()}
           </div>
         )}
         <Focusable style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} flow-children="horizontal">
           <Dropdown
             rgOptions={[
-              { data: 'release', label: 'Release' },
-              { data: 'pre-release', label: 'Pre-release' },
-              { data: 'developer', label: 'Developer (rolling)' },
+              { data: 'release', label: t().extras!.updateChannelRelease!() },
+              { data: 'pre-release', label: t().extras!.updateChannelPreRelease!() },
+              { data: 'developer', label: t().extras!.updateChannelDeveloper!() },
             ]}
             selectedOption={updateChannel}
             onChange={(opt) => setUpdateChannel(opt.data as any)}
@@ -905,7 +905,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
               {reloading ? 'Restarting...' : 'Restart plugin'}
             </DialogButton>
           ) : updating ? (
-            <DialogButton disabled style={{ fontSize: 12 }}>Installing...</DialogButton>
+            <DialogButton disabled style={{ fontSize: 12 }}>{t().extras!.updateInstalling!()}</DialogButton>
           ) : checkResult?.success && checkResult.has_update ? (
             <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12 }}>
               {`Update to ${/^\d/.test(checkResult.latest_version!) ? 'v' : ''}${checkResult.latest_version}`}
@@ -969,8 +969,8 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         </div>
         <div style={focusClipRowStyle()}>
           <ToggleField
-            label="Auto-sync to cloud"
-            description="Automatically back up configs and plugin settings when they change"
+            label={t().extras!.cloudSyncAutoLabel!()}
+            description={t().extras!.cloudSyncAutoDescription!()}
             checked={cloudAutoSync}
             onChange={(enabled) => {
               setCloudAutoSync(enabled);
@@ -982,17 +982,17 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         </div>
         <div style={focusClipRowStyle()}>
           <Field
-            label="Cloud sync refresh rate"
-            description="How often to re-check cloud sync status in the background"
+            label={t().extras!.cloudSyncRefreshRateLabel!()}
+            description={t().extras!.cloudSyncRefreshRateDescription!()}
             childrenContainerWidth="min"
           >
             <Dropdown
               rgOptions={[
-                { label: 'Disabled', data: 0 },
-                { label: '1 min', data: 1 },
-                { label: '5 min', data: 5 },
-                { label: '30 min', data: 30 },
-                { label: '1 hour', data: 60 },
+                { label: t().extras!.cloudSyncRefreshRateDisabled!(), data: 0 },
+                { label: t().extras!.cloudSyncRefreshRate1Min!(), data: 1 },
+                { label: t().extras!.cloudSyncRefreshRate5Min!(), data: 5 },
+                { label: t().extras!.cloudSyncRefreshRate30Min!(), data: 30 },
+                { label: t().extras!.cloudSyncRefreshRate1Hour!(), data: 60 },
               ]}
               selectedOption={syncPollInterval}
               onChange={(opt) => {

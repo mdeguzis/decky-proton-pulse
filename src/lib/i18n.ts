@@ -673,6 +673,74 @@ export interface TranslationTree {
     publishToPulseFailed: (err: string) => string;
     lsfgVkToggleLabel: () => string;
     lsfgVkToggleDescription: () => string;
+    // Report form (NativePulseReportModal + EditReportModal)
+    reportFormYes?: () => string;
+    reportFormNo?: () => string;
+    reportFormInstallStartupSection?: () => string;
+    reportFormInstallQuestion?: () => string;
+    reportFormStartupQuestion?: () => string;
+    reportFormStartupQuestionWithMenu?: () => string;
+    reportFormPlayQuestion?: () => string;
+    reportFormTechnicalDetails?: () => string;
+    reportFormVerdictSection?: () => string;
+    reportFormOutOfBoxQuestion?: () => string;
+    reportFormBorkedNotice?: () => string;
+    reportFormBorkedNotesLabel?: () => string;
+    reportFormBorkedNotesDescription?: () => string;
+    reportFormProtonTinkering?: () => string;
+    reportFormProtonVersion?: () => string;
+    reportFormTinkeringMethods?: () => string;
+    reportFormMultiplayerSection?: () => string;
+    reportFormMultiplayerOnline?: () => string;
+    reportFormMultiplayerLocal?: () => string;
+    reportFormProtonDefault?: () => string;
+    reportFormProtonGE?: () => string;
+    reportFormProtonOlder?: () => string;
+    reportFormProtonNative?: () => string;
+    reportFormProtonNotListed?: () => string;
+    reportFormTinkerReportNote?: () => string;
+    reportFormEditResponsesTitle?: () => string;
+    // Scoring guide modal
+    scoringGuideTitle?: () => string;
+    scoringGuideClose?: () => string;
+    scoringGuideIntro?: () => string;
+    scoringGuideFaultsTitle?: () => string;
+    scoringGuideFaultsHint1?: () => string;
+    scoringGuideFaultsHint2?: () => string;
+    scoringGuideOOBTitle?: () => string;
+    scoringGuideQuickReference?: () => string;
+    scoringGuideRankingTitle?: () => string;
+    scoringGuideRankingIntro?: () => string;
+    scoringGuidePlaytimeConfidence?: () => string;
+    scoringGuideDurationAutofill?: () => string;
+    // Update channel labels (Settings tab)
+    updateChannelRelease?: () => string;
+    updateChannelPreRelease?: () => string;
+    updateChannelDeveloper?: () => string;
+    updateInstalling?: () => string;
+    updateFailedPrefix?: () => string;
+    updateUpToDate?: (channel: string, version: string) => string;
+    updateAvailable?: (current: string, latest: string) => string;
+    updateInstalledRestart?: () => string;
+    updateCouldNotRestart?: () => string;
+    // Cloud sync labels (Settings tab)
+    cloudSyncAutoLabel?: () => string;
+    cloudSyncAutoDescription?: () => string;
+    cloudSyncRefreshRateLabel?: () => string;
+    cloudSyncRefreshRateDescription?: () => string;
+    cloudSyncRefreshRateDisabled?: () => string;
+    cloudSyncRefreshRate1Min?: () => string;
+    cloudSyncRefreshRate5Min?: () => string;
+    cloudSyncRefreshRate30Min?: () => string;
+    cloudSyncRefreshRate1Hour?: () => string;
+    // Manage tab
+    manageActive?: () => string;
+    managePlaytimeTotal?: () => string;
+    managePlaytimeThisConfig?: () => string;
+    // Game page badge
+    nativeLinuxBadge?: () => string;
+    // About tab
+    protonPulseWebsiteLabel?: () => string;
   };
 }
 
@@ -1317,6 +1385,74 @@ export const en: TranslationTree = {
     publishToPulseFailed: (err) => `Publish failed: ${err}`,
     lsfgVkToggleLabel: () => 'Enable LSFG-VK',
     lsfgVkToggleDescription: () => "Prepend ~/lsfg to this game's Steam launch options.",
+    // Report form
+    reportFormYes: () => 'Yes',
+    reportFormNo: () => 'No',
+    reportFormInstallStartupSection: () => 'Install and Startup',
+    reportFormInstallQuestion: () => 'Were you able to install the game?',
+    reportFormStartupQuestion: () => 'Were you able to start up the game?',
+    reportFormStartupQuestionWithMenu: () => 'Were you able to start up the game and view its initial menu?',
+    reportFormPlayQuestion: () => 'Were you able to begin playing?',
+    reportFormTechnicalDetails: () => 'Technical Details',
+    reportFormVerdictSection: () => 'Verdict',
+    reportFormOutOfBoxQuestion: () => 'Does it work without any tinkering (out of the box)?',
+    reportFormBorkedNotice: () => 'The game failed to install or start. Your report will be submitted as Borked.',
+    reportFormBorkedNotesLabel: () => 'Notes (optional)',
+    reportFormBorkedNotesDescription: () => 'Describe what went wrong during install or startup.',
+    reportFormProtonTinkering: () => 'Proton and Tinkering',
+    reportFormProtonVersion: () => 'Which Proton version did you use?',
+    reportFormTinkeringMethods: () => 'Are you using any of these common tinkering methods?',
+    reportFormMultiplayerSection: () => 'Multiplayer (optional)',
+    reportFormMultiplayerOnline: () => 'Did you try to play multiplayer online?',
+    reportFormMultiplayerLocal: () => 'Did you try to play multiplayer locally (couch play)?',
+    reportFormProtonDefault: () => 'Default Proton (current)',
+    reportFormProtonGE: () => 'Glorious Eggroll (GE)',
+    reportFormProtonOlder: () => 'Switched to an older version',
+    reportFormProtonNative: () => 'Native - No Proton',
+    reportFormProtonNotListed: () => 'Not Listed',
+    reportFormTinkerReportNote: () => 'Your report will be classified as a tinker report. Have you also tried playing with default Steam/Proton without any tinkering?',
+    reportFormEditResponsesTitle: () => 'Edit Responses',
+    // Scoring guide modal
+    scoringGuideTitle: () => 'How Scoring Works',
+    scoringGuideClose: () => 'Close',
+    scoringGuideIntro: () => 'Your Yes/No answers determine the rating automatically.',
+    scoringGuideFaultsTitle: () => 'Fault questions',
+    scoringGuideFaultsHint1: () => 'Each "Yes" to a fault question (',
+    scoringGuideFaultsHint2: () => ') counts as 1 fault. The total determines Silver, Bronze, or Gold.',
+    scoringGuideOOBTitle: () => 'Out-of-the-box question',
+    scoringGuideQuickReference: () => 'Quick reference',
+    scoringGuideRankingTitle: () => 'How reports are ranked',
+    scoringGuideRankingIntro: () => 'Each report gets a relevance score so the most useful ones rise to the top. Factors:',
+    scoringGuidePlaytimeConfidence: () => 'Playtime confidence rewards reporters who played 2+ hours -- they are more likely to have encountered real compatibility issues. The bonus scales with how closely their hardware matches yours.',
+    scoringGuideDurationAutofill: () => 'Duration auto-fill',
+    // Update channels
+    updateChannelRelease: () => 'Release',
+    updateChannelPreRelease: () => 'Pre-release',
+    updateChannelDeveloper: () => 'Developer (rolling)',
+    updateInstalling: () => 'Installing...',
+    updateFailedPrefix: () => 'Update failed:',
+    updateUpToDate: (channel, version) => `Up to date (latest ${channel}: v${version})`,
+    updateAvailable: (current, latest) => `Update available: v${current} -> v${latest}`,
+    updateInstalledRestart: () => 'installed. Restart Decky Loader or Steam to apply.',
+    updateCouldNotRestart: () => 'Could not auto-restart. Restart Decky Loader or Steam manually.',
+    // Cloud sync
+    cloudSyncAutoLabel: () => 'Auto-sync to cloud',
+    cloudSyncAutoDescription: () => 'Automatically back up configs and plugin settings when they change',
+    cloudSyncRefreshRateLabel: () => 'Cloud sync refresh rate',
+    cloudSyncRefreshRateDescription: () => 'How often to re-check cloud sync status in the background',
+    cloudSyncRefreshRateDisabled: () => 'Disabled',
+    cloudSyncRefreshRate1Min: () => '1 min',
+    cloudSyncRefreshRate5Min: () => '5 min',
+    cloudSyncRefreshRate30Min: () => '30 min',
+    cloudSyncRefreshRate1Hour: () => '1 hour',
+    // Manage tab
+    manageActive: () => 'Active',
+    managePlaytimeTotal: () => 'Playtime (total)',
+    managePlaytimeThisConfig: () => 'Playtime (this config)',
+    // Game page badge
+    nativeLinuxBadge: () => 'Native Linux build available',
+    // About tab
+    protonPulseWebsiteLabel: () => 'Proton Pulse Website',
   },
 };
 

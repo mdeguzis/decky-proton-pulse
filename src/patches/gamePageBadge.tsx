@@ -246,7 +246,7 @@ function BadgeIcon({ appId }: { appId: number }) {
     >
       {isNativeLinux && (
         <div
-          title="Native Linux build available"
+          title={t().extras!.nativeLinuxBadge!()}
           style={{
             display: 'flex',
             alignItems: 'center',

@@ -1479,7 +1479,7 @@ export function ReportDetailModal({
             }}
             style={{ flex: 1, fontSize: 10, padding: '5px 4px', minHeight: 0, minWidth: 0 }}
           >
-            Edit Responses
+            {t().extras!.reportFormEditResponsesTitle!()}
           </PpDialogButton>
           <PpDialogButton
             onClick={handleUpload}

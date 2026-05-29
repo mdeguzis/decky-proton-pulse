@@ -123,9 +123,10 @@ function SectionHeader({ label }: { label: string }) {
 
 // --- Yes/No dropdown ---
 
-const YES_NO_OPTIONS = [
-  { data: 'yes', label: 'Yes' },
-  { data: 'no',  label: 'No' },
+// Function so labels stay reactive to the active language. Cheap to call.
+const yesNoOptions = () => [
+  { data: 'yes', label: t().common.yes },
+  { data: 'no',  label: t().common.no },
 ];
 
 function YesNoDropdown({
@@ -155,7 +156,7 @@ function YesNoDropdown({
         {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
       </div>
       <DropdownItem
-        rgOptions={YES_NO_OPTIONS}
+        rgOptions={yesNoOptions()}
         selectedOption={value ?? null}
         onChange={(opt) => onChange(opt.data as YesNo)}
         label={label}
@@ -179,14 +180,20 @@ type TinkeringMethod = typeof TINKERING_METHODS[number];
 
 // --- Proton type options ---
 
-const PROTON_TYPE_OPTIONS = [
-  { data: 'current',   label: 'Default Proton (current)' },
-  { data: 'ge',        label: 'Glorious Eggroll (GE)' },
-  { data: 'older',     label: 'Switched to an older version' },
-  { data: 'native',    label: 'Native - No Proton' },
-  { data: 'notListed', label: 'Not Listed' },
-] as const;
-type ProtonType = typeof PROTON_TYPE_OPTIONS[number]['data'];
+// Stable data tokens. Labels live in the translation tree (extras.reportFormProton*)
+// and are resolved at render time so language switches re-render correctly
+const PROTON_TYPE_DATA = ['current', 'ge', 'older', 'native', 'notListed'] as const;
+type ProtonType = typeof PROTON_TYPE_DATA[number];
+const protonTypeOptions = () => {
+  const labels: Record<ProtonType, () => string> = {
+    current:   t().extras!.reportFormProtonDefault!,
+    ge:        t().extras!.reportFormProtonGE!,
+    older:     t().extras!.reportFormProtonOlder!,
+    native:    t().extras!.reportFormProtonNative!,
+    notListed: t().extras!.reportFormProtonNotListed!,
+  };
+  return PROTON_TYPE_DATA.map(data => ({ data, label: labels[data]() }));
+};
 
 // --- Derived rating badge ---
 
@@ -546,7 +553,7 @@ export function NativePulseReportModal({
                 onClick={() => showModal(<ScoringGuideModal />)}
                 style={{ fontSize: 11, padding: '2px 8px', minWidth: 0, width: 'auto', fontWeight: 700, letterSpacing: '0.03em', background: '#1e4a7a', color: '#7ec8f8', border: '1px solid #2a6aaa' }}
               >
-                How Scoring Works
+                {t().extras!.scoringGuideTitle!()}
               </DialogButton>
             </div>
           </div>
@@ -559,9 +566,9 @@ export function NativePulseReportModal({
           <HardwareTable sysInfo={sysInfo} />
 
           {/* ===== Install & Startup ===== */}
-          <SectionHeader label="Install and Startup" />
+          <SectionHeader label={t().extras!.reportFormInstallStartupSection!()} />
           <YesNoDropdown
-            label="Were you able to install the game?"
+            label={t().extras!.reportFormInstallQuestion!()}
             value={canInstall}
             onChange={(v) => { setCanInstall(v); setFieldErrors(p => ({ ...p, canInstall: false })); setError(null); if (v === 'yes') scrollToRef(refCanStart, 'canStart'); }}
             hasError={!!fieldErrors.canInstall}
@@ -569,7 +576,7 @@ export function NativePulseReportModal({
           {canInstall === 'yes' && (
             <div ref={refCanStart}>
               <YesNoDropdown
-                label="Were you able to start up the game and view its initial menu?"
+                label={t().extras!.reportFormStartupQuestionWithMenu!()}
                 value={canStart}
                 onChange={(v) => { setCanStart(v); setFieldErrors(p => ({ ...p, canStart: false })); setError(null); if (v === 'yes') scrollToRef(refCanPlay, 'canPlay'); }}
                 hasError={!!fieldErrors.canStart}
@@ -579,7 +586,7 @@ export function NativePulseReportModal({
           {canInstall === 'yes' && canStart === 'yes' && (
             <div ref={refCanPlay}>
               <YesNoDropdown
-                label="Were you able to begin playing?"
+                label={t().extras!.reportFormPlayQuestion!()}
                 value={canPlay}
                 onChange={(v) => { setCanPlay(v); setFieldErrors(p => ({ ...p, canPlay: false })); setError(null); if (v === 'yes') scrollToRef(refProtonType, 'protonType'); }}
                 hasError={!!fieldErrors.canPlay}
@@ -592,12 +599,12 @@ export function NativePulseReportModal({
             <>
               <DerivedRatingBadge rating="borked" />
               <div style={{ fontSize: 11, color: '#f59e0b', lineHeight: 1.5 }}>
-                The game failed to install or start. Your report will be submitted as Borked.
+                {t().extras!.reportFormBorkedNotice!()}
               </div>
               <div style={fieldErrors.notes ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
                 <TextField
-                  label="Notes (optional)"
-                  description="Describe what went wrong during install or startup."
+                  label={t().extras!.reportFormBorkedNotesLabel!()}
+                  description={t().extras!.reportFormBorkedNotesDescription!()}
                   value={summary}
                   onChange={(e) => setSummary(e.target.value.slice(0, 140))}
                   bShowClearAction
@@ -609,14 +616,14 @@ export function NativePulseReportModal({
           {/* ===== Proton + Tinkering ===== */}
           {!installFailed && canPlay === 'yes' && (
             <>
-              <SectionHeader label="Proton and Tinkering" />
+              <SectionHeader label={t().extras!.reportFormProtonTinkering!()} />
               {/* refProtonType on the wrapper div so querySelector('button') finds the DropdownItem button for focus */}
               <div ref={refProtonType} style={fieldErrors.protonType ? { outline: '1px solid #f59e0b', borderRadius: 4 } : {}}>
                 <DropdownItem
-                  rgOptions={PROTON_TYPE_OPTIONS.map(o => ({ data: o.data, label: o.label }))}
+                  rgOptions={protonTypeOptions()}
                   selectedOption={protonType ?? null}
                   onChange={(opt) => { setProtonType(opt.data as ProtonType); setFieldErrors(p => ({ ...p, protonType: false })); scrollToRef(refProtonVersion, 'protonVersion'); }}
-                  label="Which Proton version did you use?"
+                  label={t().extras!.reportFormProtonVersion!()}
                 />
               </div>
 
@@ -638,7 +645,7 @@ export function NativePulseReportModal({
 
               <div>
                 <div style={{ fontSize: 12, color: '#c8d4e0', marginBottom: 4 }}>
-                  Are you using any of these common tinkering methods?
+                  {t().extras!.reportFormTinkeringMethods!()}
                 </div>
                 {TINKERING_METHODS.map(m => (
                   <DialogCheckbox
@@ -652,7 +659,7 @@ export function NativePulseReportModal({
               </div>
 
               {/* ===== Technical Details ===== */}
-              <SectionHeader label="Technical Details" />
+              <SectionHeader label={t().extras!.reportFormTechnicalDetails!()} />
               {([
                 ['performanceFaults', t().nativeReport.faultPerformance],
                 ['graphicalFaults',   t().nativeReport.faultGraphical],
@@ -681,9 +688,9 @@ export function NativePulseReportModal({
 
               {/* ===== Multiplayer (optional) ===== */}
               <div ref={refMultiplayer}>
-                <SectionHeader label="Multiplayer (optional)" />
+                <SectionHeader label={t().extras!.reportFormMultiplayerSection!()} />
                 <YesNoDropdown
-                  label="Did you try to play multiplayer online?"
+                  label={t().extras!.reportFormMultiplayerOnline!()}
                   value={onlineMultiplayer}
                   onChange={(v) => { setOnlineMultiplayer(v); scrollToRef(refLocalMultiplayer, 'localMultiplayer'); }}
                   hasError={false}
@@ -692,7 +699,7 @@ export function NativePulseReportModal({
               </div>
               <div ref={refLocalMultiplayer}>
                 <YesNoDropdown
-                  label="Did you try to play multiplayer locally (couch play)?"
+                  label={t().extras!.reportFormMultiplayerLocal!()}
                   value={localMultiplayer}
                   onChange={(v) => { setLocalMultiplayer(v); scrollToRef(refVerdict, 'verdict'); }}
                   hasError={false}
@@ -701,7 +708,7 @@ export function NativePulseReportModal({
               </div>
 
               {/* ===== Verdict ===== */}
-              <SectionHeader label="Verdict" />
+              <SectionHeader label={t().extras!.reportFormVerdictSection!()} />
               <div ref={refVerdict}>
                 <YesNoDropdown
                   label={t().nativeReport.verdictQuestion}
@@ -714,7 +721,7 @@ export function NativePulseReportModal({
               {/* OOB - only shown when verdict=yes and 0 faults (platinum path) */}
               {verdict === 'yes' && !anyFaultForOob && (
                 <YesNoDropdown
-                  label="Did the game run out of the box without any tweaks required?"
+                  label={t().extras!.reportFormOutOfBoxQuestion!()}
                   value={verdictOob}
                   onChange={(v) => { setVerdictOob(v); setFieldErrors(p => ({ ...p, verdictOob: false })); setError(null); }}
                   hasError={!!fieldErrors.verdictOob}
@@ -724,8 +731,7 @@ export function NativePulseReportModal({
               {/* Tinker OOB confirmation - shown when tinkering and verdict=yes */}
               {verdict === 'yes' && isTinker && !anyFaultForOob && (
                 <div style={{ fontSize: 11, color: '#f59e0b', lineHeight: 1.5, padding: '6px 10px', background: 'rgba(245,158,11,0.1)', borderRadius: 4 }}>
-                  Your report will be classified as a tinker report.
-                  Have you also tried playing with default Steam/Proton without any tinkering?
+                  {t().extras!.reportFormTinkerReportNote!()}
                 </div>
               )}
 

@@ -78,7 +78,7 @@ export function AboutTab() {
         flow-children="horizontal"
       >
         {[
-          { label: 'Proton Pulse Website', url: 'https://www.proton-pulse.com' },
+          { label: t().extras!.protonPulseWebsiteLabel!(), url: 'https://www.proton-pulse.com' },
           { label: aboutStrings.github, url: 'https://github.com/mdeguzis/decky-proton-pulse' },
           { label: aboutStrings.protondb, url: 'https://www.protondb.com' },
         ].map(({ label, url }) => (
