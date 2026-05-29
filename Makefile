@@ -69,7 +69,7 @@ endif
 
 .PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise setup-remote-dev deploy deploy-local deploy-reload deploy-reload-local build-and-deploy build-and-deploy-local clean \
         logs get-logs get-cef-capture take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
-        package release github-release github-pre-release \
+        package release github-release github-pre-release github-dev-release \
         capture-project-screenshots \
         fetch-protondb check-protondb-data logs-loader reload reload-local cef-debug-enable live-reload-enable
 
@@ -120,6 +120,9 @@ help:
 	@printf "  %-27s %s\n" "github-release" "GitHub-only release flow (no Decky database submission)"
 	@printf "  %-27s %s\n" "" "Safe by default: pass DRY_RUN=false to apply live changes"
 	@printf "  %-27s %s\n" "github-pre-release" "GitHub-only pre-release flow (no Decky database submission)"
+	@printf "  %-27s %s\n" "" "Safe by default: pass DRY_RUN=false to apply live changes"
+	@printf "  %-27s %s\n" "github-dev-release" "Refresh the rolling 'developer' tag + release with the current HEAD zip"
+	@printf "  %-27s %s\n" "" "Runs every time you push plugin code so the Deck Developer channel can pull"
 	@printf "  %-27s %s\n" "" "Safe by default: pass DRY_RUN=false to apply live changes"
 	@printf "  %-27s %s\n" "clean" "Remove build output (dist/) and generated release archives"
 	@echo ""
@@ -336,6 +339,14 @@ github-release: package
 
 github-pre-release: package
 	bash scripts/deploy.sh --skip-build --github-prerelease $(_DRY_RUN_FLAG)
+
+# Rolling "developer" channel. Builds the current HEAD, deletes the existing
+# "developer" tag + release, then recreates both with the freshly built zip
+# attached. The Steam Deck plugin's "Developer (rolling)" update channel
+# polls this release. We always force --no-dry-run since it's idempotent
+# and there is nothing to confirm versus the versioned release flow
+github-dev-release: package
+	bash scripts/deploy.sh --skip-build --github-dev-release --no-dry-run
 
 clean:
 	rm -rf dist/

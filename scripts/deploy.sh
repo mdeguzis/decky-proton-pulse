@@ -366,6 +366,7 @@ while [[ $# -gt 0 ]]; do
     --release)      GH_RELEASE="release"; STORE_MODE="release"; shift ;;
     --github-release) GH_RELEASE="release"; shift ;;
     --github-prerelease) GH_RELEASE="prerelease"; shift ;;
+    --github-dev-release) GH_RELEASE="dev"; shift ;;
     --store-submit) STORE_MODE="release"; shift ;;
     --dry-run)      DRY_RUN="true";  shift ;;
     --no-dry-run)   DRY_RUN="false"; shift ;;
@@ -481,6 +482,36 @@ validate_release_readiness() {
 }
 
 # ─── GitHub Release ────────────────────────────────────────────────────────────
+
+# Rolling "developer" tag: delete the existing tag + release and recreate
+# both pointing at HEAD with the freshly built zip. Skips the full versioned
+# release flow (no changelog refresh, no version bump, no store submission)
+# because this is a moving target for testing only
+if [[ "$GH_RELEASE" == "dev" ]]; then
+  banner "GitHub Dev Release (rolling 'developer' tag)"
+  COMMIT_SHA=$(git rev-parse --short HEAD)
+  DEV_TAG="developer"
+  DEV_TITLE="Developer build (${COMMIT_SHA})"
+  DEV_NOTES="Rolling developer build at commit ${COMMIT_SHA}. Always tracks origin/main HEAD. Pulled automatically by the Proton Pulse plugin's Developer update channel."
+
+  # Delete the existing release first (gh handles the tag separately).
+  # --yes skips the confirm prompt; -y deletes both release and tag locally/remote
+  if gh release view "$DEV_TAG" --repo mdeguzis/decky-proton-pulse &>/dev/null; then
+    echo "Deleting existing dev release + tag..."
+    gh release delete "$DEV_TAG" --repo mdeguzis/decky-proton-pulse --yes --cleanup-tag
+  fi
+
+  echo "Creating dev release at ${COMMIT_SHA} with ${ZIP_NAME}..."
+  gh release create "$DEV_TAG" "./${ZIP_NAME}" \
+    --repo mdeguzis/decky-proton-pulse \
+    --title "$DEV_TITLE" \
+    --notes "$DEV_NOTES" \
+    --target main \
+    --prerelease
+
+  echo "Done: https://github.com/mdeguzis/decky-proton-pulse/releases/tag/${DEV_TAG}"
+  exit 0
+fi
 
 if [[ -n "$GH_RELEASE" ]]; then
   validate_release_readiness

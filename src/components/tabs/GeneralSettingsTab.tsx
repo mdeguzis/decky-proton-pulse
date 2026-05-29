@@ -303,10 +303,10 @@ export function GeneralSettingsTab() {
   // plugin version + update check
   const [currentVersion, setCurrentVersion] = useState('...');
   const [buildCommit, setBuildCommit] = useState('');
-  const [updateChannel, setUpdateChannelState] = useState<'release' | 'pre-release'>(
-    () => (getSetting('updateChannel', 'release') as 'release' | 'pre-release'),
+  const [updateChannel, setUpdateChannelState] = useState<'release' | 'pre-release' | 'developer'>(
+    () => (getSetting('updateChannel', 'release') as 'release' | 'pre-release' | 'developer'),
   );
-  const setUpdateChannel = (ch: 'release' | 'pre-release') => {
+  const setUpdateChannel = (ch: 'release' | 'pre-release' | 'developer') => {
     setUpdateChannelState(ch);
     setSetting('updateChannel', ch);
     setCheckResult(null);
@@ -894,6 +894,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             rgOptions={[
               { data: 'release', label: 'Release' },
               { data: 'pre-release', label: 'Pre-release' },
+              { data: 'developer', label: 'Developer (rolling)' },
             ]}
             selectedOption={updateChannel}
             onChange={(opt) => setUpdateChannel(opt.data as any)}

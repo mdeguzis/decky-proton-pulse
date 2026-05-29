@@ -54,11 +54,13 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
     channel values:
       "release"     - latest stable GitHub release (no prereleases)
       "pre-release" - latest GitHub release including prereleases
-      "latest"      - latest main branch commit (always "has update")
+      "developer"   - rolling "developer" tag/release, always tracks origin/main.
+                      Refreshed via `make github-dev-release` after every push
+      "latest"      - latest main branch commit zip (kept for backwards compat,
+                      not exposed in the UI dropdown anymore)
     """
     try:
         if channel == "latest":
-            # grab the latest commit SHA from the GitHub API
             commit_sha = "HEAD"
             try:
                 commit_data = curl_json(
@@ -80,6 +82,45 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
                 "channel": channel,
             }
 
+        if channel == "developer":
+            # Rolling "developer" tag, refreshed via make github-dev-release.
+            # Pull the release by tag so we always get the freshest zip attached
+            # to that tag regardless of version semantics. has_update fires
+            # whenever the commit-sha embedded in the version label differs
+            # from what we have locally
+            data = curl_json(
+                f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/developer",
+                headers=["Accept: application/vnd.github.v3+json"],
+                timeout=15,
+            )
+            latest = str(data.get("tag_name", "developer"))
+            # Use the release "name" or body to surface the commit sha if present
+            release_name = str(data.get("name", "") or "")
+            zip_asset = next(
+                (a for a in data.get("assets", []) if a["name"].endswith(".zip")),
+                None,
+            )
+            zip_url = zip_asset["browser_download_url"] if zip_asset else None
+            asset_size = zip_asset.get("size") if zip_asset else None
+            # has_update: always treat as available when the release name (which
+            # we set to "dev (sha)") differs from the local build commit. We
+            # cant easily read the local .build-commit from here so just always
+            # offer the update - it's a dev channel, low cost to re-install
+            display_version = release_name or latest
+            decky.logger.debug(
+                f"check_for_update(developer): zip_url={zip_url} display={display_version}"
+            )
+            return {
+                "success": True,
+                "current_version": current_version,
+                "latest_version": display_version,
+                "has_update": bool(zip_url),
+                "zip_url": zip_url,
+                "asset_size": asset_size,
+                "release_url": str(data.get("html_url", "")),
+                "channel": channel,
+            }
+
         if channel == "pre-release":
             # Find the newest release that is actually marked as a pre-release.
             # Taking releases[0] would pick the newest overall (often a stable
@@ -92,7 +133,6 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
             )
             data = next((r for r in releases if r.get("prerelease")), releases[0] if releases else {})
         else:
-            # stable release only
             data = curl_json(
                 _RELEASES_URL,
                 headers=["Accept: application/vnd.github.v3+json"],
