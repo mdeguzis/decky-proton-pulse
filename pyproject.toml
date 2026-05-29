@@ -1,6 +1,6 @@
 [project]
 name = "decky-proton-pulse"
-version = "1.7.3"
+version = "1.7.4"
 requires-python = ">=3.11"
 dependencies = [
     "aiohttp>=3.9",
