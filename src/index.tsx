@@ -48,6 +48,12 @@ import { toaster } from './lib/notify';
 
 const setLogLevel = callable<[level: string], boolean>('set_log_level');
 const getPluginVersion = callable<[], string>('get_plugin_version');
+// Startup check uses a thin signature - we only care about success +
+// has_update + latest_version. Mirror of the GeneralSettingsTab signature
+const checkForUpdateStartup = callable<
+  [channel: string],
+  { success: boolean; has_update?: boolean; latest_version?: string; current_version?: string; error?: string }
+>('check_for_update');
 
 // wrap backend calls so they timeout + log clearly when Python is dead
 const setLogLevelSafe = (level: string) =>
@@ -283,6 +289,59 @@ export default definePlugin(() => {
     })();
   }, 8000);
 
+  // Startup update check: when the user is on the release or pre-release
+  // channel, hit the GitHub API once per day and toast if a new version is
+  // available. Skipped for the developer channel since that always reports
+  // has_update: true (rolling tag) - would spam every Steam launch.
+  // Throttled via a localStorage timestamp so users who restart Steam often
+  // dont get hammered. Set proton-pulse:update-check-skip=1 to silence
+  const updateCheckTimer = setTimeout(() => {
+    void (async () => {
+      try {
+        if (getSetting('proton-pulse:update-check-skip', false)) {
+          void logFrontendEvent('DEBUG', 'Startup update check skipped', { reason: 'user-disabled' });
+          return;
+        }
+        const channel = (getSetting('updateChannel', 'release') as string);
+        if (channel !== 'release' && channel !== 'pre-release') {
+          void logFrontendEvent('DEBUG', 'Startup update check skipped', { reason: 'not-on-tracked-channel', channel });
+          return;
+        }
+        // Throttle: 24h between background checks. The Settings tab updater
+        // is always available for a manual on-demand check
+        const THROTTLE_MS = 24 * 60 * 60 * 1000;
+        const lastCheck = Number(getSetting('proton-pulse:update-check-last', 0));
+        const now = Date.now();
+        if (lastCheck && (now - lastCheck) < THROTTLE_MS) {
+          void logFrontendEvent('DEBUG', 'Startup update check skipped', { reason: 'throttled', hoursSinceLast: Math.round((now - lastCheck) / 36e5) });
+          return;
+        }
+        const currentVersion = await callWithTimeout(() => getPluginVersion(), 'get_plugin_version', 5000).catch(() => '0.0.0');
+        const result = await callWithTimeout(() => checkForUpdateStartup(channel), 'check_for_update', 15000);
+        setSetting('proton-pulse:update-check-last', now);
+        if (!result?.success || !result.has_update) {
+          void logFrontendEvent('DEBUG', 'Startup update check finished', { channel, has_update: !!result?.has_update, latest: result?.latest_version });
+          return;
+        }
+        // Suppress repeat toasts for the SAME version - if the user saw "v1.7.4 is
+        // available" yesterday and ignored it, don't pester them again today
+        const lastToasted = getSetting('proton-pulse:update-check-toasted', '');
+        if (lastToasted === result.latest_version) {
+          void logFrontendEvent('DEBUG', 'Startup update check: toast already shown for this version', { version: result.latest_version });
+          return;
+        }
+        setSetting('proton-pulse:update-check-toasted', result.latest_version);
+        void logFrontendEvent('INFO', 'Startup update check: new version available', { current: currentVersion, latest: result.latest_version, channel });
+        toaster.toast({
+          title: 'Proton Pulse update available',
+          body: `v${result.latest_version} ready on the ${channel} channel. Open Settings to install.`,
+        });
+      } catch (e) {
+        void logFrontendEvent('ERROR', 'Startup update check failed', { error: e instanceof Error ? e.message : String(e) });
+      }
+    })();
+  }, 10000);
+
   routerHook.addRoute('/proton-pulse', ProtonPulsePage);
   const teardownScreenshotAutomation = installScreenshotAutomationBridge();
   const syncFocusedGameFromPath = () => {
@@ -364,6 +423,7 @@ export default definePlugin(() => {
       stopAutoFlush();
       clearTimeout(prefetchTimer);
       clearTimeout(geAutoUpdateTimer);
+      clearTimeout(updateCheckTimer);
       void flushMetricsToDisk();
       routerHook.removeRoute('/proton-pulse');
       routerHook.removePatch('/library/app/:appid', gamePagePatch);
