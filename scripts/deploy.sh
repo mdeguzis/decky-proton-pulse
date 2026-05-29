@@ -411,6 +411,13 @@ fi
 VERSION=$(tr -d '[:space:]' < VERSION)
 RELEASE_TAG="v${VERSION}"
 ZIP_NAME="${PLUGIN_NAME}-v${VERSION}.zip"
+# Pre-releases get a -pre-release suffix on the tag + asset zip so they
+# never collide with the matching stable v1.7.3 tag/zip. Stable, store,
+# and dev release flows keep the bare names
+if [[ "$GH_RELEASE" == "prerelease" ]]; then
+  RELEASE_TAG="v${VERSION}-pre-release"
+  PRE_ZIP_NAME="${PLUGIN_NAME}-v${VERSION}-pre-release.zip"
+fi
 
 # ─── Build ─────────────────────────────────────────────────────────────────────
 
@@ -568,8 +575,20 @@ if [[ -n "$GH_RELEASE" ]]; then
     update_changelog_from_release_commits
   fi
   confirm_release_actions
+
   if ! is_truthy "$DRY_RUN"; then
     update_changelog_for_release
+
+    # Notes are derived from the just-refreshed CHANGELOG, so we can generate
+    # them now and pop the editor BEFORE committing / tagging / pushing.
+    # That way a user who hits :cq aborts cleanly with zero side effects on
+    # the repo state. Reviewing/editing here also means the edited notes get
+    # committed via auto_commit_release_derived_changes if release-notes.mjs
+    # ends up writing back to CHANGELOG.md in the future
+    NOTES_FILE="${TMPDIR:-/tmp}/decky-proton-pulse-release-notes-${VERSION}.md"
+    node scripts/release-notes.mjs > "$NOTES_FILE"
+    edit_release_notes "$NOTES_FILE"
+
     auto_commit_release_derived_changes
     ensure_release_tag
     push_release_branch
@@ -581,12 +600,17 @@ if [[ -n "$GH_RELEASE" ]]; then
     echo "Would prepare notes and create/update ${RELEASE_TAG} with asset ${ZIP_NAME}."
   else
 
-    NOTES_FILE="${TMPDIR:-/tmp}/decky-proton-pulse-release-notes-${VERSION}.md"
-    node scripts/release-notes.mjs > "$NOTES_FILE"
-    edit_release_notes "$NOTES_FILE"
+    # Use the suffixed zip name for pre-releases. The zip on disk was built
+    # as decky-proton-pulse-v1.7.3.zip; copy to the suffixed name so the
+    # release asset is unambiguous when listed alongside the stable release
+    UPLOAD_ZIP="$ZIP_NAME"
+    if [[ "$GH_RELEASE" == "prerelease" ]]; then
+      cp "./${ZIP_NAME}" "./${PRE_ZIP_NAME}"
+      UPLOAD_ZIP="$PRE_ZIP_NAME"
+    fi
 
     GH_ARGS=(
-      gh release create "$RELEASE_TAG" "./${ZIP_NAME}"
+      gh release create "$RELEASE_TAG" "./${UPLOAD_ZIP}"
       --repo mdeguzis/decky-proton-pulse
       --title "Proton Pulse ${RELEASE_TAG}"
       --notes-file "$NOTES_FILE"
@@ -596,7 +620,7 @@ if [[ -n "$GH_RELEASE" ]]; then
     # If the tag already exists, skip creating and just upload the asset
     if gh release view "$RELEASE_TAG" --repo mdeguzis/decky-proton-pulse &>/dev/null; then
       echo "Release $RELEASE_TAG already exists -- uploading asset only."
-      gh release upload "$RELEASE_TAG" "./${ZIP_NAME}" --repo mdeguzis/decky-proton-pulse --clobber
+      gh release upload "$RELEASE_TAG" "./${UPLOAD_ZIP}" --repo mdeguzis/decky-proton-pulse --clobber
     else
       "${GH_ARGS[@]}"
     fi
