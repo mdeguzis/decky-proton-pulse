@@ -31,5 +31,13 @@
     "src/patches/libraryGridBadges.ts",
     "src/patches/searchResultsHint.tsx"
   ],
-  "findings": []
+  "findings": [
+    {
+      "file": "src/components/tabs/SystemRequirementsTab.tsx",
+      "line": 131,
+      "column": 10,
+      "kind": "jsx",
+      "text": "loading"
+    }
+  ]
 }

@@ -24,9 +24,23 @@ const getSystemInfo = callable<[], SystemInfo>('get_system_info');
 const getSystemInfoSafe = () => callWithTimeout(() => getSystemInfo(), 'get_system_info');
 const DEFAULT_EXIT_PATH = '/routes/library/home';
 
+// SidebarNavigation expects route values to be full URL paths. Tabs use
+// /proton-pulse/<tab> so when SidebarNavigation pushes them, React Router's
+// prefix match on /proton-pulse keeps OUR component mounted -- the URL is
+// a subpath of our registered route, not an unknown /routes/<x> stray.
+// This mirrors how Decky Loader's own Settings sidebar works (/decky/settings,
+// /decky/settings/general, /decky/settings/plugins, ...).
+const ROUTE_PREFIX = '/proton-pulse';
+const tabToRoute = (tab: string) => `${ROUTE_PREFIX}/${tab}`;
+const routeToTab = (route: string) => route.startsWith(`${ROUTE_PREFIX}/`)
+  ? route.slice(ROUTE_PREFIX.length + 1)
+  : route;
+
 export function ProtonPulsePage() {
   useLanguage(); // triggers re-render on language change
   const extras = t().extras!;
+  // activePage holds the SHORT tab name ('manage-game'); convert to full route
+  // when feeding SidebarNavigation, convert back when SidebarNavigation tells us
   const [activePage, setActivePage] = useState<string>(pageState.initialPage);
   const [appId, setAppId]           = useState<number | null>(pageState.appId);
   const [appName, setAppName]       = useState<string>(pageState.appName);
@@ -226,11 +240,24 @@ export function ProtonPulsePage() {
 
   const hasGame = !!appId;
 
+  // Log every time activePage state changes so we can trace bad routes.
+  // The Sidebar page requested log only tells us what was clicked; this
+  // tells us what content actually renders. If you click Settings but
+  // activePage doesn't move to 'settings', that's a bug.
+  useEffect(() => {
+    void logFrontendEvent('INFO', 'Modal: activePage changed', {
+      activePage,
+      hasGame,
+      appId,
+      pathname: globalThis.location?.pathname ?? null,
+    });
+  }, [activePage, hasGame, appId]);
+
   const pages: (SidebarNavigationPage | 'separator')[] = [
     ...(hasGame ? [{
       title: t().nav.manageThisGame,
       identifier: 'manage-game',
-      route: 'manage-game',
+      route: '/proton-pulse/manage-game',
       content: (
         <ConfigureTab
           appId={appId}
@@ -241,7 +268,7 @@ export function ProtonPulsePage() {
     }, {
       title: t().nav.systemRequirements,
       identifier: 'system-requirements',
-      route: 'system-requirements',
+      route: '/proton-pulse/system-requirements',
       content: (
         <LoggingErrorBoundary name="SystemRequirements">
           <SystemRequirementsTab
@@ -255,31 +282,31 @@ export function ProtonPulsePage() {
     {
       title: t().nav.manageConfigurations,
       identifier: 'manage',
-      route: 'manage',
+      route: '/proton-pulse/manage',
       content: <LoggingErrorBoundary name="ManageTab"><ManageTab appId={appId} appName={appName} gpuVendor={sysInfo?.gpu_vendor ?? null} sysInfo={sysInfo} /></LoggingErrorBoundary>,
     },
     {
       title: t().nav.compatibilityTools,
       identifier: 'compatibility-tools',
-      route: 'compatibility-tools',
+      route: '/proton-pulse/compatibility-tools',
       content: <LoggingErrorBoundary name="CompatibilityTools"><CompatibilityToolsTab /></LoggingErrorBoundary>,
     },
     {
       title: t().nav.logs,
       identifier: 'logs',
-      route: 'logs',
+      route: '/proton-pulse/logs',
       content: <LoggingErrorBoundary name="Logs"><LogsTab /></LoggingErrorBoundary>,
     },
     {
       title: t().nav.settings,
       identifier: 'settings',
-      route: 'settings',
+      route: '/proton-pulse/settings',
       content: <LoggingErrorBoundary name="Settings"><GeneralSettingsTab /></LoggingErrorBoundary>,
     },
     {
       title: t().nav.about,
       identifier: 'about',
-      route: 'about',
+      route: '/proton-pulse/about',
       content: <LoggingErrorBoundary name="About"><AboutTab /></LoggingErrorBoundary>,
     },
   ];
@@ -311,16 +338,20 @@ export function ProtonPulsePage() {
           title="Proton Pulse"
           showTitle={false}
           pages={pages}
-          page={activePage}
+          page={tabToRoute(activePage)}
           onPageRequested={(page) => {
+            // SidebarNavigation gives us the full route ('/proton-pulse/manage')
+            // Convert back to the short tab name we use everywhere else
+            const tab = typeof page === 'string' ? routeToTab(page) : null;
             void logFrontendEvent('DEBUG', 'Sidebar page requested', {
-              requestedPage: typeof page === 'string' ? page : null,
+              requestedRoute: typeof page === 'string' ? page : null,
+              requestedTab: tab,
               appId,
               appName,
             });
-            if (typeof page !== 'string') return;
-            if (!pages.some((entry) => entry !== 'separator' && entry.route === page)) return;
-            setActivePage(page);
+            if (!tab) return;
+            if (!pages.some((entry) => entry !== 'separator' && entry.identifier === tab)) return;
+            setActivePage(tab);
           }}
           disableRouteReporting={true}
         />

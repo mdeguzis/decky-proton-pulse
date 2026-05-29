@@ -22,6 +22,10 @@ export class LoggingErrorBoundary extends Component<Props, State> {
     return { error };
   }
 
+  componentDidMount(): void {
+    void logFrontendEvent('DEBUG', `LoggingErrorBoundary mounted: ${this.props.name}`, {});
+  }
+
   componentDidCatch(error: Error, info: ErrorInfo): void {
     const msg = error?.message || String(error);
     const stack = info?.componentStack?.slice(0, 500) || '';

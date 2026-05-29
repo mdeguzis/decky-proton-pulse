@@ -2,8 +2,9 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
-## v1.8.0
+## v1.7.4
 
+- fix(nav): sidebar tabs now use full route paths (/proton-pulse/<tab>) so React Router prefix-matches and our component stays mounted -- prior bare tab routes caused blank screens and Steam Settings to open when clicking tabs after a Steam Client update changed disableRouteReporting behavior
 - feat(i18n): add 10 new translation languages (bg, da, el, es-419, fi, hu, no, pt, ro, sl) -- 29 total
 - feat(i18n): raise minimum translation coverage from 90% to 95%; all languages now at 100%
 - fix(i18n): report flow buttons now say "Submit" instead of "Upload"
@@ -128,6 +129,10 @@ All notable changes to Proton Pulse should be recorded here.
 - chore(deploy): y/n prompt for PR push, detect existing PR title/author, clean fork sync
 
 ## Unreleased
+
+- Hidden focusable in loading state so gamepad input stays captured
+- I18n: enforce strict 100% coverage; localize 2 remaining brand strings
+- I18n: translate 61 new extras keys across all 28 languages (>= 99.7%)
 
 ## v1.7.2 pre-release
 
