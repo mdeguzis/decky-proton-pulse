@@ -59,16 +59,17 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/tabs/GeneralSettingsTab.tsx` | 889 | jsx | installed. Restart Decky Loader or Steam to apply. |
 | `src/components/tabs/GeneralSettingsTab.tsx` | 895 | string | Release |
 | `src/components/tabs/GeneralSettingsTab.tsx` | 896 | string | Pre-release |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 907 | jsx | Installing... |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 971 | string | Auto-sync to cloud |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 972 | string | Automatically back up configs and plugin settings when they change |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 984 | string | Cloud sync refresh rate |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 985 | string | How often to re-check cloud sync status in the background |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 990 | string | Disabled |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 991 | string | 1 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 992 | string | 5 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 993 | string | 30 min |
-| `src/components/tabs/GeneralSettingsTab.tsx` | 994 | string | 1 hour |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 897 | string | Developer (rolling) |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 908 | jsx | Installing... |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 972 | string | Auto-sync to cloud |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 973 | string | Automatically back up configs and plugin settings when they change |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 985 | string | Cloud sync refresh rate |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 986 | string | How often to re-check cloud sync status in the background |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 991 | string | Disabled |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 992 | string | 1 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 993 | string | 5 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 994 | string | 30 min |
+| `src/components/tabs/GeneralSettingsTab.tsx` | 995 | string | 1 hour |
 | `src/components/tabs/ManageTab.tsx` | 569 | string | Active |
 | `src/components/tabs/ManageTab.tsx` | 571 | string | Playtime (total) |
 | `src/components/tabs/ManageTab.tsx` | 572 | string | Playtime (this config) |

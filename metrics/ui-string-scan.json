@@ -426,70 +426,77 @@
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 907,
+      "line": 897,
+      "column": 43,
+      "kind": "string",
+      "text": "Developer (rolling)"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 908,
       "column": 61,
       "kind": "jsx",
       "text": "Installing..."
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 971,
+      "line": 972,
       "column": 19,
       "kind": "string",
       "text": "Auto-sync to cloud"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 972,
+      "line": 973,
       "column": 25,
       "kind": "string",
       "text": "Automatically back up configs and plugin settings when they change"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 984,
+      "line": 985,
       "column": 19,
       "kind": "string",
       "text": "Cloud sync refresh rate"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 985,
+      "line": 986,
       "column": 25,
       "kind": "string",
       "text": "How often to re-check cloud sync status in the background"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 990,
+      "line": 991,
       "column": 26,
       "kind": "string",
       "text": "Disabled"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 991,
+      "line": 992,
       "column": 26,
       "kind": "string",
       "text": "1 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 992,
+      "line": 993,
       "column": 26,
       "kind": "string",
       "text": "5 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 993,
+      "line": 994,
       "column": 26,
       "kind": "string",
       "text": "30 min"
     },
     {
       "file": "src/components/tabs/GeneralSettingsTab.tsx",
-      "line": 994,
+      "line": 995,
       "column": 26,
       "kind": "string",
       "text": "1 hour"

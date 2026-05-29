@@ -126,6 +126,11 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Dev release: name asset decky-proton-pulse-dev-<sha>.zip
+- Dont prepend 'v' to non-numeric version labels (Developer channel)
+- Trailing newline to test developer update channel
+- Add Developer rolling update channel + make github-dev-release
+- Add 10 new translation languages, raise min coverage to 95%
 - Rename Upload to Submit in report flow; correct README comparison table
 - Shorten names for MD table
 - Remove Wine Cellar column, expand Proton Pulse badge descriptions from v1.7.0 commits
