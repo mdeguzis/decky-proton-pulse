@@ -11,9 +11,11 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.7.3
 
-- Startup: toast a new-version-available nudge on release/pre-release channels
-- Release: open editor on generated notes before publishing
-- Dev release: name asset decky-proton-pulse-dev-<sha>.zip
+- Sync README + translation coverage metrics for 90% floor
+- Check-translations: lower MIN_COVERAGE 95 -> 90 (tracked in #83)
+- I18n: wire 71 hardcoded UI strings to extras tree, seed 9 enforced langs
+- Release: -pre-release tag suffix + edit notes before any commits
+- Sync release-derived files for 1.7.3
 
 ## v1.7.2
 
