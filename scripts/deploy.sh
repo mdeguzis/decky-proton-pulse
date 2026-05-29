@@ -44,6 +44,32 @@ banner() {
   echo ""
 }
 
+# Pop open $EDITOR (vim by default) on the generated release-notes file so
+# the user can review or rewrite them before we push. Set SKIP_NOTES_EDIT=1
+# to bypass (CI, scripts, automated dev-release loops). Re-reads the file
+# after the editor exits in case the user edited in place
+edit_release_notes() {
+  local notes_file="$1"
+  if [[ "${SKIP_NOTES_EDIT:-0}" == "1" ]]; then
+    echo "SKIP_NOTES_EDIT=1, using generated notes as-is."
+    return 0
+  fi
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    echo "Non-interactive shell, skipping notes editor."
+    return 0
+  fi
+  local editor="${EDITOR:-vim}"
+  echo ""
+  echo "Opening release notes in ${editor} for review."
+  echo "Edit, save, and quit (:wq in vim) to continue. :cq to abort the release."
+  echo ""
+  if ! "$editor" "$notes_file"; then
+    echo "Editor exited non-zero, aborting release."
+    exit 1
+  fi
+  echo "Notes saved. Continuing with release."
+}
+
 is_truthy() {
   local val
   val="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
@@ -492,7 +518,23 @@ if [[ "$GH_RELEASE" == "dev" ]]; then
   COMMIT_SHA=$(git rev-parse --short HEAD)
   DEV_TAG="developer"
   DEV_TITLE="Developer build (${COMMIT_SHA})"
-  DEV_NOTES="Rolling developer build at commit ${COMMIT_SHA}. Always tracks origin/main HEAD. Pulled automatically by the Proton Pulse plugin's Developer update channel."
+
+  # Seed the notes with a brief auto-summary, then let the user edit them
+  # in $EDITOR. The 1-line commit body gives a fast jump-off when the dev
+  # release is for a single change; bullet of recent commits gives context
+  # when there are several
+  DEV_NOTES_FILE="${TMPDIR:-/tmp}/decky-proton-pulse-dev-notes-${COMMIT_SHA}.md"
+  {
+    echo "Rolling developer build at commit ${COMMIT_SHA}."
+    echo ""
+    echo "Always tracks origin/main HEAD. Pulled automatically by the Proton Pulse plugin's Developer update channel."
+    echo ""
+    echo "## Recent commits"
+    echo ""
+    git log --pretty='format:- %h %s' -5
+    echo ""
+  } > "$DEV_NOTES_FILE"
+  edit_release_notes "$DEV_NOTES_FILE"
 
   # Delete the existing release first (gh handles the tag separately).
   # --yes skips the confirm prompt; -y deletes both release and tag locally/remote
@@ -512,7 +554,7 @@ if [[ "$GH_RELEASE" == "dev" ]]; then
   gh release create "$DEV_TAG" "./${DEV_ZIP_NAME}" \
     --repo mdeguzis/decky-proton-pulse \
     --title "$DEV_TITLE" \
-    --notes "$DEV_NOTES" \
+    --notes-file "$DEV_NOTES_FILE" \
     --target main \
     --prerelease
 
@@ -541,6 +583,7 @@ if [[ -n "$GH_RELEASE" ]]; then
 
     NOTES_FILE="${TMPDIR:-/tmp}/decky-proton-pulse-release-notes-${VERSION}.md"
     node scripts/release-notes.mjs > "$NOTES_FILE"
+    edit_release_notes "$NOTES_FILE"
 
     GH_ARGS=(
       gh release create "$RELEASE_TAG" "./${ZIP_NAME}"
