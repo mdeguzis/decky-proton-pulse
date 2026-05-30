@@ -28,6 +28,7 @@ import { setupLibraryGridBadges, teardownLibraryGridBadges } from './patches/lib
 import { getSetting, setSetting } from './lib/settings';
 import { NOTIFICATIONS_ENABLED_KEY } from './lib/notify';
 import { logFrontendEvent, callWithTimeout } from './lib/logger';
+import { formatVersion } from './lib/formatVersion';
 import { TRANSLATIONS_LOADED } from './lib/translations';
 import { useLanguage, t } from './lib/i18n';
 import { installScreenshotAutomationBridge } from './lib/screenshotAutomation';
@@ -334,7 +335,7 @@ export default definePlugin(() => {
         void logFrontendEvent('INFO', 'Startup update check: new version available', { current: currentVersion, latest: result.latest_version, channel });
         toaster.toast({
           title: 'Proton Pulse update available',
-          body: `v${result.latest_version} ready on the ${channel} channel. Open Settings to install.`,
+          body: `${formatVersion(result.latest_version)} ready on the ${channel} channel. Open Settings to install.`,
         });
       } catch (e) {
         void logFrontendEvent('ERROR', 'Startup update check failed', { error: e instanceof Error ? e.message : String(e) });

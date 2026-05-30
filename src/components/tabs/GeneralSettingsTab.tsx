@@ -27,6 +27,7 @@ import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPlugin
 import { buildPluginLinkProfileUrl } from '../../lib/protonPulseLinkUrl';
 import { type UpdateCheckResult, type UpdateStatusResult, triggerReload } from './aboutTabUpdate';
 import { showReleaseNotesModal } from '../ReleaseNotesModal';
+import { formatVersion } from '../../lib/formatVersion';
 import { refreshLibraryGridBadges } from '../../patches/libraryGridBadges';
 
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -851,8 +852,30 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
     ? extras.protonPulseLinkCodeExpires(new Date(pluginLinkStatus.linkCodeExpiresAt).toLocaleTimeString())
     : '';
 
+  // Y-button opens the release notes modal -- works even when no update
+  // is available (loads the most recent 10 releases). Mirrors Decky
+  // Loader's pattern of binding onOptionsButton + onOptionsActionDescription
+  // on the Field component for the footer "Y PATCH NOTES" hint
+  const openPatchNotes = () => {
+    if (checkResult?.success && checkResult.has_update && checkResult.release_notes) {
+      showReleaseNotesModal({
+        version: checkResult.latest_version ?? '',
+        body: checkResult.release_notes ?? '',
+        releaseUrl: checkResult.release_url,
+        publishedAt: (checkResult as { published_at?: string }).published_at,
+        isPrerelease: updateChannel === 'pre-release',
+      });
+    } else {
+      // No active update -- modal loads recent history from list_releases
+      showReleaseNotesModal();
+    }
+  };
+
   return (
-    <Focusable>
+    <Focusable
+      onOptionsActionDescription={t().extras!.releaseNotes!() as string}
+      onOptionsButton={openPatchNotes}
+    >
       {/* --- Plugin Update --- */}
       <div style={sectionStyle()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
@@ -860,7 +883,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             {aboutStrings.checkForUpdates}
           </div>
           <div style={{ fontSize: 11, color: '#7a9bb5', fontFamily: 'monospace', textAlign: 'right' }}>
-            <div>v{currentVersion}</div>
+            <div>{formatVersion(currentVersion)}</div>
             {buildCommit && <div style={{ fontSize: 10, color: '#5a7a8f' }}>{buildCommit}</div>}
           </div>
         </div>
@@ -887,7 +910,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         )}
         {updateApplied && (
           <div style={{ fontSize: 12, color: '#4caf50', marginBottom: 8, padding: '8px 12px', background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.3)', borderRadius: 4 }}>
-            v{updateStatus?.version} {t().extras!.updateInstalledRestart!()}
+            {formatVersion(updateStatus?.version)} {t().extras!.updateInstalledRestart!()}
           </div>
         )}
         <Focusable style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} flow-children="horizontal">
@@ -909,13 +932,13 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             <DialogButton disabled style={{ fontSize: 12 }}>{t().extras!.updateInstalling!()}</DialogButton>
           ) : checkResult?.success && checkResult.has_update ? (
             <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12 }}>
-              {`Update to ${/^\d/.test(checkResult.latest_version!) ? 'v' : ''}${checkResult.latest_version}`}
+              {`Update to ${formatVersion(checkResult.latest_version)}`}
             </DialogButton>
           ) : checkResult?.success && !checkResult.has_update
               && (checkResult.current_version ?? '') > (checkResult.latest_version ?? '')
               && checkResult.current_version !== checkResult.latest_version ? (
             <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12, color: '#fb923c' }}>
-              {`Downgrade to ${/^\d/.test(checkResult.latest_version!) ? 'v' : ''}${checkResult.latest_version}`}
+              {`Downgrade to ${formatVersion(checkResult.latest_version)}`}
             </DialogButton>
           ) : (
             <DialogButton onClick={handleCheckUpdate} disabled={checkingUpdate} style={{ fontSize: 12 }}>
@@ -924,20 +947,14 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
           )}
         </Focusable>
 
-        {/* Release Notes button -- only shown when an update is available and
-            the backend returned a non-empty body. Steam Big Picture surfaces
-            release notes inline in its System Updates box; we use a click-out
-            modal so the Settings tab stays compact */}
+        {/* Release Notes button: visible click target for users who dont know
+            about the Y gamepad shortcut. The same modal is also reachable
+            anywhere on this tab via the onOptionsButton Y-binding wired on
+            the root Focusable above */}
         {checkResult?.success && checkResult.has_update && !updating && !updateApplied && checkResult.release_notes && (
           <Focusable style={{ marginTop: 8 }}>
             <DialogButton
-              onClick={() => showReleaseNotesModal(
-                checkResult.latest_version ?? '',
-                checkResult.release_notes ?? '',
-                checkResult.release_url,
-                (checkResult as any).published_at as string | undefined,
-                updateChannel === 'pre-release',
-              )}
+              onClick={openPatchNotes}
               style={{ width: '100%', fontSize: 12 }}
             >
               {t().extras!.releaseNotes!()}

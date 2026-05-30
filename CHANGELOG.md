@@ -129,6 +129,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Release notes modal: steam-style full-screen overlay + browse history with L/R
 - Release notes modal: surface github release body on update-available
 - UseFocusableScroll: extract shared hook for scroll-on-focus + indicator
 - Scroll-on-focus + bottom buffer + readable tier badges in Analysis tab

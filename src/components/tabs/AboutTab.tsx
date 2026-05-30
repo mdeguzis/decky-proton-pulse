@@ -4,6 +4,7 @@ import { callable } from '@decky/api';
 import { Focusable, DialogButton, Dropdown, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 import { BrandLogo } from '../BrandLogo';
+import { formatVersion } from '../../lib/formatVersion';
 import { toaster } from '../../lib/notify';
 import { t } from '../../lib/i18n';
 import { openIssue, type IssueTemplate } from '../../lib/issueReport';
@@ -65,7 +66,7 @@ export function AboutTab() {
         <BrandLogo size={42} />
         <div>
           <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Proton Pulse</div>
-          <div style={{ color: '#888' }}>{`v${version}`}</div>
+          <div style={{ color: '#888' }}>{formatVersion(version)}</div>
         </div>
       </div>
       <div style={{ marginBottom: 12, lineHeight: 1.5 }}>
