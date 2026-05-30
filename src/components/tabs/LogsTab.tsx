@@ -37,7 +37,10 @@ export function LogsTab() {
   const strings = t().logs;
 
   return (
-    <Focusable style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    // height: 100% lets the preview pane grow to fill the tab. Without it
+    // the Focusable just sizes to its content and the preview sits as a
+    // 250px floor with empty space below
+    <Focusable style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
       <div style={{ fontSize: 11, color: '#7a9bb5', lineHeight: 1.5 }}>
         {strings.viewerHint}
       </div>
@@ -63,6 +66,12 @@ export function LogsTab() {
           wordBreak: 'break-all',
           lineHeight: 1.45,
           minHeight: 250,
+          // flex: 1 makes the preview pane fill the remaining vertical
+          // space in the tab. overflow: auto keeps long lines from
+          // breaking the layout. The preview shows the last 5 lines so
+          // overflow is rare but defensive
+          flex: 1,
+          overflow: 'auto',
         }}
       >
         {latestLines || strings.noLogs}

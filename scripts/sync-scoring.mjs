@@ -33,10 +33,16 @@ function listScoringFiles(dir) {
     .sort();
 }
 
+// Match the normalization in check-scoring-sync.mjs so CI on Windows
+// (which checks out CRLF) gets the same hash as the Linux baseline
+function normalizeForHash(buf) {
+  return Buffer.from(buf.toString('utf8').replace(/\r\n/g, '\n'), 'utf8');
+}
+
 function hashFiles(dir, files) {
   const h = crypto.createHash('sha256');
   for (const f of files) {
-    const buf = fs.readFileSync(path.join(dir, f));
+    const buf = normalizeForHash(fs.readFileSync(path.join(dir, f)));
     // include filename so reordering / renaming flips the hash
     h.update(f);
     h.update('\0');

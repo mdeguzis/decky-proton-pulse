@@ -1,0 +1,11 @@
+# Force LF line endings on synced scoring JS so the hash baseline in
+# SYNC_MANIFEST.json holds across Linux/macOS/Windows checkouts. Without
+# this the Windows CI runner converts checked-in files to CRLF and
+# scripts/check-scoring-sync.mjs flags them as drifted
+src/lib/gameStats/_synced/*.js text eol=lf
+src/lib/gameStats/_synced/*.d.ts text eol=lf
+src/lib/gameStats/_synced/SYNC_MANIFEST.json text eol=lf
+
+# Project convention: scripts and shell files stay LF on Windows too
+*.sh text eol=lf
+*.mjs text eol=lf

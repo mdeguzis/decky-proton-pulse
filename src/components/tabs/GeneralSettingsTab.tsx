@@ -852,12 +852,30 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
     ? extras.protonPulseLinkCodeExpires(new Date(pluginLinkStatus.linkCodeExpiresAt).toLocaleTimeString())
     : '';
 
+  // For the developer channel the backend always reports has_update=true
+  // (it cant cheaply read the local .build-commit), so we double-check
+  // here: if the sha embedded in the dev version label matches our local
+  // buildCommit, suppress the "Update available" banner + button. Example
+  // label: "Developer build (9860f30)" -> sha "9860f30"
+  const sameDevBuildAsLocal = (() => {
+    if (!checkResult?.success) return false;
+    if (updateChannel !== 'developer') return false;
+    const m = /\(([0-9a-f]{6,40})(?:\+uncommitted)?\)/i.exec(checkResult.latest_version ?? '');
+    if (!m) return false;
+    const remoteSha = m[1].toLowerCase();
+    // buildCommit on disk can be "abc1234" or "abc1234+uncommitted"; compare
+    // only the leading hex section
+    const localSha = (buildCommit || '').split('+')[0].toLowerCase();
+    return localSha !== '' && localSha === remoteSha;
+  })();
+  const hasUpdate = !!checkResult?.has_update && !sameDevBuildAsLocal;
+
   // Y-button opens the release notes modal -- works even when no update
   // is available (loads the most recent 10 releases). Mirrors Decky
   // Loader's pattern of binding onOptionsButton + onOptionsActionDescription
   // on the Field component for the footer "Y PATCH NOTES" hint
   const openPatchNotes = () => {
-    if (checkResult?.success && checkResult.has_update && checkResult.release_notes) {
+    if (checkResult?.success && hasUpdate && checkResult.release_notes) {
       showReleaseNotesModal({
         channel: updateChannel,
         initial: {
@@ -897,12 +915,12 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         {updateStatus?.state === 'error' && (
           <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 8 }}>{t().extras!.updateFailedPrefix!()} {updateStatus.error}</div>
         )}
-        {checkResult?.success && !checkResult.has_update && !updating && !updateApplied && (
+        {checkResult?.success && !hasUpdate && !updating && !updateApplied && (
           <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>
             {t().extras!.updateUpToDate!(updateChannel, checkResult.latest_version ?? '')}
           </div>
         )}
-        {checkResult?.success && checkResult.has_update && !updating && !updateApplied && (
+        {checkResult?.success && hasUpdate && !updating && !updateApplied && (
           <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
             {t().extras!.updateAvailable!(checkResult.current_version ?? '', checkResult.latest_version ?? '')}
           </div>
@@ -934,11 +952,11 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             </DialogButton>
           ) : updating ? (
             <DialogButton disabled style={{ fontSize: 12 }}>{t().extras!.updateInstalling!()}</DialogButton>
-          ) : checkResult?.success && checkResult.has_update ? (
+          ) : checkResult?.success && hasUpdate ? (
             <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12 }}>
               {`Update to ${formatVersion(checkResult.latest_version)}`}
             </DialogButton>
-          ) : checkResult?.success && !checkResult.has_update
+          ) : checkResult?.success && !hasUpdate
               && (checkResult.current_version ?? '') > (checkResult.latest_version ?? '')
               && checkResult.current_version !== checkResult.latest_version ? (
             <DialogButton onClick={handleInstallUpdate} style={{ fontSize: 12, color: '#fb923c' }}>
@@ -955,7 +973,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             about the Y gamepad shortcut. The same modal is also reachable
             anywhere on this tab via the onOptionsButton Y-binding wired on
             the root Focusable above */}
-        {checkResult?.success && checkResult.has_update && !updating && !updateApplied && checkResult.release_notes && (
+        {checkResult?.success && hasUpdate && !updating && !updateApplied && checkResult.release_notes && (
           <Focusable style={{ marginTop: 8 }}>
             <DialogButton
               onClick={openPatchNotes}

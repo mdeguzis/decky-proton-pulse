@@ -28,10 +28,19 @@ const SYNCED_DIR = path.resolve(PLUGIN_ROOT, 'src', 'lib', 'gameStats', '_synced
 const MANIFEST_PATH = path.join(SYNCED_DIR, 'SYNC_MANIFEST.json');
 const WEBUI_SCORING_DIR = path.resolve(PLUGIN_ROOT, '..', 'proton-pulse-data', 'lib', 'scoring');
 
+// Normalize CRLF -> LF before hashing so Windows checkouts (which git
+// converts to CRLF by default) produce the same hash as the Linux/macOS
+// baseline. Without this the CI Windows build was failing with
+// "Expected sha256: aca9... Got sha256: 0802..." even though the file
+// content was identical apart from line endings
+function normalizeForHash(buf) {
+  return Buffer.from(buf.toString('utf8').replace(/\r\n/g, '\n'), 'utf8');
+}
+
 function hashFiles(dir, files) {
   const h = crypto.createHash('sha256');
   for (const f of files) {
-    const buf = fs.readFileSync(path.join(dir, f));
+    const buf = normalizeForHash(fs.readFileSync(path.join(dir, f)));
     h.update(f);
     h.update('\0');
     h.update(buf);
