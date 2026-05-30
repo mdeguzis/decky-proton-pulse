@@ -172,18 +172,24 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
         return {"success": False, "error": str(e), "current_version": current_version}
 
 
-def list_releases(limit: int = 10, include_prereleases: bool = True) -> dict[str, Any]:
-    """Return the N most recent GitHub releases for browsing in the
-    release-notes modal. Used by the modal's left/right navigation so the
-    user can scroll back through past release history without bouncing to
-    a browser.
+def list_releases(
+    limit: int = 10,
+    include_prereleases: bool = True,
+    channel: str = "release",
+) -> dict[str, Any]:
+    """Return releases for the modal's history carousel.
 
-    Each entry includes: version (display tag), name, body (markdown),
-    published_at (ISO date), prerelease flag, developer flag, html_url.
-    The rolling 'developer' release is INCLUDED with developer=True set
-    so the modal can render it with the DEV channel pill and show the
-    auto-generated commit summary as the first card when the user is on
-    the developer channel
+    Output shape per entry: version, name, body (markdown), published_at,
+    prerelease flag, developer flag, html_url.
+
+    Channel filtering:
+      * channel="developer" -> include per-build dev tags (from list_dev_tags)
+        at the top, then real GitHub Releases. The rolling 'developer' Release
+        is always filtered out because dev tags replace it as the source of
+        per-build history
+      * any other channel  -> only real GitHub Releases (no dev tags, and the
+        rolling 'developer' Release is filtered out so it doesn't bleed into
+        stable users' history view)
     """
     try:
         raw = curl_json(
@@ -192,32 +198,121 @@ def list_releases(limit: int = 10, include_prereleases: bool = True) -> dict[str
             timeout=15,
         )
         out: list[dict[str, Any]] = []
+        if channel == "developer":
+            # Merge per-build dev tags in first. These come from
+            # list_dev_tags, which fetches `dev-<version>-<sha>` tags and
+            # their annotation bodies. Cap at half the limit so real
+            # releases still get a fair number of slots
+            dev_half = max(1, limit // 2)
+            dev_tags = list_dev_tags(limit=dev_half).get("releases", [])
+            out.extend(dev_tags)
         for r in raw:
             tag = str(r.get("tag_name", "") or "")
+            if tag == "developer":
+                # The rolling Release is the plugin updater's source-of-truth
+                # for downloading the dev zip, but never shown in history
+                continue
             is_pre = bool(r.get("prerelease"))
-            is_dev = tag == "developer"
             if is_pre and not include_prereleases:
                 continue
-            # The dev rolling release uses the release "name" ("Developer
-            # build (sha)") as the display version because the tag itself
-            # is just "developer". For everything else, strip the leading v
-            display_version = (str(r.get("name", "")).strip() if is_dev else tag.lstrip("v"))
             out.append(
                 {
-                    "version": display_version or tag,
+                    "version": tag.lstrip("v"),
                     "name": str(r.get("name", "") or tag),
                     "body": str(r.get("body", "") or ""),
                     "published_at": str(r.get("published_at", "") or ""),
                     "prerelease": is_pre,
-                    "developer": is_dev,
+                    "developer": False,
                     "html_url": str(r.get("html_url", "") or ""),
                 }
             )
             if len(out) >= limit:
                 break
-        return {"success": True, "releases": out}
+        return {"success": True, "releases": out[:limit]}
     except Exception as e:
         decky.logger.error(f"list_releases: failed: {e}")
+        return {"success": False, "error": str(e), "releases": []}
+
+
+def list_dev_tags(limit: int = 5) -> dict[str, Any]:
+    """Return the N most recent dev-history tags (dev-<version>-<sha>).
+
+    These are persistent git tags created by `make github-dev-release`
+    that exist outside the GitHub Releases page. Each tag's annotated
+    message body holds the same auto-generated notes the rolling
+    'developer' Release carries -- so the modal can show history of past
+    dev builds without polluting the public releases page.
+
+    Pulls tags via /git/matching-refs/tags/dev-, fetches each annotated
+    tag object to get the message + tagger date. Caps at `limit` to keep
+    the request count bounded (one list + N annotation fetches)
+    """
+    try:
+        refs = curl_json(
+            f"https://api.github.com/repos/{GITHUB_REPO}/git/matching-refs/tags/dev-",
+            headers=["Accept: application/vnd.github.v3+json"],
+            timeout=15,
+        )
+        if not isinstance(refs, list):
+            return {"success": True, "releases": []}
+        # Newest tags come last in git ref order; reverse so the modal's
+        # first card is the most recent dev build
+        refs = list(reversed(refs))[:limit]
+        out: list[dict[str, Any]] = []
+        for ref in refs:
+            ref_name = str(ref.get("ref", ""))
+            tag_short = ref_name.removeprefix("refs/tags/")
+            obj = ref.get("object", {}) or {}
+            obj_sha = str(obj.get("sha", ""))
+            obj_type = str(obj.get("type", ""))
+            if not obj_sha:
+                continue
+            message = ""
+            tagger_date = ""
+            if obj_type == "tag":
+                # annotated tag -- fetch the tag object for message + date
+                try:
+                    tag_obj = curl_json(
+                        f"https://api.github.com/repos/{GITHUB_REPO}/git/tags/{obj_sha}",
+                        headers=["Accept: application/vnd.github.v3+json"],
+                        timeout=10,
+                    )
+                    message = str(tag_obj.get("message", "") or "")
+                    tagger_date = str(tag_obj.get("tagger", {}).get("date", "") or "")
+                except Exception as inner:
+                    decky.logger.warning(
+                        f"list_dev_tags: failed to fetch tag obj for {tag_short}: {inner}"
+                    )
+            # Lightweight tag or annotation fetch failed -- fall back to
+            # commit subject so the carousel still has SOMETHING to show
+            if not message:
+                try:
+                    commit = curl_json(
+                        f"https://api.github.com/repos/{GITHUB_REPO}/commits/{obj_sha}",
+                        headers=["Accept: application/vnd.github.v3+json"],
+                        timeout=10,
+                    )
+                    message = str(commit.get("commit", {}).get("message", "") or "")
+                    tagger_date = tagger_date or str(
+                        commit.get("commit", {}).get("author", {}).get("date", "") or ""
+                    )
+                except Exception:
+                    pass
+            out.append(
+                {
+                    "version": tag_short.removeprefix("dev-"),
+                    "name": tag_short,
+                    "body": message,
+                    "published_at": tagger_date,
+                    "prerelease": False,
+                    "developer": True,
+                    # No release page for dev tags; link to the tag compare view
+                    "html_url": f"https://github.com/{GITHUB_REPO}/releases/tag/{tag_short}",
+                }
+            )
+        return {"success": True, "releases": out}
+    except Exception as e:
+        decky.logger.error(f"list_dev_tags: failed: {e}")
         return {"success": False, "error": str(e), "releases": []}
 
 

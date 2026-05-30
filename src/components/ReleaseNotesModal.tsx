@@ -45,9 +45,13 @@ interface ReleaseRow {
   html_url: string;
 }
 
-const listReleases = callable<[number, boolean], { success: boolean; releases: ReleaseRow[]; error?: string }>(
-  'list_releases',
-);
+// Channel arg drives whether per-build dev tags are merged into the list.
+// 'developer' -> include dev tag history; anything else -> stable + prerelease
+// releases only (rolling 'developer' release is filtered out either way)
+const listReleases = callable<
+  [number, boolean, string],
+  { success: boolean; releases: ReleaseRow[]; error?: string }
+>('list_releases');
 
 function parseBody(body: string): Array<{ kind: 'heading' | 'item' | 'text'; text: string }> {
   const out: Array<{ kind: 'heading' | 'item' | 'text'; text: string }> = [];
@@ -257,17 +261,20 @@ function ReleaseColumn({
 
 interface Props {
   initial?: ReleaseRow;
+  // Current user update channel ('release' | 'pre-release' | 'developer').
+  // Drives whether dev-tag history is included by the backend
+  channel?: string;
   closeModal?: () => void;
 }
 
-function ReleaseNotesModal({ initial, closeModal }: Props) {
+function ReleaseNotesModal({ initial, channel = 'release', closeModal }: Props) {
   const [releases, setReleases] = useState<ReleaseRow[] | null>(initial ? [initial] : null);
   const SP = findSP();
 
   useEffect(() => {
     void (async () => {
       try {
-        const res = await listReleases(10, true);
+        const res = await listReleases(10, true, channel);
         if (!res?.success || !Array.isArray(res.releases)) {
           if (!initial) setReleases([]);
           return;
@@ -289,7 +296,7 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
         });
       }
     })();
-  }, [initial]);
+  }, [initial, channel]);
 
   // Column dimensions copy Decky Loader's PatchNotesModal exactly:
   //   nHeight = nItemHeight = SP.innerHeight - 40
@@ -350,14 +357,20 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
   );
 }
 
-export function showReleaseNotesModal(initial?: {
-  version: string;
-  body: string;
-  releaseUrl?: string;
-  publishedAt?: string;
-  isPrerelease?: boolean;
-  isDeveloper?: boolean;
+export function showReleaseNotesModal(opts?: {
+  initial?: {
+    version: string;
+    body: string;
+    releaseUrl?: string;
+    publishedAt?: string;
+    isPrerelease?: boolean;
+    isDeveloper?: boolean;
+  };
+  // Current user channel ('release' | 'pre-release' | 'developer'). Drives
+  // whether the backend includes dev-tag history in the carousel
+  channel?: string;
 }): void {
+  const initial = opts?.initial;
   const seed: ReleaseRow | undefined = initial ? {
     version: initial.version,
     name: '',
@@ -370,6 +383,7 @@ export function showReleaseNotesModal(initial?: {
   const modal = showModal(
     <ReleaseNotesModal
       initial={seed}
+      channel={opts?.channel ?? 'release'}
       closeModal={() => modal?.Close()}
     />,
   );

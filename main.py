@@ -270,14 +270,25 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         current = getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
         return _updater_check(current, channel=channel)
 
-    async def list_releases(self, limit: int = 10, include_prereleases: bool = True) -> dict:
-        """Return the N most recent releases for the release-notes browser modal.
+    async def list_releases(
+        self,
+        limit: int = 10,
+        include_prereleases: bool = True,
+        channel: str = "release",
+    ) -> dict:
+        """Return releases + per-build dev tags for the release-notes carousel.
 
-        Each entry carries version / name / body / published_at / prerelease /
-        html_url so the modal can render the same Steam-style card for every
-        release as the user pages left/right through history
+        channel: when "developer", merges in persistent dev tags (created by
+        `make github-dev-release` as `dev-<version>-<sha>`) so the user sees
+        the full rolling dev history. Other channels skip dev entries
+        entirely so stable/pre-release users dont get dev clutter in their
+        history view
         """
-        return _updater_list_releases(limit=limit, include_prereleases=include_prereleases)
+        return _updater_list_releases(
+            limit=limit,
+            include_prereleases=include_prereleases,
+            channel=channel,
+        )
 
     async def apply_update(self, zip_url: str, version: str) -> dict:
         """Start a background download+extract of the release ZIP.

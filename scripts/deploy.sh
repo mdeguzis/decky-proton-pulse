@@ -566,6 +566,25 @@ if [[ "$GH_RELEASE" == "dev" ]]; then
     --prerelease
 
   echo "Done: https://github.com/mdeguzis/decky-proton-pulse/releases/tag/${DEV_TAG}"
+
+  # Persistent per-build tag for the release-notes carousel history. The
+  # rolling "developer" Release above is what the plugin's updater
+  # mechanism downloads from; this tag is JUST a git ref with the same
+  # auto-generated notes stored in its annotation body, so the modal can
+  # show every past dev build without polluting the public Releases page.
+  # Tag format: dev-<version>-<sha>. Annotated so the message survives
+  # for the backend to render
+  PLUGIN_VERSION=$(tr -d '[:space:]' < VERSION)
+  DEV_HISTORY_TAG="dev-${PLUGIN_VERSION}-${COMMIT_SHA}"
+  if git rev-parse -q --verify "refs/tags/${DEV_HISTORY_TAG}" >/dev/null 2>&1; then
+    echo "Dev history tag ${DEV_HISTORY_TAG} already exists locally, skipping create."
+  else
+    echo "Tagging dev history: ${DEV_HISTORY_TAG}"
+    git tag -a "$DEV_HISTORY_TAG" -F "$DEV_NOTES_FILE"
+    if ! is_truthy "$DRY_RUN"; then
+      git push origin "refs/tags/${DEV_HISTORY_TAG}"
+    fi
+  fi
   exit 0
 fi
 
