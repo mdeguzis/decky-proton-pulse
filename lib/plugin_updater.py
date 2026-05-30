@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import tempfile
 import threading
 import time
 import zipfile
@@ -193,7 +194,7 @@ def _run(
     cancel: threading.Event,
 ) -> None:
     plugin_parent_dir = os.path.dirname(plugin_dir)
-    tmp_path = Path(f"/tmp/pp-update-{version}.zip")
+    tmp_path = Path(tempfile.gettempdir()) / f"pp-update-{version}.zip"
 
     def _set(**kwargs: Any) -> None:
         with lock:
@@ -235,7 +236,7 @@ def _run(
 
         # extract to a temp dir first so we can handle wrong dir names
         # (github archive zips use repo-branch/ not the plugin name)
-        tmp_extract = Path(f"/tmp/pp-update-extract-{os.getpid()}")
+        tmp_extract = Path(tempfile.gettempdir()) / f"pp-update-extract-{os.getpid()}"
         if tmp_extract.exists():
             shutil.rmtree(tmp_extract)
         tmp_extract.mkdir(parents=True)
