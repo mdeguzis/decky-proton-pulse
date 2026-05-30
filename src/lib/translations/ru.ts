@@ -54,6 +54,8 @@ export const ru: TranslationTree = {
     manageThisGame: 'Управлять этой игрой',
     manageConfigurations: 'Управление конфигурациями',
     systemRequirements: 'Системные требования',
+
+    analysis: 'Анализ',
     logs: 'Журналы',
     compatibilityTools: 'Инструменты совместимости',
     settings: 'Настройки',
@@ -728,6 +730,21 @@ export const ru: TranslationTree = {
     managePlaytimeThisConfig: () => "Время игры (эта конфигурация)",
     nativeLinuxBadge: () => "Доступна нативная сборка Linux",
     protonPulseWebsiteLabel: () => "Веб-сайт Proton Pulse",
+    // Analysis tab
+    analysisNoReports: () => 'Для этой игры пока нет отчётов.',
+    analysisConfidence: () => 'Уверенность',
+    analysisAcrossReports: (n) => n === 1 ? "по 1 отчёту" : `по ${n} отчётам`,
+    analysisTrend: () => 'Тенденция',
+    analysisTrend_improving: () => 'Улучшается',
+    analysisTrend_declining: () => 'Ухудшается',
+    analysisTrend_stable: () => 'Стабильно',
+    analysisTrend_insufficient: () => 'Недостаточно данных',
+    analysisTrendDetail: (r, p) => `последние 90д: ${r} . предыдущие 90-270д: ${p}`,
+    analysisRatingMix: () => 'Распределение оценок',
+    analysisTopProtonVersions: () => 'Топ версии Proton',
+    analysisNoVersionData: () => 'Данных о версии Proton пока нет.',
+    analysisVersionTotal: (n) => n === 1 ? "1 отчёт" : `${n} отчётов`,
+    analysisDeepDiveHint: () => 'Графики и подробности отчётов доступны на proton-pulse.com.',
   },
 };
 

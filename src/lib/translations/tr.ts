@@ -42,6 +42,8 @@ export const tr: TranslationTree = {
     manageThisGame: 'Bu Oyunu Yönet',
     manageConfigurations: 'Yapılandırmaları Yönet',
     systemRequirements: 'Sistem gereksinimleri',
+
+    analysis: 'Analiz',
     logs: 'Günlükler',
     compatibilityTools: 'Uyumluluk Araçları',
     settings: 'Ayarlar',
@@ -698,6 +700,21 @@ export const tr: TranslationTree = {
     managePlaytimeThisConfig: () => "Oynama süresi (bu yapılandırma)",
     nativeLinuxBadge: () => "Yerel Linux yapısı mevcut",
     protonPulseWebsiteLabel: () => "Proton Pulse Web Sitesi",
+    // Analysis tab
+    analysisNoReports: () => 'Bu oyun için henüz rapor yok.',
+    analysisConfidence: () => 'Güven',
+    analysisAcrossReports: (n) => n === 1 ? "1 rapor üzerinden" : `${n} rapor üzerinden`,
+    analysisTrend: () => 'Eğilim',
+    analysisTrend_improving: () => 'İyileşiyor',
+    analysisTrend_declining: () => 'Kötüleşiyor',
+    analysisTrend_stable: () => 'Sabit',
+    analysisTrend_insufficient: () => 'Yeterli veri yok',
+    analysisTrendDetail: (r, p) => `son 90g: ${r} . önceki 90-270g: ${p}`,
+    analysisRatingMix: () => 'Puan dağılımı',
+    analysisTopProtonVersions: () => 'En çok kullanılan Proton sürümleri',
+    analysisNoVersionData: () => 'Henüz Proton sürümü verisi yok.',
+    analysisVersionTotal: (n) => n === 1 ? "1 rapor" : `${n} rapor`,
+    analysisDeepDiveHint: () => 'Eğilim grafikleri ve rapor detayları için oyunu proton-pulse.com üzerinde açın.',
   },
 };
 

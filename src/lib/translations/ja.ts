@@ -42,6 +42,8 @@ export const ja: TranslationTree = {
     manageThisGame: 'このゲームを管理',
     manageConfigurations: '設定を管理',
     systemRequirements: 'システム要件',
+
+    analysis: '分析',
     logs: 'ログ',
     compatibilityTools: '互換性ツール',
     settings: '設定',
@@ -698,6 +700,21 @@ export const ja: TranslationTree = {
     managePlaytimeThisConfig: () => "プレイ時間 (この設定)",
     nativeLinuxBadge: () => "ネイティブ Linux ビルドが利用可能",
     protonPulseWebsiteLabel: () => "Proton Pulse ウェブサイト",
+    // Analysis tab
+    analysisNoReports: () => 'このゲームのレポートはまだありません。',
+    analysisConfidence: () => '信頼度',
+    analysisAcrossReports: (n) => `${n}件のレポートから`,
+    analysisTrend: () => '傾向',
+    analysisTrend_improving: () => '改善中',
+    analysisTrend_declining: () => '悪化中',
+    analysisTrend_stable: () => '安定',
+    analysisTrend_insufficient: () => 'データ不足',
+    analysisTrendDetail: (r, p) => `直近90日: ${r} . その前90-270日: ${p}`,
+    analysisRatingMix: () => '評価の内訳',
+    analysisTopProtonVersions: () => '主要なProtonバージョン',
+    analysisNoVersionData: () => 'Protonバージョンのデータがまだありません。',
+    analysisVersionTotal: (n) => `${n}件のレポート`,
+    analysisDeepDiveHint: () => 'トレンドグラフやレポート詳細は proton-pulse.com で確認できます。',
   },
 };
 

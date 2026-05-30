@@ -24,6 +24,8 @@ const SKIP_VALUES = new Set([
   'Full', 'Compact', 'Minimal', 'Off',
   // Common international loanwords in tech/gaming contexts -- legitimately same in many European languages
   'Bronze', 'General', 'Experimental', 'Local', 'Global', 'Driver', 'Type', 'Error', 'Match',
+  // Loanwords used verbatim in many European languages (de, nl, pl, sv, cs, no for "Trend"; fr for "Stable")
+  'Trend', 'Stable',
 ]);
 
 const SKIP_KEYS = new Set([
@@ -41,6 +43,11 @@ const SKIP_KEYS = new Set([
   'nativeReport.faultSaveGame',
   'nativeReport.faultSignificantBugs',
   'extras.compatVersionColumn',
+  // Function-typed loanwords: "Trend" is the same in de/nl/pl/sv/cs/no and
+  // "Stable" is the same in fr. SKIP_VALUES doesn't apply because these are
+  // function entries, not bare strings, so we skip by key path instead
+  'extras.analysisTrend',
+  'extras.analysisTrend_stable',
 ]);
 
 const LANGUAGES = [

@@ -15,6 +15,7 @@ import { CompatibilityToolsTab } from './tabs/CompatibilityToolsTab';
 import { GeneralSettingsTab } from './tabs/GeneralSettingsTab';
 import { AboutTab } from './tabs/AboutTab';
 import { SystemRequirementsTab } from './tabs/SystemRequirementsTab';
+import { AnalysisTab } from './tabs/AnalysisTab';
 import { logFrontendEvent, callWithTimeout } from '../lib/logger';
 import { useLanguage, t } from '../lib/i18n';
 import { getSetting } from '../lib/settings';
@@ -276,6 +277,15 @@ export function ProtonPulsePage() {
             appName={appName ?? ''}
             sysInfo={sysInfo}
           />
+        </LoggingErrorBoundary>
+      ),
+    }, {
+      title: t().nav.analysis,
+      identifier: 'analysis',
+      route: '/proton-pulse/analysis',
+      content: (
+        <LoggingErrorBoundary name="Analysis">
+          <AnalysisTab appId={appId} appName={appName ?? ''} />
         </LoggingErrorBoundary>
       ),
     }] : []),

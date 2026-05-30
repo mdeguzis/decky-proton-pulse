@@ -94,6 +94,7 @@ export interface TranslationTree {
     manageThisGame: string;
     manageConfigurations: string;
     systemRequirements: string;
+    analysis: string;
     logs: string;
     compatibilityTools: string;
     settings: string;
@@ -741,6 +742,21 @@ export interface TranslationTree {
     nativeLinuxBadge?: () => string;
     // About tab
     protonPulseWebsiteLabel?: () => string;
+    // Analysis tab (per-game aggregate stats)
+    analysisNoReports?: () => string;
+    analysisConfidence?: () => string;
+    analysisAcrossReports?: (count: number) => string;
+    analysisTrend?: () => string;
+    analysisTrend_improving?: () => string;
+    analysisTrend_declining?: () => string;
+    analysisTrend_stable?: () => string;
+    analysisTrend_insufficient?: () => string;
+    analysisTrendDetail?: (recent: number, prior: number) => string;
+    analysisRatingMix?: () => string;
+    analysisTopProtonVersions?: () => string;
+    analysisNoVersionData?: () => string;
+    analysisVersionTotal?: (n: number) => string;
+    analysisDeepDiveHint?: () => string;
   };
 }
 
@@ -789,6 +805,7 @@ export const en: TranslationTree = {
     manageThisGame: 'Manage This Game',
     manageConfigurations: 'Manage Configurations',
     systemRequirements: 'System Requirements',
+    analysis: 'Analysis',
     logs: 'Logs',
     compatibilityTools: 'Compatibility Tools',
     settings: 'Settings',
@@ -1453,6 +1470,21 @@ export const en: TranslationTree = {
     nativeLinuxBadge: () => 'Native Linux build available',
     // About tab
     protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    // Analysis tab
+    analysisNoReports: () => 'No reports yet for this game.',
+    analysisConfidence: () => 'Confidence',
+    analysisAcrossReports: (n) => n === 1 ? 'across 1 report' : `across ${n} reports`,
+    analysisTrend: () => 'Trend',
+    analysisTrend_improving: () => 'Improving',
+    analysisTrend_declining: () => 'Declining',
+    analysisTrend_stable: () => 'Stable',
+    analysisTrend_insufficient: () => 'Not enough data',
+    analysisTrendDetail: (r, p) => `last 90d: ${r} . prior 90-270d: ${p}`,
+    analysisRatingMix: () => 'Rating mix',
+    analysisTopProtonVersions: () => 'Top Proton versions',
+    analysisNoVersionData: () => 'No Proton version data yet.',
+    analysisVersionTotal: (n) => n === 1 ? '1 report' : `${n} reports`,
+    analysisDeepDiveHint: () => 'For trend charts and per-report drilldown, open this game on proton-pulse.com.',
   },
 };
 

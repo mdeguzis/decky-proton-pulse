@@ -42,6 +42,8 @@ export const fr: TranslationTree = {
     manageThisGame: 'Gérer ce jeu',
     manageConfigurations: 'Gérer les configurations',
     systemRequirements: 'Configuration requise',
+
+    analysis: 'Analyse',
     logs: 'Journaux',
     compatibilityTools: 'Outils de compatibilité',
     settings: 'Paramètres',
@@ -698,6 +700,21 @@ export const fr: TranslationTree = {
     managePlaytimeThisConfig: () => "Temps de jeu (cette config)",
     nativeLinuxBadge: () => "Version Linux native disponible",
     protonPulseWebsiteLabel: () => "Site web Proton Pulse",
+    // Analysis tab
+    analysisNoReports: () => 'Aucun rapport pour ce jeu pour l\'instant.',
+    analysisConfidence: () => 'Confiance',
+    analysisAcrossReports: (n) => n === 1 ? "sur 1 rapport" : `sur ${n} rapports`,
+    analysisTrend: () => 'Tendance',
+    analysisTrend_improving: () => 'En progression',
+    analysisTrend_declining: () => 'En recul',
+    analysisTrend_stable: () => 'Stable',
+    analysisTrend_insufficient: () => 'Données insuffisantes',
+    analysisTrendDetail: (r, p) => `derniers 90j: ${r} . précédents 90-270j: ${p}`,
+    analysisRatingMix: () => 'Distribution des notes',
+    analysisTopProtonVersions: () => 'Principales versions Proton',
+    analysisNoVersionData: () => 'Pas encore de données sur les versions Proton.',
+    analysisVersionTotal: (n) => n === 1 ? "1 rapport" : `${n} rapports`,
+    analysisDeepDiveHint: () => 'Pour les graphiques de tendance et le détail par rapport, ouvrez le jeu sur proton-pulse.com.',
   },
 };
 

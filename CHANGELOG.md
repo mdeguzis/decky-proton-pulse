@@ -129,6 +129,9 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Scoring: sync infra to pull shared game-stats engine from proton-pulse-data
+- Replace hardcoded /tmp with tempfile.gettempdir() for Termux compat
+
 ## v1.7.2 pre-release
 
 - Bump to 1.7.2 -- updater pre-release channel fix

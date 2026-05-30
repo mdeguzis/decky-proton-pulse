@@ -42,6 +42,8 @@ export const zhCN: TranslationTree = {
     manageThisGame: '管理此游戏',
     manageConfigurations: '管理配置',
     systemRequirements: '系统要求',
+
+    analysis: '分析',
     logs: '日志',
     compatibilityTools: '兼容性工具',
     settings: '设置',
@@ -698,6 +700,21 @@ export const zhCN: TranslationTree = {
     managePlaytimeThisConfig: () => "游戏时间 (此配置)",
     nativeLinuxBadge: () => "可用原生 Linux 版本",
     protonPulseWebsiteLabel: () => "Proton Pulse 网站",
+    // Analysis tab
+    analysisNoReports: () => '此游戏暂无报告。',
+    analysisConfidence: () => '可信度',
+    analysisAcrossReports: (n) => `基于 ${n} 份报告`,
+    analysisTrend: () => '趋势',
+    analysisTrend_improving: () => '改善中',
+    analysisTrend_declining: () => '下降中',
+    analysisTrend_stable: () => '稳定',
+    analysisTrend_insufficient: () => '数据不足',
+    analysisTrendDetail: (r, p) => `最近 90 天: ${r} . 之前 90-270 天: ${p}`,
+    analysisRatingMix: () => '评级分布',
+    analysisTopProtonVersions: () => '主要 Proton 版本',
+    analysisNoVersionData: () => '暂无 Proton 版本数据。',
+    analysisVersionTotal: (n) => `${n} 份报告`,
+    analysisDeepDiveHint: () => '趋势图和每份报告的详情请访问 proton-pulse.com。',
   },
 };
 

@@ -17,6 +17,7 @@
     "src/components/ReportDetailModal.tsx",
     "src/components/ScoringGuideModal.tsx",
     "src/components/tabs/AboutTab.tsx",
+    "src/components/tabs/AnalysisTab.tsx",
     "src/components/tabs/CompatibilityToolsTab.tsx",
     "src/components/tabs/ConfigureTab.tsx",
     "src/components/tabs/GeneralSettingsTab.tsx",

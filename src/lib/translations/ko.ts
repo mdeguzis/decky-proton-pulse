@@ -42,6 +42,8 @@ export const ko: TranslationTree = {
     manageThisGame: '이 게임 관리',
     manageConfigurations: '설정 관리',
     systemRequirements: '시스템 요구사항',
+
+    analysis: '분석',
     logs: '로그',
     compatibilityTools: '호환성 도구',
     settings: '설정',
@@ -698,6 +700,21 @@ export const ko: TranslationTree = {
     managePlaytimeThisConfig: () => "플레이 시간 (이 구성)",
     nativeLinuxBadge: () => "네이티브 Linux 빌드 사용 가능",
     protonPulseWebsiteLabel: () => "Proton Pulse 웹사이트",
+    // Analysis tab
+    analysisNoReports: () => '이 게임에 대한 보고서가 아직 없습니다.',
+    analysisConfidence: () => '신뢰도',
+    analysisAcrossReports: (n) => `보고서 ${n}건 기준`,
+    analysisTrend: () => '추세',
+    analysisTrend_improving: () => '개선 중',
+    analysisTrend_declining: () => '악화 중',
+    analysisTrend_stable: () => '안정적',
+    analysisTrend_insufficient: () => '데이터 부족',
+    analysisTrendDetail: (r, p) => `최근 90일: ${r} . 이전 90-270일: ${p}`,
+    analysisRatingMix: () => '등급 분포',
+    analysisTopProtonVersions: () => '주요 Proton 버전',
+    analysisNoVersionData: () => '아직 Proton 버전 데이터가 없습니다.',
+    analysisVersionTotal: (n) => `보고서 ${n}건`,
+    analysisDeepDiveHint: () => '추세 차트와 보고서별 상세는 proton-pulse.com에서 확인하세요.',
   },
 };
 
