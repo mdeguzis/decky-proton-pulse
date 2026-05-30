@@ -1,0 +1,9 @@
+{
+  "source": "proton-pulse-data/lib/scoring",
+  "syncedAt": "2026-05-30T17:18:00.418Z",
+  "sha256": "aca9675f8293d761108557442b13d2bca2b4b18839fec446e1c31cd92afc9a38",
+  "files": [
+    "gameStats.js",
+    "index.js"
+  ]
+}

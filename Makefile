@@ -163,11 +163,23 @@ help:
 	@printf "  %-27s %s\n" "cef-debug-enable" "Enable remote CEF debugging (React DevTools on port 8081)"
 	@printf "  %-27s %s\n" "live-reload-enable" "Configure LIVE_RELOAD=1 on plugin_loader service"
 
-build: clean test
+build: clean test check-scoring-sync
 	@COMMIT=$$(git rev-parse --short HEAD 2>/dev/null || echo "unknown"); \
 	UNCOMMITTED=$$(git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null || echo "+uncommitted"); \
 	echo "$${COMMIT}$${UNCOMMITTED}" > .build-commit
 	$(PNPM) build
+
+# Sync the shared scoring module from proton-pulse-data. Run this any time
+# the canonical source at ../proton-pulse-data/lib/scoring/ changes -- CI
+# (check-scoring-sync) will fail the plugin build until you do.
+sync-scoring:
+	node scripts/sync-scoring.mjs
+
+# CI guard: verifies src/lib/gameStats/_synced/ hasn't been edited locally
+# and (if proton-pulse-data is checked out next door) warns when upstream
+# has new content that hasn't been synced yet
+check-scoring-sync:
+	node scripts/check-scoring-sync.mjs
 	@echo ""
 	@echo "Build complete."
 	@echo "Next steps:"
