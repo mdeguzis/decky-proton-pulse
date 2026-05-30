@@ -864,6 +864,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         releaseUrl: checkResult.release_url,
         publishedAt: (checkResult as { published_at?: string }).published_at,
         isPrerelease: updateChannel === 'pre-release',
+        isDeveloper: updateChannel === 'developer',
       });
     } else {
       // No active update -- modal loads recent history from list_releases

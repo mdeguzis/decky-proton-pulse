@@ -41,6 +41,7 @@ interface ReleaseRow {
   body: string;
   published_at: string;
   prerelease: boolean;
+  developer?: boolean;
   html_url: string;
 }
 
@@ -94,9 +95,18 @@ function ReleaseColumn({
   const { onRowFocus, onRowBlur, focusBorder } = useFocusableScroll();
   const blocks = parseBody(release.body || '');
   const publishedLabel = formatPublishedDate(release.published_at);
-  const channelLabel = release.prerelease
-    ? t().extras!.updateChannelPreRelease!()
-    : t().extras!.updateChannelRelease!();
+  // Three channel pills: DEV (rolling), PRE-RELEASE, RELEASE. The dev
+  // one uses a brighter cyan so it stands out from prerelease orange
+  const channelLabel = release.developer
+    ? t().extras!.updateChannelDeveloper!()
+    : release.prerelease
+      ? t().extras!.updateChannelPreRelease!()
+      : t().extras!.updateChannelRelease!();
+  const channelColor = release.developer
+    ? '#5ec8f4'
+    : release.prerelease
+      ? '#f6b347'
+      : '#9bb5cc';
 
   return (
     <Focusable
@@ -135,7 +145,7 @@ function ReleaseColumn({
         </div>
         <div style={{
           fontSize: 11, fontWeight: 700,
-          color: release.prerelease ? '#f6b347' : '#9bb5cc',
+          color: channelColor,
           textTransform: 'uppercase', letterSpacing: '0.08em',
         }}>
           {channelLabel}
@@ -346,6 +356,7 @@ export function showReleaseNotesModal(initial?: {
   releaseUrl?: string;
   publishedAt?: string;
   isPrerelease?: boolean;
+  isDeveloper?: boolean;
 }): void {
   const seed: ReleaseRow | undefined = initial ? {
     version: initial.version,
@@ -353,6 +364,7 @@ export function showReleaseNotesModal(initial?: {
     body: initial.body,
     published_at: initial.publishedAt ?? '',
     prerelease: !!initial.isPrerelease,
+    developer: !!initial.isDeveloper,
     html_url: initial.releaseUrl ?? '',
   } : undefined;
   const modal = showModal(

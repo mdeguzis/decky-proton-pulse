@@ -179,9 +179,11 @@ def list_releases(limit: int = 10, include_prereleases: bool = True) -> dict[str
     a browser.
 
     Each entry includes: version (display tag), name, body (markdown),
-    published_at (ISO date), prerelease flag, html_url. The developer
-    rolling tag is filtered out because its body is just "Recent commits"
-    boilerplate that doesnt belong in a release-history view
+    published_at (ISO date), prerelease flag, developer flag, html_url.
+    The rolling 'developer' release is INCLUDED with developer=True set
+    so the modal can render it with the DEV channel pill and show the
+    auto-generated commit summary as the first card when the user is on
+    the developer channel
     """
     try:
         raw = curl_json(
@@ -192,18 +194,22 @@ def list_releases(limit: int = 10, include_prereleases: bool = True) -> dict[str
         out: list[dict[str, Any]] = []
         for r in raw:
             tag = str(r.get("tag_name", "") or "")
-            if tag == "developer":
-                continue
             is_pre = bool(r.get("prerelease"))
+            is_dev = tag == "developer"
             if is_pre and not include_prereleases:
                 continue
+            # The dev rolling release uses the release "name" ("Developer
+            # build (sha)") as the display version because the tag itself
+            # is just "developer". For everything else, strip the leading v
+            display_version = (str(r.get("name", "")).strip() if is_dev else tag.lstrip("v"))
             out.append(
                 {
-                    "version": tag.lstrip("v"),
+                    "version": display_version or tag,
                     "name": str(r.get("name", "") or tag),
                     "body": str(r.get("body", "") or ""),
                     "published_at": str(r.get("published_at", "") or ""),
                     "prerelease": is_pre,
+                    "developer": is_dev,
                     "html_url": str(r.get("html_url", "") or ""),
                 }
             )
