@@ -6,6 +6,7 @@ const PpDialogButton = DialogButton as React.ComponentType<React.ComponentProps<
 import { callable } from '@decky/api';
 import type { SystemInfo } from '../../types';
 import { t } from '../../lib/i18n';
+import { useFocusableScroll } from '../../lib/useFocusableScroll';
 
 interface GameReqField { label: string; value: string }
 interface GameReqResponse {
@@ -76,7 +77,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
   const [reqs, setReqs]                 = useState<GameReqResponse | null>(null);
   const [platformData, setPlatformData] = useState<PlatformsResponse | null>(null);
   const [loading, setLoading]         = useState(true);
-  const [focusedRow, setFocusedRow]   = useState<string | null>(null);
+  const { onRowFocus, onRowBlur, focusBorder } = useFocusableScroll();
 
   useEffect(() => {
     if (!appId) { setLoading(false); return; }
@@ -111,15 +112,6 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
 
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) evt.preventDefault();
-  };
-
-  // Set focused-row marker AND scroll the focused row to viewport center.
-  // Default Steam behaviour only scrolls when the focused element is
-  // off-screen which makes early D-pad presses feel "dead". Centering on
-  // every focus change gives immediate motion feedback
-  const onRowFocus = (id: string) => (e: React.FocusEvent<HTMLElement>) => {
-    setFocusedRow(id);
-    e.currentTarget.scrollIntoView({ block: 'center', behavior: 'smooth' });
   };
 
   if (loading) {
@@ -161,8 +153,8 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
       {/* --- Platform availability --- */}
       <PpDialogButton onClick={() => {}}
         onFocus={onRowFocus('hdr-platform')}
-        onBlur={() => setFocusedRow(null)}
-        style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusedRow === 'hdr-platform' ? '3px solid #1a9fff' : '3px solid transparent', paddingLeft: 13 }}
+        onBlur={onRowBlur}
+        style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-platform'), paddingLeft: 13 }}
       >{t().detail.platformAvailability}</PpDialogButton>
 
       {/* column headers */}
@@ -173,11 +165,11 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
       {platformRows.map((row, i) => (
         <PpDialogButton key={row.name} onClick={() => {}}
           onFocus={onRowFocus(`plat-${row.name}`)}
-          onBlur={() => setFocusedRow(null)}
+          onBlur={onRowBlur}
           style={{
             ...ROW_BTN,
             borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.06)',
-            borderRight: focusedRow === `plat-${row.name}` ? '3px solid #1a9fff' : '3px solid transparent',
+            borderRight: focusBorder(`plat-${row.name}`),
           }}>
           <span style={{ fontSize: 12, color: '#c8dcea', fontWeight: 600 }}>{row.name}</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -197,8 +189,8 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
       {/* --- Minimum requirements vs our system --- */}
       <PpDialogButton onClick={() => {}}
         onFocus={onRowFocus('hdr-min')}
-        onBlur={() => setFocusedRow(null)}
-        style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusedRow === 'hdr-min' ? '3px solid #1a9fff' : '3px solid transparent', paddingLeft: 13 }}
+        onBlur={onRowBlur}
+        style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-min'), paddingLeft: 13 }}
       >{t().detail.minimumRequirements}</PpDialogButton>
 
       {/* column headers */}
@@ -215,8 +207,8 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
         return (
           <PpDialogButton key={i} onClick={() => {}}
             onFocus={onRowFocus(`req-${i}`)}
-            onBlur={() => setFocusedRow(null)}
-            style={{ ...ROW_BTN, borderRight: focusedRow === `req-${i}` ? '3px solid #1a9fff' : '3px solid transparent' }}>
+            onBlur={onRowBlur}
+            style={{ ...ROW_BTN, borderRight: focusBorder(`req-${i}`) }}>
             <span style={{ color: '#c8dcea', fontWeight: 600 }}>{f.label}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <span style={{ fontSize: 11, color: '#9db0c4' }}>{f.value}</span>

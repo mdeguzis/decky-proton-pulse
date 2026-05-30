@@ -24,6 +24,7 @@ import { computeGameStats, type GameStats, type Tier } from '../../lib/gameStats
 import { RATING_COLORS } from '../../lib/reportFormatters';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
+import { useFocusableScroll } from '../../lib/useFocusableScroll';
 import type { CdnReport } from '../../types';
 
 // Cast lets us pass onFocus/onBlur without TS complaining -- DialogButton's
@@ -119,7 +120,7 @@ export function AnalysisTab({ appId }: Props) {
   const [reports, setReports] = useState<CdnReport[]>([]);
   const [stats, setStats] = useState<GameStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [focusedRow, setFocusedRow] = useState<string | null>(null);
+  const { onRowFocus, onRowBlur, focusBorder } = useFocusableScroll();
 
   useEffect(() => {
     if (!appId) { setLoading(false); return; }
@@ -148,19 +149,6 @@ export function AnalysisTab({ appId }: Props) {
   // pattern as SystemRequirementsTab
   const handleRootDirection = (evt: GamepadEvent) => {
     if (evt.detail.button === GamepadButton.DIR_LEFT) evt.preventDefault();
-  };
-
-  // onFocus handler that BOTH sets the focused-row marker AND scrolls the
-  // row into the middle of the viewport. Default Steam behaviour only
-  // scrolls when the focused element is off-screen, which means D-pad
-  // pushes feel "dead" until focus reaches the bottom edge. Calling
-  // scrollIntoView({ block: 'center' }) on every focus change makes each
-  // push immediately reposition the page so the user gets motion feedback
-  // straight away. behavior: 'smooth' rides the GPU compositor so it
-  // doesnt jank on the Deck
-  const onRowFocus = (id: string) => (e: React.FocusEvent<HTMLElement>) => {
-    setFocusedRow(id);
-    e.currentTarget.scrollIntoView({ block: 'center', behavior: 'smooth' });
   };
 
   if (loading) {
@@ -193,11 +181,6 @@ export function AnalysisTab({ appId }: Props) {
   const confColor = confidenceColor(confidencePct);
   const tierOrder: Tier[] = ['platinum', 'gold', 'silver', 'bronze', 'borked'];
 
-  // Focus indicator. Lives in the row style as a 3px right border, blue
-  // when focused, transparent otherwise. Steam handles the actual scroll
-  const focusBorder = (id: string) =>
-    focusedRow === id ? '3px solid #1a9fff' : '3px solid transparent';
-
   return (
     <Focusable onGamepadDirection={handleRootDirection} style={{ display: 'flex', flexDirection: 'column' }}>
 
@@ -208,13 +191,13 @@ export function AnalysisTab({ appId }: Props) {
       {/* --- Confidence header + factor rows --- */}
       <PpDialogButton onClick={() => {}}
         onFocus={onRowFocus('hdr-conf')}
-        onBlur={() => setFocusedRow(null)}
+        onBlur={onRowBlur}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-conf'), paddingLeft: 13 }}
       >{t().extras!.analysisConfidence!()}</PpDialogButton>
 
       <PpDialogButton onClick={() => {}}
         onFocus={onRowFocus('conf-summary')}
-        onBlur={() => setFocusedRow(null)}
+        onBlur={onRowBlur}
         style={{ ...ROW, borderRight: focusBorder('conf-summary'), padding: '4px 16px 10px' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -233,7 +216,7 @@ export function AnalysisTab({ appId }: Props) {
       {confFactors.map((f) => (
         <PpDialogButton key={f.label} onClick={() => {}}
           onFocus={onRowFocus(`conf-${f.label}`)}
-          onBlur={() => setFocusedRow(null)}
+          onBlur={onRowBlur}
           style={{ ...ROW, borderRight: focusBorder(`conf-${f.label}`) }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -250,13 +233,13 @@ export function AnalysisTab({ appId }: Props) {
       {/* --- Trend --- */}
       <PpDialogButton onClick={() => {}}
         onFocus={onRowFocus('hdr-trend')}
-        onBlur={() => setFocusedRow(null)}
+        onBlur={onRowBlur}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-trend'), paddingLeft: 13 }}
       >{t().extras!.analysisTrend!()}</PpDialogButton>
 
       <PpDialogButton onClick={() => {}}
         onFocus={onRowFocus('trend-row')}
-        onBlur={() => setFocusedRow(null)}
+        onBlur={onRowBlur}
         style={{ ...ROW, borderRight: focusBorder('trend-row') }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -285,7 +268,7 @@ export function AnalysisTab({ appId }: Props) {
       {/* --- Rating distribution --- */}
       <PpDialogButton onClick={() => {}}
         onFocus={onRowFocus('hdr-mix')}
-        onBlur={() => setFocusedRow(null)}
+        onBlur={onRowBlur}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-mix'), paddingLeft: 13 }}
       >{t().extras!.analysisRatingMix!()}</PpDialogButton>
 
@@ -296,7 +279,7 @@ export function AnalysisTab({ appId }: Props) {
         return (
           <PpDialogButton key={tier} onClick={() => {}}
             onFocus={onRowFocus(`mix-${tier}`)}
-            onBlur={() => setFocusedRow(null)}
+            onBlur={onRowBlur}
             style={{ ...ROW, borderRight: focusBorder(`mix-${tier}`) }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -320,7 +303,7 @@ export function AnalysisTab({ appId }: Props) {
       {/* --- Top Proton versions --- */}
       <PpDialogButton onClick={() => {}}
         onFocus={onRowFocus('hdr-ver')}
-        onBlur={() => setFocusedRow(null)}
+        onBlur={onRowBlur}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-ver'), paddingLeft: 13 }}
       >{t().extras!.analysisTopProtonVersions!()}</PpDialogButton>
 
@@ -331,7 +314,7 @@ export function AnalysisTab({ appId }: Props) {
       ) : versionStats.slice(0, 5).map((v) => (
         <PpDialogButton key={v.ver} onClick={() => {}}
           onFocus={onRowFocus(`ver-${v.ver}`)}
-          onBlur={() => setFocusedRow(null)}
+          onBlur={onRowBlur}
           style={{ ...ROW, borderRight: focusBorder(`ver-${v.ver}`) }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>

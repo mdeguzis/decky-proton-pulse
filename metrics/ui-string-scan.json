@@ -35,14 +35,14 @@
   "findings": [
     {
       "file": "src/components/tabs/AnalysisTab.tsx",
-      "line": 176,
+      "line": 164,
       "column": 10,
       "kind": "jsx",
       "text": "loading"
     },
     {
       "file": "src/components/tabs/SystemRequirementsTab.tsx",
-      "line": 140,
+      "line": 132,
       "column": 10,
       "kind": "jsx",
       "text": "loading"
