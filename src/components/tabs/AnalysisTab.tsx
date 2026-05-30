@@ -29,7 +29,10 @@ import type { CdnReport } from '../../types';
 // Cast lets us pass onFocus/onBlur without TS complaining -- DialogButton's
 // public type doesnt expose these but the underlying element accepts them
 const PpDialogButton = DialogButton as React.ComponentType<
-  React.ComponentProps<typeof DialogButton> & { onFocus?: () => void; onBlur?: () => void }
+  React.ComponentProps<typeof DialogButton> & {
+    onFocus?: (e: React.FocusEvent<HTMLElement>) => void;
+    onBlur?: () => void;
+  }
 >;
 
 interface Props {
@@ -38,11 +41,21 @@ interface Props {
 }
 
 const TIER_LABELS: Record<Tier, string> = {
-  platinum: 'PLAT',
+  platinum: 'PLATINUM',
   gold: 'GOLD',
-  silver: 'SILV',
-  bronze: 'BRNZ',
-  borked: 'BORK',
+  silver: 'SILVER',
+  bronze: 'BRONZE',
+  borked: 'BORKED',
+};
+
+// Light tier backgrounds (platinum, gold, silver) need dark text or
+// nothing reads. Bronze + borked are saturated enough that white reads
+const TIER_TEXT: Record<Tier, string> = {
+  platinum: '#1a1410',
+  gold:     '#1a1410',
+  silver:   '#1a1410',
+  bronze:   '#fff',
+  borked:   '#fff',
 };
 
 const TREND_ARROW: Record<string, string> = {
@@ -137,6 +150,19 @@ export function AnalysisTab({ appId }: Props) {
     if (evt.detail.button === GamepadButton.DIR_LEFT) evt.preventDefault();
   };
 
+  // onFocus handler that BOTH sets the focused-row marker AND scrolls the
+  // row into the middle of the viewport. Default Steam behaviour only
+  // scrolls when the focused element is off-screen, which means D-pad
+  // pushes feel "dead" until focus reaches the bottom edge. Calling
+  // scrollIntoView({ block: 'center' }) on every focus change makes each
+  // push immediately reposition the page so the user gets motion feedback
+  // straight away. behavior: 'smooth' rides the GPU compositor so it
+  // doesnt jank on the Deck
+  const onRowFocus = (id: string) => (e: React.FocusEvent<HTMLElement>) => {
+    setFocusedRow(id);
+    e.currentTarget.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  };
+
   if (loading) {
     return (
       <Focusable style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
@@ -181,13 +207,13 @@ export function AnalysisTab({ appId }: Props) {
 
       {/* --- Confidence header + factor rows --- */}
       <PpDialogButton onClick={() => {}}
-        onFocus={() => setFocusedRow('hdr-conf')}
+        onFocus={onRowFocus('hdr-conf')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-conf'), paddingLeft: 13 }}
       >{t().extras!.analysisConfidence!()}</PpDialogButton>
 
       <PpDialogButton onClick={() => {}}
-        onFocus={() => setFocusedRow('conf-summary')}
+        onFocus={onRowFocus('conf-summary')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...ROW, borderRight: focusBorder('conf-summary'), padding: '4px 16px 10px' }}
       >
@@ -206,7 +232,7 @@ export function AnalysisTab({ appId }: Props) {
 
       {confFactors.map((f) => (
         <PpDialogButton key={f.label} onClick={() => {}}
-          onFocus={() => setFocusedRow(`conf-${f.label}`)}
+          onFocus={onRowFocus(`conf-${f.label}`)}
           onBlur={() => setFocusedRow(null)}
           style={{ ...ROW, borderRight: focusBorder(`conf-${f.label}`) }}
         >
@@ -223,13 +249,13 @@ export function AnalysisTab({ appId }: Props) {
 
       {/* --- Trend --- */}
       <PpDialogButton onClick={() => {}}
-        onFocus={() => setFocusedRow('hdr-trend')}
+        onFocus={onRowFocus('hdr-trend')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-trend'), paddingLeft: 13 }}
       >{t().extras!.analysisTrend!()}</PpDialogButton>
 
       <PpDialogButton onClick={() => {}}
-        onFocus={() => setFocusedRow('trend-row')}
+        onFocus={onRowFocus('trend-row')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...ROW, borderRight: focusBorder('trend-row') }}
       >
@@ -258,7 +284,7 @@ export function AnalysisTab({ appId }: Props) {
 
       {/* --- Rating distribution --- */}
       <PpDialogButton onClick={() => {}}
-        onFocus={() => setFocusedRow('hdr-mix')}
+        onFocus={onRowFocus('hdr-mix')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-mix'), paddingLeft: 13 }}
       >{t().extras!.analysisRatingMix!()}</PpDialogButton>
@@ -269,17 +295,17 @@ export function AnalysisTab({ appId }: Props) {
         const pct = totalReports > 0 ? Math.round((cnt / totalReports) * 100) : 0;
         return (
           <PpDialogButton key={tier} onClick={() => {}}
-            onFocus={() => setFocusedRow(`mix-${tier}`)}
+            onFocus={onRowFocus(`mix-${tier}`)}
             onBlur={() => setFocusedRow(null)}
             style={{ ...ROW, borderRight: focusBorder(`mix-${tier}`) }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{
                 background: RATING_COLORS[tier] ?? '#888',
-                color: tier === 'gold' || tier === 'silver' ? '#1a1410' : '#fff',
-                fontSize: 10, fontWeight: 700, padding: '2px 8px',
+                color: TIER_TEXT[tier] ?? '#fff',
+                fontSize: 10, fontWeight: 700, padding: '2px 10px',
                 borderRadius: 3, letterSpacing: '0.04em',
-                minWidth: 44, textAlign: 'center',
+                minWidth: 70, textAlign: 'center',
               }}>{TIER_LABELS[tier]}</span>
               <span style={{ fontSize: 11, color: '#9db0c4' }}>{cnt}</span>
             </div>
@@ -293,7 +319,7 @@ export function AnalysisTab({ appId }: Props) {
 
       {/* --- Top Proton versions --- */}
       <PpDialogButton onClick={() => {}}
-        onFocus={() => setFocusedRow('hdr-ver')}
+        onFocus={onRowFocus('hdr-ver')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusBorder('hdr-ver'), paddingLeft: 13 }}
       >{t().extras!.analysisTopProtonVersions!()}</PpDialogButton>
@@ -304,7 +330,7 @@ export function AnalysisTab({ appId }: Props) {
         </div>
       ) : versionStats.slice(0, 5).map((v) => (
         <PpDialogButton key={v.ver} onClick={() => {}}
-          onFocus={() => setFocusedRow(`ver-${v.ver}`)}
+          onFocus={onRowFocus(`ver-${v.ver}`)}
           onBlur={() => setFocusedRow(null)}
           style={{ ...ROW, borderRight: focusBorder(`ver-${v.ver}`) }}
         >
@@ -324,6 +350,13 @@ export function AnalysisTab({ appId }: Props) {
       <div style={{ padding: '12px 16px 16px', fontSize: 10, color: '#4a6070', textAlign: 'left' }}>
         {t().extras!.analysisDeepDiveHint!()}
       </div>
+
+      {/* Bottom spacer: the Steam BPM footer (STEAM MENU / SELECT BACK) is
+          ~64px tall and overlays our content. Without this buffer the last
+          row sits behind the footer and scrollIntoView({block:'center'}) on
+          it puts it at viewport-center which is still under the footer.
+          80px clears the footer with a little breathing room */}
+      <div style={{ height: 80, flexShrink: 0 }} aria-hidden="true" />
     </Focusable>
   );
 }

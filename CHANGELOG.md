@@ -129,6 +129,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Analysis tab: focusable rows for gamepad scrolling
+- I18n: dont prepend 'v' to non-numeric version names in updateAvailable
 - Analysis: new per-game Analysis tab between System Requirements and Manage Configurations
 - Scoring: sync infra to pull shared game-stats engine from proton-pulse-data
 - Replace hardcoded /tmp with tempfile.gettempdir() for Termux compat

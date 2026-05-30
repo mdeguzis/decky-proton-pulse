@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Focusable, DialogButton, SteamSpinner, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
 
-const PpDialogButton = DialogButton as React.ComponentType<React.ComponentProps<typeof DialogButton> & { onFocus?: () => void; onBlur?: () => void }>;
+const PpDialogButton = DialogButton as React.ComponentType<React.ComponentProps<typeof DialogButton> & { onFocus?: (e: React.FocusEvent<HTMLElement>) => void; onBlur?: () => void }>;
 import { callable } from '@decky/api';
 import type { SystemInfo } from '../../types';
 import { t } from '../../lib/i18n';
@@ -113,6 +113,15 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
     if (evt.detail.button === GamepadButton.DIR_LEFT) evt.preventDefault();
   };
 
+  // Set focused-row marker AND scroll the focused row to viewport center.
+  // Default Steam behaviour only scrolls when the focused element is
+  // off-screen which makes early D-pad presses feel "dead". Centering on
+  // every focus change gives immediate motion feedback
+  const onRowFocus = (id: string) => (e: React.FocusEvent<HTMLElement>) => {
+    setFocusedRow(id);
+    e.currentTarget.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  };
+
   if (loading) {
     // Wrap the spinner in a Focusable that ALSO has a focusable child (DialogButton).
     // Without a focusable child, the gamepad input has nowhere to land and
@@ -151,7 +160,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
 
       {/* --- Platform availability --- */}
       <PpDialogButton onClick={() => {}}
-        onFocus={() => setFocusedRow('hdr-platform')}
+        onFocus={onRowFocus('hdr-platform')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusedRow === 'hdr-platform' ? '3px solid #1a9fff' : '3px solid transparent', paddingLeft: 13 }}
       >{t().detail.platformAvailability}</PpDialogButton>
@@ -163,7 +172,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
 
       {platformRows.map((row, i) => (
         <PpDialogButton key={row.name} onClick={() => {}}
-          onFocus={() => setFocusedRow(`plat-${row.name}`)}
+          onFocus={onRowFocus(`plat-${row.name}`)}
           onBlur={() => setFocusedRow(null)}
           style={{
             ...ROW_BTN,
@@ -187,7 +196,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
 
       {/* --- Minimum requirements vs our system --- */}
       <PpDialogButton onClick={() => {}}
-        onFocus={() => setFocusedRow('hdr-min')}
+        onFocus={onRowFocus('hdr-min')}
         onBlur={() => setFocusedRow(null)}
         style={{ ...SECTION_HDR, background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'left', borderRight: focusedRow === 'hdr-min' ? '3px solid #1a9fff' : '3px solid transparent', paddingLeft: 13 }}
       >{t().detail.minimumRequirements}</PpDialogButton>
@@ -205,7 +214,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
         const ourValue = buildOurValue(f, sysInfo, storageFreeGb);
         return (
           <PpDialogButton key={i} onClick={() => {}}
-            onFocus={() => setFocusedRow(`req-${i}`)}
+            onFocus={onRowFocus(`req-${i}`)}
             onBlur={() => setFocusedRow(null)}
             style={{ ...ROW_BTN, borderRight: focusedRow === `req-${i}` ? '3px solid #1a9fff' : '3px solid transparent' }}>
             <span style={{ color: '#c8dcea', fontWeight: 600 }}>{f.label}</span>
@@ -218,6 +227,10 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
           </PpDialogButton>
         );
       })}
+
+      {/* Bottom spacer: clears the ~64px Steam BPM footer so the last row
+          can scroll into view with onFocus's scrollIntoView({block:'center'}) */}
+      <div style={{ height: 80, flexShrink: 0 }} aria-hidden="true" />
     </Focusable>
   );
 }
