@@ -639,7 +639,23 @@ export const it: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - fork community",
     protonPulseWebsiteLabel: () => "Sito web Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Analisi della segnalazione',
+    perReportContribution: () => 'Contributo alla affidabilità',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp alla affidabilità totale` : d < 0 ? `${d} pp alla affidabilità totale` : "Nessun cambiamento",
+    perReportContributionNeutral: () => 'Rimuovere questa segnalazione non cambierebbe la affidabilità totale.',
+    perReportRecency: () => 'Peso di freschezza',
+    perReportRecencyRecent: () => 'Recente (ultimi 90 giorni, peso pieno)',
+    perReportRecencyPrior: () => 'Periodo precedente (90-365 giorni, peso 60%)',
+    perReportRecencyHistoric: () => 'Storico (oltre 1 anno, peso 20%)',
+    perReportTierAgreement: () => 'Valutazione vs maggioranza',
+    perReportTierAgrees: () => 'Corrisponde alla categoria più comune',
+    perReportTierDisagrees: () => 'Differisce dalla maggioranza',
+    perReportHardwareMatch: () => 'Corrispondenza hardware',
+    perReportHardwareMatches: () => 'Il produttore GPU corrisponde al tuo sistema',
+    perReportHardwareMismatch: () => 'Il produttore GPU differisce dal tuo sistema',
+    perReportShowAnalysisHint: () => 'Analisi',
+    // Release notes modal
     releaseNotes: () => 'Note di rilascio',
     releaseNotesEmpty: () => 'Nessuna nota di rilascio disponibile per questa versione.',
     releaseNotesPosted: () => 'PUBBLICATO',

@@ -639,7 +639,23 @@ export const nl: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - community-fork",
     protonPulseWebsiteLabel: () => "Proton Pulse-website",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Rapportanalyse',
+    perReportContribution: () => 'Bijdrage aan betrouwbaarheid',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp aan totale betrouwbaarheid` : d < 0 ? `${d} pp aan totale betrouwbaarheid` : "Geen verandering",
+    perReportContributionNeutral: () => 'Het verwijderen van dit rapport zou de totale betrouwbaarheid niet veranderen.',
+    perReportRecency: () => 'Actualiteitsgewicht',
+    perReportRecencyRecent: () => 'Recent (laatste 90 dagen, vol gewicht)',
+    perReportRecencyPrior: () => 'Eerdere periode (90-365 dagen, 60% gewicht)',
+    perReportRecencyHistoric: () => 'Historisch (meer dan 1 jaar, 20% gewicht)',
+    perReportTierAgreement: () => 'Beoordeling vs meerderheid',
+    perReportTierAgrees: () => 'Komt overeen met de meest voorkomende categorie',
+    perReportTierDisagrees: () => 'Wijkt af van de meerderheid',
+    perReportHardwareMatch: () => 'Hardware-overeenkomst',
+    perReportHardwareMatches: () => 'GPU-fabrikant komt overeen met je systeem',
+    perReportHardwareMismatch: () => 'GPU-fabrikant wijkt af van je systeem',
+    perReportShowAnalysisHint: () => 'Analyse',
+    // Release notes modal
     releaseNotes: () => 'Releaseopmerkingen',
     releaseNotesEmpty: () => 'Geen releaseopmerkingen beschikbaar voor deze versie.',
     releaseNotesPosted: () => 'GEPLAATST',

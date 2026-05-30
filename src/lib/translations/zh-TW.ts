@@ -639,7 +639,23 @@ export const zhTW: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - 社群分支",
     protonPulseWebsiteLabel: () => "Proton Pulse 網站",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => '報告分析',
+    perReportContribution: () => '可信度貢獻',
+    perReportContributionDetail: (d) => d > 0 ? `對總體可信度 +${d} 個百分點` : d < 0 ? `對總體可信度 ${d} 個百分點` : "無變化",
+    perReportContributionNeutral: () => '刪除此報告不會改變總體可信度。',
+    perReportRecency: () => '新鮮度權重',
+    perReportRecencyRecent: () => '近期 (最近 90 天，完整權重)',
+    perReportRecencyPrior: () => '先前 (90-365 天，60% 權重)',
+    perReportRecencyHistoric: () => '歷史 (超過 1 年，20% 權重)',
+    perReportTierAgreement: () => '評級 vs 多數',
+    perReportTierAgrees: () => '與最常見的等級一致',
+    perReportTierDisagrees: () => '與多數不同',
+    perReportHardwareMatch: () => '硬體匹配',
+    perReportHardwareMatches: () => 'GPU 廠商與你的系統一致',
+    perReportHardwareMismatch: () => 'GPU 廠商與你的系統不同',
+    perReportShowAnalysisHint: () => '分析',
+    // Release notes modal
     releaseNotes: () => '版本資訊',
     releaseNotesEmpty: () => '此版本沒有版本資訊。',
     releaseNotesPosted: () => '發布於',

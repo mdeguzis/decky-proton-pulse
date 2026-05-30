@@ -639,7 +639,23 @@ export const sl: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - skupnostni fork",
     protonPulseWebsiteLabel: () => "Spletna stran Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Analiza poročila',
+    perReportContribution: () => 'Prispevek k zanesljivosti',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp k skupni zanesljivosti` : d < 0 ? `${d} pp k skupni zanesljivosti` : "Brez sprememb",
+    perReportContributionNeutral: () => 'Odstranitev tega poročila ne bi spremenila skupne zanesljivosti.',
+    perReportRecency: () => 'Utež aktualnosti',
+    perReportRecencyRecent: () => 'Nedavno (zadnjih 90 dni, polna utež)',
+    perReportRecencyPrior: () => 'Prejšnje obdobje (90-365 dni, 60% utež)',
+    perReportRecencyHistoric: () => 'Zgodovinsko (več kot 1 leto, 20% utež)',
+    perReportTierAgreement: () => 'Ocena vs večina',
+    perReportTierAgrees: () => 'Ustreza najpogostejši kategoriji',
+    perReportTierDisagrees: () => 'Se razlikuje od večine',
+    perReportHardwareMatch: () => 'Ujemanje strojne opreme',
+    perReportHardwareMatches: () => 'Proizvajalec GPU ustreza vašemu sistemu',
+    perReportHardwareMismatch: () => 'Proizvajalec GPU se razlikuje od vašega sistema',
+    perReportShowAnalysisHint: () => 'Analiza',
+    // Release notes modal
     releaseNotes: () => 'Opombe ob izdaji',
     releaseNotesEmpty: () => 'Za to različico ni na voljo opomb ob izdaji.',
     releaseNotesPosted: () => 'OBJAVLJENO',

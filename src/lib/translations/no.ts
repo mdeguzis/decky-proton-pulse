@@ -639,7 +639,23 @@ export const no: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - community-fork",
     protonPulseWebsiteLabel: () => "Proton Pulse-nettsted",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Rapportanalyse',
+    perReportContribution: () => 'Bidrag til tillit',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp til samlet tillit` : d < 0 ? `${d} pp til samlet tillit` : "Ingen endring",
+    perReportContributionNeutral: () => 'Å fjerne denne rapporten ville ikke endre den samlede tilliten.',
+    perReportRecency: () => 'Aktualitetsvekt',
+    perReportRecencyRecent: () => 'Nylig (siste 90 dager, full vekt)',
+    perReportRecencyPrior: () => 'Tidligere periode (90-365 dager, 60% vekt)',
+    perReportRecencyHistoric: () => 'Historisk (over 1 år, 20% vekt)',
+    perReportTierAgreement: () => 'Vurdering vs flertall',
+    perReportTierAgrees: () => 'Samsvarer med den vanligste kategorien',
+    perReportTierDisagrees: () => 'Avviker fra flertallet',
+    perReportHardwareMatch: () => 'Maskinvare-samsvar',
+    perReportHardwareMatches: () => 'GPU-produsent samsvarer med systemet ditt',
+    perReportHardwareMismatch: () => 'GPU-produsent avviker fra systemet ditt',
+    perReportShowAnalysisHint: () => 'Analyse',
+    // Release notes modal
     releaseNotes: () => 'Utgivelsesnotater',
     releaseNotesEmpty: () => 'Ingen utgivelsesnotater tilgjengelig for denne versjonen.',
     releaseNotesPosted: () => 'PUBLISERT',

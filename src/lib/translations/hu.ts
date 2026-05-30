@@ -639,7 +639,23 @@ export const hu: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - közösségi fork",
     protonPulseWebsiteLabel: () => "Proton Pulse weboldal",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Jelentés elemzése',
+    perReportContribution: () => 'Hozzájárulás a megbízhatósághoz',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp az összesített megbízhatósághoz` : d < 0 ? `${d} pp az összesített megbízhatósághoz` : "Nincs változás",
+    perReportContributionNeutral: () => 'Ennek a jelentésnek az eltávolítása nem változtatná az összesített megbízhatóságot.',
+    perReportRecency: () => 'Frissesség súlya',
+    perReportRecencyRecent: () => 'Friss (utolsó 90 nap, teljes súly)',
+    perReportRecencyPrior: () => 'Előző időszak (90-365 nap, 60% súly)',
+    perReportRecencyHistoric: () => 'Történelmi (több mint 1 év, 20% súly)',
+    perReportTierAgreement: () => 'Értékelés vs többség',
+    perReportTierAgrees: () => 'Megegyezik a leggyakoribb kategóriával',
+    perReportTierDisagrees: () => 'Eltér a többségtől',
+    perReportHardwareMatch: () => 'Hardver egyezés',
+    perReportHardwareMatches: () => 'A GPU gyártója megegyezik a rendszereddel',
+    perReportHardwareMismatch: () => 'A GPU gyártója eltér a rendszeredtől',
+    perReportShowAnalysisHint: () => 'Elemzés',
+    // Release notes modal
     releaseNotes: () => 'Kiadási megjegyzések',
     releaseNotesEmpty: () => 'Ehhez a verzióhoz nem érhetők el kiadási megjegyzések.',
     releaseNotesPosted: () => 'KÖZZÉTÉVE',

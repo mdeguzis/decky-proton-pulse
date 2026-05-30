@@ -639,7 +639,23 @@ export const es419: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - bifurcación comunitaria",
     protonPulseWebsiteLabel: () => "Sitio web de Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Análisis del reporte',
+    perReportContribution: () => 'Contribución a la confianza',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp a la confianza total` : d < 0 ? `${d} pp a la confianza total` : "Sin cambios",
+    perReportContributionNeutral: () => 'Eliminar este reporte no cambiaría la confianza total.',
+    perReportRecency: () => 'Peso de actualidad',
+    perReportRecencyRecent: () => 'Reciente (últimos 90 días, peso completo)',
+    perReportRecencyPrior: () => 'Período previo (90-365 días, 60% de peso)',
+    perReportRecencyHistoric: () => 'Histórico (más de 1 año, 20% de peso)',
+    perReportTierAgreement: () => 'Calificación vs mayoría',
+    perReportTierAgrees: () => 'Coincide con la categoría más común',
+    perReportTierDisagrees: () => 'Difiere de la mayoría',
+    perReportHardwareMatch: () => 'Coincidencia de hardware',
+    perReportHardwareMatches: () => 'El fabricante de GPU coincide con tu sistema',
+    perReportHardwareMismatch: () => 'El fabricante de GPU difiere de tu sistema',
+    perReportShowAnalysisHint: () => 'Análisis',
+    // Release notes modal
     releaseNotes: () => 'Notas de la versión',
     releaseNotesEmpty: () => 'No hay notas de versión disponibles para esta versión.',
     releaseNotesPosted: () => 'PUBLICADO',

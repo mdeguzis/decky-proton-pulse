@@ -639,7 +639,23 @@ export const bg: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - общностен форк",
     protonPulseWebsiteLabel: () => "Уебсайт на Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Анализ на доклад',
+    perReportContribution: () => 'Принос към сигурността',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} пп към общата сигурност` : d < 0 ? `${d} пп към общата сигурност` : "Без промяна",
+    perReportContributionNeutral: () => 'Премахването на този доклад не би променило общата сигурност.',
+    perReportRecency: () => 'Тегло на актуалност',
+    perReportRecencyRecent: () => 'Скорошен (последни 90 дни, пълно тегло)',
+    perReportRecencyPrior: () => 'Предходен период (90-365 дни, 60% тегло)',
+    perReportRecencyHistoric: () => 'Исторически (над 1 година, 20% тегло)',
+    perReportTierAgreement: () => 'Оценка спрямо мнозинството',
+    perReportTierAgrees: () => 'Съответства на най-честата категория',
+    perReportTierDisagrees: () => 'Не съответства на мнозинството',
+    perReportHardwareMatch: () => 'Съвпадение на хардуера',
+    perReportHardwareMatches: () => 'Производителят на GPU съответства на вашата система',
+    perReportHardwareMismatch: () => 'Производителят на GPU се различава от вашата система',
+    perReportShowAnalysisHint: () => 'Анализ',
+    // Release notes modal
     releaseNotes: () => 'Бележки за изданието',
     releaseNotesEmpty: () => 'Няма налични бележки за тази версия.',
     releaseNotesPosted: () => 'ПУБЛИКУВАНО',

@@ -21,9 +21,13 @@ interface Props {
   onFocus?: (report: DisplayReportCard) => void;
   onUpvote?: (report: DisplayReportCard) => void;
   onDownvote?: (report: DisplayReportCard) => void;
+  // Y-button handler. Opens the per-report analysis modal showing how
+  // this single report contributes to the aggregate confidence + its
+  // recency, tier agreement, and hardware match
+  onAnalyze?: (report: DisplayReportCard) => void;
 }
 
-export function ReportCard({ report, selected, focused = false, systemGpuVendor, onSelect, onFocus, onUpvote }: Props) {
+export function ReportCard({ report, selected, focused = false, systemGpuVendor, onSelect, onFocus, onUpvote, onAnalyze }: Props) {
   const strings = t();
   // Badge shows the report's actual rating (derived from yes/no answers).
   // Earlier this used scoreToRating(report.score) which re-tier'd a borked
@@ -44,6 +48,8 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
       onGamepadFocus={() => onFocus?.(report)}
       onSecondaryButton={onUpvote ? () => onUpvote(report) : undefined}
       onSecondaryActionDescription={onUpvote ? strings.detail.upvote : undefined}
+      onOptionsButton={onAnalyze ? () => onAnalyze(report) : undefined}
+      onOptionsActionDescription={onAnalyze ? strings.extras!.perReportShowAnalysisHint!() : undefined}
       style={{ width: '100%' }}
     >
       <div

@@ -639,7 +639,23 @@ export const th: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - คอมมูนิตี้ฟอร์ก",
     protonPulseWebsiteLabel: () => "เว็บไซต์ Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'การวิเคราะห์รายงาน',
+    perReportContribution: () => 'การมีส่วนร่วมต่อความมั่นใจ',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp ต่อความมั่นใจรวม` : d < 0 ? `${d} pp ต่อความมั่นใจรวม` : "ไม่มีการเปลี่ยนแปลง",
+    perReportContributionNeutral: () => 'การลบรายงานนี้จะไม่เปลี่ยนความมั่นใจรวม',
+    perReportRecency: () => 'น้ำหนักความใหม่',
+    perReportRecencyRecent: () => 'ล่าสุด (90 วันที่ผ่านมา น้ำหนักเต็ม)',
+    perReportRecencyPrior: () => 'ช่วงก่อนหน้า (90-365 วัน น้ำหนัก 60%)',
+    perReportRecencyHistoric: () => 'ประวัติ (มากกว่า 1 ปี น้ำหนัก 20%)',
+    perReportTierAgreement: () => 'การให้คะแนนเทียบกับเสียงข้างมาก',
+    perReportTierAgrees: () => 'ตรงกับหมวดหมู่ที่พบบ่อยที่สุด',
+    perReportTierDisagrees: () => 'ต่างจากเสียงข้างมาก',
+    perReportHardwareMatch: () => 'การจับคู่ฮาร์ดแวร์',
+    perReportHardwareMatches: () => 'ผู้ผลิต GPU ตรงกับระบบของคุณ',
+    perReportHardwareMismatch: () => 'ผู้ผลิต GPU ต่างจากระบบของคุณ',
+    perReportShowAnalysisHint: () => 'วิเคราะห์',
+    // Release notes modal
     releaseNotes: () => 'บันทึกประจำรุ่น',
     releaseNotesEmpty: () => 'ไม่มีบันทึกประจำรุ่นสำหรับเวอร์ชันนี้',
     releaseNotesPosted: () => 'เผยแพร่',

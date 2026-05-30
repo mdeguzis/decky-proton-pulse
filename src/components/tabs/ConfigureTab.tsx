@@ -21,6 +21,7 @@ import {
   runRegisteredScreenshotAutomationHandler,
 } from '../../lib/screenshotAutomation';
 import { ReportCard, type DisplayReportCard } from '../ReportCard';
+import { showPerReportAnalysisModal } from '../PerReportAnalysisModal';
 import { ReportDetailModal } from '../ReportDetailModal';
 import { RATING_COLORS } from '../../lib/reportFormatters';
 import { resolveLaunchOptionsWithPrompt, showLaunchOptionConflictPreview } from '../LaunchOptionConflictModal';
@@ -1444,6 +1445,9 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                     onSelect={openReportDetail}
                     onUpvote={handleUpvote}
                     onDownvote={handleDownvote}
+                    onAnalyze={(report) => showPerReportAnalysisModal(
+                      report, sortedReports, pulseReports, sysInfo,
+                    )}
                   />
                 ))
               )}

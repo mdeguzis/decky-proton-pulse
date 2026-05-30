@@ -639,7 +639,23 @@ export const ro: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - fork al comunității",
     protonPulseWebsiteLabel: () => "Site-ul Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Analiza raportului',
+    perReportContribution: () => 'Contribuție la încredere',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp la încrederea totală` : d < 0 ? `${d} pp la încrederea totală` : "Fără schimbare",
+    perReportContributionNeutral: () => 'Eliminarea acestui raport nu ar modifica încrederea totală.',
+    perReportRecency: () => 'Greutate de actualitate',
+    perReportRecencyRecent: () => 'Recent (ultimele 90 de zile, greutate completă)',
+    perReportRecencyPrior: () => 'Perioadă anterioară (90-365 zile, greutate 60%)',
+    perReportRecencyHistoric: () => 'Istoric (peste 1 an, greutate 20%)',
+    perReportTierAgreement: () => 'Evaluare vs majoritate',
+    perReportTierAgrees: () => 'Se potrivește cu categoria cea mai comună',
+    perReportTierDisagrees: () => 'Diferă de majoritate',
+    perReportHardwareMatch: () => 'Potrivire hardware',
+    perReportHardwareMatches: () => 'Producătorul GPU se potrivește cu sistemul tău',
+    perReportHardwareMismatch: () => 'Producătorul GPU diferă de sistemul tău',
+    perReportShowAnalysisHint: () => 'Analiză',
+    // Release notes modal
     releaseNotes: () => 'Note de lansare',
     releaseNotesEmpty: () => 'Nu sunt disponibile note de lansare pentru această versiune.',
     releaseNotesPosted: () => 'PUBLICAT',

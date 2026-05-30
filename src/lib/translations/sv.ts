@@ -639,7 +639,23 @@ export const sv: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - community-fork",
     protonPulseWebsiteLabel: () => "Proton Pulse-webbplats",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Rapportanalys',
+    perReportContribution: () => 'Bidrag till tillförlitlighet',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp till total tillförlitlighet` : d < 0 ? `${d} pp till total tillförlitlighet` : "Ingen förändring",
+    perReportContributionNeutral: () => 'Att ta bort den här rapporten skulle inte ändra den totala tillförlitligheten.',
+    perReportRecency: () => 'Aktualitetsvikt',
+    perReportRecencyRecent: () => 'Nyligen (senaste 90 dagarna, full vikt)',
+    perReportRecencyPrior: () => 'Tidigare period (90-365 dagar, 60% vikt)',
+    perReportRecencyHistoric: () => 'Historisk (över 1 år, 20% vikt)',
+    perReportTierAgreement: () => 'Betyg vs majoritet',
+    perReportTierAgrees: () => 'Matchar den vanligaste kategorin',
+    perReportTierDisagrees: () => 'Skiljer sig från majoriteten',
+    perReportHardwareMatch: () => 'Hårdvarumatch',
+    perReportHardwareMatches: () => 'GPU-tillverkare matchar ditt system',
+    perReportHardwareMismatch: () => 'GPU-tillverkare skiljer sig från ditt system',
+    perReportShowAnalysisHint: () => 'Analys',
+    // Release notes modal
     releaseNotes: () => 'Versionsinformation',
     releaseNotesEmpty: () => 'Ingen versionsinformation tillgänglig för denna version.',
     releaseNotesPosted: () => 'PUBLICERAD',

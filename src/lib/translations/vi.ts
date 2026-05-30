@@ -639,7 +639,23 @@ export const vi: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - fork cộng đồng",
     protonPulseWebsiteLabel: () => "Trang web Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Phân tích báo cáo',
+    perReportContribution: () => 'Đóng góp vào độ tin cậy',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} điểm vào độ tin cậy tổng thể` : d < 0 ? `${d} điểm vào độ tin cậy tổng thể` : "Không thay đổi",
+    perReportContributionNeutral: () => 'Loại bỏ báo cáo này sẽ không thay đổi độ tin cậy tổng thể.',
+    perReportRecency: () => 'Trọng số mới mẻ',
+    perReportRecencyRecent: () => 'Gần đây (90 ngày qua, trọng số đầy đủ)',
+    perReportRecencyPrior: () => 'Giai đoạn trước (90-365 ngày, 60% trọng số)',
+    perReportRecencyHistoric: () => 'Lịch sử (hơn 1 năm, 20% trọng số)',
+    perReportTierAgreement: () => 'Đánh giá vs đa số',
+    perReportTierAgrees: () => 'Khớp với hạng phổ biến nhất',
+    perReportTierDisagrees: () => 'Khác với đa số',
+    perReportHardwareMatch: () => 'Khớp phần cứng',
+    perReportHardwareMatches: () => 'Nhà sản xuất GPU khớp với hệ thống của bạn',
+    perReportHardwareMismatch: () => 'Nhà sản xuất GPU khác với hệ thống của bạn',
+    perReportShowAnalysisHint: () => 'Phân tích',
+    // Release notes modal
     releaseNotes: () => 'Ghi chú phát hành',
     releaseNotesEmpty: () => 'Không có ghi chú phát hành cho phiên bản này.',
     releaseNotesPosted: () => 'ĐÃ ĐĂNG',

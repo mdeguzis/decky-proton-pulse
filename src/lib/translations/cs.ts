@@ -639,7 +639,23 @@ export const cs: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - komunitní fork",
     protonPulseWebsiteLabel: () => "Web Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Analýza hlášení',
+    perReportContribution: () => 'Příspěvek ke spolehlivosti',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pb k celkové spolehlivosti` : d < 0 ? `${d} pb k celkové spolehlivosti` : "Beze změny",
+    perReportContributionNeutral: () => 'Odstranění tohoto hlášení by nezměnilo celkovou spolehlivost.',
+    perReportRecency: () => 'Váha aktuálnosti',
+    perReportRecencyRecent: () => 'Aktuální (posledních 90 dní, plná váha)',
+    perReportRecencyPrior: () => 'Předchozí období (90-365 dní, 60% váha)',
+    perReportRecencyHistoric: () => 'Historické (přes 1 rok, 20% váha)',
+    perReportTierAgreement: () => 'Hodnocení vs většina',
+    perReportTierAgrees: () => 'Odpovídá nejčastější úrovni',
+    perReportTierDisagrees: () => 'Liší se od většiny',
+    perReportHardwareMatch: () => 'Shoda hardwaru',
+    perReportHardwareMatches: () => 'Výrobce GPU odpovídá vašemu systému',
+    perReportHardwareMismatch: () => 'Výrobce GPU se liší od vašeho systému',
+    perReportShowAnalysisHint: () => 'Analýza',
+    // Release notes modal
     releaseNotes: () => 'Poznámky k vydání',
     releaseNotesEmpty: () => 'Pro tuto verzi nejsou k dispozici poznámky.',
     releaseNotesPosted: () => 'ZVEŘEJNĚNO',

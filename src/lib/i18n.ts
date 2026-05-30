@@ -742,6 +742,22 @@ export interface TranslationTree {
     nativeLinuxBadge?: () => string;
     // About tab
     protonPulseWebsiteLabel?: () => string;
+    // Per-report analysis modal (opened with Y on a focused report card)
+    perReportAnalysisTitle?: () => string;
+    perReportContribution?: () => string;
+    perReportContributionDetail?: (delta: number) => string;
+    perReportContributionNeutral?: () => string;
+    perReportRecency?: () => string;
+    perReportRecencyRecent?: () => string;
+    perReportRecencyPrior?: () => string;
+    perReportRecencyHistoric?: () => string;
+    perReportTierAgreement?: () => string;
+    perReportTierAgrees?: () => string;
+    perReportTierDisagrees?: () => string;
+    perReportHardwareMatch?: () => string;
+    perReportHardwareMatches?: () => string;
+    perReportHardwareMismatch?: () => string;
+    perReportShowAnalysisHint?: () => string;
     // Release notes modal (opened from Settings tab when an update is available)
     releaseNotes?: () => string;
     releaseNotesEmpty?: () => string;
@@ -1476,6 +1492,22 @@ export const en: TranslationTree = {
     nativeLinuxBadge: () => 'Native Linux build available',
     // About tab
     protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Report Analysis',
+    perReportContribution: () => 'Confidence contribution',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp to aggregate confidence` : d < 0 ? `${d} pp to aggregate confidence` : 'No change',
+    perReportContributionNeutral: () => 'Removing this report would not change aggregate confidence.',
+    perReportRecency: () => 'Recency weight',
+    perReportRecencyRecent: () => 'Recent (last 90 days, full weight)',
+    perReportRecencyPrior: () => 'Prior window (90-365 days, 60% weight)',
+    perReportRecencyHistoric: () => 'Historic (over 1 year, 20% weight)',
+    perReportTierAgreement: () => 'Rating vs majority',
+    perReportTierAgrees: () => 'Matches the most common tier',
+    perReportTierDisagrees: () => 'Disagrees with the majority',
+    perReportHardwareMatch: () => 'Hardware match',
+    perReportHardwareMatches: () => 'GPU vendor matches your system',
+    perReportHardwareMismatch: () => 'GPU vendor differs from your system',
+    perReportShowAnalysisHint: () => 'Report Analysis',
     // Release notes modal
     releaseNotes: () => 'Release Notes',
     releaseNotesEmpty: () => 'No release notes available for this version.',

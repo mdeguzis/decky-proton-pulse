@@ -639,7 +639,23 @@ export const uk: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - збірка спільноти",
     protonPulseWebsiteLabel: () => "Веб-сайт Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Аналіз звіту',
+    perReportContribution: () => 'Вплив на впевненість',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} пп до загальної впевненості` : d < 0 ? `${d} пп до загальної впевненості` : "Без змін",
+    perReportContributionNeutral: () => 'Видалення цього звіту не змінить загальну впевненість.',
+    perReportRecency: () => 'Вага актуальності',
+    perReportRecencyRecent: () => 'Недавній (останні 90 днів, повна вага)',
+    perReportRecencyPrior: () => 'Попередній період (90-365 днів, вага 60%)',
+    perReportRecencyHistoric: () => 'Історичний (понад 1 рік, вага 20%)',
+    perReportTierAgreement: () => 'Оцінка vs більшість',
+    perReportTierAgrees: () => 'Збігається з найбільш поширеною категорією',
+    perReportTierDisagrees: () => 'Відрізняється від більшості',
+    perReportHardwareMatch: () => 'Збіг обладнання',
+    perReportHardwareMatches: () => 'Виробник GPU відповідає вашій системі',
+    perReportHardwareMismatch: () => 'Виробник GPU відрізняється від вашої системи',
+    perReportShowAnalysisHint: () => 'Аналіз',
+    // Release notes modal
     releaseNotes: () => 'Примітки до випуску',
     releaseNotesEmpty: () => 'Немає приміток до випуску для цієї версії.',
     releaseNotesPosted: () => 'ОПУБЛІКОВАНО',

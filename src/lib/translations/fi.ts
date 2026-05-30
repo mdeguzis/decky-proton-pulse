@@ -639,7 +639,23 @@ export const fi: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - yhteisön fork",
     protonPulseWebsiteLabel: () => "Proton Pulse -verkkosivu",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Raportin analyysi',
+    perReportContribution: () => 'Vaikutus luottamukseen',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} pp kokonaisluottamukseen` : d < 0 ? `${d} pp kokonaisluottamukseen` : "Ei muutosta",
+    perReportContributionNeutral: () => 'Tämän raportin poistaminen ei muuttaisi kokonaisluottamusta.',
+    perReportRecency: () => 'Tuoreuden paino',
+    perReportRecencyRecent: () => 'Tuore (viimeiset 90 päivää, täysi paino)',
+    perReportRecencyPrior: () => 'Aiempi jakso (90-365 päivää, 60% paino)',
+    perReportRecencyHistoric: () => 'Historiallinen (yli 1 vuosi, 20% paino)',
+    perReportTierAgreement: () => 'Arviointi vs enemmistö',
+    perReportTierAgrees: () => 'Vastaa yleisintä luokkaa',
+    perReportTierDisagrees: () => 'Eroaa enemmistöstä',
+    perReportHardwareMatch: () => 'Laitteistovastaavuus',
+    perReportHardwareMatches: () => 'GPU-valmistaja vastaa järjestelmääsi',
+    perReportHardwareMismatch: () => 'GPU-valmistaja eroaa järjestelmästäsi',
+    perReportShowAnalysisHint: () => 'Analyysi',
+    // Release notes modal
     releaseNotes: () => 'Julkaisutiedot',
     releaseNotesEmpty: () => 'Tälle versiolle ei ole saatavilla julkaisutietoja.',
     releaseNotesPosted: () => 'JULKAISTU',

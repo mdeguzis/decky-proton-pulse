@@ -639,7 +639,23 @@ export const el: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - κοινοτικό fork",
     protonPulseWebsiteLabel: () => "Ιστότοπος Proton Pulse",
-        // Release notes modal
+            // Per-report analysis modal
+    perReportAnalysisTitle: () => 'Ανάλυση αναφοράς',
+    perReportContribution: () => 'Συμβολή στην εμπιστοσύνη',
+    perReportContributionDetail: (d) => d > 0 ? `+${d} ππ στη συνολική εμπιστοσύνη` : d < 0 ? `${d} ππ στη συνολική εμπιστοσύνη` : "Καμία αλλαγή",
+    perReportContributionNeutral: () => 'Η αφαίρεση αυτής της αναφοράς δεν θα άλλαζε τη συνολική εμπιστοσύνη.',
+    perReportRecency: () => 'Βάρος επικαιρότητας',
+    perReportRecencyRecent: () => 'Πρόσφατο (τελευταίες 90 ημέρες, πλήρες βάρος)',
+    perReportRecencyPrior: () => 'Προηγούμενη περίοδος (90-365 ημέρες, 60% βάρος)',
+    perReportRecencyHistoric: () => 'Ιστορικό (πάνω από 1 έτος, 20% βάρος)',
+    perReportTierAgreement: () => 'Βαθμολογία vs πλειοψηφία',
+    perReportTierAgrees: () => 'Ταιριάζει με την πιο κοινή κατηγορία',
+    perReportTierDisagrees: () => 'Διαφέρει από την πλειοψηφία',
+    perReportHardwareMatch: () => 'Αντιστοίχιση υλικού',
+    perReportHardwareMatches: () => 'Ο κατασκευαστής GPU ταιριάζει με το σύστημά σας',
+    perReportHardwareMismatch: () => 'Ο κατασκευαστής GPU διαφέρει από το σύστημά σας',
+    perReportShowAnalysisHint: () => 'Ανάλυση',
+    // Release notes modal
     releaseNotes: () => 'Σημειώσεις έκδοσης',
     releaseNotesEmpty: () => 'Δεν υπάρχουν διαθέσιμες σημειώσεις για αυτήν την έκδοση.',
     releaseNotesPosted: () => 'ΔΗΜΟΣΙΕΥΘΗΚΕ',
