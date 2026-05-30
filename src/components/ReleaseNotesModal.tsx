@@ -88,13 +88,12 @@ function ReleaseColumn({ release, total, idx }: { release: ReleaseRow; total: nu
 
   return (
     <Focusable style={{
+      // No background or border here -- the outer ModalRoot Focusable wraps
+      // this column with the chrome. Adding our own would double-frame
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
       padding: 0,
-      background: '#0f1822',
-      border: '1px solid rgba(102, 192, 244, 0.18)',
-      borderRadius: 6,
     }}>
       {/* metadata strip */}
       <div style={{
@@ -244,10 +243,16 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
     })();
   }, [initial]);
 
-  // Carousel column dimensions matched to Decky Loader's PatchNotesModal:
-  // each column is ~90% of viewport width, full inner height minus chrome
-  const columnW = Math.max(600, Math.min(SP.innerWidth - SP.innerWidth * 0.1, 1280));
-  const itemH = Math.max(400, SP.innerHeight - 120);
+  // Modal sizing. Outer card is ~90% of the BPM viewport so the ModalRoot
+  // border frames it cleanly. The carousel column fills the inside of
+  // that card (minus a small inset so the focus ring on the column has
+  // room to render without clipping)
+  const outerW = Math.max(720, Math.min(SP.innerWidth - SP.innerWidth * 0.08, 1280));
+  const outerH = Math.max(420, SP.innerHeight - 80);
+  // Carousel column = outer card width minus modal padding. Don't subtract
+  // for borders since the inner column no longer draws its own frame
+  const columnW = outerW - 16;
+  const itemH = outerH - 64; // 64 = footer height (gap for action buttons)
 
   if (!releases) {
     return (
@@ -287,7 +292,19 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
     <ModalRoot onCancel={closeModal}>
       <Focusable
         onCancelButton={closeModal}
-        style={{ display: 'flex', flexDirection: 'column', width: columnW, height: itemH + 60 }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          width: outerW,
+          height: outerH,
+          // Single bordered card -- ModalRoot already provides modal dimming,
+          // but the inner card style gives the patch-notes overlay its
+          // distinctive look
+          background: '#0f1822',
+          border: '1px solid rgba(102, 192, 244, 0.18)',
+          borderRadius: 6,
+          overflow: 'hidden',
+        }}
       >
         <Carousel
           fnItemRenderer={(id: number) => (
@@ -312,6 +329,7 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
           gap: 8,
           padding: '10px 22px',
           borderTop: '1px solid rgba(255,255,255,0.06)',
+          flexShrink: 0,
         }}>
           {current.html_url && (
             <DialogButton
