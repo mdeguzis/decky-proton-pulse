@@ -639,6 +639,9 @@ export const vi: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - fork cộng đồng",
     protonPulseWebsiteLabel: () => "Trang web Proton Pulse",
+        // Release notes modal
+    releaseNotes: () => 'Ghi chú phát hành',
+    releaseNotesEmpty: () => 'Không có ghi chú phát hành cho phiên bản này.',
     // Analysis tab
     analysisNoReports: () => 'Chưa có báo cáo nào cho trò chơi này.',
     analysisConfidence: () => 'Độ tin cậy',

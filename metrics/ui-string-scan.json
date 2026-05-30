@@ -13,6 +13,7 @@
     "src/components/MyHardwareModal.tsx",
     "src/components/NativePulseReportModal.tsx",
     "src/components/ProtonDBSubmitModal.tsx",
+    "src/components/ReleaseNotesModal.tsx",
     "src/components/ReportCard.tsx",
     "src/components/ReportDetailModal.tsx",
     "src/components/ScoringGuideModal.tsx",

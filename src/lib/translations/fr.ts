@@ -700,6 +700,9 @@ export const fr: TranslationTree = {
     managePlaytimeThisConfig: () => "Temps de jeu (cette config)",
     nativeLinuxBadge: () => "Version Linux native disponible",
     protonPulseWebsiteLabel: () => "Site web Proton Pulse",
+        // Release notes modal
+    releaseNotes: () => 'Notes de version',
+    releaseNotesEmpty: () => 'Aucune note de version disponible pour cette version.',
     // Analysis tab
     analysisNoReports: () => 'Aucun rapport pour ce jeu pour l\'instant.',
     analysisConfidence: () => 'Confiance',

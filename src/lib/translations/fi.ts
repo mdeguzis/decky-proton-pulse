@@ -639,6 +639,9 @@ export const fi: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - yhteisön fork",
     protonPulseWebsiteLabel: () => "Proton Pulse -verkkosivu",
+        // Release notes modal
+    releaseNotes: () => 'Julkaisutiedot',
+    releaseNotesEmpty: () => 'Tälle versiolle ei ole saatavilla julkaisutietoja.',
     // Analysis tab
     analysisNoReports: () => 'Ei vielä raportteja tästä pelistä.',
     analysisConfidence: () => 'Luottamus',

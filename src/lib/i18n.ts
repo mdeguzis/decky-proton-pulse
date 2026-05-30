@@ -742,6 +742,9 @@ export interface TranslationTree {
     nativeLinuxBadge?: () => string;
     // About tab
     protonPulseWebsiteLabel?: () => string;
+    // Release notes modal (opened from Settings tab when an update is available)
+    releaseNotes?: () => string;
+    releaseNotesEmpty?: () => string;
     // Analysis tab (per-game aggregate stats)
     analysisNoReports?: () => string;
     analysisConfidence?: () => string;
@@ -1470,6 +1473,9 @@ export const en: TranslationTree = {
     nativeLinuxBadge: () => 'Native Linux build available',
     // About tab
     protonPulseWebsiteLabel: () => 'Proton Pulse Website',
+    // Release notes modal
+    releaseNotes: () => 'Release Notes',
+    releaseNotesEmpty: () => 'No release notes available for this version.',
     // Analysis tab
     analysisNoReports: () => 'No reports yet for this game.',
     analysisConfidence: () => 'Confidence',

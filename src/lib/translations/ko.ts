@@ -700,6 +700,9 @@ export const ko: TranslationTree = {
     managePlaytimeThisConfig: () => "플레이 시간 (이 구성)",
     nativeLinuxBadge: () => "네이티브 Linux 빌드 사용 가능",
     protonPulseWebsiteLabel: () => "Proton Pulse 웹사이트",
+        // Release notes modal
+    releaseNotes: () => '릴리스 노트',
+    releaseNotesEmpty: () => '이 버전에 대한 릴리스 노트가 없습니다.',
     // Analysis tab
     analysisNoReports: () => '이 게임에 대한 보고서가 아직 없습니다.',
     analysisConfidence: () => '신뢰도',

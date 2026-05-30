@@ -639,6 +639,9 @@ export const zhTW: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - 社群分支",
     protonPulseWebsiteLabel: () => "Proton Pulse 網站",
+        // Release notes modal
+    releaseNotes: () => '版本資訊',
+    releaseNotesEmpty: () => '此版本沒有版本資訊。',
     // Analysis tab
     analysisNoReports: () => '此遊戲尚無報告。',
     analysisConfidence: () => '可信度',

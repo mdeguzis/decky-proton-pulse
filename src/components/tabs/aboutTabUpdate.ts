@@ -26,6 +26,9 @@ export interface UpdateCheckResult {
   zip_url?: string | null;
   asset_size?: number | null;
   release_url?: string;
+  // Raw markdown body of the GitHub release. Used by ReleaseNotesModal to
+  // show what changed before the user commits to applying the update
+  release_notes?: string;
   error?: string;
 }
 

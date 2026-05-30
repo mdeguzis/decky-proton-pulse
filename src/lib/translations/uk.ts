@@ -639,6 +639,9 @@ export const uk: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - збірка спільноти",
     protonPulseWebsiteLabel: () => "Веб-сайт Proton Pulse",
+        // Release notes modal
+    releaseNotes: () => 'Примітки до випуску',
+    releaseNotesEmpty: () => 'Немає приміток до випуску для цієї версії.',
     // Analysis tab
     analysisNoReports: () => 'Для цієї гри ще немає звітів.',
     analysisConfidence: () => 'Впевненість',

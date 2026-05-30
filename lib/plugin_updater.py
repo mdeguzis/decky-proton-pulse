@@ -80,6 +80,7 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
                 "zip_url": _LATEST_COMMIT_ZIP,
                 "asset_size": None,
                 "release_url": f"https://github.com/{GITHUB_REPO}/tree/main",
+                "release_notes": "",
                 "channel": channel,
             }
 
@@ -119,6 +120,7 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
                 "zip_url": zip_url,
                 "asset_size": asset_size,
                 "release_url": str(data.get("html_url", "")),
+                "release_notes": str(data.get("body", "") or ""),
                 "channel": channel,
             }
 
@@ -160,6 +162,7 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
             "zip_url": zip_url,
             "asset_size": asset_size,
             "release_url": str(data.get("html_url", "")),
+            "release_notes": str(data.get("body", "") or ""),
             "channel": channel,
         }
     except Exception as e:

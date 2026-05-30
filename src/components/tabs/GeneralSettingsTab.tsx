@@ -26,6 +26,7 @@ import { getVoterId } from '../../lib/voting';
 import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPluginLink, type PluginLinkStatus } from '../../lib/protonPulseAccount';
 import { buildPluginLinkProfileUrl } from '../../lib/protonPulseLinkUrl';
 import { type UpdateCheckResult, type UpdateStatusResult, triggerReload } from './aboutTabUpdate';
+import { showReleaseNotesModal } from '../ReleaseNotesModal';
 import { refreshLibraryGridBadges } from '../../patches/libraryGridBadges';
 
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -922,6 +923,25 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             </DialogButton>
           )}
         </Focusable>
+
+        {/* Release Notes button -- only shown when an update is available and
+            the backend returned a non-empty body. Steam Big Picture surfaces
+            release notes inline in its System Updates box; we use a click-out
+            modal so the Settings tab stays compact */}
+        {checkResult?.success && checkResult.has_update && !updating && !updateApplied && checkResult.release_notes && (
+          <Focusable style={{ marginTop: 8 }}>
+            <DialogButton
+              onClick={() => showReleaseNotesModal(
+                checkResult.latest_version ?? '',
+                checkResult.release_notes ?? '',
+                checkResult.release_url,
+              )}
+              style={{ width: '100%', fontSize: 12 }}
+            >
+              {t().extras!.releaseNotes!()}
+            </DialogButton>
+          </Focusable>
+        )}
       </div>
 
       <div style={sectionStyle()}>

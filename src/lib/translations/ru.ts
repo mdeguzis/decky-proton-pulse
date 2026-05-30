@@ -730,6 +730,9 @@ export const ru: TranslationTree = {
     managePlaytimeThisConfig: () => "Время игры (эта конфигурация)",
     nativeLinuxBadge: () => "Доступна нативная сборка Linux",
     protonPulseWebsiteLabel: () => "Веб-сайт Proton Pulse",
+        // Release notes modal
+    releaseNotes: () => 'Примечания к выпуску',
+    releaseNotesEmpty: () => 'Для этой версии нет примечаний к выпуску.',
     // Analysis tab
     analysisNoReports: () => 'Для этой игры пока нет отчётов.',
     analysisConfidence: () => 'Уверенность',

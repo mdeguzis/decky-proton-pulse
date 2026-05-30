@@ -700,6 +700,9 @@ export const zhCN: TranslationTree = {
     managePlaytimeThisConfig: () => "游戏时间 (此配置)",
     nativeLinuxBadge: () => "可用原生 Linux 版本",
     protonPulseWebsiteLabel: () => "Proton Pulse 网站",
+        // Release notes modal
+    releaseNotes: () => '发行说明',
+    releaseNotesEmpty: () => '此版本暂无发行说明。',
     // Analysis tab
     analysisNoReports: () => '此游戏暂无报告。',
     analysisConfidence: () => '可信度',

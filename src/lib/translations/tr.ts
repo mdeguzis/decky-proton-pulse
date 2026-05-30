@@ -700,6 +700,9 @@ export const tr: TranslationTree = {
     managePlaytimeThisConfig: () => "Oynama süresi (bu yapılandırma)",
     nativeLinuxBadge: () => "Yerel Linux yapısı mevcut",
     protonPulseWebsiteLabel: () => "Proton Pulse Web Sitesi",
+        // Release notes modal
+    releaseNotes: () => 'Sürüm notları',
+    releaseNotesEmpty: () => 'Bu sürüm için sürüm notu mevcut değil.',
     // Analysis tab
     analysisNoReports: () => 'Bu oyun için henüz rapor yok.',
     analysisConfidence: () => 'Güven',

@@ -639,6 +639,9 @@ export const th: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - คอมมูนิตี้ฟอร์ก",
     protonPulseWebsiteLabel: () => "เว็บไซต์ Proton Pulse",
+        // Release notes modal
+    releaseNotes: () => 'บันทึกประจำรุ่น',
+    releaseNotesEmpty: () => 'ไม่มีบันทึกประจำรุ่นสำหรับเวอร์ชันนี้',
     // Analysis tab
     analysisNoReports: () => 'ยังไม่มีรายงานสำหรับเกมนี้',
     analysisConfidence: () => 'ความมั่นใจ',

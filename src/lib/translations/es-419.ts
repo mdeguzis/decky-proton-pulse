@@ -639,6 +639,9 @@ export const es419: TranslationTree = {
     // Backfilled translations for new extras keys (run 2026-05-29)
     reportFormProtonGE: () => "Glorious Eggroll (GE) - bifurcación comunitaria",
     protonPulseWebsiteLabel: () => "Sitio web de Proton Pulse",
+        // Release notes modal
+    releaseNotes: () => 'Notas de la versión',
+    releaseNotesEmpty: () => 'No hay notas de versión disponibles para esta versión.',
     // Analysis tab
     analysisNoReports: () => 'Aún no hay reportes para este juego.',
     analysisConfidence: () => 'Confianza',

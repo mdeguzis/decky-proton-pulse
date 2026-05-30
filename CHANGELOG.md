@@ -129,6 +129,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- UseFocusableScroll: extract shared hook for scroll-on-focus + indicator
 - Scroll-on-focus + bottom buffer + readable tier badges in Analysis tab
 - Analysis tab: focusable rows for gamepad scrolling
 - I18n: dont prepend 'v' to non-numeric version names in updateAvailable
