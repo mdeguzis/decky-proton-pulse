@@ -1,26 +1,26 @@
-// Release notes browser modal. Mirrors Decky Loader's own patch-notes
-// browser (frontend/src/components/settings/pages/general/Updater.tsx)
-// which is itself styled after Steam Big Picture's "Software Updates"
-// patch-notes overlay.
+// Release notes browser. Literal copy of Decky Loader's PatchNotesModal
+// pattern (frontend/src/components/settings/pages/general/Updater.tsx):
 //
-// Architecture:
-//   - <Carousel> from @decky/ui handles left/right paging natively. Each
-//     release is a column; shoulder buttons (L1/R1) page through them
-//     with the same animated focus rings Steam uses for game library
-//     carousels. We dont have to wire DIR_LEFT / DIR_RIGHT manually
-//   - Each column renders the metadata strip + title + parsed body in a
-//     scrollable <Focusable>. Inside the body, useFocusableScroll keeps
-//     up/down D-pad scrolling smooth (focused row centers in viewport)
-//   - findSP() returns the Steam UI window, used to size each carousel
-//     column to the BPM viewport
+//   <Focusable onCancelButton={closeModal}>
+//     <Carousel
+//       fnItemRenderer={(id) => (
+//         <Focusable style={... translucent dark bg, margin, padding}>
+//           <h1>{name}</h1>
+//           <body markdown />
+//         </Focusable>
+//       )}
+//       ... column dims from findSP()
+//     />
+//   </Focusable>
 //
-// Callers either pass an `initial` release (when the user clicked the
-// Release Notes button from an active update), or pass nothing -- the
-// modal then loads the 10 most recent releases and starts at index 0
+// No ModalRoot, no outer card frame -- the Steam BPM backdrop is the modal
+// chrome, and each carousel column is the "card" with its own background.
+// Same gamepad mechanics: shoulder buttons page L/R via Carousel, B closes
+// via the root Focusable's onCancelButton.
 
 import { useEffect, useState } from 'react';
 import {
-  Carousel, ModalRoot, Focusable, DialogButton, Navigation, showModal, findSP,
+  Carousel, Focusable, DialogButton, Navigation, showModal, findSP,
 } from '@decky/ui';
 import { callable } from '@decky/api';
 import { useFocusableScroll } from '../lib/useFocusableScroll';
@@ -68,17 +68,29 @@ function parseBody(body: string): Array<{ kind: 'heading' | 'item' | 'text'; tex
   return out;
 }
 
+// Render the GitHub publish timestamp as a short weekday + date + full
+// UTC time string. We keep the UTC suffix so users on the Deck dont have
+// to guess what timezone a release was cut in. Example output:
+//   "Fri, May 30 . 14:35 UTC"
 function formatPublishedDate(iso: string): string {
   if (!iso) return '';
   try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      weekday: 'short', month: 'short', day: 'numeric',
+    const d = new Date(iso);
+    const date = d.toLocaleDateString('en-US', {
+      weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC',
     });
+    const time = d.toLocaleTimeString('en-US', {
+      hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC',
+    });
+    return `${date} . ${time} UTC`;
   } catch { return ''; }
 }
 
-// Render one release's full content (header + body) -- one carousel column
-function ReleaseColumn({ release, total, idx }: { release: ReleaseRow; total: number; idx: number }) {
+// One carousel column. Translucent dark card with margin + padding (Decky's
+// values: rgba(37,40,46,0.5) bg, 30px margin, 0/15px padding).
+function ReleaseColumn({
+  release, total, idx, closeModal,
+}: { release: ReleaseRow; total: number; idx: number; closeModal?: () => void }) {
   const { onRowFocus, onRowBlur, focusBorder } = useFocusableScroll();
   const blocks = parseBody(release.body || '');
   const publishedLabel = formatPublishedDate(release.published_at);
@@ -87,20 +99,25 @@ function ReleaseColumn({ release, total, idx }: { release: ReleaseRow; total: nu
     : t().extras!.updateChannelRelease!();
 
   return (
-    <Focusable style={{
-      // No background or border here -- the outer ModalRoot Focusable wraps
-      // this column with the chrome. Adding our own would double-frame
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      padding: 0,
-    }}>
+    <Focusable
+      style={{
+        marginTop: '40px',
+        height: 'calc(100% - 40px)',
+        overflowY: 'scroll',
+        display: 'flex',
+        flexDirection: 'column',
+        margin: '30px',
+        padding: '20px 24px',
+        backgroundColor: 'rgba(37, 40, 46, 0.55)',
+        borderRadius: 6,
+      }}
+    >
       {/* metadata strip */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '14px 22px 10px',
+        marginBottom: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#9bb5cc' }}>
           <span style={{
@@ -131,18 +148,20 @@ function ReleaseColumn({ release, total, idx }: { release: ReleaseRow; total: nu
       </div>
 
       {/* title */}
-      <div style={{ padding: '0 22px 10px' }}>
-        <div style={{ fontSize: 28, fontWeight: 800, color: '#ffffff', lineHeight: 1.15 }}>
-          {release.name || formatVersion(release.version)}
-        </div>
-      </div>
+      <h1 style={{
+        margin: '0 0 14px',
+        fontSize: 28,
+        fontWeight: 800,
+        color: '#ffffff',
+        lineHeight: 1.15,
+      }}>
+        {release.name || formatVersion(release.version)}
+      </h1>
 
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '0 22px' }} />
-
-      {/* scrollable body */}
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 0' }}>
+      {/* body blocks */}
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         {blocks.length === 0 ? (
-          <div style={{ padding: '24px 28px', color: '#9bb5cc', fontSize: 14, textAlign: 'center' }}>
+          <div style={{ padding: '20px 0', color: '#9bb5cc', fontSize: 14 }}>
             {t().extras!.releaseNotesEmpty!()}
           </div>
         ) : blocks.map((b, i) => {
@@ -154,7 +173,7 @@ function ReleaseColumn({ release, total, idx }: { release: ReleaseRow; total: nu
                 style={{
                   width: '100%', textAlign: 'left',
                   background: 'transparent', border: 'none', boxShadow: 'none',
-                  padding: '18px 28px 6px',
+                  padding: '14px 0 4px',
                   fontSize: 17, fontWeight: 700, color: '#e8f4ff',
                   letterSpacing: '0.01em',
                   borderRight: focusBorder(id),
@@ -169,14 +188,14 @@ function ReleaseColumn({ release, total, idx }: { release: ReleaseRow; total: nu
                 style={{
                   width: '100%', textAlign: 'left',
                   background: 'transparent', border: 'none', boxShadow: 'none',
-                  padding: '7px 32px 7px 44px',
+                  padding: '6px 8px 6px 22px',
                   fontSize: 14, color: '#dbe7ef', lineHeight: 1.55,
                   position: 'relative',
                   borderRight: focusBorder(id),
                 }}
               >
                 <span style={{
-                  position: 'absolute', left: 26, top: 16,
+                  position: 'absolute', left: 6, top: 14,
                   width: 6, height: 6, borderRadius: '50%',
                   background: '#7a9bb5',
                 }} />
@@ -190,15 +209,38 @@ function ReleaseColumn({ release, total, idx }: { release: ReleaseRow; total: nu
               style={{
                 width: '100%', textAlign: 'left',
                 background: 'transparent', border: 'none', boxShadow: 'none',
-                padding: '8px 28px',
+                padding: '6px 0',
                 fontSize: 14, color: '#c8dcea', lineHeight: 1.55,
                 borderRight: focusBorder(id),
               }}
             >{b.text}</PpDialogButton>
           );
         })}
-        <div style={{ height: 40, flexShrink: 0 }} aria-hidden="true" />
       </div>
+
+      {/* in-column footer actions (Open on GitHub / Close) so users dont have
+          to scroll back up after reading. Each focusable, A button activates */}
+      <Focusable style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: 8,
+        marginTop: 24,
+        paddingTop: 16,
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        {release.html_url && (
+          <DialogButton
+            onClick={() => { try { Navigation.NavigateToExternalWeb(release.html_url); } catch { /* ignore */ } }}
+            style={{ minWidth: 180, fontSize: 12 }}
+          >
+            {t().extras!.releaseNotesOpenOnGitHub!()}
+          </DialogButton>
+        )}
+        <DialogButton onClick={closeModal} style={{ minWidth: 140, fontSize: 12 }}>
+          {t().common.close}
+        </DialogButton>
+      </Focusable>
     </Focusable>
   );
 }
@@ -212,9 +254,6 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
   const [releases, setReleases] = useState<ReleaseRow[] | null>(initial ? [initial] : null);
   const SP = findSP();
 
-  // Load the most recent N releases on mount. If we have an initial entry,
-  // splice it in at index 0 so the user lands on the version they clicked.
-  // De-dup by version since the active update is also in list_releases
   useEffect(() => {
     void (async () => {
       try {
@@ -232,7 +271,6 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
         }
         void logFrontendEvent('DEBUG', 'ReleaseNotesModal: history loaded', {
           totalCount: fetched.length + (initial ? 1 : 0),
-          startedWithInitial: !!initial,
         });
       } catch (e) {
         if (!initial) setReleases([]);
@@ -243,118 +281,55 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
     })();
   }, [initial]);
 
-  // Modal sizing. Outer card is ~90% of the BPM viewport so the ModalRoot
-  // border frames it cleanly. The carousel column fills the inside of
-  // that card (minus a small inset so the focus ring on the column has
-  // room to render without clipping)
-  const outerW = Math.max(720, Math.min(SP.innerWidth - SP.innerWidth * 0.08, 1280));
-  const outerH = Math.max(420, SP.innerHeight - 80);
-  // Carousel column = outer card width minus modal padding. Don't subtract
-  // for borders since the inner column no longer draws its own frame
-  const columnW = outerW - 16;
-  const itemH = outerH - 64; // 64 = footer height (gap for action buttons)
+  // Column dimensions copy Decky Loader's PatchNotesModal exactly:
+  //   nHeight = nItemHeight = SP.innerHeight - 40
+  //   fnGetColumnWidth = () => SP.innerWidth - SP.innerWidth * (10 / 100)
+  // That gives ~90% wide columns and full minus chrome height
+  const itemH = SP.innerHeight - 40;
+  const columnW = SP.innerWidth - SP.innerWidth * 0.1;
 
-  if (!releases) {
+  if (!releases || releases.length === 0) {
     return (
-      <ModalRoot onCancel={closeModal}>
-        <Focusable style={{ width: 720, height: 360, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <DialogButton onClick={() => {}} style={{ position: 'absolute', width: 1, height: 1, padding: 0, border: 'none', clip: 'rect(0 0 0 0)' }}>...</DialogButton>
-          <div style={{ color: '#9bb5cc' }}>...</div>
-        </Focusable>
-      </ModalRoot>
-    );
-  }
-
-  if (releases.length === 0) {
-    return (
-      <ModalRoot onCancel={closeModal}>
-        <Focusable style={{
-          width: '92vw', maxWidth: 1100, padding: '40px 24px',
-          background: '#0f1822',
-          border: '1px solid rgba(102,192,244,0.18)',
+      <Focusable onCancelButton={closeModal}>
+        <div style={{
+          margin: 30,
+          padding: 40,
+          backgroundColor: 'rgba(37, 40, 46, 0.55)',
           borderRadius: 6,
           textAlign: 'center',
+          color: '#9bb5cc',
         }}>
-          <div style={{ fontSize: 14, color: '#9bb5cc', marginBottom: 16 }}>
-            {t().extras!.releaseNotesEmpty!()}
-          </div>
-          <DialogButton onClick={closeModal} style={{ minWidth: 160 }}>
-            {t().common.close}
-          </DialogButton>
-        </Focusable>
-      </ModalRoot>
+          {releases === null ? '...' : t().extras!.releaseNotesEmpty!()}
+        </div>
+      </Focusable>
     );
   }
 
-  const current = releases[0];
-
   return (
-    <ModalRoot onCancel={closeModal}>
-      <Focusable
-        onCancelButton={closeModal}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: outerW,
-          height: outerH,
-          // Single bordered card -- ModalRoot already provides modal dimming,
-          // but the inner card style gives the patch-notes overlay its
-          // distinctive look
-          background: '#0f1822',
-          border: '1px solid rgba(102, 192, 244, 0.18)',
-          borderRadius: 6,
-          overflow: 'hidden',
-        }}
-      >
-        <Carousel
-          fnItemRenderer={(id: number) => (
-            <ReleaseColumn release={releases[id]} total={releases.length} idx={id} />
-          )}
-          fnGetId={(id) => id}
-          nNumItems={releases.length}
-          nHeight={itemH}
-          nItemHeight={itemH}
-          nItemMarginX={0}
-          initialColumn={0}
-          autoFocus
-          fnGetColumnWidth={() => columnW}
-          name={t().extras!.releaseNotes!() as string}
-        />
-
-        {/* Footer action buttons */}
-        <Focusable style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: 8,
-          padding: '10px 22px',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          flexShrink: 0,
-        }}>
-          {current.html_url && (
-            <DialogButton
-              onClick={() => { try { Navigation.NavigateToExternalWeb(current.html_url); } catch { /* ignore */ } }}
-              style={{ minWidth: 180, fontSize: 12 }}
-            >
-              {t().extras!.releaseNotesOpenOnGitHub!()}
-            </DialogButton>
-          )}
-          <DialogButton onClick={closeModal} style={{ minWidth: 140, fontSize: 12 }}>
-            {t().common.close}
-          </DialogButton>
-        </Focusable>
-      </Focusable>
-    </ModalRoot>
+    <Focusable onCancelButton={closeModal}>
+      <Carousel
+        fnItemRenderer={(id: number) => (
+          <ReleaseColumn
+            release={releases[id]}
+            total={releases.length}
+            idx={id}
+            closeModal={closeModal}
+          />
+        )}
+        fnGetId={(id) => id}
+        nNumItems={releases.length}
+        nHeight={itemH}
+        nItemHeight={itemH}
+        nItemMarginX={0}
+        initialColumn={0}
+        autoFocus
+        fnGetColumnWidth={() => columnW}
+        name={t().extras!.releaseNotes!() as string}
+      />
+    </Focusable>
   );
 }
 
-// Public API:
-//   showReleaseNotesModal(initial?)
-//     - If `initial` is provided, the modal opens with that release at
-//       index 0 and loads history alongside it
-//     - If `initial` is omitted, the modal loads the 10 most recent
-//       releases from GitHub and shows the latest. Use this when Y is
-//       pressed and no active update is queued
 export function showReleaseNotesModal(initial?: {
   version: string;
   body: string;
