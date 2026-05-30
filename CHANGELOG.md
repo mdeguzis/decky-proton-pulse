@@ -129,6 +129,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- Release notes modal: copy Decky Loader's structure exactly + full UTC timestamp
 - Release notes modal: drop double border + fit carousel inside the card
 - Patch notes: use Steam Carousel + Y-button binding to match Decky Loader
 - Release notes modal: steam-style full-screen overlay + browse history with L/R

@@ -307,7 +307,16 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
 
   return (
     <Focusable onCancelButton={closeModal}>
+      {/* `key` forces React (and Steam's Carousel) to start fresh each time
+          the modal opens AND each time the release list grows from [initial]
+          to the full history. Without it, Carousel's saved column index
+          (keyed by the `name` prop in Steam's focus-restoration store)
+          would carry over from a previous open -- so closing at 4/9 and
+          reopening would land back at 4/9 instead of 1/9. The length is
+          part of the key so the carousel also resets when the array grows
+          from 1 (initial only) to N (after list_releases returns) */}
       <Carousel
+        key={`releases-${releases.length}`}
         fnItemRenderer={(id: number) => (
           <ReleaseColumn
             release={releases[id]}
@@ -322,6 +331,7 @@ function ReleaseNotesModal({ initial, closeModal }: Props) {
         nItemHeight={itemH}
         nItemMarginX={0}
         initialColumn={0}
+        nIndexLeftmost={0}
         autoFocus
         fnGetColumnWidth={() => columnW}
         name={t().extras!.releaseNotes!() as string}
