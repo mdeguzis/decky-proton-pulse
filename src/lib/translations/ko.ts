@@ -703,6 +703,9 @@ export const ko: TranslationTree = {
         // Release notes modal
     releaseNotes: () => '릴리스 노트',
     releaseNotesEmpty: () => '이 버전에 대한 릴리스 노트가 없습니다.',
+    releaseNotesPosted: () => '게시됨',
+    releaseNotesNavHint: () => '릴리스 둘러보기',
+    releaseNotesOpenOnGitHub: () => 'GitHub에서 열기',
     // Analysis tab
     analysisNoReports: () => '이 게임에 대한 보고서가 아직 없습니다.',
     analysisConfidence: () => '신뢰도',

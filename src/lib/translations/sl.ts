@@ -642,6 +642,9 @@ export const sl: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Opombe ob izdaji',
     releaseNotesEmpty: () => 'Za to različico ni na voljo opomb ob izdaji.',
+    releaseNotesPosted: () => 'OBJAVLJENO',
+    releaseNotesNavHint: () => 'Brskaj po izdajah',
+    releaseNotesOpenOnGitHub: () => 'Odpri na GitHubu',
     // Analysis tab
     analysisNoReports: () => 'Za to igro še ni poročil.',
     analysisConfidence: () => 'Zanesljivost',

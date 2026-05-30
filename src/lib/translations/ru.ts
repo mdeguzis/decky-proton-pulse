@@ -733,6 +733,9 @@ export const ru: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Примечания к выпуску',
     releaseNotesEmpty: () => 'Для этой версии нет примечаний к выпуску.',
+    releaseNotesPosted: () => 'ОПУБЛИКОВАНО',
+    releaseNotesNavHint: () => 'Перелистывать выпуски',
+    releaseNotesOpenOnGitHub: () => 'Открыть на GitHub',
     // Analysis tab
     analysisNoReports: () => 'Для этой игры пока нет отчётов.',
     analysisConfidence: () => 'Уверенность',

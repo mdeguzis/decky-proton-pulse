@@ -703,6 +703,9 @@ export const zhCN: TranslationTree = {
         // Release notes modal
     releaseNotes: () => '发行说明',
     releaseNotesEmpty: () => '此版本暂无发行说明。',
+    releaseNotesPosted: () => '发布于',
+    releaseNotesNavHint: () => '浏览发行版',
+    releaseNotesOpenOnGitHub: () => '在 GitHub 中打开',
     // Analysis tab
     analysisNoReports: () => '此游戏暂无报告。',
     analysisConfidence: () => '可信度',

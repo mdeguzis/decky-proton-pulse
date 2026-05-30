@@ -29,6 +29,10 @@ export interface UpdateCheckResult {
   // Raw markdown body of the GitHub release. Used by ReleaseNotesModal to
   // show what changed before the user commits to applying the update
   release_notes?: string;
+  // ISO 8601 publish timestamp from the GitHub release. Used by
+  // ReleaseNotesModal to render "POSTED Fri, May 29"-style date in the
+  // metadata strip
+  published_at?: string;
   error?: string;
 }
 

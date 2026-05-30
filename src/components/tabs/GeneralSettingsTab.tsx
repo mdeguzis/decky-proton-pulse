@@ -935,6 +935,8 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
                 checkResult.latest_version ?? '',
                 checkResult.release_notes ?? '',
                 checkResult.release_url,
+                (checkResult as any).published_at as string | undefined,
+                updateChannel === 'pre-release',
               )}
               style={{ width: '100%', fontSize: 12 }}
             >

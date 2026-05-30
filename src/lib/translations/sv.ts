@@ -642,6 +642,9 @@ export const sv: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Versionsinformation',
     releaseNotesEmpty: () => 'Ingen versionsinformation tillgänglig för denna version.',
+    releaseNotesPosted: () => 'PUBLICERAD',
+    releaseNotesNavHint: () => 'Bläddra i versioner',
+    releaseNotesOpenOnGitHub: () => 'Öppna på GitHub',
     // Analysis tab
     analysisNoReports: () => 'Inga rapporter ännu för detta spel.',
     analysisConfidence: () => 'Tillförlitlighet',

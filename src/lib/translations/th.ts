@@ -642,6 +642,9 @@ export const th: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'บันทึกประจำรุ่น',
     releaseNotesEmpty: () => 'ไม่มีบันทึกประจำรุ่นสำหรับเวอร์ชันนี้',
+    releaseNotesPosted: () => 'เผยแพร่',
+    releaseNotesNavHint: () => 'เรียกดูการเผยแพร่',
+    releaseNotesOpenOnGitHub: () => 'เปิดบน GitHub',
     // Analysis tab
     analysisNoReports: () => 'ยังไม่มีรายงานสำหรับเกมนี้',
     analysisConfidence: () => 'ความมั่นใจ',

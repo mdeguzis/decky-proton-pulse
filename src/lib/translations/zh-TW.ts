@@ -642,6 +642,9 @@ export const zhTW: TranslationTree = {
         // Release notes modal
     releaseNotes: () => '版本資訊',
     releaseNotesEmpty: () => '此版本沒有版本資訊。',
+    releaseNotesPosted: () => '發布於',
+    releaseNotesNavHint: () => '瀏覽版本',
+    releaseNotesOpenOnGitHub: () => '在 GitHub 開啟',
     // Analysis tab
     analysisNoReports: () => '此遊戲尚無報告。',
     analysisConfidence: () => '可信度',

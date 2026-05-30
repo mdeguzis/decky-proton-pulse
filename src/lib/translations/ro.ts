@@ -642,6 +642,9 @@ export const ro: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Note de lansare',
     releaseNotesEmpty: () => 'Nu sunt disponibile note de lansare pentru această versiune.',
+    releaseNotesPosted: () => 'PUBLICAT',
+    releaseNotesNavHint: () => 'Răsfoiește lansările',
+    releaseNotesOpenOnGitHub: () => 'Deschide pe GitHub',
     // Analysis tab
     analysisNoReports: () => 'Încă nu sunt rapoarte pentru acest joc.',
     analysisConfidence: () => 'Încredere',

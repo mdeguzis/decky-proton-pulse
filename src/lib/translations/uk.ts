@@ -642,6 +642,9 @@ export const uk: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Примітки до випуску',
     releaseNotesEmpty: () => 'Немає приміток до випуску для цієї версії.',
+    releaseNotesPosted: () => 'ОПУБЛІКОВАНО',
+    releaseNotesNavHint: () => 'Переглянути випуски',
+    releaseNotesOpenOnGitHub: () => 'Відкрити в GitHub',
     // Analysis tab
     analysisNoReports: () => 'Для цієї гри ще немає звітів.',
     analysisConfidence: () => 'Впевненість',

@@ -642,6 +642,9 @@ export const el: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Σημειώσεις έκδοσης',
     releaseNotesEmpty: () => 'Δεν υπάρχουν διαθέσιμες σημειώσεις για αυτήν την έκδοση.',
+    releaseNotesPosted: () => 'ΔΗΜΟΣΙΕΥΘΗΚΕ',
+    releaseNotesNavHint: () => 'Περιήγηση εκδόσεων',
+    releaseNotesOpenOnGitHub: () => 'Άνοιγμα στο GitHub',
     // Analysis tab
     analysisNoReports: () => 'Δεν υπάρχουν ακόμα αναφορές για αυτό το παιχνίδι.',
     analysisConfidence: () => 'Εμπιστοσύνη',

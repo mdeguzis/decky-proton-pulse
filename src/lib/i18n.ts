@@ -745,6 +745,9 @@ export interface TranslationTree {
     // Release notes modal (opened from Settings tab when an update is available)
     releaseNotes?: () => string;
     releaseNotesEmpty?: () => string;
+    releaseNotesPosted?: () => string;
+    releaseNotesNavHint?: () => string;
+    releaseNotesOpenOnGitHub?: () => string;
     // Analysis tab (per-game aggregate stats)
     analysisNoReports?: () => string;
     analysisConfidence?: () => string;
@@ -1476,6 +1479,9 @@ export const en: TranslationTree = {
     // Release notes modal
     releaseNotes: () => 'Release Notes',
     releaseNotesEmpty: () => 'No release notes available for this version.',
+    releaseNotesPosted: () => 'POSTED',
+    releaseNotesNavHint: () => 'Browse releases',
+    releaseNotesOpenOnGitHub: () => 'Open on GitHub',
     // Analysis tab
     analysisNoReports: () => 'No reports yet for this game.',
     analysisConfidence: () => 'Confidence',

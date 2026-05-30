@@ -703,6 +703,9 @@ export const tr: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Sürüm notları',
     releaseNotesEmpty: () => 'Bu sürüm için sürüm notu mevcut değil.',
+    releaseNotesPosted: () => 'YAYINLANDI',
+    releaseNotesNavHint: () => 'Sürümleri tara',
+    releaseNotesOpenOnGitHub: () => 'GitHub\'da aç',
     // Analysis tab
     analysisNoReports: () => 'Bu oyun için henüz rapor yok.',
     analysisConfidence: () => 'Güven',

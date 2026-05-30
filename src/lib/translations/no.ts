@@ -642,6 +642,9 @@ export const no: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Utgivelsesnotater',
     releaseNotesEmpty: () => 'Ingen utgivelsesnotater tilgjengelig for denne versjonen.',
+    releaseNotesPosted: () => 'PUBLISERT',
+    releaseNotesNavHint: () => 'Bla i utgivelser',
+    releaseNotesOpenOnGitHub: () => 'Åpne på GitHub',
     // Analysis tab
     analysisNoReports: () => 'Ingen rapporter ennå for dette spillet.',
     analysisConfidence: () => 'Tillit',

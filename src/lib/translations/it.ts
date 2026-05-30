@@ -642,6 +642,9 @@ export const it: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Note di rilascio',
     releaseNotesEmpty: () => 'Nessuna nota di rilascio disponibile per questa versione.',
+    releaseNotesPosted: () => 'PUBBLICATO',
+    releaseNotesNavHint: () => 'Sfoglia le versioni',
+    releaseNotesOpenOnGitHub: () => 'Apri su GitHub',
     // Analysis tab
     analysisNoReports: () => 'Nessuna segnalazione per questo gioco al momento.',
     analysisConfidence: () => 'Affidabilità',

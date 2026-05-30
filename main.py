@@ -60,6 +60,7 @@ from lib.metrics_export import export_metrics_to_disk
 from lib.protondb_systeminfo import generate_system_info
 from lib.plugin_updater import (
     check_for_update as _updater_check,
+    list_releases as _updater_list_releases,
     make_initial_status as _updater_make_status,
     start_apply_update as _updater_start,
 )
@@ -268,6 +269,15 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         """
         current = getattr(decky, "DECKY_PLUGIN_VERSION", "unknown")
         return _updater_check(current, channel=channel)
+
+    async def list_releases(self, limit: int = 10, include_prereleases: bool = True) -> dict:
+        """Return the N most recent releases for the release-notes browser modal.
+
+        Each entry carries version / name / body / published_at / prerelease /
+        html_url so the modal can render the same Steam-style card for every
+        release as the user pages left/right through history
+        """
+        return _updater_list_releases(limit=limit, include_prereleases=include_prereleases)
 
     async def apply_update(self, zip_url: str, version: str) -> dict:
         """Start a background download+extract of the release ZIP.

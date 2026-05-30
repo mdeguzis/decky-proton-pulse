@@ -642,6 +642,9 @@ export const cs: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Poznámky k vydání',
     releaseNotesEmpty: () => 'Pro tuto verzi nejsou k dispozici poznámky.',
+    releaseNotesPosted: () => 'ZVEŘEJNĚNO',
+    releaseNotesNavHint: () => 'Procházet vydání',
+    releaseNotesOpenOnGitHub: () => 'Otevřít na GitHubu',
     // Analysis tab
     analysisNoReports: () => 'Pro tuto hru zatím nejsou žádná hlášení.',
     analysisConfidence: () => 'Spolehlivost',

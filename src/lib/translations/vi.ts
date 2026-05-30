@@ -642,6 +642,9 @@ export const vi: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Ghi chú phát hành',
     releaseNotesEmpty: () => 'Không có ghi chú phát hành cho phiên bản này.',
+    releaseNotesPosted: () => 'ĐÃ ĐĂNG',
+    releaseNotesNavHint: () => 'Duyệt các bản phát hành',
+    releaseNotesOpenOnGitHub: () => 'Mở trên GitHub',
     // Analysis tab
     analysisNoReports: () => 'Chưa có báo cáo nào cho trò chơi này.',
     analysisConfidence: () => 'Độ tin cậy',

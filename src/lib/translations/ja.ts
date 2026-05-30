@@ -703,6 +703,9 @@ export const ja: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'リリースノート',
     releaseNotesEmpty: () => 'このバージョンのリリースノートはありません。',
+    releaseNotesPosted: () => '公開',
+    releaseNotesNavHint: () => 'リリースを閲覧',
+    releaseNotesOpenOnGitHub: () => 'GitHubで開く',
     // Analysis tab
     analysisNoReports: () => 'このゲームのレポートはまだありません。',
     analysisConfidence: () => '信頼度',

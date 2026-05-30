@@ -642,6 +642,9 @@ export const hu: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Kiadási megjegyzések',
     releaseNotesEmpty: () => 'Ehhez a verzióhoz nem érhetők el kiadási megjegyzések.',
+    releaseNotesPosted: () => 'KÖZZÉTÉVE',
+    releaseNotesNavHint: () => 'Kiadások böngészése',
+    releaseNotesOpenOnGitHub: () => 'Megnyitás a GitHubon',
     // Analysis tab
     analysisNoReports: () => 'Még nincs jelentés ehhez a játékhoz.',
     analysisConfidence: () => 'Megbízhatóság',

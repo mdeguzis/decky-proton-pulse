@@ -642,6 +642,9 @@ export const bg: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Бележки за изданието',
     releaseNotesEmpty: () => 'Няма налични бележки за тази версия.',
+    releaseNotesPosted: () => 'ПУБЛИКУВАНО',
+    releaseNotesNavHint: () => 'Преглед на изданията',
+    releaseNotesOpenOnGitHub: () => 'Отвори в GitHub',
     // Analysis tab
     analysisNoReports: () => 'Все още няма доклади за тази игра.',
     analysisConfidence: () => 'Сигурност',

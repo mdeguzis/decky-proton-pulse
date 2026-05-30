@@ -642,6 +642,9 @@ export const nl: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Releaseopmerkingen',
     releaseNotesEmpty: () => 'Geen releaseopmerkingen beschikbaar voor deze versie.',
+    releaseNotesPosted: () => 'GEPLAATST',
+    releaseNotesNavHint: () => 'Bladeren door releases',
+    releaseNotesOpenOnGitHub: () => 'Openen op GitHub',
     // Analysis tab
     analysisNoReports: () => 'Nog geen meldingen voor dit spel.',
     analysisConfidence: () => 'Betrouwbaarheid',

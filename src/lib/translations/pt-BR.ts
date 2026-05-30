@@ -703,6 +703,9 @@ export const ptBR: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Notas de versão',
     releaseNotesEmpty: () => 'Nenhuma nota de versão disponível para esta versão.',
+    releaseNotesPosted: () => 'PUBLICADO',
+    releaseNotesNavHint: () => 'Navegar versões',
+    releaseNotesOpenOnGitHub: () => 'Abrir no GitHub',
     // Analysis tab
     analysisNoReports: () => 'Ainda sem relatórios para este jogo.',
     analysisConfidence: () => 'Confiança',

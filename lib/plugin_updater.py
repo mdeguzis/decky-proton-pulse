@@ -81,6 +81,7 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
                 "asset_size": None,
                 "release_url": f"https://github.com/{GITHUB_REPO}/tree/main",
                 "release_notes": "",
+                "published_at": "",
                 "channel": channel,
             }
 
@@ -121,6 +122,7 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
                 "asset_size": asset_size,
                 "release_url": str(data.get("html_url", "")),
                 "release_notes": str(data.get("body", "") or ""),
+                "published_at": str(data.get("published_at", "") or ""),
                 "channel": channel,
             }
 
@@ -168,6 +170,49 @@ def check_for_update(current_version: str, channel: str = "release") -> dict[str
     except Exception as e:
         decky.logger.error(f"check_for_update({channel}): failed: {e}")
         return {"success": False, "error": str(e), "current_version": current_version}
+
+
+def list_releases(limit: int = 10, include_prereleases: bool = True) -> dict[str, Any]:
+    """Return the N most recent GitHub releases for browsing in the
+    release-notes modal. Used by the modal's left/right navigation so the
+    user can scroll back through past release history without bouncing to
+    a browser.
+
+    Each entry includes: version (display tag), name, body (markdown),
+    published_at (ISO date), prerelease flag, html_url. The developer
+    rolling tag is filtered out because its body is just "Recent commits"
+    boilerplate that doesnt belong in a release-history view
+    """
+    try:
+        raw = curl_json(
+            _ALL_RELEASES_URL,
+            headers=["Accept: application/vnd.github.v3+json"],
+            timeout=15,
+        )
+        out: list[dict[str, Any]] = []
+        for r in raw:
+            tag = str(r.get("tag_name", "") or "")
+            if tag == "developer":
+                continue
+            is_pre = bool(r.get("prerelease"))
+            if is_pre and not include_prereleases:
+                continue
+            out.append(
+                {
+                    "version": tag.lstrip("v"),
+                    "name": str(r.get("name", "") or tag),
+                    "body": str(r.get("body", "") or ""),
+                    "published_at": str(r.get("published_at", "") or ""),
+                    "prerelease": is_pre,
+                    "html_url": str(r.get("html_url", "") or ""),
+                }
+            )
+            if len(out) >= limit:
+                break
+        return {"success": True, "releases": out}
+    except Exception as e:
+        decky.logger.error(f"list_releases: failed: {e}")
+        return {"success": False, "error": str(e), "releases": []}
 
 
 def start_apply_update(

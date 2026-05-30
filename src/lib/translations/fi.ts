@@ -642,6 +642,9 @@ export const fi: TranslationTree = {
         // Release notes modal
     releaseNotes: () => 'Julkaisutiedot',
     releaseNotesEmpty: () => 'Tälle versiolle ei ole saatavilla julkaisutietoja.',
+    releaseNotesPosted: () => 'JULKAISTU',
+    releaseNotesNavHint: () => 'Selaa julkaisuja',
+    releaseNotesOpenOnGitHub: () => 'Avaa GitHubissa',
     // Analysis tab
     analysisNoReports: () => 'Ei vielä raportteja tästä pelistä.',
     analysisConfidence: () => 'Luottamus',
