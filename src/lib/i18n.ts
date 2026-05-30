@@ -1449,7 +1449,7 @@ export const en: TranslationTree = {
     updateInstalling: () => 'Installing...',
     updateFailedPrefix: () => 'Update failed:',
     updateUpToDate: (channel, version) => `Up to date (latest ${channel}: v${version})`,
-    updateAvailable: (current, latest) => `Update available: v${current} -> v${latest}`,
+    updateAvailable: (current, latest) => `Update available: v${current} -> ${/^\d/.test(latest) ? 'v' : ''}${latest}`,
     updateInstalledRestart: () => 'installed. Restart Decky Loader or Steam to apply.',
     updateCouldNotRestart: () => 'Could not auto-restart. Restart Decky Loader or Steam manually.',
     // Cloud sync
