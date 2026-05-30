@@ -129,22 +129,6 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- * Use tags for rolling dev release
-- Release notes modal: include the dev rolling release with DEV channel pill
-- Release notes modal: always reopen at 1/N (latest)
-- Release notes modal: copy Decky Loader's structure exactly + full UTC timestamp
-- Release notes modal: drop double border + fit carousel inside the card
-- Patch notes: use Steam Carousel + Y-button binding to match Decky Loader
-- Release notes modal: steam-style full-screen overlay + browse history with L/R
-- Release notes modal: surface github release body on update-available
-- UseFocusableScroll: extract shared hook for scroll-on-focus + indicator
-- Scroll-on-focus + bottom buffer + readable tier badges in Analysis tab
-- Analysis tab: focusable rows for gamepad scrolling
-- I18n: dont prepend 'v' to non-numeric version names in updateAvailable
-- Analysis: new per-game Analysis tab between System Requirements and Manage Configurations
-- Scoring: sync infra to pull shared game-stats engine from proton-pulse-data
-- Replace hardcoded /tmp with tempfile.gettempdir() for Termux compat
-
 ## v1.7.2 pre-release
 
 - Bump to 1.7.2 -- updater pre-release channel fix

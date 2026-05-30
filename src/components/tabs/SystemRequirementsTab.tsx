@@ -129,7 +129,7 @@ export function SystemRequirementsTab({ appId, sysInfo }: Props) {
             padding: 0, border: 'none', background: 'transparent',
             clip: 'rect(0 0 0 0)', overflow: 'hidden',
           }}
-        >loading</DialogButton>
+        >{t().common.loading}</DialogButton>
         <SteamSpinner />
       </Focusable>
     );
