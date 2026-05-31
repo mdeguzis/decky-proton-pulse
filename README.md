@@ -172,9 +172,12 @@ Several Decky plugins cover subsets of what Proton Pulse does. The table below c
 
 > Additional forks of these plugins exist outside the Decky store and may offer further variations. The table reflects the primary/canonical repo for each project.
 
+For a deeper comparison of Proton Pulse vs ProtonDB (including the website, report ownership, open data, and hardware scoring), see the [FAQ](https://github.com/mdeguzis/decky-proton-pulse/wiki/FAQ).
+
 ## Documentation
 
 * [Proton Pulse Site](https://www.proton-pulse.com/) - browse community reports, Pulse configs, and per-game data
+* [FAQ](https://github.com/mdeguzis/decky-proton-pulse/wiki/FAQ) - common questions: how Proton Pulse compares to ProtonDB, report ownership, hardware scoring, privacy
 * [Developer Guide](https://github.com/mdeguzis/decky-proton-pulse/wiki/Developer-Guide) - setup, build, deploy, testing, CEF debugging
 * [Architecture](https://github.com/mdeguzis/decky-proton-pulse/wiki/Architecture) - file-by-file code breakdown and ownership boundaries
 * [System Design](https://github.com/mdeguzis/decky-proton-pulse/wiki/System-Design) - end-to-end flow diagrams, data ownership, scoring model
