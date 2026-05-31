@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { callable } from '@decky/api';
 import { Focusable, DialogButton, Dropdown, GamepadButton } from '@decky/ui';
 import type { GamepadEvent } from '@decky/ui';
-import { BrandLogo } from '../BrandLogo';
+import { BrandLogoWide } from '../BrandLogoWide';
 import { formatVersion } from '../../lib/formatVersion';
 import { toaster } from '../../lib/notify';
 import { t } from '../../lib/i18n';
@@ -62,13 +62,10 @@ export function AboutTab() {
 
   return (
     <Focusable onGamepadDirection={handleRootDirection} style={{ padding: 8, fontSize: 12, color: '#ccc' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <BrandLogo size={42} />
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Proton Pulse</div>
-          <div style={{ color: '#888' }}>{formatVersion(version)}</div>
-        </div>
+      <div style={{ marginBottom: 4 }}>
+        <BrandLogoWide atomSize={42} />
       </div>
+      <div style={{ color: '#888', fontSize: 12, marginBottom: 8 }}>{formatVersion(version)}</div>
       <div style={{ marginBottom: 12, lineHeight: 1.5 }}>
         {aboutStrings.description}
       </div>
