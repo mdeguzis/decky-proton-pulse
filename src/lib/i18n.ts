@@ -758,6 +758,23 @@ export interface TranslationTree {
     perReportHardwareMatches?: () => string;
     perReportHardwareMismatch?: () => string;
     perReportShowAnalysisHint?: () => string;
+    // Confidence breakdown section (full per-factor view inside the modal)
+    perReportConfidenceTotal?: () => string;
+    perReportAdditiveFactors?: () => string;
+    perReportMultiplierFactors?: () => string;
+    perReportFinalAdjustments?: () => string;
+    breakdownRating?: () => string;
+    breakdownRecency?: () => string;
+    breakdownCustomProton?: () => string;
+    breakdownProtonProximity?: () => string;
+    breakdownPlaytime?: () => string;
+    breakdownGpu?: () => string;
+    breakdownOs?: () => string;
+    breakdownKernel?: () => string;
+    breakdownNotesSentiment?: () => string;
+    breakdownSourcePenalty?: () => string;
+    breakdownBorkedStaleness?: () => string;
+    breakdownTotal?: () => string;
     // Release notes modal (opened from Settings tab when an update is available)
     releaseNotes?: () => string;
     releaseNotesEmpty?: () => string;
@@ -1508,6 +1525,23 @@ export const en: TranslationTree = {
     perReportHardwareMatches: () => 'GPU vendor matches your system',
     perReportHardwareMismatch: () => 'GPU vendor differs from your system',
     perReportShowAnalysisHint: () => 'Report Analysis',
+    // Confidence breakdown labels (full per-factor table)
+    perReportConfidenceTotal: () => 'Confidence',
+    perReportAdditiveFactors: () => 'Additive factors',
+    perReportMultiplierFactors: () => 'Hardware multipliers',
+    perReportFinalAdjustments: () => 'Adjustments',
+    breakdownRating: () => 'Rating baseline',
+    breakdownRecency: () => 'Recency',
+    breakdownCustomProton: () => 'Custom Proton',
+    breakdownProtonProximity: () => 'Proton version match',
+    breakdownPlaytime: () => 'Playtime',
+    breakdownGpu: () => 'GPU match',
+    breakdownOs: () => 'OS match',
+    breakdownKernel: () => 'Kernel match',
+    breakdownNotesSentiment: () => 'Notes sentiment',
+    breakdownSourcePenalty: () => 'Source',
+    breakdownBorkedStaleness: () => 'Borked staleness',
+    breakdownTotal: () => 'Final confidence',
     // Release notes modal
     releaseNotes: () => 'Release Notes',
     releaseNotesEmpty: () => 'No release notes available for this version.',

@@ -48,6 +48,8 @@ const SKIP_KEYS = new Set([
   // function entries, not bare strings, so we skip by key path instead
   'extras.analysisTrend',
   'extras.analysisTrend_stable',
+  // "Source" is the same word in French and English -- legitimate
+  'extras.breakdownSourcePenalty',
 ]);
 
 const LANGUAGES = [

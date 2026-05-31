@@ -52,8 +52,13 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
       onOptionsActionDescription={onAnalyze ? strings.extras!.perReportShowAnalysisHint!() : undefined}
       style={{ width: '100%' }}
     >
+      {/* Inner div used to have tabIndex={0} but that made it independently
+          focusable on top of the outer Focusable. Y button presses then
+          fired both onOptionsButton (correct) AND a synthetic click on
+          this inner div (wrong, it opened the report detail modal at the
+          same time). Removed the tabIndex -- the Focusable already
+          handles focus + click forwarding */}
       <div
-        tabIndex={0}
         style={{
           position: 'relative',
           border: `2px solid ${highlighted ? 'rgba(255,255,255,0.96)' : '#2a3a4a'}`,

@@ -1049,6 +1049,190 @@ export function computeConfidence(report: CdnReport, sysInfo: SystemInfo): Score
   };
 }
 
+// Same math as computeConfidence but also returns the per-factor
+// contributions so the per-report analysis modal can render exactly why
+// a report scored the way it did. Each factor has:
+//   kind:   'additive' | 'multiplier'  -- 'additive' adds points before
+//           the multipliers; 'multiplier' scales the additive subtotal
+//   label:  i18n key suffix (modal looks up t().extras![breakdownX]())
+//   detail: parameterised human-readable description (eg. "platinum -> 60")
+//   value:  the numeric contribution. For additive: raw points; for
+//           multiplier: the multiplier (eg. 1.3 = 30% boost)
+//   active: whether this factor actually applied for this report
+export interface ConfidenceBreakdownFactor {
+  kind: 'additive' | 'multiplier' | 'final';
+  label: string;
+  detail: string;
+  value: number;
+  active: boolean;
+}
+
+export interface ConfidenceBreakdown {
+  total: number;       // final confidence (matches computeConfidence output)
+  raw: number;         // raw pre-clamp value (can exceed 100)
+  factors: ConfidenceBreakdownFactor[];
+}
+
+export function computeConfidenceBreakdown(
+  report: CdnReport,
+  sysInfo: SystemInfo,
+): ConfidenceBreakdown {
+  const gpuTier = detectReportGpuTier(report);
+  const gpuMult = gpuDriverMultiplier(report, sysInfo);
+  const distroMult = osMultiplier(report, sysInfo);
+  const kernelMult = kernelVersionMultiplier(report, sysInfo);
+  const recencyDays = Math.round((Date.now() / 1000 - report.timestamp) / 86400);
+
+  const ratingScore = (RATING_SCORES[report.rating] ?? 0) * WEIGHTS.BASE_MAX;
+
+  const recencyBonus =
+    recencyDays < 90  ? WEIGHTS.RECENCY_RECENT :
+    recencyDays < 365 ? WEIGHTS.RECENCY_MID :
+                        WEIGHTS.RECENCY_OLD;
+  const recencyLabel =
+    recencyDays < 90  ? 'recent' :
+    recencyDays < 365 ? 'mid' : 'old';
+
+  const customProton = isCustomProton(report.protonVersion);
+  const customBonus = customProton ? WEIGHTS.CUSTOM_PROTON : 0;
+
+  const notesModifier = parseNotesSentiment(report.notes);
+
+  const isBorkedStale =
+    report.rating === 'borked' && recencyDays > WEIGHTS.BORKED_DECAY_DAYS;
+  const borkedStalenessPenalty = isBorkedStale ? WEIGHTS.BORKED_STALENESS_PENALTY : 0;
+
+  const reportProtonMajor = parseProtonMajorVersion(report.protonVersion);
+  const systemProtonMajor = parseProtonMajorVersion(sysInfo.proton_custom ?? '');
+  let protonBonus = 0;
+  let protonDiff: number | null = null;
+  if (reportProtonMajor !== null && systemProtonMajor !== null) {
+    protonDiff = Math.abs(reportProtonMajor - systemProtonMajor);
+    if (protonDiff === 0) protonBonus = WEIGHTS.PROTON_MATCH;
+    else if (protonDiff === 1) protonBonus = WEIGHTS.PROTON_CLOSE;
+  }
+
+  const sourcePenalty = report.source === 'user' ? WEIGHTS.SOURCE_PULSE_PENALTY : 0;
+  const playtimeBonus = playtimeConfidenceBonus(report.duration);
+
+  const additiveSubtotal =
+    ratingScore + recencyBonus + customBonus + protonBonus + playtimeBonus;
+  const afterMultipliers = additiveSubtotal * gpuMult * distroMult * kernelMult;
+  const raw = afterMultipliers + notesModifier + sourcePenalty + borkedStalenessPenalty;
+  const total = Math.max(0, Math.round(raw));
+
+  const sysGpu = (sysInfo.gpu_vendor ?? '').toLowerCase();
+  const sysOs  = (sysInfo.distro ?? '').slice(0, 32);
+  const sysKernel = (sysInfo.kernel ?? '').slice(0, 16);
+
+  const factors: ConfidenceBreakdownFactor[] = [
+    {
+      kind: 'additive',
+      label: 'breakdownRating',
+      detail: `${report.rating} -> ${ratingScore} pts`,
+      value: ratingScore,
+      active: true,
+    },
+    {
+      kind: 'additive',
+      label: 'breakdownRecency',
+      detail: `${recencyDays}d old (${recencyLabel})`,
+      value: recencyBonus,
+      active: true,
+    },
+    {
+      kind: 'additive',
+      label: 'breakdownCustomProton',
+      detail: customProton ? `${report.protonVersion}` : '(stock Proton)',
+      value: customBonus,
+      active: customProton,
+    },
+    {
+      kind: 'additive',
+      label: 'breakdownProtonProximity',
+      detail: protonDiff === null
+        ? '(version unknown)'
+        : protonDiff === 0
+          ? `same major version (${reportProtonMajor})`
+          : protonDiff === 1
+            ? `1 major version off (${reportProtonMajor} vs ${systemProtonMajor})`
+            : `${protonDiff} major versions off`,
+      value: protonBonus,
+      active: protonBonus !== 0,
+    },
+    {
+      kind: 'additive',
+      label: 'breakdownPlaytime',
+      detail: report.duration
+        ? `${report.duration}`
+        : '(no playtime recorded)',
+      value: playtimeBonus,
+      active: playtimeBonus !== 0,
+    },
+    {
+      kind: 'multiplier',
+      label: 'breakdownGpu',
+      detail: `${gpuTier.toUpperCase()} vs ${(sysGpu || '?').toUpperCase()}`,
+      value: gpuMult,
+      active: gpuMult !== 1.0,
+    },
+    {
+      kind: 'multiplier',
+      label: 'breakdownOs',
+      detail: sysOs
+        ? `${report.os || '?'} vs ${sysOs}`
+        : '(host OS unknown)',
+      value: distroMult,
+      active: distroMult !== 1.0,
+    },
+    {
+      kind: 'multiplier',
+      label: 'breakdownKernel',
+      detail: sysKernel
+        ? `${report.kernel || '?'} vs ${sysKernel}`
+        : '(host kernel unknown)',
+      value: kernelMult,
+      active: kernelMult !== 1.0,
+    },
+    {
+      kind: 'additive',
+      label: 'breakdownNotesSentiment',
+      detail: notesModifier === 0
+        ? '(no positive/negative cues)'
+        : `notes parsed (max +/-${WEIGHTS.NOTES_MAX})`,
+      value: notesModifier,
+      active: notesModifier !== 0,
+    },
+    {
+      kind: 'additive',
+      label: 'breakdownSourcePenalty',
+      detail: report.source === 'user'
+        ? 'native Pulse report'
+        : `source=${report.source ?? 'cdn'}`,
+      value: sourcePenalty,
+      active: sourcePenalty !== 0,
+    },
+    {
+      kind: 'additive',
+      label: 'breakdownBorkedStaleness',
+      detail: isBorkedStale
+        ? `borked report > ${WEIGHTS.BORKED_DECAY_DAYS}d old`
+        : '(not stale-borked)',
+      value: borkedStalenessPenalty,
+      active: isBorkedStale,
+    },
+    {
+      kind: 'final',
+      label: 'breakdownTotal',
+      detail: raw < 0 ? `raw=${Math.round(raw)} (clamped to 0)` : `clamped to 0-100 floor`,
+      value: total,
+      active: true,
+    },
+  ];
+
+  return { total, raw, factors };
+}
+
 export function bucketByGpuTier(reports: ScoredReport[]): TieredReports {
   const buckets: TieredReports = { nvidia: [], amd: [], other: [] };
   for (const r of reports) {
