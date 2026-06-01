@@ -1,0 +1,14 @@
+name: Decky Latest (Arch Linux)
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-decky-latest-reusable.yml
+    with:
+      workflow_name: Decky Latest (Arch Linux)
+      container_image: archlinux:latest
+      install_cmd: pacman -Sy --noconfirm archlinux-keyring && pacman -S --noconfirm bash ca-certificates curl git make rsync unzip xz

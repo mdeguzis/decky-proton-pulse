@@ -1,0 +1,14 @@
+name: Decky Latest (Fedora)
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-decky-latest-reusable.yml
+    with:
+      workflow_name: Decky Latest (Fedora)
+      container_image: fedora:latest
+      install_cmd: dnf install -y bash ca-certificates curl git make rsync unzip xz

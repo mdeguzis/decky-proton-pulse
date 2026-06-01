@@ -1,4 +1,4 @@
-name: Decky Latest Compatibility
+name: Decky Latest (Ubuntu)
 
 on:
   schedule:
@@ -6,50 +6,8 @@ on:
     - cron: "0 8 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: read
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
-  build-decky-latest:
-    name: Build against @decky latest
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Set up pnpm
-        run: npm install -g pnpm@10
-
-      - name: Install frontend dependencies (pinned lockfile)
-        run: pnpm install --frozen-lockfile
-
-      - name: Upgrade Decky packages to latest
-        run: pnpm add @decky/ui@latest @decky/api@latest @decky/rollup@latest
-
-      - name: Show resolved Decky versions
-        run: |
-          echo "=== Decky package versions ==="
-          pnpm list @decky/ui @decky/api @decky/rollup
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Set up uv
-        run: python3 -m pip install uv
-
-      - name: Sync Python dependencies
-        run: uv sync --group dev
-
-      - name: Build
-        run: make build
+  build:
+    uses: ./.github/workflows/build-decky-latest-reusable.yml
+    with:
+      workflow_name: Decky Latest (Ubuntu)
