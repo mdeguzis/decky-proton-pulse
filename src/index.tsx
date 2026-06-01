@@ -193,7 +193,7 @@ function Content() {
               textAlign: 'center',
             }}
           >
-            <small>{t().sidebar.about(version)}</small>
+            <small>{t().sidebar.about(formatVersion(version))}</small>
           </div>
         </PanelSectionRow>
       </PanelSection>

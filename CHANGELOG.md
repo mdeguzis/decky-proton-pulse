@@ -2,6 +2,12 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.7.5
+
+- Fix "vDeveloper" label on Settings > Updates page across all locales
+- Move version-prefix formatting to call sites so translators stay dumb
+- Add vDeveloperGuard test that fails if any locale re-prefixes raw labels
+
 ## v1.7.4
 
 - Use full /proton-pulse/<tab> route paths in sidebar (1.7.4)
@@ -128,6 +134,10 @@ All notable changes to Proton Pulse should be recorded here.
 - chore(deploy): y/n prompt for PR push, detect existing PR title/author, clean fork sync
 
 ## Unreleased
+
+- Add Danger.js i18n coverage check for PRs
+- Replace logo with simple blue atom, add BrandLogoWide for About tab
+- Add FAQ wiki link to comparison section and docs list
 
 ## v1.7.2 pre-release
 
