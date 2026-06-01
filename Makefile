@@ -400,15 +400,19 @@ logs:
 		tail -f $$HOME/homebrew/logs/decky-proton-pulse/plugin.log; \
 	fi
 
+LOGS_DIR := $(abspath ../logs/decky-proton-pulse)
 get-logs:
 	$(call show_mode)
-	@mkdir -p ../logs
+	@mkdir -p $(LOGS_DIR)
 	@if [ -n "$(DECK_IP)" ]; then \
-		rsync -rav $(DECK_USER)@$(DECK_HOST):~/homebrew/logs/decky-proton-pulse/ ../logs/; \
+		rsync -rav $(DECK_USER)@$(DECK_HOST):~/homebrew/logs/decky-proton-pulse/ $(LOGS_DIR)/; \
 	else \
-		rsync -rav $$HOME/homebrew/logs/decky-proton-pulse/ ../logs/; \
+		rsync -rav $$HOME/homebrew/logs/decky-proton-pulse/ $(LOGS_DIR)/; \
 	fi
-	@cd ../logs && ls -1t *.log 2>/dev/null | grep -v '^plugin-debug\.log$$' | tail -n +20 | xargs -r rm -f
+	@cd $(LOGS_DIR) && ls -1t *.log 2>/dev/null | grep -v '^plugin-debug\.log$$' | tail -n +20 | xargs -r rm -f
+	@echo ""
+	@echo "Logs synced to: $(LOGS_DIR)"
+	@ls -1t $(LOGS_DIR)/*.log 2>/dev/null | head -5 | sed 's/^/  /' || true
 
 get-cef-capture:
 	$(call show_mode)
