@@ -11,6 +11,8 @@
 
 Windows CI currently validates that the repo toolchain can install and build on a GitHub-hosted Windows runner. It is not a claim that the Decky plugin runtime or hardware-detection backend is fully supported on Windows.
 
+Decky Latest builds against the current published versions of `@decky/ui`, `@decky/api`, and `@decky/rollup` on every commit and on a daily schedule to catch upstream breaks early. Termux and Windows show N/A because they are not Decky Loader targets.
+
 [![Python Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/python-coverage.json&cacheSeconds=300)](https://mdeguzis.github.io/decky-proton-pulse/)
 [![TypeScript Coverage](https://img.shields.io/endpoint?url=https://mdeguzis.github.io/decky-proton-pulse/badges/ts-coverage.json&cacheSeconds=300)](https://mdeguzis.github.io/decky-proton-pulse/)
 [![Pulse Reports](https://img.shields.io/endpoint?url=https://www.proton-pulse.com/badges/pulse-reports.json&cacheSeconds=3600)](https://www.proton-pulse.com/)
