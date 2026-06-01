@@ -5,6 +5,8 @@ on:
     # Daily at 08:00 UTC
     - cron: "0 8 * * *"
   workflow_dispatch:
+  push:
+  pull_request:
 
 jobs:
   build:
