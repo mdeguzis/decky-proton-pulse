@@ -135,6 +135,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
+- "vDeveloper" label on Settings > Updates across all locales
 - Add Danger.js i18n coverage check for PRs
 - Replace logo with simple blue atom, add BrandLogoWide for About tab
 - Add FAQ wiki link to comparison section and docs list
