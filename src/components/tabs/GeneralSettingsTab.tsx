@@ -917,12 +917,12 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         )}
         {checkResult?.success && !hasUpdate && !updating && !updateApplied && (
           <div style={{ fontSize: 11, color: '#4caf50', marginBottom: 8 }}>
-            {t().extras!.updateUpToDate!(updateChannel, checkResult.latest_version ?? '')}
+            {t().extras!.updateUpToDate!(updateChannel, formatVersion(checkResult.latest_version ?? ''))}
           </div>
         )}
         {checkResult?.success && hasUpdate && !updating && !updateApplied && (
           <div style={{ fontSize: 11, color: '#ffb74d', marginBottom: 8 }}>
-            {t().extras!.updateAvailable!(checkResult.current_version ?? '', checkResult.latest_version ?? '')}
+            {t().extras!.updateAvailable!(formatVersion(checkResult.current_version ?? ''), formatVersion(checkResult.latest_version ?? ''))}
           </div>
         )}
         {updating && updateStatus && (
