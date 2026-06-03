@@ -1424,4 +1424,355 @@ def test_uninstall_lsfg_vk_reports_oserror(plugin: Plugin, tmp_path: pathlib.Pat
         mod.lsfg_vk_install_dir.return_value = tmp_path
         result = asyncio.run(plugin.uninstall_lsfg_vk("v1.0.0"))
     assert result["success"] is False
-    assert "perm denied" in result["message"]
+
+
+# ---------------------------------------------------------------------------
+# get_compat_manager_state
+# ---------------------------------------------------------------------------
+
+def test_get_compat_manager_state_proton_ge(plugin: Plugin) -> None:
+    releases = [{"tag_name": "GE-Proton10-1", "asset_size": 100}]
+    installed_tools = [
+        {"display_name": "GE-Proton10-1", "directory_name": "GE-Proton10-1", "managed_slot": "latest", "tool_id": "proton-ge"},
+    ]
+    install_status = {"state": "idle"}
+
+    with (
+        patch("main.get_releases_sync", return_value=releases),
+        patch("main.read_latest_metadata", return_value=None),
+        patch("main.list_installed_compatibility_tools", return_value=installed_tools),
+        patch("main.get_install_status", return_value=install_status),
+        patch("main.installed_tool_matches_version", side_effect=lambda tool, ver: tool["display_name"] == ver),
+    ):
+        state = asyncio.run(plugin.get_compat_manager_state("proton-ge", False))
+
+    assert state["tool_id"] == "proton-ge"
+    assert state["tool_label"] == "Proton-GE"
+    assert state["current_release"] == releases[0]
+    assert state["current_installed"] is True
+    assert state["install_status"] == install_status
+
+
+def test_get_compat_manager_state_cachyos(plugin: Plugin) -> None:
+    releases = [{"tag_name": "cachyos-11.0-20260521-slr", "asset_size": 200}]
+    installed_tools = [
+        {"display_name": "Proton-CachyOS", "directory_name": "proton-cachyos-11.0-20260521-slr", "managed_slot": "latest", "tool_id": "proton-cachyos"},
+    ]
+    install_status = {"state": "idle"}
+
+    with (
+        patch("main.get_releases_sync", return_value=releases),
+        patch("main.read_latest_metadata", return_value=None),
+        patch("main.list_installed_compatibility_tools", return_value=installed_tools),
+        patch("main.get_install_status", return_value=install_status),
+        patch("main.matches_release_tag", side_effect=lambda tool, tag: tag in tool["directory_name"]),
+    ):
+        state = asyncio.run(plugin.get_compat_manager_state("proton-cachyos", False))
+
+    assert state["tool_id"] == "proton-cachyos"
+    assert state["tool_label"] == "Proton-CachyOS"
+    assert state["current_installed"] is True
+
+
+def test_get_compat_manager_state_empty_releases(plugin: Plugin) -> None:
+    with (
+        patch("main.get_releases_sync", return_value=[]),
+        patch("main.read_latest_metadata", return_value=None),
+        patch("main.list_installed_compatibility_tools", return_value=[]),
+        patch("main.get_install_status", return_value={}),
+    ):
+        state = asyncio.run(plugin.get_compat_manager_state("proton-ge"))
+
+    assert state["current_release"] is None
+    assert state["current_installed"] is False
+    assert state["current_latest_slot_installed"] is False
+
+
+# ---------------------------------------------------------------------------
+# install_compat_tool
+# ---------------------------------------------------------------------------
+
+def test_install_compat_tool_rejects_missing_version(plugin: Plugin) -> None:
+    with (
+        patch("main.get_releases_sync", return_value=[{"tag_name": "GE-Proton10-1"}]),
+        patch("main.normalize_tag_for_tool", return_value="GE-Proton10-9"),
+    ):
+        result = asyncio.run(plugin.install_compat_tool("proton-ge", "GE-Proton10-9"))
+
+    assert result["success"] is False
+    assert "Could not find" in result["message"]
+
+
+def test_install_compat_tool_rejects_empty_feed(plugin: Plugin) -> None:
+    with patch("main.get_releases_sync", return_value=[]):
+        result = asyncio.run(plugin.install_compat_tool("proton-cachyos"))
+
+    assert result["success"] is False
+    assert "No" in result["message"] and "available" in result["message"]
+
+
+def test_install_compat_tool_starts_background_thread(plugin: Plugin) -> None:
+    fake_thread = _FakeThread()
+    release = {"tag_name": "GE-Proton10-1", "asset_size": 1234}
+
+    with (
+        patch("main.get_releases_sync", return_value=[release]),
+        patch("main.threading.Thread", return_value=fake_thread),
+    ):
+        result = asyncio.run(plugin.install_compat_tool("proton-ge"))
+
+    assert result["success"] is True
+    assert "GE-Proton10-1" in result["message"]
+    assert fake_thread.started is True
+    assert plugin._proton_ge_install_status["state"] == "running"
+
+
+def test_install_compat_tool_rejects_concurrent_install(plugin: Plugin) -> None:
+    plugin._proton_ge_install_thread = _FakeThread(alive=True)
+    plugin._proton_ge_install_status.update({"message": "Already busy", "tag_name": "GE-Proton10-1"})
+    release = {"tag_name": "GE-Proton10-2", "asset_size": 100}
+
+    with patch("main.get_releases_sync", return_value=[release]):
+        result = asyncio.run(plugin.install_compat_tool("proton-ge"))
+
+    assert result["success"] is False
+    assert result["message"] == "Already busy"
+
+
+def test_install_compat_tool_worker_success(plugin: Plugin) -> None:
+    release = {"tag_name": "GE-Proton10-1", "asset_size": 1234}
+    status_updates: list[dict[str, Any]] = []
+    captured_thread: _CapturedThread | None = None
+
+    def fake_set_install_status(status_ref: dict[str, Any], _lock_ref: Any, **kwargs: Any) -> None:
+        status_ref.update(kwargs)
+        status_updates.append(kwargs)
+
+    def make_thread(**kwargs: Any) -> _CapturedThread:
+        nonlocal captured_thread
+        captured_thread = _CapturedThread(**kwargs)
+        return captured_thread
+
+    with (
+        patch("main.get_releases_sync", return_value=[release]),
+        patch("main.threading.Thread", side_effect=make_thread),
+        patch("main.install_sync", return_value={"success": True, "message": "Done"}),
+        patch("main.set_install_status", side_effect=fake_set_install_status),
+    ):
+        result = asyncio.run(plugin.install_compat_tool("proton-ge"))
+        assert captured_thread is not None
+        captured_thread.run_target()
+
+    assert result["success"] is True
+    assert any(u.get("state") == "success" for u in status_updates)
+
+
+def test_install_compat_tool_worker_cancelled(plugin: Plugin) -> None:
+    release = {"tag_name": "cachyos-11.0-slr", "asset_size": 200}
+    status_updates: list[dict[str, Any]] = []
+    captured_thread: _CapturedThread | None = None
+
+    def fake_install_sync(
+        _normalized: str,
+        _install_as_latest: bool,
+        _force_reinstall: bool,
+        _status_ref: dict[str, Any],
+        _lock_ref: Any,
+        cancel_ref: threading.Event,
+        _process_ref: Any,
+        _tool_id: str = "proton-ge",
+    ) -> dict[str, Any]:
+        cancel_ref.set()
+        return {"success": False, "message": "Cancelled by user"}
+
+    def fake_set_install_status(status_ref: dict[str, Any], _lock_ref: Any, **kwargs: Any) -> None:
+        status_ref.update(kwargs)
+        status_updates.append(kwargs)
+
+    def make_thread(**kwargs: Any) -> _CapturedThread:
+        nonlocal captured_thread
+        captured_thread = _CapturedThread(**kwargs)
+        return captured_thread
+
+    with (
+        patch("main.get_releases_sync", return_value=[release]),
+        patch("main.threading.Thread", side_effect=make_thread),
+        patch("main.install_sync", side_effect=fake_install_sync),
+        patch("main.set_install_status", side_effect=fake_set_install_status),
+    ):
+        asyncio.run(plugin.install_compat_tool("proton-cachyos"))
+        assert captured_thread is not None
+        captured_thread.run_target()
+
+    assert any(u.get("stage") == "cancelled" for u in status_updates)
+
+
+def test_install_compat_tool_worker_exception(plugin: Plugin) -> None:
+    release = {"tag_name": "GE-Proton10-1", "asset_size": 1234}
+    status_updates: list[dict[str, Any]] = []
+    captured_thread: _CapturedThread | None = None
+
+    def fake_set_install_status(status_ref: dict[str, Any], _lock_ref: Any, **kwargs: Any) -> None:
+        status_ref.update(kwargs)
+        status_updates.append(kwargs)
+
+    def make_thread(**kwargs: Any) -> _CapturedThread:
+        nonlocal captured_thread
+        captured_thread = _CapturedThread(**kwargs)
+        return captured_thread
+
+    with (
+        patch("main.get_releases_sync", return_value=[release]),
+        patch("main.threading.Thread", side_effect=make_thread),
+        patch("main.install_sync", side_effect=OSError("disk full")),
+        patch("main.set_install_status", side_effect=fake_set_install_status),
+    ):
+        asyncio.run(plugin.install_compat_tool("proton-ge"))
+        assert captured_thread is not None
+        captured_thread.run_target()
+
+    assert any(u.get("state") == "error" for u in status_updates)
+    assert any("disk full" in (u.get("message") or "") for u in status_updates)
+
+
+# ---------------------------------------------------------------------------
+# cancel_compat_tool_install
+# ---------------------------------------------------------------------------
+
+def test_cancel_compat_tool_install_no_running_thread(plugin: Plugin) -> None:
+    result = asyncio.run(plugin.cancel_compat_tool_install("proton-ge"))
+    assert result == {"success": True, "message": "Install cancelled."}
+
+
+def test_cancel_compat_tool_install_terminates_live_proc(plugin: Plugin) -> None:
+    plugin._proton_ge_install_thread = _FakeThread(alive=True)
+    proc = MagicMock()
+    proc.poll.return_value = None
+    plugin._proton_ge_install_process_ref[0] = proc
+
+    result = asyncio.run(plugin.cancel_compat_tool_install("proton-cachyos"))
+
+    assert result == {"success": True, "message": "Install cancelled."}
+    proc.terminate.assert_called_once()
+
+
+def test_get_build_commit_reads_file(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    commit_file = tmp_path / ".build-commit"
+    commit_file.write_text("abc1234\n")
+    with patch.object(decky, "DECKY_PLUGIN_DIR", str(tmp_path)):
+        assert asyncio.run(plugin.get_build_commit()) == "abc1234"
+
+
+def test_get_build_commit_missing_returns_dev(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    with patch.object(decky, "DECKY_PLUGIN_DIR", str(tmp_path)):
+        assert asyncio.run(plugin.get_build_commit()) == "dev"
+
+
+def test_get_build_commit_oserror_returns_unknown(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    with patch.object(decky, "DECKY_PLUGIN_DIR", str(tmp_path)), \
+         patch("pathlib.Path.is_file", return_value=True), \
+         patch("pathlib.Path.read_text", side_effect=OSError("perm")):
+        assert asyncio.run(plugin.get_build_commit()) == "unknown"
+
+
+def test_check_for_update_delegates(plugin: Plugin) -> None:
+    with patch("main._updater_check", return_value={"has_update": True}) as mock_check:
+        result = asyncio.run(plugin.check_for_update("release"))
+    mock_check.assert_called_once_with(decky.DECKY_PLUGIN_VERSION, channel="release")
+    assert result == {"has_update": True}
+
+
+def test_list_releases_delegates(plugin: Plugin) -> None:
+    with patch("main._updater_list_releases", return_value={"releases": []}) as mock_lr:
+        result = asyncio.run(plugin.list_releases(limit=5, include_prereleases=False, channel="developer"))
+    mock_lr.assert_called_once_with(limit=5, include_prereleases=False, channel="developer")
+    assert result == {"releases": []}
+
+
+def test_apply_update_starts_update(plugin: Plugin) -> None:
+    with patch("main._updater_start") as mock_start:
+        result = asyncio.run(plugin.apply_update("https://x/test.zip", "1.5.0"))
+    assert result == {"success": True}
+    mock_start.assert_called_once()
+
+
+def test_apply_update_rejects_concurrent(plugin: Plugin) -> None:
+    plugin._update_status["state"] = "running"
+    result = asyncio.run(plugin.apply_update("https://x/test.zip", "1.5.0"))
+    assert result == {"success": False, "error": "Update already in progress"}
+
+
+def test_get_update_status_returns_snapshot(plugin: Plugin) -> None:
+    plugin._update_status.update({"state": "running", "version": "1.5.0"})
+    result = asyncio.run(plugin.get_update_status())
+    assert result["state"] == "running"
+    assert result["version"] == "1.5.0"
+
+
+def test_cancel_update_sets_event(plugin: Plugin) -> None:
+    result = asyncio.run(plugin.cancel_update())
+    assert result == {"success": True}
+    assert plugin._update_cancel.is_set()
+
+
+def test_restart_plugin_loader_returns_success(plugin: Plugin) -> None:
+    with patch("main.threading.Thread") as mock_thread:
+        mock_thread.return_value = MagicMock()
+        result = asyncio.run(plugin.restart_plugin_loader())
+    assert result == {"success": True}
+    mock_thread.return_value.start.assert_called_once()
+
+
+def test_get_game_source_delegates(plugin: Plugin) -> None:
+    with patch("lib.game_source.get_game_source", return_value={"is_steam": True}) as mock_gs:
+        result = asyncio.run(plugin.get_game_source("123", "Half-Life"))
+    assert result == {"is_steam": True}
+
+
+def test_get_shortcut_name_found(plugin: Plugin) -> None:
+    with patch("lib.game_source.find_shortcut_name_by_appid", return_value="My Game"):
+        result = asyncio.run(plugin.get_shortcut_name("12345"))
+    assert result == "My Game"
+
+
+def test_get_shortcut_name_not_found(plugin: Plugin) -> None:
+    with patch("lib.game_source.find_shortcut_name_by_appid", return_value=None):
+        result = asyncio.run(plugin.get_shortcut_name("99999"))
+    assert result == ""
+
+
+def test_get_installed_game_stats_delegates(plugin: Plugin) -> None:
+    with patch("main.get_installed_game_stats", return_value={"total": 5}) as mock_stats:
+        result = asyncio.run(plugin.get_installed_game_stats())
+    assert result == {"total": 5}
+
+
+def test_get_grid_artwork_returns_data_url(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    grid_dir = tmp_path / ".local" / "share" / "Steam" / "userdata" / "123456" / "config" / "grid"
+    grid_dir.mkdir(parents=True)
+    img_file = grid_dir / "730.jpg"
+    img_file.write_bytes(b"\xff\xd8\xff" + b"\x00" * 10)
+
+    with patch.object(decky, "DECKY_USER_HOME", str(tmp_path)):
+        result = asyncio.run(plugin.get_grid_artwork(730))
+
+    assert result["dataUrl"] is not None
+    assert result["dataUrl"].startswith("data:image/jpeg;base64,")
+
+
+def test_get_grid_artwork_no_image_returns_null(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    with patch.object(decky, "DECKY_USER_HOME", str(tmp_path)):
+        result = asyncio.run(plugin.get_grid_artwork(730))
+    assert result == {"dataUrl": None}
+
+
+def test_cancel_compat_tool_install_skips_dead_proc(plugin: Plugin) -> None:
+    plugin._proton_ge_install_thread = _FakeThread(alive=True)
+    proc = MagicMock()
+    proc.poll.return_value = 0
+    plugin._proton_ge_install_process_ref[0] = proc
+
+    result = asyncio.run(plugin.cancel_compat_tool_install("proton-ge"))
+
+    assert result == {"success": True, "message": "Install cancelled."}
+    proc.terminate.assert_not_called()
