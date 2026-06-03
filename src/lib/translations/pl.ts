@@ -203,6 +203,7 @@ export const pl: TranslationTree = {
     timeLeft: (time) => `Pozostało: ${time}`,
     archivePickerFailed: 'Nie można otworzyć selektora plików. Możesz nadal ręcznie wpisać ścieżkę.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Najpierw zakończ grę',

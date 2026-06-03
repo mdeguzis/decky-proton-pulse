@@ -203,6 +203,7 @@ export const de: TranslationTree = {
     timeLeft: (time) => `Noch ${time}`,
     archivePickerFailed: 'Die Dateiauswahl konnte nicht geöffnet werden. Sie können den Pfad weiterhin manuell eingeben.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Bitte beenden Sie zuerst das Spiel',

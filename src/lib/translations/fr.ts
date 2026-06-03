@@ -203,6 +203,7 @@ export const fr: TranslationTree = {
     timeLeft: (time) => `${time} restant`,
     archivePickerFailed: 'Impossible d’ouvrir le sélecteur de fichiers. Vous pouvez toujours saisir un chemin manuellement.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Veuillez quitter le jeu en premier',

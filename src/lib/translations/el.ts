@@ -203,6 +203,7 @@ export const el: TranslationTree = {
     timeLeft: (time) => `${time} απομένει`,
     archivePickerFailed: 'Αποτυχία ανοίγματος επιλογέα αρχείων. Μπορείτε να εισάγετε τη διαδρομή χειροκίνητα.',
     info: 'Πληροφορίες',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Πρώτα κλείστε το παιχνίδι',

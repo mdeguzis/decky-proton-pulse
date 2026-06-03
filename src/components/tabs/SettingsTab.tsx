@@ -6,16 +6,17 @@ import { openFilePicker, FileSelectionType } from '@decky/api';
 import { toaster } from '../../lib/notify';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
-import { cancelProtonGeInstall, getProtonGeManagerState, installCompatibilityToolArchive, installProtonGe, uninstallCompatibilityTool } from '../../lib/compatTools';
-import type { CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
+import { cancelCompatToolInstall, getCompatManagerState, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
+import type { CompatToolId, CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
+import { COMPAT_TOOL_OPTIONS } from '../../types';
 import { t } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
 import { buildInstallProgressDetails, shouldPollInstallStatus, shouldShowInstallStatusToast } from './settingsTabProgress';
 
-const AUTO_UPDATE_KEY = 'compat-auto-update-proton-ge';
+const getAutoUpdateKey = (toolId: CompatToolId) => `compat-auto-update-${toolId}`;
 const RESTART_HINT = ' Steam may need a restart before the new compatibility tool appears everywhere.';
 const RELEASE_GRID_TEMPLATE = 'minmax(0, 1fr) 72px 104px 112px';
-type CompatibilityRowType = 'proton-ge' | 'custom';
+type CompatibilityRowType = 'proton-ge' | 'proton-cachyos' | 'custom';
 
 interface CompatibilityCatalogRow {
   key: string;
@@ -74,11 +75,6 @@ function focusClipRowStyle(): React.CSSProperties {
 function formatReleaseDate(value: string | null): string {
   if (!value) return t().compatTools.unknownDate;
   return value.slice(0, 10);
-}
-
-function isProtonFamilyTool(tool: InstalledCompatTool): boolean {
-  return [tool.directory_name, tool.display_name, tool.internal_name]
-    .some((value) => value.toLowerCase().includes('proton'));
 }
 
 function formatReleaseVersion(tagName: string): string {
@@ -490,11 +486,20 @@ function matchesRelease(tool: InstalledCompatTool, release: CompatToolRelease): 
   return [tool.directory_name, tool.display_name, tool.internal_name].some((field) => field.toLowerCase().includes(tag));
 }
 
-function isManagedGeTool(tool: InstalledCompatTool): boolean {
-  if (tool.managed_slot === 'latest') return true;
-  return [tool.directory_name, tool.display_name, tool.internal_name].some((field) =>
-    field.toLowerCase().includes('ge-proton'),
-  );
+function isManagedToolForId(tool: InstalledCompatTool, toolId: CompatToolId): boolean {
+  if (tool.tool_id) return tool.tool_id === toolId;
+  if (toolId === 'proton-ge') {
+    if (tool.managed_slot === 'latest') return true;
+    return [tool.directory_name, tool.display_name, tool.internal_name].some((f) =>
+      f.toLowerCase().includes('ge-proton'),
+    );
+  }
+  if (toolId === 'proton-cachyos') {
+    return [tool.directory_name, tool.display_name, tool.internal_name].some((f) =>
+      f.toLowerCase().includes('proton-cachyos'),
+    );
+  }
+  return false;
 }
 
 function installedToolStatusTone(tool: InstalledCompatTool): React.CSSProperties {
@@ -553,7 +558,8 @@ function CompactActionButton({
 
 export function SettingsTab() {
   const extras = t().extras!;
-  const [autoUpdateCurrent, setAutoUpdateCurrent] = useState(() => getSetting(AUTO_UPDATE_KEY, false));
+  const [selectedTool, setSelectedTool] = useState<CompatToolId>('proton-ge');
+  const [autoUpdateCurrent, setAutoUpdateCurrent] = useState(() => getSetting(getAutoUpdateKey('proton-ge'), false));
   const [managerState, setManagerState] = useState<ProtonGeManagerState | null>(null);
   const [loadingManager, setLoadingManager] = useState(true);
   const [installingTag, setInstallingTag] = useState<string | null>(null);
@@ -572,10 +578,10 @@ export function SettingsTab() {
     return tags;
   }, [managerState]);
 
-  const refreshManager = async (forceRefresh = false, showSuccessToast = false) => {
+  const refreshManager = async (forceRefresh = false, showSuccessToast = false, toolIdOverride?: CompatToolId) => {
     setLoadingManager(true);
     try {
-      const nextState = await getProtonGeManagerState(forceRefresh);
+      const nextState = await getCompatManagerState(toolIdOverride ?? selectedTool, forceRefresh);
       setManagerState(nextState);
       void logFrontendEvent('INFO', 'Loaded Proton-GE manager state', {
         releases: nextState.releases.length,
@@ -610,6 +616,10 @@ export function SettingsTab() {
   const compatibilityRows = useMemo<CompatibilityCatalogRow[]>(() => {
     if (!managerState) return [];
 
+    const toolOption = COMPAT_TOOL_OPTIONS.find((o) => o.id === selectedTool);
+    const toolLabel = toolOption?.label ?? selectedTool;
+    const latestSlotLabel = `${toolLabel}-Latest`;
+
     const matchedDirectories = new Set<string>();
     const releaseRows = managerState.releases.map((release) => {
       const matchedTool = managerState.installed_tools.find((tool) => matchesRelease(tool, release));
@@ -624,13 +634,13 @@ export function SettingsTab() {
       return {
         key: `release:${release.tag_name}`,
         kind: 'release' as const,
-        type: 'proton-ge' as const,
+        type: selectedTool as CompatibilityRowType,
         release,
         tool: matchedTool,
         installed,
         installing: isInstalling,
         removing: false,
-        displayName: matchedTool?.managed_slot === 'latest' ? 'Proton-GE-Latest' : 'Proton-GE',
+        displayName: matchedTool?.managed_slot === 'latest' ? latestSlotLabel : toolLabel,
         versionLabel: formatReleaseVersion(release.tag_name),
         versionMeta: progress?.progressMeta,
         progressRatio: progress?.progressRatio,
@@ -643,7 +653,7 @@ export function SettingsTab() {
         actionLabel: isInstalling ? t().common.cancel : installed ? t().compatTools.uninstall : t().compatTools.install,
         actionDanger: isInstalling || installed,
         actionDisabled: isInstalling ? false : installingTag !== null || removingTool !== null,
-        onAction: installed && matchedTool && matchedTool.source !== 'valve' && isManagedGeTool(matchedTool)
+        onAction: installed && matchedTool && matchedTool.source !== 'valve' && isManagedToolForId(matchedTool, selectedTool)
           ? () => void handleUninstallTool(matchedTool)
           : isInstalling
             ? () => void handleCancelInstall()
@@ -656,7 +666,7 @@ export function SettingsTab() {
     });
 
     const installedOnlyRows = managerState.installed_tools
-      .filter((tool) => isProtonFamilyTool(tool))
+      .filter((tool) => isManagedToolForId(tool, selectedTool))
       .filter((tool) => !matchedDirectories.has(tool.directory_name))
       .filter((tool) => tool.source !== 'valve')
       .map((tool) => {
@@ -666,53 +676,53 @@ export function SettingsTab() {
         const progress = isLatestSlotInstall
           ? buildInstallProgressDetails(managerState.install_status, managerState.current_release?.asset_size, getInstallProgressLabels())
           : null;
+        const isManagedTool = isManagedToolForId(tool, selectedTool);
         return ({
-        key: `installed:${tool.directory_name}`,
-        kind: 'installed-only' as const,
-        type: isManagedGeTool(tool) ? ('proton-ge' as const) : ('custom' as const),
-        tool,
-        installed: true,
-        installing: isLatestSlotInstall,
-        removing: removingTool === tool.directory_name,
-        displayName: tool.display_name,
-        versionLabel: isManagedGeTool(tool)
-          ? formatReleaseVersion(tool.internal_name || tool.display_name || tool.directory_name)
-          : extras.compatCustom(),
-        versionMeta: progress?.progressMeta,
-        progressRatio: progress?.progressRatio,
-        progressLabel: progress?.progressLabel,
-        etaLabel: progress?.etaLabel,
-        statusLabel: removingTool === tool.directory_name
-          ? t().compatTools.removing
-          : tool.managed_slot === 'latest'
-            ? extras.compatLatestSlot()
-            : isManagedGeTool(tool)
-              ? t().compatTools.installed
+          key: `installed:${tool.directory_name}`,
+          kind: 'installed-only' as const,
+          type: isManagedTool ? (selectedTool as CompatibilityRowType) : ('custom' as const),
+          tool,
+          installed: true,
+          installing: isLatestSlotInstall,
+          removing: removingTool === tool.directory_name,
+          displayName: tool.display_name,
+          versionLabel: isManagedTool
+            ? formatReleaseVersion(tool.internal_name || tool.display_name || tool.directory_name)
             : extras.compatCustom(),
-        statusStyle: installedToolStatusTone(tool),
-        actionLabel: removingTool === tool.directory_name ? t().compatTools.removing : t().compatTools.uninstall,
-        actionDanger: true,
-        actionDisabled: removingTool !== null || installingTag !== null,
-        onAction: tool.source !== 'valve'
-          ? () => void handleUninstallTool(tool)
-          : undefined,
-        reinstallLabel: isManagedGeTool(tool) ? t().compatTools.reinstall : undefined,
-        onReinstall: isManagedGeTool(tool)
-          ? () => void handleInstallRelease(
-            tool.latest_tag ?? managerState.current_release?.tag_name ?? null,
-            true,
-          )
-          : undefined,
-      });
+          versionMeta: progress?.progressMeta,
+          progressRatio: progress?.progressRatio,
+          progressLabel: progress?.progressLabel,
+          etaLabel: progress?.etaLabel,
+          statusLabel: removingTool === tool.directory_name
+            ? t().compatTools.removing
+            : tool.managed_slot === 'latest'
+              ? extras.compatLatestSlot()
+              : isManagedTool
+                ? t().compatTools.installed
+                : extras.compatCustom(),
+          statusStyle: installedToolStatusTone(tool),
+          actionLabel: removingTool === tool.directory_name ? t().compatTools.removing : t().compatTools.uninstall,
+          actionDanger: true,
+          actionDisabled: removingTool !== null || installingTag !== null,
+          onAction: tool.source !== 'valve'
+            ? () => void handleUninstallTool(tool)
+            : undefined,
+          reinstallLabel: isManagedTool ? t().compatTools.reinstall : undefined,
+          onReinstall: isManagedTool
+            ? () => void handleInstallRelease(
+              tool.latest_tag ?? managerState.current_release?.tag_name ?? null,
+              true,
+            )
+            : undefined,
+        });
       });
 
     return [...releaseRows, ...installedOnlyRows].sort((a, b) => {
       if (a.installed !== b.installed) return a.installed ? -1 : 1;
       if (a.kind !== b.kind) return a.kind === 'release' ? -1 : 1;
-      if (a.type !== b.type) return a.type === 'proton-ge' ? -1 : 1;
       return 0;
     });
-  }, [installedReleaseTags, installingTag, managerState, removingTool]);
+  }, [installedReleaseTags, installingTag, managerState, removingTool, selectedTool]);
 
   const installedCompatibilityRows = useMemo(
     () => compatibilityRows.filter((row) => row.installed),
@@ -731,6 +741,16 @@ export function SettingsTab() {
     void refreshManager(false);
   }, []);
 
+  const handleToolSwitch = (toolId: CompatToolId) => {
+    setSelectedTool(toolId);
+    setInstallingTag(null);
+    setAutoUpdateTriggered(false);
+    const nextAutoUpdate = getSetting(getAutoUpdateKey(toolId), false);
+    setAutoUpdateCurrent(nextAutoUpdate);
+    void refreshManager(false, false, toolId);
+    void logFrontendEvent('INFO', 'Compat tool selector changed', { toolId });
+  };
+
 
 
   useEffect(() => {
@@ -748,7 +768,7 @@ export function SettingsTab() {
     setAutoUpdateTriggered(true);
     void (async () => {
       setInstallingTag(managerState.current_release!.tag_name);
-      const result = await installProtonGe(managerState.current_release!.tag_name, true);
+      const result = await installCompatTool(selectedTool, managerState.current_release!.tag_name, true);
       toaster.toast({
         title: 'Proton Pulse',
         body: result.message,
@@ -758,7 +778,7 @@ export function SettingsTab() {
         await refreshManager(true);
       }
     })();
-  }, [autoUpdateCurrent, autoUpdateTriggered, loadingManager, managerState]);
+  }, [autoUpdateCurrent, autoUpdateTriggered, loadingManager, managerState, selectedTool]);
 
   useEffect(() => {
     if (!managerState) {
@@ -816,15 +836,16 @@ export function SettingsTab() {
   const handleAutoUpdateToggle = (enabled: boolean) => {
     setAutoUpdateCurrent(enabled);
     setAutoUpdateTriggered(false);
-    setSetting(AUTO_UPDATE_KEY, enabled);
-    void logFrontendEvent('INFO', 'Current Proton-GE auto-update toggle changed', {
+    setSetting(getAutoUpdateKey(selectedTool), enabled);
+    void logFrontendEvent('INFO', 'Compat tool auto-update toggle changed', {
+      toolId: selectedTool,
       nextValue: enabled,
     });
     if (enabled && managerState?.current_release && !managerState.current_latest_slot_installed && !installingTag) {
       setAutoUpdateTriggered(true);
       void (async () => {
         setInstallingTag(managerState.current_release!.tag_name);
-        const result = await installProtonGe(managerState.current_release!.tag_name, true);
+        const result = await installCompatTool(selectedTool, managerState.current_release!.tag_name, true);
         toaster.toast({
           title: 'Proton Pulse',
           body: result.message,
@@ -843,7 +864,7 @@ export function SettingsTab() {
     const installAsLatest = nextTag === managerState?.current_release?.tag_name;
 
     setInstallingTag(nextTag);
-    const result = await installProtonGe(nextTag, installAsLatest, forceReinstall);
+    const result = await installCompatTool(selectedTool, nextTag, installAsLatest, forceReinstall);
     if (result.success) {
       await refreshManager(false);
     }
@@ -858,7 +879,7 @@ export function SettingsTab() {
   };
 
   const handleCancelInstall = async () => {
-    const result = await cancelProtonGeInstall();
+    const result = await cancelCompatToolInstall(selectedTool);
     toaster.toast({
       title: 'Proton Pulse',
       body: result.message,
@@ -989,6 +1010,45 @@ export function SettingsTab() {
             disabled={loadingManager || installingTag !== null}
             fullWidth={false}
           />
+        </div>
+
+        <div style={{ marginBottom: 10 }}>
+          <Focusable
+            style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+            onGamepadFocus={() => setFocusedMenuKey('tool-selector')}
+            onGamepadBlur={() => setFocusedMenuKey((c) => c === 'tool-selector' ? null : c)}
+          >
+            <div style={{ fontSize: 11, color: '#7a9bb5', flexShrink: 0 }}>
+              {t().compatTools.toolSelector}:
+            </div>
+            <DialogButton
+              style={{
+                height: 32,
+                minWidth: 0,
+                padding: '0 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                boxShadow: focusedMenuKey === 'tool-selector' ? '0 0 0 1px rgba(160,210,255,0.38) inset' : undefined,
+              }}
+              onClick={(e: MouseEvent) =>
+                showContextMenu(
+                  <Menu label={t().compatTools.toolSelector} cancelText={t().common.close}>
+                    {COMPAT_TOOL_OPTIONS.map((opt) => (
+                      <MenuItem
+                        key={opt.id}
+                        onClick={() => handleToolSwitch(opt.id)}
+                      >
+                        {opt.label}{selectedTool === opt.id ? ' *' : ''}
+                      </MenuItem>
+                    ))}
+                  </Menu>,
+                  e.currentTarget ?? window,
+                )
+              }
+            >
+              {COMPAT_TOOL_OPTIONS.find((o) => o.id === selectedTool)?.label ?? selectedTool} {'\u25BE'}
+            </DialogButton>
+          </Focusable>
         </div>
 
         <div

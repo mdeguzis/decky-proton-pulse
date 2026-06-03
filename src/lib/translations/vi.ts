@@ -203,6 +203,7 @@ export const vi: TranslationTree = {
     timeLeft: (time) => `Còn ${time}`,
     archivePickerFailed: 'Không thể mở bộ chọn tệp. Bạn vẫn có thể nhập đường dẫn thủ công.',
     info: 'Thông tin',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Thoát trò chơi trước',

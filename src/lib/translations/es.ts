@@ -203,6 +203,7 @@ export const es: TranslationTree = {
     timeLeft: (time) => `${time} restante`,
     archivePickerFailed: 'No se pudo abrir el selector de archivos. Aun así puedes escribir una ruta manualmente.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Por favor, cierra el juego primero',

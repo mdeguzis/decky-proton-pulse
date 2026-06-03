@@ -203,6 +203,7 @@ export const nl: TranslationTree = {
     timeLeft: (time) => `Nog ${time}`,
     archivePickerFailed: 'De bestandskiezer kon niet worden geopend. Je kunt het pad nog steeds handmatig invoeren.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Sluit het spel eerst af',

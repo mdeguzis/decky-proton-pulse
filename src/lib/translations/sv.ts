@@ -203,6 +203,7 @@ export const sv: TranslationTree = {
     timeLeft: (time) => `${time} kvar`,
     archivePickerFailed: 'Kunde inte öppna filväljaren. Du kan fortfarande ange sökvägen manuellt.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Avsluta spelet först',

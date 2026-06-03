@@ -1134,6 +1134,7 @@ def test_uninstall_compatibility_tool_removes_managed_directory(
                     "directory_name": "GE-Proton10-1",
                     "path": str(tool_dir),
                     "source": "custom",
+                    "tool_id": "proton-ge",
                 }
             ],
         ),
@@ -1143,7 +1144,7 @@ def test_uninstall_compatibility_tool_removes_managed_directory(
         result = asyncio.run(plugin.uninstall_compatibility_tool("GE-Proton10-1"))
 
     assert result == {"success": True, "message": "Removed GE-Proton10-1."}
-    clear_mock.assert_called_once_with("GE-Proton10-1")
+    clear_mock.assert_called_once_with("GE-Proton10-1", "proton-ge")
     assert not tool_dir.exists()
 
 

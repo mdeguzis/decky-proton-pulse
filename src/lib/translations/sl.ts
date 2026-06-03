@@ -203,6 +203,7 @@ export const sl: TranslationTree = {
     timeLeft: (time) => `${time} preostalo`,
     archivePickerFailed: 'Izbirnika datotek ni bilo mogoce odpreti. Pot lahko še vedno vnesete rocno.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Najprej zaprite igro',

@@ -15,6 +15,36 @@ import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from .steam_paths import compat_tools_dirs, find_steam_root, read_vdf_value
 
 PROTON_GE_LATEST_SLOT_NAME = "Proton-GE-Latest"
+PROTON_CACHY_LATEST_SLOT_NAME = "Proton-CachyOS-Latest"
+
+COMPAT_TOOL_CONFIGS: dict[str, dict[str, str]] = {
+    "proton-ge": {
+        "id": "proton-ge",
+        "label": "Proton-GE",
+        "api_url": (
+            "https://api.github.com/repos/GloriousEggroll/proton-ge-custom"
+            "/releases?per_page=30"
+        ),
+        "asset_prefix": "GE-Proton",
+        "asset_arch": "",
+        "latest_slot_name": PROTON_GE_LATEST_SLOT_NAME,
+        "cache_file": "proton-ge-releases-cache.json",
+        "metadata_file": "proton-ge-latest.json",
+    },
+    "proton-cachyos": {
+        "id": "proton-cachyos",
+        "label": "Proton-CachyOS",
+        "api_url": (
+            "https://api.github.com/repos/CachyOS/proton-cachyos"
+            "/releases?per_page=30"
+        ),
+        "asset_prefix": "proton-cachyos",
+        "asset_arch": "x86_64",
+        "latest_slot_name": PROTON_CACHY_LATEST_SLOT_NAME,
+        "cache_file": "proton-cachyos-releases-cache.json",
+        "metadata_file": "proton-cachyos-latest.json",
+    },
+}
 
 
 def _looks_like_proton_tool(*values: str | None) -> bool:
@@ -85,10 +115,50 @@ def is_proton_ge_tool(tool: dict[str, Any]) -> bool:
     return any("ge-proton" in field.lower() for field in fields)
 
 
-def simplify_release(release: dict[str, Any]) -> dict[str, Any] | None:
+def normalize_tag_for_tool(tool_id: str, version: str) -> str | None:
+    """Normalize a version string for the given tool.
+
+    For Proton-GE, coerces to the canonical GE-ProtonX-Y format.
+    For other tools, returns the stripped version as-is.
+    """
+    if tool_id == "proton-ge":
+        return normalize_proton_ge_tag(version)
+    cleaned = version.strip()
+    return cleaned if cleaned else None
+
+
+def matches_release_tag(tool: dict[str, Any], tag: str) -> bool:
+    """Does this installed tool appear to match the given release tag?"""
+    tag_lower = tag.lower()
+    return any(
+        tag_lower in (tool.get(f) or "").lower()
+        for f in ("directory_name", "display_name", "internal_name")
+    )
+
+
+def _detect_tool_id_from_names(
+    entry_name: str, display_name: str, internal_name: str
+) -> str | None:
+    """Infer which compat tool config this installed directory belongs to."""
+    for tid, config in COMPAT_TOOL_CONFIGS.items():
+        if entry_name == config["latest_slot_name"]:
+            return tid
+    all_names = (entry_name + display_name + internal_name).lower()
+    for tid, config in COMPAT_TOOL_CONFIGS.items():
+        if config["asset_prefix"].lower() in all_names:
+            return tid
+    return None
+
+
+def simplify_release(
+    release: dict[str, Any],
+    asset_prefix: str = "GE-Proton",
+    asset_arch: str = "",
+) -> dict[str, Any] | None:
     """Boil a GitHub release payload down to the fields the frontend needs.
 
-    Skips drafts and prereleases.
+    Skips drafts and prereleases. asset_arch filters by architecture suffix
+    (e.g. "x86_64" matches "-x86_64.tar." but not "-x86_64_v3.tar.").
     """
     if release.get("draft") or release.get("prerelease"):
         return None
@@ -97,8 +167,9 @@ def simplify_release(release: dict[str, Any]) -> dict[str, Any] | None:
             c
             for c in release.get("assets", [])
             if isinstance(c.get("name"), str)
-            and c["name"].startswith("GE-Proton")
+            and c["name"].lower().startswith(asset_prefix.lower())
             and (c["name"].endswith(".tar.gz") or c["name"].endswith(".tar.xz"))
+            and (not asset_arch or f"-{asset_arch}.tar." in c["name"])
         ),
         None,
     )
@@ -137,14 +208,24 @@ def find_closest_installed_tool(
     return best_tool
 
 
-def list_installed_compatibility_tools(  # pylint: disable=too-many-locals
-    latest_metadata: dict[str, Any] | None,
+def list_installed_compatibility_tools(  # pylint: disable=too-many-locals,too-many-branches
+    latest_metadata: dict[str, Any] | None = None,
+    all_latest_metadata: dict[str, dict[str, Any] | None] | None = None,
 ) -> list[dict[str, Any]]:
     """Find every installed Proton build on this system.
 
     Checks ``compatibilitytools.d`` (custom tools) and
     ``steamapps/common`` (Valve's official builds).
     """
+    effective_meta: dict[str, dict[str, Any] | None] = (
+        all_latest_metadata
+        or ({"proton-ge": latest_metadata} if latest_metadata is not None else {})
+    )
+    known_latest_slots: dict[str, str] = {
+        cfg["latest_slot_name"]: tid
+        for tid, cfg in COMPAT_TOOL_CONFIGS.items()
+    }
+
     tools: list[dict[str, Any]] = []
     seen_dirs: set[str] = set()
 
@@ -175,6 +256,30 @@ def list_installed_compatibility_tools(  # pylint: disable=too-many-locals
             if not _looks_like_proton_tool(entry.name, display_name, internal_name):
                 continue
 
+            detected_tool_id = _detect_tool_id_from_names(
+                entry.name, display_name, internal_name
+            )
+            is_latest_slot = (
+                entry.name in known_latest_slots
+                or any(
+                    meta is not None and meta.get("directory_name") == entry.name
+                    for meta in effective_meta.values()
+                )
+            )
+            managed_slot: str | None = (
+                "latest" if is_latest_slot
+                else "versioned" if detected_tool_id is not None
+                else None
+            )
+            latest_tag: str | None = None
+            for tid, meta in effective_meta.items():
+                if meta and (
+                    meta.get("directory_name") == entry.name
+                    or entry.name == COMPAT_TOOL_CONFIGS.get(tid, {}).get("latest_slot_name")
+                ):
+                    latest_tag = meta.get("tag_name") or None
+                    break
+
             tools.append(
                 {
                     "directory_name": entry.name,
@@ -182,29 +287,9 @@ def list_installed_compatibility_tools(  # pylint: disable=too-many-locals
                     "internal_name": internal_name,
                     "path": str(entry),
                     "source": "custom",
-                    "managed_slot": (
-                        "latest"
-                        if entry.name == PROTON_GE_LATEST_SLOT_NAME
-                        or (
-                            latest_metadata
-                            and latest_metadata.get("directory_name") == entry.name
-                        )
-                        else (
-                            "versioned"
-                            if "ge-proton"
-                            in (display_name + internal_name + entry.name).lower()
-                            else None
-                        )
-                    ),
-                    "latest_tag": (
-                        latest_metadata.get("tag_name")
-                        if latest_metadata
-                        and (
-                            entry.name == PROTON_GE_LATEST_SLOT_NAME
-                            or latest_metadata.get("directory_name") == entry.name
-                        )
-                        else None
-                    ),
+                    "tool_id": detected_tool_id,
+                    "managed_slot": managed_slot,
+                    "latest_tag": latest_tag,
                 }
             )
 

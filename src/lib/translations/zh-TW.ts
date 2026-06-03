@@ -203,6 +203,7 @@ export const zhTW: TranslationTree = {
     timeLeft: (time) => `剩餘 ${time}`,
     archivePickerFailed: '無法開啟檔案選擇器，您仍可手動輸入路徑。',
     info: '資訊',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: '請先退出遊戲',

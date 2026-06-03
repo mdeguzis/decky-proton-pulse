@@ -203,6 +203,7 @@ export const uk: TranslationTree = {
     timeLeft: (time) => `Залишилось: ${time}`,
     archivePickerFailed: 'Не вдалося відкрити вибір файлів. Ви можете вручну ввести шлях.',
     info: 'Інфо',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Спочатку закрийте гру',

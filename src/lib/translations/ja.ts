@@ -203,6 +203,7 @@ export const ja: TranslationTree = {
     timeLeft: (time) => `残り ${time}`,
     archivePickerFailed: 'ファイルピッカーを開けませんでした。パスは手動で入力できます。',
     info: '情報',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: '先にゲームを終了してください',

@@ -233,6 +233,7 @@ export const ru: TranslationTree = {
     timeLeft: (time) => `осталось ${time}`,
     archivePickerFailed: 'Не удалось открыть выбор файла. Путь всё равно можно ввести вручную.',
     info: 'Инфо',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Сначала выйдите из игры',

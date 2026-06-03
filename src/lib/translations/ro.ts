@@ -203,6 +203,7 @@ export const ro: TranslationTree = {
     timeLeft: (time) => `${time} ramas`,
     archivePickerFailed: 'Nu s-a putut deschide selectorul de fisiere. Poti introduce totusi calea manual.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Inchide mai intai jocul',

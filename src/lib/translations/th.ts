@@ -203,6 +203,7 @@ export const th: TranslationTree = {
     timeLeft: (time) => `เหลือ ${time}`,
     archivePickerFailed: 'ไม่สามารถเปิดตัวเลือกไฟล์ได้ คุณยังคงป้อนเส้นทางด้วยตนเองได้',
     info: 'ข้อมูล',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'ออกจากเกมก่อน',

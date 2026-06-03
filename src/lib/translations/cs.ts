@@ -203,6 +203,7 @@ export const cs: TranslationTree = {
     timeLeft: (time) => `${time} zbývá`,
     archivePickerFailed: 'Nepodařilo se otevřít výběr souborů. Cestu můžete stále zadat ručně.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Nejprve ukončete hru',

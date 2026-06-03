@@ -203,6 +203,7 @@ export const da: TranslationTree = {
     timeLeft: (time) => `${time} tilbage`,
     archivePickerFailed: 'Kunne ikke åbne filovervælger. Du kan stadig indtaste stien manuelt.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Afslut spillet først',

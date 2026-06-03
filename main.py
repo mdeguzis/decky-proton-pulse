@@ -37,10 +37,13 @@ if _PLUGIN_DIR not in sys.path:
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
 from lib.compat_tools import (
+    COMPAT_TOOL_CONFIGS,
     find_closest_installed_tool,
     installed_tool_matches_version,
     list_installed_compatibility_tools,
+    matches_release_tag,
     normalize_proton_ge_tag,
+    normalize_tag_for_tool,
 )
 from lib.plugin_logging import get_log_contents, log_frontend_event, sync_set_log_level
 from lib.plugin_utils import extract_archive_safely
@@ -554,7 +557,9 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
 
     async def list_installed_compatibility_tools(self) -> list[dict[str, Any]]:
         """List every compat tool we can find in Steam's compatibilitytools.d dirs."""
-        return list_installed_compatibility_tools(read_latest_metadata())
+        return list_installed_compatibility_tools(
+            all_latest_metadata={tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
+        )
 
     async def get_proton_ge_releases(
         self, force_refresh: bool = False
@@ -567,7 +572,9 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     ) -> dict[str, Any]:
         """Bundle up everything the frontend needs: releases, installed tools, install status."""
         releases = await self.get_proton_ge_releases(force_refresh)
-        installed = list_installed_compatibility_tools(read_latest_metadata())
+        installed = list_installed_compatibility_tools(
+            all_latest_metadata={tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
+        )
         current_release = releases[0] if releases else None
         current_installed = bool(
             current_release
@@ -595,10 +602,192 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             ),
         }
 
+    async def get_compat_manager_state(
+        self, tool_id: str = "proton-ge", force_refresh: bool = False
+    ) -> dict[str, Any]:
+        """Bundle up releases, installed tools, and install status for any compat tool."""
+        releases = get_releases_sync(force_refresh, tool_id)
+        all_meta = {tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
+        installed = list_installed_compatibility_tools(all_latest_metadata=all_meta)
+        current_release = releases[0] if releases else None
+        config = COMPAT_TOOL_CONFIGS.get(tool_id, COMPAT_TOOL_CONFIGS["proton-ge"])
+
+        def _matches(tool: dict[str, Any], tag: str) -> bool:
+            if tool_id == "proton-ge":
+                return installed_tool_matches_version(tool, tag)
+            return matches_release_tag(tool, tag)
+
+        current_installed = bool(
+            current_release
+            and any(_matches(t, current_release["tag_name"]) for t in installed)
+        )
+        current_latest_slot_installed = bool(
+            current_release
+            and any(
+                t.get("managed_slot") == "latest"
+                and t.get("tool_id") == tool_id
+                and _matches(t, current_release["tag_name"])
+                for t in installed
+            )
+        )
+        decky.logger.debug(
+            f"get_compat_manager_state: tool_id={tool_id}"
+            f" releases={len(releases)} installed={len(installed)}"
+            f" current={current_release.get('tag_name') if current_release else None}"
+            f" current_installed={current_installed}"
+            f" latest_slot_installed={current_latest_slot_installed}"
+        )
+        return {
+            "current_release": current_release,
+            "current_installed": current_installed,
+            "current_latest_slot_installed": current_latest_slot_installed,
+            "installed_tools": installed,
+            "releases": releases,
+            "install_status": get_install_status(
+                self._proton_ge_install_status, self._proton_ge_install_lock
+            ),
+            "tool_id": tool_id,
+            "tool_label": config["label"],
+        }
+
+    async def install_compat_tool(
+        self,
+        tool_id: str = "proton-ge",
+        version: str | None = None,
+        install_as_latest: bool = False,
+        force_reinstall: bool = False,
+    ) -> dict[str, Any]:
+        """Kick off a background install for any compat tool."""
+        config = COMPAT_TOOL_CONFIGS.get(tool_id, COMPAT_TOOL_CONFIGS["proton-ge"])
+        label = config["label"]
+        releases = get_releases_sync(False, tool_id)
+        release: dict[str, Any] | None = None
+
+        if version:
+            normalized = normalize_tag_for_tool(tool_id, version)
+            release = next(
+                (i for i in releases if i.get("tag_name") == normalized), None
+            )
+            if not release:
+                return {
+                    "success": False,
+                    "message": f"Could not find {label} release for {version}.",
+                    "release": None,
+                }
+        else:
+            release = releases[0] if releases else None
+            normalized = release.get("tag_name") if release else None
+
+        if not release or not normalized:
+            return {
+                "success": False,
+                "message": f"No {label} release is available right now.",
+                "release": None,
+            }
+
+        with self._proton_ge_install_lock:
+            thread = self._proton_ge_install_thread
+            if thread and thread.is_alive():
+                existing = dict(self._proton_ge_install_status)
+                return {
+                    "success": False,
+                    "message": existing.get("message")
+                    or f"{existing.get('tag_name') or 'A release'} is already installing.",
+                    "release": release,
+                }
+            self._proton_ge_install_cancel.clear()
+            self._proton_ge_install_status.clear()
+            self._proton_ge_install_status.update({
+                "state": "running",
+                "tag_name": normalized,
+                "message": f"Installing {normalized}...",
+                "stage": "queued",
+                "downloaded_bytes": None,
+                "total_bytes": release.get("asset_size"),
+                "progress_fraction": None,
+                "started_at": int(time.time()),
+                "finished_at": None,
+                "install_as_latest": install_as_latest,
+            })
+
+            status_ref = self._proton_ge_install_status
+            lock_ref = self._proton_ge_install_lock
+            cancel_ref = self._proton_ge_install_cancel
+            process_ref = self._proton_ge_install_process_ref
+
+            def _worker() -> None:
+                try:
+                    result = install_sync(
+                        normalized,
+                        install_as_latest,
+                        force_reinstall,
+                        status_ref,
+                        lock_ref,
+                        cancel_ref,
+                        process_ref,
+                        tool_id,
+                    )
+                    if cancel_ref.is_set() and not result.get("success"):
+                        set_install_status(
+                            status_ref, lock_ref,
+                            state="error", tag_name=normalized,
+                            message=result.get("message") or f"Install cancelled for {normalized}.",
+                            install_as_latest=install_as_latest,
+                            stage="cancelled",
+                            finished_at=int(time.time()),
+                        )
+                        return
+                    set_install_status(
+                        status_ref, lock_ref,
+                        state="success" if result.get("success") else "error",
+                        tag_name=normalized,
+                        message=result.get("message"),
+                        install_as_latest=install_as_latest,
+                        finished_at=int(time.time()),
+                    )
+                except (OSError, subprocess.SubprocessError, Exception) as err:  # pylint: disable=broad-except
+                    decky.logger.error(f"install_compat_tool worker failed: {err}")
+                    set_install_status(
+                        status_ref, lock_ref,
+                        state="error", tag_name=normalized,
+                        message=f"Install failed: {err}",
+                        install_as_latest=install_as_latest,
+                        finished_at=int(time.time()),
+                    )
+
+            self._proton_ge_install_thread = threading.Thread(
+                target=_worker, daemon=True, name=f"pp-install-{tool_id}"
+            )
+            self._proton_ge_install_thread.start()
+
+        decky.logger.info(
+            f"install_compat_tool queued"
+            f" | tool_id={tool_id} version={normalized} install_as_latest={install_as_latest}"
+        )
+        return {"success": True, "message": f"Installing {normalized}...", "release": release}
+
+    async def cancel_compat_tool_install(self, tool_id: str = "proton-ge") -> dict[str, Any]:
+        """Cancel any running compat tool install."""
+        self._proton_ge_install_cancel.set()
+        with self._proton_ge_install_lock:
+            proc = self._proton_ge_install_process_ref[0]
+        if proc and proc.poll() is None:
+            try:
+                proc.terminate()
+            except OSError:
+                pass
+        thread = self._proton_ge_install_thread
+        if thread:
+            thread.join(timeout=5)
+        decky.logger.info(f"cancel_compat_tool_install: tool_id={tool_id}")
+        return {"success": True, "message": "Install cancelled."}
+
     async def check_proton_version_availability(self, version: str) -> dict[str, Any]:
         """See if a specific Proton-GE version is installed, available, or unknown."""
         normalized = normalize_proton_ge_tag(version)
-        installed = list_installed_compatibility_tools(read_latest_metadata())
+        installed = list_installed_compatibility_tools(
+            all_latest_metadata={tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
+        )
 
         if not normalized:
             return {
@@ -1049,7 +1238,9 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
                 "message": "No compatibility tool was specified.",
             }
 
-        installed = list_installed_compatibility_tools(read_latest_metadata())
+        installed = list_installed_compatibility_tools(
+            all_latest_metadata={tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
+        )
         target = next(
             (t for t in installed if t.get("directory_name") == target_name), None
         )
@@ -1079,7 +1270,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
 
         try:
             shutil.rmtree(resolved)
-            clear_latest_metadata(target_name)
+            tool_id_for_uninstall = target.get("tool_id") or "proton-ge"
+            clear_latest_metadata(target_name, tool_id_for_uninstall)
             return {"success": True, "message": f"Removed {target_name}."}
         except OSError as err:
             decky.logger.error(

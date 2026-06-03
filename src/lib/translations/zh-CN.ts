@@ -203,6 +203,7 @@ export const zhCN: TranslationTree = {
     timeLeft: (time) => `剩余 ${time}`,
     archivePickerFailed: '无法打开文件选择器。你仍然可以手动输入路径。',
     info: '信息',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: '请先退出游戏',

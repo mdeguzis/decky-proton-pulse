@@ -203,6 +203,7 @@ export const no: TranslationTree = {
     timeLeft: (time) => `${time} gjenstar`,
     archivePickerFailed: 'Kunne ikke apne filvelgeren. Du kan fortsatt skrive inn stien manuelt.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Avslutt spillet først',

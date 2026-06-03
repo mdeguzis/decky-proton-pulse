@@ -254,6 +254,7 @@ export interface TranslationTree {
     timeLeft: (time: string) => string;
     archivePickerFailed: string;
     info: string;
+    toolSelector: string;
   };
   configure: {
     quitGameFirst: string;
@@ -1004,6 +1005,7 @@ export const en: TranslationTree = {
     timeLeft: (time) => `${time} left`,
     archivePickerFailed: 'Could not open the file picker. You can still enter a path manually.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Please quit the game first',

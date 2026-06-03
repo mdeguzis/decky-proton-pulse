@@ -81,6 +81,13 @@ export interface TieredReports {
 
 // --- Compatibility Tools ---
 
+export type CompatToolId = 'proton-ge' | 'proton-cachyos';
+
+export const COMPAT_TOOL_OPTIONS: { id: CompatToolId; label: string }[] = [
+  { id: 'proton-ge', label: 'Proton-GE' },
+  { id: 'proton-cachyos', label: 'Proton-CachyOS' },
+];
+
 export interface CompatToolRelease {
   tag_name: string;
   name: string;
@@ -98,6 +105,7 @@ export interface InstalledCompatTool {
   internal_name: string;
   path: string;
   source?: 'custom' | 'valve';
+  tool_id?: CompatToolId | null;
   managed_slot?: 'latest' | 'versioned' | null;
   latest_tag?: string | null;
 }
@@ -108,6 +116,8 @@ export interface ProtonGeManagerState {
   current_latest_slot_installed: boolean;
   installed_tools: InstalledCompatTool[];
   releases: CompatToolRelease[];
+  tool_id?: CompatToolId;
+  tool_label?: string;
   install_status: {
     state: 'idle' | 'running' | 'success' | 'error';
     tag_name: string | null;

@@ -203,6 +203,7 @@ export const tr: TranslationTree = {
     timeLeft: (time) => `${time} kaldı`,
     archivePickerFailed: 'Dosya seçici açılamadı. Yolu yine de elle girebilirsiniz.',
     info: 'Bilgi',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Lütfen önce oyundan çıkın',

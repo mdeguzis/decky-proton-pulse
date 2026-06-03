@@ -203,6 +203,7 @@ export const hu: TranslationTree = {
     timeLeft: (time) => `${time} maradt`,
     archivePickerFailed: 'Nem sikerült megnyitni a fájlkiválasztót. Az elérési utat manuálisan is megadhatja.',
     info: 'Info',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Először lépjen ki a játékból',

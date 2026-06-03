@@ -203,6 +203,7 @@ export const fi: TranslationTree = {
     timeLeft: (time) => `${time} jäljellä`,
     archivePickerFailed: 'Tiedostojen valitsija ei avautunut. Voit syöttää polun manuaalisesti.',
     info: 'Tiedot',
+    toolSelector: 'Compatibility Tool',
   },
   configure: {
     quitGameFirst: 'Sulje peli ensin',
