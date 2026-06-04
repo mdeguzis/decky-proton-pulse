@@ -168,6 +168,9 @@ export interface TranslationTree {
     notInstalled: string;
     unavailable: string;
     valveProton: string;
+    compatToolType?: string;
+    compatToolTypeAll?: string;
+    toolVersion?: string;
     checking: string;
     matchesGpu: string;
     differentGpu: string;
@@ -919,6 +922,9 @@ export const en: TranslationTree = {
     notInstalled: 'Not Installed',
     unavailable: 'Unavailable',
     valveProton: 'Valve Proton',
+    compatToolType: 'Compatibility Tool Type',
+    compatToolTypeAll: 'All',
+    toolVersion: 'Tool Version',
     checking: 'Checking...',
     matchesGpu: 'Matches your GPU',
     differentGpu: 'Different GPU',
