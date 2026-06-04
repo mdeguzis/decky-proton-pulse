@@ -117,6 +117,9 @@ export const th: TranslationTree = {
     notInstalled: 'ยังไม่ได้ติดตั้ง',
     unavailable: 'ไม่พร้อมใช้งาน',
     valveProton: 'Valve Proton',
+    compatToolType: 'ประเภทเครื่องมือความเข้ากันได้',
+    compatToolTypeAll: 'ทั้งหมด',
+    toolVersion: 'เวอร์ชันเครื่องมือ',
     checking: 'กำลังตรวจสอบ...',
     matchesGpu: 'ตรงกับ GPU ของคุณ',
     differentGpu: 'GPU ต่างชนิด',
@@ -203,7 +206,7 @@ export const th: TranslationTree = {
     timeLeft: (time) => `เหลือ ${time}`,
     archivePickerFailed: 'ไม่สามารถเปิดตัวเลือกไฟล์ได้ คุณยังคงป้อนเส้นทางด้วยตนเองได้',
     info: 'ข้อมูล',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'เครื่องมือความเข้ากันได้',
   },
   configure: {
     quitGameFirst: 'ออกจากเกมก่อน',

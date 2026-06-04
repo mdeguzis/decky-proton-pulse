@@ -117,6 +117,9 @@ export const el: TranslationTree = {
     notInstalled: 'Μη εγκατεστημένο',
     unavailable: 'Μη διαθέσιμο',
     valveProton: 'Valve Proton',
+    compatToolType: 'Τύπος εργαλείου συμβατότητας',
+    compatToolTypeAll: 'Όλα',
+    toolVersion: 'Έκδοση εργαλείου',
     checking: 'Έλεγχος...',
     matchesGpu: 'Αντιστοιχεί στη GPU σας',
     differentGpu: 'Διαφορετική GPU',
@@ -203,7 +206,7 @@ export const el: TranslationTree = {
     timeLeft: (time) => `${time} απομένει`,
     archivePickerFailed: 'Αποτυχία ανοίγματος επιλογέα αρχείων. Μπορείτε να εισάγετε τη διαδρομή χειροκίνητα.',
     info: 'Πληροφορίες',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Εργαλείο συμβατότητας',
   },
   configure: {
     quitGameFirst: 'Πρώτα κλείστε το παιχνίδι',

@@ -117,6 +117,9 @@ export const ro: TranslationTree = {
     notInstalled: 'Neinstalat',
     unavailable: 'Indisponibil',
     valveProton: 'Valve Proton',
+    compatToolType: 'Tip instrument de compatibilitate',
+    compatToolTypeAll: 'Toate',
+    toolVersion: 'Versiune instrument',
     checking: 'Se verifica...',
     matchesGpu: 'Se potriveste cu GPU-ul tau',
     differentGpu: 'GPU diferit',
@@ -203,7 +206,7 @@ export const ro: TranslationTree = {
     timeLeft: (time) => `${time} ramas`,
     archivePickerFailed: 'Nu s-a putut deschide selectorul de fisiere. Poti introduce totusi calea manual.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Instrument de compatibilitate',
   },
   configure: {
     quitGameFirst: 'Inchide mai intai jocul',

@@ -117,6 +117,9 @@ export const hu: TranslationTree = {
     notInstalled: 'Nincs telepítve',
     unavailable: 'Nem elérhető',
     valveProton: 'Valve Proton',
+    compatToolType: 'Kompatibilitási eszköz típusa',
+    compatToolTypeAll: 'Összes',
+    toolVersion: 'Eszköz verziója',
     checking: 'Ellenőrzés...',
     matchesGpu: 'Megfelel az Ön GPU-jának',
     differentGpu: 'Eltérő GPU',
@@ -203,7 +206,7 @@ export const hu: TranslationTree = {
     timeLeft: (time) => `${time} maradt`,
     archivePickerFailed: 'Nem sikerült megnyitni a fájlkiválasztót. Az elérési utat manuálisan is megadhatja.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Kompatibilitási eszköz',
   },
   configure: {
     quitGameFirst: 'Először lépjen ki a játékból',

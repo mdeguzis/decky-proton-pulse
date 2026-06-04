@@ -117,6 +117,9 @@ export const tr: TranslationTree = {
     notInstalled: 'Yüklenmedi',
     unavailable: 'Kullanılamaz',
     valveProton: 'Valve Proton',
+    compatToolType: 'Uyumluluk aracı türü',
+    compatToolTypeAll: 'Tümü',
+    toolVersion: 'Araç sürümü',
     checking: 'Kontrol ediliyor...',
     matchesGpu: "GPU'nuzla eşleşiyor",
     differentGpu: 'Farklı GPU',
@@ -144,9 +147,6 @@ export const tr: TranslationTree = {
     requirementColumn: 'Gereksinim',
     minOursColumn: 'Min / Bizimki',
     oursLabel: 'Bizimki:',
-    compatToolType: 'Compatibility Tool Type',
-    compatToolTypeAll: 'All',
-    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'Raporu Düzenle',
@@ -206,7 +206,7 @@ export const tr: TranslationTree = {
     timeLeft: (time) => `${time} kaldı`,
     archivePickerFailed: 'Dosya seçici açılamadı. Yolu yine de elle girebilirsiniz.',
     info: 'Bilgi',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Uyumluluk aracı',
   },
   configure: {
     quitGameFirst: 'Lütfen önce oyundan çıkın',

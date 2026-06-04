@@ -117,6 +117,9 @@ export const ko: TranslationTree = {
     notInstalled: '설치되지 않음',
     unavailable: '사용 불가',
     valveProton: 'Valve Proton',
+    compatToolType: '호환성 도구 유형',
+    compatToolTypeAll: '전체',
+    toolVersion: '도구 버전',
     checking: '확인 중...',
     matchesGpu: '내 GPU와 일치',
     differentGpu: '다른 GPU',
@@ -144,9 +147,6 @@ export const ko: TranslationTree = {
     requirementColumn: '요구사항',
     minOursColumn: '최소 / 내 것',
     oursLabel: '내 것:',
-    compatToolType: 'Compatibility Tool Type',
-    compatToolTypeAll: 'All',
-    toolVersion: 'Tool Version',
   },
   editReport: {
     title: '보고서 편집',
@@ -206,7 +206,7 @@ export const ko: TranslationTree = {
     timeLeft: (time) => `${time} 남음`,
     archivePickerFailed: '파일 선택기를 열 수 없습니다. 경로는 직접 입력할 수 있습니다.',
     info: '정보',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: '호환성 도구',
   },
   configure: {
     quitGameFirst: '먼저 게임을 종료해 주세요',

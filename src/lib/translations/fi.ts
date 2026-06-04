@@ -117,6 +117,9 @@ export const fi: TranslationTree = {
     notInstalled: 'Ei asennettu',
     unavailable: 'Ei saatavilla',
     valveProton: 'Valve Proton',
+    compatToolType: 'Yhteensopivuustyökalun tyyppi',
+    compatToolTypeAll: 'Kaikki',
+    toolVersion: 'Työkalun versio',
     checking: 'Tarkistetaan...',
     matchesGpu: 'Vastaa GPU:tasi',
     differentGpu: 'Eri GPU',
@@ -203,7 +206,7 @@ export const fi: TranslationTree = {
     timeLeft: (time) => `${time} jäljellä`,
     archivePickerFailed: 'Tiedostojen valitsija ei avautunut. Voit syöttää polun manuaalisesti.',
     info: 'Tiedot',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Yhteensopivuustyökalu',
   },
   configure: {
     quitGameFirst: 'Sulje peli ensin',

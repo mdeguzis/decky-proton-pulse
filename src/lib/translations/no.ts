@@ -117,6 +117,9 @@ export const no: TranslationTree = {
     notInstalled: 'Ikke installert',
     unavailable: 'Ikke tilgjengelig',
     valveProton: 'Valve Proton',
+    compatToolType: 'Type kompatibilitetsverktøy',
+    compatToolTypeAll: 'Alle',
+    toolVersion: 'Verktøyversjon',
     checking: 'Kontrollerer...',
     matchesGpu: 'Samsvarer med GPU-en din',
     differentGpu: 'Annen GPU',
@@ -203,7 +206,7 @@ export const no: TranslationTree = {
     timeLeft: (time) => `${time} gjenstar`,
     archivePickerFailed: 'Kunne ikke apne filvelgeren. Du kan fortsatt skrive inn stien manuelt.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Kompatibilitetsverktøy',
   },
   configure: {
     quitGameFirst: 'Avslutt spillet først',

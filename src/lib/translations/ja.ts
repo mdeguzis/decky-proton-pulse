@@ -117,6 +117,9 @@ export const ja: TranslationTree = {
     notInstalled: '未インストール',
     unavailable: '利用不可',
     valveProton: 'Valve Proton',
+    compatToolType: '互換性ツールの種類',
+    compatToolTypeAll: 'すべて',
+    toolVersion: 'ツールのバージョン',
     checking: '確認中...',
     matchesGpu: 'あなたの GPU に一致',
     differentGpu: '異なる GPU',
@@ -144,9 +147,6 @@ export const ja: TranslationTree = {
     requirementColumn: '要件',
     minOursColumn: '最小 / 自分',
     oursLabel: '自分:',
-    compatToolType: 'Compatibility Tool Type',
-    compatToolTypeAll: 'All',
-    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'レポートを編集',
@@ -206,7 +206,7 @@ export const ja: TranslationTree = {
     timeLeft: (time) => `残り ${time}`,
     archivePickerFailed: 'ファイルピッカーを開けませんでした。パスは手動で入力できます。',
     info: '情報',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: '互換性ツール',
   },
   configure: {
     quitGameFirst: '先にゲームを終了してください',

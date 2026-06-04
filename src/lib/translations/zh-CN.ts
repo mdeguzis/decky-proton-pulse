@@ -117,6 +117,9 @@ export const zhCN: TranslationTree = {
     notInstalled: '未安装',
     unavailable: '不可用',
     valveProton: 'Valve Proton',
+    compatToolType: '兼容性工具类型',
+    compatToolTypeAll: '全部',
+    toolVersion: '工具版本',
     checking: '检查中...',
     matchesGpu: '与您的 GPU 匹配',
     differentGpu: '不同的 GPU',
@@ -144,9 +147,6 @@ export const zhCN: TranslationTree = {
     requirementColumn: '要求',
     minOursColumn: '最低 / 我们的',
     oursLabel: '我们的:',
-    compatToolType: 'Compatibility Tool Type',
-    compatToolTypeAll: 'All',
-    toolVersion: 'Tool Version',
   },
   editReport: {
     title: '编辑报告',
@@ -206,7 +206,7 @@ export const zhCN: TranslationTree = {
     timeLeft: (time) => `剩余 ${time}`,
     archivePickerFailed: '无法打开文件选择器。你仍然可以手动输入路径。',
     info: '信息',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: '兼容性工具',
   },
   configure: {
     quitGameFirst: '请先退出游戏',

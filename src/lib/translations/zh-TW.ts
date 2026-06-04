@@ -117,6 +117,9 @@ export const zhTW: TranslationTree = {
     notInstalled: '未安裝',
     unavailable: '不可用',
     valveProton: 'Valve Proton',
+    compatToolType: '相容性工具類型',
+    compatToolTypeAll: '全部',
+    toolVersion: '工具版本',
     checking: '檢查中...',
     matchesGpu: '符合您的 GPU',
     differentGpu: '不同的 GPU',
@@ -203,7 +206,7 @@ export const zhTW: TranslationTree = {
     timeLeft: (time) => `剩餘 ${time}`,
     archivePickerFailed: '無法開啟檔案選擇器，您仍可手動輸入路徑。',
     info: '資訊',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: '相容性工具',
   },
   configure: {
     quitGameFirst: '請先退出遊戲',

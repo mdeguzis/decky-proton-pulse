@@ -147,6 +147,9 @@ export const ru: TranslationTree = {
     notInstalled: 'Не установлено',
     unavailable: 'Недоступно',
     valveProton: 'Valve Proton',
+    compatToolType: 'Тип инструмента совместимости',
+    compatToolTypeAll: 'Все',
+    toolVersion: 'Версия инструмента',
     checking: 'Проверка...',
     matchesGpu: 'Соответствует вашему GPU',
     differentGpu: 'Другой GPU',
@@ -174,9 +177,6 @@ export const ru: TranslationTree = {
     requirementColumn: 'Требование',
     minOursColumn: 'Мин / Наше',
     oursLabel: 'Наше:',
-    compatToolType: 'Compatibility Tool Type',
-    compatToolTypeAll: 'All',
-    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'Изменить отчёт',
@@ -236,7 +236,7 @@ export const ru: TranslationTree = {
     timeLeft: (time) => `осталось ${time}`,
     archivePickerFailed: 'Не удалось открыть выбор файла. Путь всё равно можно ввести вручную.',
     info: 'Инфо',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Инструмент совместимости',
   },
   configure: {
     quitGameFirst: 'Сначала выйдите из игры',

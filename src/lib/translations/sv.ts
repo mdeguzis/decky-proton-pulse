@@ -117,6 +117,9 @@ export const sv: TranslationTree = {
     notInstalled: 'Inte installerad',
     unavailable: 'Inte tillgänglig',
     valveProton: 'Valve Proton',
+    compatToolType: 'Typ av kompatibilitetsverktyg',
+    compatToolTypeAll: 'Alla',
+    toolVersion: 'Verktygsversion',
     checking: 'Kontrollerar...',
     matchesGpu: 'Matchar din GPU',
     differentGpu: 'Annan GPU',
@@ -203,7 +206,7 @@ export const sv: TranslationTree = {
     timeLeft: (time) => `${time} kvar`,
     archivePickerFailed: 'Kunde inte öppna filväljaren. Du kan fortfarande ange sökvägen manuellt.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Kompatibilitetsverktyg',
   },
   configure: {
     quitGameFirst: 'Avsluta spelet först',

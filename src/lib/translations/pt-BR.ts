@@ -117,6 +117,9 @@ export const ptBR: TranslationTree = {
     notInstalled: 'Não Instalado',
     unavailable: 'Indisponível',
     valveProton: 'Valve Proton',
+    compatToolType: 'Tipo de ferramenta de compatibilidade',
+    compatToolTypeAll: 'Todos',
+    toolVersion: 'Versão da ferramenta',
     checking: 'Verificando...',
     matchesGpu: 'Corresponde à sua GPU',
     differentGpu: 'GPU Diferente',
@@ -144,9 +147,6 @@ export const ptBR: TranslationTree = {
     requirementColumn: 'Requisito',
     minOursColumn: 'Mín / Nosso',
     oursLabel: 'Nosso:',
-    compatToolType: 'Compatibility Tool Type',
-    compatToolTypeAll: 'All',
-    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'Editar Relatório',
@@ -206,7 +206,7 @@ export const ptBR: TranslationTree = {
     timeLeft: (time) => `${time} restantes`,
     archivePickerFailed: 'Não foi possível abrir o seletor de arquivos. Você ainda pode digitar um caminho manualmente.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Ferramenta de compatibilidade',
   },
   configure: {
     quitGameFirst: 'Por favor, saia do jogo primeiro',

@@ -117,6 +117,9 @@ export const cs: TranslationTree = {
     notInstalled: 'Nenainstalováno',
     unavailable: 'Nedostupné',
     valveProton: 'Valve Proton',
+    compatToolType: 'Typ nástroje kompatibility',
+    compatToolTypeAll: 'Vše',
+    toolVersion: 'Verze nástroje',
     checking: 'Kontroluji...',
     matchesGpu: 'Odpovídá vašemu GPU',
     differentGpu: 'Jiné GPU',
@@ -203,7 +206,7 @@ export const cs: TranslationTree = {
     timeLeft: (time) => `${time} zbývá`,
     archivePickerFailed: 'Nepodařilo se otevřít výběr souborů. Cestu můžete stále zadat ručně.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Nástroj kompatibility',
   },
   configure: {
     quitGameFirst: 'Nejprve ukončete hru',

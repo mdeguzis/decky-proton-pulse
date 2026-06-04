@@ -117,6 +117,9 @@ export const vi: TranslationTree = {
     notInstalled: 'Chưa cài đặt',
     unavailable: 'Không khả dụng',
     valveProton: 'Valve Proton',
+    compatToolType: 'Loại công cụ tương thích',
+    compatToolTypeAll: 'Tất cả',
+    toolVersion: 'Phiên bản công cụ',
     checking: 'Đang kiểm tra...',
     matchesGpu: 'Khớp với GPU của bạn',
     differentGpu: 'GPU khác',
@@ -203,7 +206,7 @@ export const vi: TranslationTree = {
     timeLeft: (time) => `Còn ${time}`,
     archivePickerFailed: 'Không thể mở bộ chọn tệp. Bạn vẫn có thể nhập đường dẫn thủ công.',
     info: 'Thông tin',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Công cụ tương thích',
   },
   configure: {
     quitGameFirst: 'Thoát trò chơi trước',

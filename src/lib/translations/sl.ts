@@ -117,6 +117,9 @@ export const sl: TranslationTree = {
     notInstalled: 'Ni nameščeno',
     unavailable: 'Ni na voljo',
     valveProton: 'Valve Proton',
+    compatToolType: 'Vrsta orodja za združljivost',
+    compatToolTypeAll: 'Vse',
+    toolVersion: 'Različica orodja',
     checking: 'Preverjam...',
     matchesGpu: 'Se ujema z vašim GPU',
     differentGpu: 'Drug GPU',
@@ -203,7 +206,7 @@ export const sl: TranslationTree = {
     timeLeft: (time) => `${time} preostalo`,
     archivePickerFailed: 'Izbirnika datotek ni bilo mogoce odpreti. Pot lahko še vedno vnesete rocno.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Orodje za združljivost',
   },
   configure: {
     quitGameFirst: 'Najprej zaprite igro',

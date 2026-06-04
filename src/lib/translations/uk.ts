@@ -117,6 +117,9 @@ export const uk: TranslationTree = {
     notInstalled: 'Не встановлено',
     unavailable: 'Недоступно',
     valveProton: 'Valve Proton',
+    compatToolType: 'Тип інструмента сумісності',
+    compatToolTypeAll: 'Усі',
+    toolVersion: 'Версія інструмента',
     checking: 'Перевірка...',
     matchesGpu: 'Відповідає вашому GPU',
     differentGpu: 'Інший GPU',
@@ -203,7 +206,7 @@ export const uk: TranslationTree = {
     timeLeft: (time) => `Залишилось: ${time}`,
     archivePickerFailed: 'Не вдалося відкрити вибір файлів. Ви можете вручну ввести шлях.',
     info: 'Інфо',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Інструмент сумісності',
   },
   configure: {
     quitGameFirst: 'Спочатку закрийте гру',

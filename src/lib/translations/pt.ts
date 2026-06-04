@@ -117,6 +117,9 @@ export const pt: TranslationTree = {
     notInstalled: 'Nao instalado',
     unavailable: 'Indisponivel',
     valveProton: 'Valve Proton',
+    compatToolType: 'Tipo de ferramenta de compatibilidade',
+    compatToolTypeAll: 'Todos',
+    toolVersion: 'Versão da ferramenta',
     checking: 'A verificar...',
     matchesGpu: 'Corresponde a sua GPU',
     differentGpu: 'GPU diferente',
@@ -203,7 +206,7 @@ export const pt: TranslationTree = {
     timeLeft: (time) => `${time} restante`,
     archivePickerFailed: 'Nao foi possivel abrir o seletor de ficheiros. Ainda pode introduzir o caminho manualmente.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Ferramenta de compatibilidade',
   },
   configure: {
     quitGameFirst: 'Feche o jogo primeiro',

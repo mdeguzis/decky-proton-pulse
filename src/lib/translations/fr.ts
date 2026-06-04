@@ -117,6 +117,9 @@ export const fr: TranslationTree = {
     notInstalled: 'Non installé',
     unavailable: 'Indisponible',
     valveProton: 'Valve Proton',
+    compatToolType: 'Type d\'outil de compatibilité',
+    compatToolTypeAll: 'Tous',
+    toolVersion: 'Version de l\'outil',
     checking: 'Vérification...',
     matchesGpu: 'Correspond à votre GPU',
     differentGpu: 'GPU différent',
@@ -144,9 +147,6 @@ export const fr: TranslationTree = {
     requirementColumn: 'Exigence',
     minOursColumn: 'Min / Notre',
     oursLabel: 'Notre :',
-    compatToolType: 'Compatibility Tool Type',
-    compatToolTypeAll: 'All',
-    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'Modifier le rapport',
@@ -206,7 +206,7 @@ export const fr: TranslationTree = {
     timeLeft: (time) => `${time} restant`,
     archivePickerFailed: 'Impossible d’ouvrir le sélecteur de fichiers. Vous pouvez toujours saisir un chemin manuellement.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Outil de compatibilité',
   },
   configure: {
     quitGameFirst: 'Veuillez quitter le jeu en premier',

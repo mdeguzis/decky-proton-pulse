@@ -117,6 +117,9 @@ export const nl: TranslationTree = {
     notInstalled: 'Niet geïnstalleerd',
     unavailable: 'Niet beschikbaar',
     valveProton: 'Valve Proton',
+    compatToolType: 'Type compatibiliteitstool',
+    compatToolTypeAll: 'Alle',
+    toolVersion: 'Toolversie',
     checking: 'Controleren...',
     matchesGpu: 'Komt overeen met jouw GPU',
     differentGpu: 'Andere GPU',
@@ -203,7 +206,7 @@ export const nl: TranslationTree = {
     timeLeft: (time) => `Nog ${time}`,
     archivePickerFailed: 'De bestandskiezer kon niet worden geopend. Je kunt het pad nog steeds handmatig invoeren.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Compatibiliteitstool',
   },
   configure: {
     quitGameFirst: 'Sluit het spel eerst af',

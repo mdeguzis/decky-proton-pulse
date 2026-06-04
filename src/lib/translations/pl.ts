@@ -117,6 +117,9 @@ export const pl: TranslationTree = {
     notInstalled: 'Niezainstalowano',
     unavailable: 'Niedostępne',
     valveProton: 'Valve Proton',
+    compatToolType: 'Typ narzędzia zgodności',
+    compatToolTypeAll: 'Wszystkie',
+    toolVersion: 'Wersja narzędzia',
     checking: 'Sprawdzanie...',
     matchesGpu: 'Pasuje do Twojego GPU',
     differentGpu: 'Inne GPU',
@@ -203,7 +206,7 @@ export const pl: TranslationTree = {
     timeLeft: (time) => `Pozostało: ${time}`,
     archivePickerFailed: 'Nie można otworzyć selektora plików. Możesz nadal ręcznie wpisać ścieżkę.',
     info: 'Info',
-    toolSelector: 'Compatibility Tool',
+    toolSelector: 'Narzędzie zgodności',
   },
   configure: {
     quitGameFirst: 'Najpierw zakończ grę',
