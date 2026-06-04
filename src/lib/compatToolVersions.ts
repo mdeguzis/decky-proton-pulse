@@ -1,5 +1,5 @@
 import { formatProtonLabel } from './reportFormatters';
-import type { InstalledCompatTool } from '../types';
+import type { CompatToolId, InstalledCompatTool, ProtonGeManagerState } from '../types';
 
 export interface VersionOption {
   value: string;
@@ -65,4 +65,30 @@ export function buildVersionOptions(
   const combined = [...latestOptions, ...extraInstalled, ...releaseOptions];
   combined.sort((a, b) => (a.installed !== b.installed ? (a.installed ? -1 : 1) : 0));
   return combined;
+}
+
+export type CompatToolType = 'all' | CompatToolId;
+
+type ManagerStateLike = Pick<ProtonGeManagerState, 'releases' | 'installed_tools'>;
+
+export function versionOptionsForType(
+  type: CompatToolType,
+  managerState: ManagerStateLike,
+  cachyState: ManagerStateLike | null,
+): VersionOption[] {
+  if (type === 'all') {
+    return buildVersionOptions(managerState.releases, managerState.installed_tools);
+  }
+  if (type === 'proton-ge') {
+    return buildVersionOptions(
+      managerState.releases,
+      managerState.installed_tools.filter((t) => t.tool_id === 'proton-ge'),
+    );
+  }
+  // proton-cachyos: needs the lazily-fetched cachy state
+  if (!cachyState) return [];
+  return buildVersionOptions(
+    cachyState.releases,
+    cachyState.installed_tools.filter((t) => t.tool_id === 'proton-cachyos'),
+  );
 }

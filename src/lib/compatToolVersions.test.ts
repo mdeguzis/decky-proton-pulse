@@ -59,3 +59,44 @@ describe('buildVersionOptions', () => {
     expect(opts[opts.length - 1].installed).toBe(false);
   });
 });
+
+import { versionOptionsForType } from './compatToolVersions';
+
+const geManagerState = {
+  releases: [{ tag_name: 'GE-Proton10-1' }],
+  installed_tools: [
+    tool({ directory_name: 'Proton-GE-Latest', display_name: 'Proton-GE-Latest', internal_name: 'Proton-GE-Latest', tool_id: 'proton-ge', managed_slot: 'latest' }),
+    tool({ directory_name: 'Proton 9.0 (Beta)', display_name: 'Proton 9.0 (Beta)', internal_name: 'Proton 9.0 (Beta)', tool_id: null, managed_slot: null }),
+  ],
+} as any;
+
+const cachyManagerState = {
+  releases: [{ tag_name: 'proton-cachyos-10.0' }],
+  installed_tools: [
+    tool({ directory_name: 'Proton-CachyOS-Latest', display_name: 'Proton-CachyOS-Latest', internal_name: 'proton-cachyos', tool_id: 'proton-cachyos', managed_slot: 'latest' }),
+  ],
+} as any;
+
+describe('versionOptionsForType', () => {
+  it('all: includes valve and managed families together', () => {
+    const values = versionOptionsForType('all', geManagerState, null).map((o) => o.value);
+    expect(values).toContain('Proton-GE-Latest');
+    expect(values).toContain('Proton 9.0 (Beta)');
+  });
+
+  it('proton-ge: excludes valve/other tools', () => {
+    const values = versionOptionsForType('proton-ge', geManagerState, null).map((o) => o.value);
+    expect(values).toContain('Proton-GE-Latest');
+    expect(values).not.toContain('Proton 9.0 (Beta)');
+  });
+
+  it('proton-cachyos: returns empty until cachy state is loaded', () => {
+    expect(versionOptionsForType('proton-cachyos', geManagerState, null)).toEqual([]);
+  });
+
+  it('proton-cachyos: lists cachy installed + cachy releases when loaded', () => {
+    const values = versionOptionsForType('proton-cachyos', geManagerState, cachyManagerState).map((o) => o.value);
+    expect(values).toContain('Proton-CachyOS-Latest');
+    expect(values).toContain('proton-cachyos-10.0');
+  });
+});
