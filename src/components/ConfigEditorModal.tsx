@@ -31,9 +31,9 @@ import { t } from '../lib/i18n';
 import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } from '../lib/playtime';
 import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
-import type { GpuVendor, SystemInfo } from '../types';
-import { VersionOptionLabel } from './EditReportModal';
-import { buildVersionOptions, type VersionOption } from '../lib/compatToolVersions';
+import type { GpuVendor, ProtonGeManagerState, SystemInfo } from '../types';
+import type { VersionOption } from '../lib/compatToolVersions';
+import { CompatToolVersionPicker } from './CompatToolVersionPicker';
 import { resolveLaunchOptionsWithPrompt } from './LaunchOptionConflictModal';
 import { callable } from '@decky/api';
 
@@ -692,7 +692,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   const [enabledCustomToggleIds, setEnabledCustomToggleIds] = useState<Set<string>>(initialParsedState.enabledCustomToggleIds);
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [loadingSystemInfo, setLoadingSystemInfo] = useState(true);
-  const [versionOptions, setVersionOptions] = useState<VersionOption[]>([]);
+  const [managerState, setManagerState] = useState<ProtonGeManagerState | null>(null);
   const [loadingVersions, setLoadingVersions] = useState(true);
   const [installing, setInstalling] = useState<string | null>(null);
   const screenshotModeOpenedRef = useRef(false);
@@ -752,23 +752,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   useEffect(() => {
     getProtonGeManagerState(false)
       .then((state) => {
-        const opts = buildVersionOptions(state.releases, state.installed_tools);
-
-        // if editing an existing config with a version, make sure it's in the list
-        if (protonVersion) {
-          const norm = protonVersion.toLowerCase();
-          const found = opts.some((o) => o.value.toLowerCase() === norm);
-          if (!found) {
-            opts.unshift({
-              value: protonVersion,
-              displayName: protonVersion,
-              installed: false,
-              managed: /ge/i.test(protonVersion),
-            });
-          }
-        }
-
-        setVersionOptions(opts);
+        setManagerState(state);
         setLoadingVersions(false);
       })
       .catch((err) => {
@@ -779,53 +763,47 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleVersionChange = (nextVersion: string) => {
+  const handleVersionChange = (nextVersion: string, option?: VersionOption) => {
     setProtonVersion(nextVersion);
-    const opt = versionOptions.find((o) => o.value === nextVersion);
-    if (opt && !opt.installed && opt.managed) {
-      setInstalling(nextVersion);
-      void logFrontendEvent('INFO', 'Auto-installing Proton version from config editor', {
+    const needsInstall = !!option && option.managed && !option.installed;
+    // installProtonGe only installs Proton-GE builds. For a not-installed
+    // CachyOS selection we set the version and log; family-aware install is a
+    // follow-up.
+    const looksLikeGe = /ge-?proton|proton-ge/i.test(nextVersion);
+    if (!needsInstall) return;
+    if (!looksLikeGe) {
+      void logFrontendEvent('INFO', 'Selected not-installed non-GE compat version; skipping auto-install', {
         version: nextVersion,
+        source: 'ConfigEditorModal.handleVersionChange',
       });
-      installProtonGe(nextVersion)
-        .then((result) => {
-          if (result.success) {
-            toaster.toast({
-              title: 'Proton Pulse',
-              body: result.already_installed
-                ? t().toast.alreadyInstalled(nextVersion)
-                : t().toast.installed(nextVersion),
-            });
-            setVersionOptions((prev) =>
-              prev.map((o) => (o.value === nextVersion ? { ...o, installed: true } : o)),
-            );
-          } else {
-            toaster.toast({
-              title: 'Proton Pulse',
-              body: t().toast.installFailed(result.message),
-            });
-          }
-        })
-        .catch((err) => {
+      return;
+    }
+    setInstalling(nextVersion);
+    void logFrontendEvent('INFO', 'Auto-installing Proton version from config editor', { version: nextVersion });
+    installProtonGe(nextVersion)
+      .then((result) => {
+        if (result.success) {
           toaster.toast({
             title: 'Proton Pulse',
-            body: t().toast.installFailed(err instanceof Error ? err.message : String(err)),
+            body: result.already_installed
+              ? t().toast.alreadyInstalled(nextVersion)
+              : t().toast.installed(nextVersion),
           });
-        })
-        .finally(() => setInstalling(null));
-    }
+          // refetch so the version list reflects the new install state
+          return getProtonGeManagerState(true).then(setManagerState);
+        }
+        toaster.toast({ title: 'Proton Pulse', body: t().toast.installFailed(result.message) });
+        return undefined;
+      })
+      .catch((err) => {
+        toaster.toast({
+          title: 'Proton Pulse',
+          body: t().toast.installFailed(err instanceof Error ? err.message : String(err)),
+        });
+      })
+      .finally(() => setInstalling(null));
   };
 
-  const versionDropdownOptions = [
-    {
-      data: '',
-      label: t().configManager.protonVersionNone,
-    },
-    ...versionOptions.map((opt) => ({
-      data: opt.value,
-      label: <VersionOptionLabel name={opt.displayName} installed={opt.installed} managed={opt.managed} />,
-    })),
-  ];
 
   const allVars = useMemo(() => {
     const merged = { ...enabledVars };
@@ -1256,18 +1234,17 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               selectedOption={gpuFilter}
               onChange={(opt) => setGpuFilter(opt.data as GpuFilter)}
             />
-            {loadingVersions ? (
+            {loadingVersions || !managerState ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
                 <SteamSpinner style={{ width: 16, height: 16 }} />
                 <span style={{ fontSize: 11, color: '#7a9bb5' }}>{t().common.loading}</span>
               </div>
             ) : (
-              <DropdownItem
-                label={installing ? t().detail.installing(installing) : t().detail.protonVersion}
-                rgOptions={versionDropdownOptions}
-                selectedOption={protonVersion || ''}
-                onChange={(opt) => handleVersionChange(opt.data)}
-                disabled={!!installing}
+              <CompatToolVersionPicker
+                value={protonVersion || ''}
+                onChange={handleVersionChange}
+                managerState={managerState}
+                installingVersion={installing}
               />
             )}
           </div>
