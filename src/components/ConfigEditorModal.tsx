@@ -32,7 +32,8 @@ import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } fr
 import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
 import type { GpuVendor, SystemInfo } from '../types';
-import { buildVersionOptions, VersionOptionLabel, type VersionOption } from './EditReportModal';
+import { VersionOptionLabel } from './EditReportModal';
+import { buildVersionOptions, type VersionOption } from '../lib/compatToolVersions';
 import { resolveLaunchOptionsWithPrompt } from './LaunchOptionConflictModal';
 import { callable } from '@decky/api';
 

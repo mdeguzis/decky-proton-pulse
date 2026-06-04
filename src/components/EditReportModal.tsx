@@ -16,51 +16,6 @@ import { t } from '../lib/i18n';
 import { deriveRating, FAULT_KEYS, inferResponsesFromRating, type ReportResponses, type YesNo } from '../lib/scoring';
 import { RATING_COLORS } from '../lib/reportFormatters';
 
-export interface VersionOption {
-  value: string;
-  displayName: string;
-  installed: boolean;
-  managed: boolean;
-}
-
-import { formatProtonLabel } from '../lib/reportFormatters';
-
-export function buildVersionOptions(
-  releases: { tag_name: string }[],
-  installedTools: { directory_name: string; display_name: string; internal_name: string }[],
-): VersionOption[] {
-  const installedTagSet = new Set<string>();
-  for (const tool of installedTools) {
-    if (tool.internal_name) installedTagSet.add(tool.internal_name.toLowerCase());
-    if (tool.directory_name) installedTagSet.add(tool.directory_name.toLowerCase());
-  }
-  const isInstalled = (tag: string) => installedTagSet.has(tag.toLowerCase());
-  const releaseOptions: VersionOption[] = releases.map((r) => ({
-    value: r.tag_name, displayName: formatProtonLabel(r.tag_name),
-    installed: isInstalled(r.tag_name), managed: true,
-  }));
-  const geLatest = installedTools.find(
-    (t) => t.directory_name === 'Proton-GE-Latest' || (t as any).managed_slot === 'latest',
-  );
-  const geLatestOption: VersionOption[] = geLatest
-    ? [{ value: 'Proton-GE-Latest', displayName: 'Proton-GE-Latest', installed: true, managed: true }]
-    : [];
-  const releaseTagSet = new Set(releases.map((r) => r.tag_name.toLowerCase()));
-  const extraInstalled: VersionOption[] = installedTools
-    .filter((t) =>
-      !releaseTagSet.has((t.internal_name || t.directory_name).toLowerCase())
-      && t.directory_name !== 'Proton-GE-Latest'
-      && (t as any).managed_slot !== 'latest',
-    )
-    .map((t) => ({
-      value: t.internal_name || t.directory_name, displayName: t.display_name || t.directory_name,
-      installed: true, managed: false,
-    }));
-  const combined = [...geLatestOption, ...extraInstalled, ...releaseOptions];
-  combined.sort((a, b) => (a.installed !== b.installed ? (a.installed ? -1 : 1) : 0));
-  return combined;
-}
-
 export function VersionOptionLabel({ name, installed, managed }: { name: string; installed: boolean; managed: boolean }) {
   const statusLabel = installed ? t().detail.installed : managed ? t().detail.notInstalled : t().detail.valveProton;
   const statusColor = installed ? '#4caf50' : managed ? '#f59e0b' : '#4a6a8a';
