@@ -2,6 +2,12 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.8.0
+
+- Add Proton-CachyOS to the compatibility tool selector
+- Show the build version in developer update labels (v1.8.0-<commit>) on Settings > Updates
+- Parse the commit sha from both the old and new developer labels so the up-to-date check keeps working
+
 ## v1.7.5
 
 - Fix "vDeveloper" label on Settings > Updates page across all locales

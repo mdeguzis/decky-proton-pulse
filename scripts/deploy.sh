@@ -524,7 +524,10 @@ if [[ "$GH_RELEASE" == "dev" ]]; then
   banner "GitHub Dev Release (rolling 'developer' tag)"
   COMMIT_SHA=$(git rev-parse --short HEAD)
   DEV_TAG="developer"
-  DEV_TITLE="Developer build (${COMMIT_SHA})"
+  # Embed the version the build was cut from so the dev label reads
+  # "Developer build (v1.7.5-3d7e659)". The sha stays the last hex run before
+  # the close paren so extractDevBuildSha() in the frontend still parses it.
+  DEV_TITLE="Developer build (v${VERSION}-${COMMIT_SHA})"
 
   # Seed the notes with a brief auto-summary, then let the user edit them
   # in $EDITOR. The 1-line commit body gives a fast jump-off when the dev

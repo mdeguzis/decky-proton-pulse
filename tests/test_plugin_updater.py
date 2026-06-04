@@ -128,7 +128,7 @@ class TestCheckForUpdate:
         # with the build sha in the title and the dev zip attached
         mock_curl.return_value = {
             "tag_name": "developer",
-            "name": "Developer build (abc1234)",
+            "name": "Developer build (v1.6.9-abc1234)",
             "html_url": "https://github.com/mdeguzis/decky-proton-pulse/releases/tag/developer",
             "assets": [{
                 "name": "decky-proton-pulse-dev.zip",

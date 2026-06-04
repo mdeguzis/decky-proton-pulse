@@ -27,7 +27,7 @@ import { fetchPluginLinkStatus, getInstallationId, startPluginLink, unlinkPlugin
 import { buildPluginLinkProfileUrl } from '../../lib/protonPulseLinkUrl';
 import { type UpdateCheckResult, type UpdateStatusResult, triggerReload } from './aboutTabUpdate';
 import { showReleaseNotesModal } from '../ReleaseNotesModal';
-import { formatVersion } from '../../lib/formatVersion';
+import { formatVersion, extractDevBuildSha } from '../../lib/formatVersion';
 import { refreshLibraryGridBadges } from '../../patches/libraryGridBadges';
 
 const getPluginVersion = callable<[], string>('get_plugin_version');
@@ -855,14 +855,14 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
   // For the developer channel the backend always reports has_update=true
   // (it cant cheaply read the local .build-commit), so we double-check
   // here: if the sha embedded in the dev version label matches our local
-  // buildCommit, suppress the "Update available" banner + button. Example
-  // label: "Developer build (9860f30)" -> sha "9860f30"
+  // buildCommit, suppress the "Update available" banner + button. The label
+  // can be "Developer build (9860f30)" or "Developer build (v1.7.5-9860f30)";
+  // extractDevBuildSha handles both.
   const sameDevBuildAsLocal = (() => {
     if (!checkResult?.success) return false;
     if (updateChannel !== 'developer') return false;
-    const m = /\(([0-9a-f]{6,40})(?:\+uncommitted)?\)/i.exec(checkResult.latest_version ?? '');
-    if (!m) return false;
-    const remoteSha = m[1].toLowerCase();
+    const remoteSha = extractDevBuildSha(checkResult.latest_version);
+    if (!remoteSha) return false;
     // buildCommit on disk can be "abc1234" or "abc1234+uncommitted"; compare
     // only the leading hex section
     const localSha = (buildCommit || '').split('+')[0].toLowerCase();
