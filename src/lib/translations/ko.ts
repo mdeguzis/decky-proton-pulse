@@ -144,6 +144,9 @@ export const ko: TranslationTree = {
     requirementColumn: '요구사항',
     minOursColumn: '최소 / 내 것',
     oursLabel: '내 것:',
+    compatToolType: 'Compatibility Tool Type',
+    compatToolTypeAll: 'All',
+    toolVersion: 'Tool Version',
   },
   editReport: {
     title: '보고서 편집',

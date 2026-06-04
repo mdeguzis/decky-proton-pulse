@@ -144,6 +144,9 @@ export const tr: TranslationTree = {
     requirementColumn: 'Gereksinim',
     minOursColumn: 'Min / Bizimki',
     oursLabel: 'Bizimki:',
+    compatToolType: 'Compatibility Tool Type',
+    compatToolTypeAll: 'All',
+    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'Raporu Düzenle',

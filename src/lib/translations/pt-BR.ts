@@ -144,6 +144,9 @@ export const ptBR: TranslationTree = {
     requirementColumn: 'Requisito',
     minOursColumn: 'Mín / Nosso',
     oursLabel: 'Nosso:',
+    compatToolType: 'Compatibility Tool Type',
+    compatToolTypeAll: 'All',
+    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'Editar Relatório',

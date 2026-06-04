@@ -174,6 +174,9 @@ export const ru: TranslationTree = {
     requirementColumn: 'Требование',
     minOursColumn: 'Мин / Наше',
     oursLabel: 'Наше:',
+    compatToolType: 'Compatibility Tool Type',
+    compatToolTypeAll: 'All',
+    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'Изменить отчёт',

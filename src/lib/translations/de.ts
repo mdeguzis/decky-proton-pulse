@@ -144,6 +144,9 @@ export const de: TranslationTree = {
     requirementColumn: 'Anforderung',
     minOursColumn: 'Min / Unsere',
     oursLabel: 'Unsere:',
+    compatToolType: 'Compatibility Tool Type',
+    compatToolTypeAll: 'All',
+    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'Bericht bearbeiten',

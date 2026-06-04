@@ -144,6 +144,9 @@ export const zhCN: TranslationTree = {
     requirementColumn: '要求',
     minOursColumn: '最低 / 我们的',
     oursLabel: '我们的:',
+    compatToolType: 'Compatibility Tool Type',
+    compatToolTypeAll: 'All',
+    toolVersion: 'Tool Version',
   },
   editReport: {
     title: '编辑报告',

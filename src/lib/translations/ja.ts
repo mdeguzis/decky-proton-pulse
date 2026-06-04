@@ -144,6 +144,9 @@ export const ja: TranslationTree = {
     requirementColumn: '要件',
     minOursColumn: '最小 / 自分',
     oursLabel: '自分:',
+    compatToolType: 'Compatibility Tool Type',
+    compatToolTypeAll: 'All',
+    toolVersion: 'Tool Version',
   },
   editReport: {
     title: 'レポートを編集',
