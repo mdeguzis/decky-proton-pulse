@@ -1,12 +1,12 @@
 // Public entry point for per-game aggregate stats inside the plugin.
 //
-// Wraps the synced JS module from proton-pulse-data with TypeScript types
+// Wraps the synced JS module from proton-pulse-web with TypeScript types
 // so callers get autocomplete + compile-time checks against the plugin's
 // own CdnReport / ScoredReport / UserConfigRow types.
 //
 // IMPORTANT: do not edit anything under _synced/ directly. That directory
 // is overwritten by `make sync-scoring`. All scoring math edits go in the
-// canonical source: proton-pulse-data/lib/scoring/. The CI staleness check
+// canonical source: proton-pulse-web/js/lib/scoring/. The CI staleness check
 // (scripts/check-scoring-sync.mjs) fails the build if _synced/ drifts.
 
 // Rollup's @rollup/plugin-commonjs (already wired via @decky/rollup) lets
@@ -22,7 +22,7 @@ import type { UserConfigRow } from '../userConfigs';
 const synced: SyncedScoring = ((syncedRaw as any).default ?? syncedRaw) as SyncedScoring;
 
 // ---------- Synced module shape ----------
-// These mirror the runtime shape of proton-pulse-data/lib/scoring/gameStats.js.
+// These mirror the runtime shape of proton-pulse-web/js/lib/scoring/gameStats.js.
 // Loose `any` for the report/config params is intentional -- the synced JS
 // reads a small set of fields (rating, timestamp, protonVersion,
 // launchOptions) and doesn't care whether you pass it a CdnReport from the

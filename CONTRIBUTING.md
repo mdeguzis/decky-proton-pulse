@@ -140,6 +140,6 @@ The project covers a few moving parts:
 - the Decky plugin
 - localization
 - screenshot automation
-- the `proton-pulse-data` pipeline and CDN-backed data flow
+- the `proton-pulse-web` pipeline and CDN-backed data flow
 
 So if something feels connected to one of those systems, it probably is.

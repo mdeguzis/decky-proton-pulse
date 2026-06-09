@@ -1,6 +1,6 @@
 // Aggregate per-game stats. Reads the same reports + configs ConfigureTab
 // loads, runs them through the shared scoring engine (synced from
-// proton-pulse-data/lib/scoring/), and renders a condensed breakdown so
+// proton-pulse-web/js/lib/scoring/), and renders a condensed breakdown so
 // the user can see at a glance: how confident the data is, whether the
 // game is trending up or down, which Proton version is winning, and which
 // launch flags the community is using.

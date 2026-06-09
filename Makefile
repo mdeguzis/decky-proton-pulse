@@ -155,7 +155,7 @@ help:
 	@printf "  %-27s %s\n" "" "Note: press Enter to stop and finalize cleanly."
 	@printf "  %-27s %s\n" "fetch-protondb" "Clone or update upstream protondb-data for local inspection"
 	@printf "  %-27s %s\n" "" "Prefers ../protondb-data when present, otherwise uses ~/src/protondb-data"
-	@printf "  %-27s %s\n" "check-protondb-data" "Run the proton-pulse-data splitter against the local upstream repo into /tmp"
+	@printf "  %-27s %s\n" "check-protondb-data" "Run the proton-pulse-web splitter against the local upstream repo into /tmp"
 	@printf "  %-27s %s\n" "" "Optional: APP_ID=1145350 make check-protondb-data"
 	@printf "  %-27s %s\n" "logs-loader" "Follow plugin_loader journal in real time"
 	@printf "  %-27s %s\n" "reload" "Restart plugin_loader locally, or on the Deck when DECK_IP is set"
@@ -169,14 +169,14 @@ build: clean test check-scoring-sync
 	echo "$${COMMIT}$${UNCOMMITTED}" > .build-commit
 	$(PNPM) build
 
-# Sync the shared scoring module from proton-pulse-data. Run this any time
-# the canonical source at ../proton-pulse-data/lib/scoring/ changes -- CI
+# Sync the shared scoring module from proton-pulse-web. Run this any time
+# the canonical source at ../proton-pulse-web/js/lib/scoring/ changes -- CI
 # (check-scoring-sync) will fail the plugin build until you do.
 sync-scoring:
 	node scripts/sync-scoring.mjs
 
 # CI guard: verifies src/lib/gameStats/_synced/ hasn't been edited locally
-# and (if proton-pulse-data is checked out next door) warns when upstream
+# and (if proton-pulse-web is checked out next door) warns when upstream
 # has new content that hasn't been synced yet
 check-scoring-sync:
 	node scripts/check-scoring-sync.mjs

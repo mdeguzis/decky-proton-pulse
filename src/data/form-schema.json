@@ -1,6 +1,6 @@
 {
   "_source": "https://github.com/mdeguzis/decky-proton-pulse/blob/main/src/lib/userConfigs.ts",
-  "_note": "Canonical form schema for Pulse report submissions. Consumed by proton-pulse-data web app at build time.",
+  "_note": "Canonical form schema for Pulse report submissions. Consumed by proton-pulse-web web app at build time.",
   "validRatings": ["platinum", "gold", "silver", "bronze", "borked"],
   "validOs": [
     "SteamOS",

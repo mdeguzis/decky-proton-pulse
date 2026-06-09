@@ -20,7 +20,7 @@ Decky Latest builds against the current published versions of `@decky/ui`, `@dec
 
 A [Decky Loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin for Steam Deck that pulls [ProtonDB](https://www.protondb.com) reports for the game in front of you, scores them against your hardware, and lets you apply useful launch options without typing them by hand.
 
-> Website: **<https://www.proton-pulse.com/>** - the companion web app now lives on its own domain. If you had the old `mdeguzis.github.io/proton-pulse-data/*` URLs bookmarked, please update them. The plugin itself already points at the new host.
+> Website: **<https://www.proton-pulse.com/>** - the companion web app now lives on its own domain. If you had the old `mdeguzis.github.io/proton-pulse-web/*` URLs bookmarked, please update them. The plugin itself already points at the new host.
 
 Browse community reports, Pulse configs, and per-game compatibility data on the **[Proton Pulse site](https://www.proton-pulse.com/)** - works on mobile with a collapsible left-side nav.
 

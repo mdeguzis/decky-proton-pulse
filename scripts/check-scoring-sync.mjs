@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Verify the synced scoring module hasn't drifted from the canonical source
-// in proton-pulse-data. Runs as part of the plugin's build (see package.json).
+// in proton-pulse-web. Runs as part of the plugin's build (see package.json).
 //
 // What this does:
 //   1. Loads src/lib/gameStats/_synced/SYNC_MANIFEST.json (written by
@@ -8,10 +8,10 @@
 //   2. Re-hashes the current files in src/lib/gameStats/_synced/
 //   3. Fails the build if the recomputed hash doesn't match the manifest --
 //      that means someone hand-edited a synced file, which is forbidden:
-//      edits MUST go in the canonical proton-pulse-data/lib/scoring/ repo
+//      edits MUST go in the canonical proton-pulse-web/js/lib/scoring/ repo
 //      and then `make sync-scoring` brings them back
 //
-// If the webui repo is checked out at ../proton-pulse-data, also compare
+// If the webui repo is checked out at ../proton-pulse-web, also compare
 // against the live upstream and warn if the local sync is behind master --
 // but don't fail the build for that case (the user might have local
 // unpushed webui changes they havent synced yet, and a dev machine without
@@ -26,7 +26,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
 const SYNCED_DIR = path.resolve(PLUGIN_ROOT, 'src', 'lib', 'gameStats', '_synced');
 const MANIFEST_PATH = path.join(SYNCED_DIR, 'SYNC_MANIFEST.json');
-const WEBUI_SCORING_DIR = path.resolve(PLUGIN_ROOT, '..', 'proton-pulse-data', 'lib', 'scoring');
+const WEBUI_SCORING_DIR = path.resolve(PLUGIN_ROOT, '..', 'proton-pulse-web', 'js', 'lib', 'scoring');
 
 // Normalize CRLF -> LF before hashing so Windows checkouts (which git
 // converts to CRLF by default) produce the same hash as the Linux/macOS
@@ -86,17 +86,17 @@ function main() {
         `  Expected sha256: ${manifest.sha256}\n` +
         `  Got sha256:      ${currentHash}\n` +
         '  Do NOT edit files in src/lib/gameStats/_synced/ directly.\n' +
-        '  Edit proton-pulse-data/lib/scoring/ instead, then run `make sync-scoring`.',
+        '  Edit proton-pulse-web/js/lib/scoring/ instead, then run `make sync-scoring`.',
     );
   }
 
   // Optional upstream drift check (warn only). Skipped on CI runners that
-  // don't have proton-pulse-data checked out alongside this repo
+  // don't have proton-pulse-web checked out alongside this repo
   if (fs.existsSync(WEBUI_SCORING_DIR)) {
     const upstreamFiles = listScoringFiles(WEBUI_SCORING_DIR);
     if (upstreamFiles.join(',') !== currentFiles.join(',')) {
       console.warn(
-        `  warn: upstream proton-pulse-data has different file list than synced copy.\n` +
+        `  warn: upstream proton-pulse-web has different file list than synced copy.\n` +
           `        Upstream: ${upstreamFiles.join(', ')}\n` +
           `        Synced:   ${currentFiles.join(', ')}\n` +
           `        Run \`make sync-scoring\` to update.`,
@@ -105,7 +105,7 @@ function main() {
       const upstreamHash = hashFiles(WEBUI_SCORING_DIR, upstreamFiles);
       if (upstreamHash !== currentHash) {
         console.warn(
-          `  warn: upstream proton-pulse-data has new content not yet synced into the plugin.\n` +
+          `  warn: upstream proton-pulse-web has new content not yet synced into the plugin.\n` +
             `        Upstream sha256: ${upstreamHash}\n` +
             `        Synced sha256:   ${currentHash}\n` +
             `        Run \`make sync-scoring\` to refresh.`,

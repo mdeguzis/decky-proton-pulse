@@ -11,7 +11,7 @@ out_dir="$(mktemp -d "${output_prefix}.XXXXXX")"
 
 echo "Using upstream repo: $repo_dir"
 echo "Writing split output to $out_dir"
-UV_CACHE_DIR="$uv_cache_dir" uv run --with ijson python ../proton-pulse-data/scripts/split_reports.py "$repo_dir/reports" "$out_dir"
+UV_CACHE_DIR="$uv_cache_dir" uv run --with ijson python ../proton-pulse-web/scripts/split_reports.py "$repo_dir/reports" "$out_dir"
 
 if [[ -n "$app_id" ]]; then
   if [[ -f "$out_dir/data/$app_id/index.json" ]]; then

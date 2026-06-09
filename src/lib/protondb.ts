@@ -1,6 +1,6 @@
 // src/lib/protondb.ts
 //
-// Fetches ProtonDB reports and summary data from the CDN (proton-pulse-data
+// Fetches ProtonDB reports and summary data from the CDN (proton-pulse-web
 // GitHub Pages site) with a fallback to live ProtonDB detailed data or summary
 // data when the CDN doesn't have data for a game yet.
 //

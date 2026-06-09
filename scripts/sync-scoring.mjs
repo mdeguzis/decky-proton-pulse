@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Sync the shared scoring module from the proton-pulse-data webui repo.
+// Sync the shared scoring module from the proton-pulse-web webui repo.
 //
 // What this does:
-//   1. rsyncs proton-pulse-data/lib/scoring/*.js into src/lib/gameStats/_synced/
+//   1. rsyncs proton-pulse-web/js/lib/scoring/*.js into src/lib/gameStats/_synced/
 //   2. Computes a sha256 over the sorted file contents
 //   3. Writes that hash + the source path into _synced/SYNC_MANIFEST.json
 //      so the staleness check (check-scoring-sync.mjs) can compare on CI
@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
-const WEBUI_SCORING_DIR = path.resolve(PLUGIN_ROOT, '..', 'proton-pulse-data', 'lib', 'scoring');
+const WEBUI_SCORING_DIR = path.resolve(PLUGIN_ROOT, '..', 'proton-pulse-web', 'js', 'lib', 'scoring');
 const SYNCED_DIR = path.resolve(PLUGIN_ROOT, 'src', 'lib', 'gameStats', '_synced');
 const MANIFEST_PATH = path.join(SYNCED_DIR, 'SYNC_MANIFEST.json');
 
@@ -55,7 +55,7 @@ function hashFiles(dir, files) {
 function main() {
   if (!fs.existsSync(WEBUI_SCORING_DIR)) {
     console.error(`ERROR: webui scoring dir not found at ${WEBUI_SCORING_DIR}`);
-    console.error('Make sure proton-pulse-data is checked out next to decky-proton-pulse.');
+    console.error('Make sure proton-pulse-web is checked out next to decky-proton-pulse.');
     process.exit(1);
   }
 
@@ -81,7 +81,7 @@ function main() {
 
   const hash = hashFiles(WEBUI_SCORING_DIR, files);
   const manifest = {
-    source: 'proton-pulse-data/lib/scoring',
+    source: 'proton-pulse-web/js/lib/scoring',
     syncedAt: new Date().toISOString(),
     sha256: hash,
     files,
