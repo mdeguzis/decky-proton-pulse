@@ -2,6 +2,10 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.9.0
+
+- Show GPU architecture badge (e.g. RDNA2, Ada) on each report card alongside the GPU tier label
+
 ## v1.8.0
 
 - Add Proton-CachyOS to the compatibility tool selector
@@ -141,10 +145,17 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- "vDeveloper" label on Settings > Updates across all locales
-- Add Danger.js i18n coverage check for PRs
-- Replace logo with simple blue atom, add BrandLogoWide for About tab
-- Add FAQ wiki link to comparison section and docs list
+- Add GPU architecture filter to report view (#14)
+- Update webui repo references for proton-pulse-web rename
+- Use CompatToolVersionPicker in profile editor
+- Translate compat tool type/version labels across all locales
+- Add CompatToolVersionPicker (type + version rows)
+- Add compat tool type + tool version labels
+- Source buildVersionOptions from shared lib
+- Add per-type version list builder
+- Pure version-list builder with per-family latest slots
+- Show version in developer build labels
+- Place fetched logs in ../logs/decky-proton-pulse subfolder
 
 ## v1.7.2 pre-release
 
