@@ -38,6 +38,7 @@ interface Props {
 }
 
 type FilterTier = GpuVendor | 'all';
+type FilterArch = string; // e.g. "RDNA2", "Ada", "Polaris", or "all"
 type SortMode = 'score' | 'votes';
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
@@ -644,6 +645,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   const gpuVendor = sysInfo?.gpu_vendor ?? null;
   const [filter, setFilter] = useState<FilterTier>('all');
+  const [archFilter, setArchFilter] = useState<FilterArch>('all');
 
   const scoreContext = useMemo(
     () => buildScoreContextForFilter(sysInfo, filter),
@@ -688,12 +690,24 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     other: DisplayReportCard[];
   };
 
-  const visibleReports: DisplayReportCard[] =
+  const tierFiltered: DisplayReportCard[] =
     filter === 'all'                       ? [...buckets.nvidia, ...buckets.amd, ...buckets.other] :
     filter === 'nvidia'                    ? buckets.nvidia :
     filter === 'amd'                       ? buckets.amd :
     filter === 'intel' || filter === 'other' ? buckets.other :
                                                buckets.other;
+
+  const availArchitectures: string[] = useMemo(() => {
+    const archs = [...new Set(tierFiltered.map(r => r.gpuArchitecture).filter(Boolean))];
+    return archs.sort();
+  }, [tierFiltered]);
+
+  const visibleReports: DisplayReportCard[] = useMemo(() =>
+    archFilter === 'all'
+      ? tierFiltered
+      : tierFiltered.filter(r => r.gpuArchitecture === archFilter),
+    [tierFiltered, archFilter],
+  );
 
   const gpuFilterCounts = useMemo(() => ({
     all: scored.length,
@@ -1404,6 +1418,25 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
               selectedOption={filter}
               onChange={(opt) => setFilterMode(opt.data as FilterTier)}
             />
+            {availArchitectures.length > 1 && (<>
+              <div
+                style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
+              >
+                Architecture
+              </div>
+              <Dropdown
+                strDefaultLabel={archFilter === 'all' ? `All (${tierFiltered.length})` : `${archFilter} (${visibleReports.length})`}
+                rgOptions={[
+                  { data: 'all', label: `All (${tierFiltered.length})` },
+                  ...availArchitectures.map(arch => ({
+                    data: arch,
+                    label: `${arch} (${tierFiltered.filter(r => r.gpuArchitecture === arch).length})`,
+                  })),
+                ]}
+                selectedOption={archFilter}
+                onChange={(opt) => setArchFilter(opt.data as FilterArch)}
+              />
+            </>)}
             <div
               style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
             >

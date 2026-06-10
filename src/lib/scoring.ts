@@ -24,6 +24,7 @@
 
 import type { CdnReport, ScoredReport, SystemInfo, TieredReports, GpuTier } from '../types';
 import type { ProtonRating } from '../types';
+import { detectGpuArch } from './gpuArchDetector';
 
 // --- Weights, edit these to tune confidence ranking ---
 //
@@ -1042,6 +1043,7 @@ export function computeConfidence(report: CdnReport, sysInfo: SystemInfo): Score
     // number here preserves ordering when comparing two strong reports
     confidence: Math.max(0, Math.round(raw)),
     gpuTier,
+    gpuArchitecture: detectGpuArch(report.gpu),
     recencyDays,
     notesModifier,
     upvotes: 0,

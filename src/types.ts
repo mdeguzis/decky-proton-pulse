@@ -67,6 +67,7 @@ export interface ScoredReport extends CdnReport {
   // you how trustworthy this report is for the viewer's situation.
   confidence: number;
   gpuTier: GpuTier;
+  gpuArchitecture: string; // e.g. "RDNA2", "Ada", "Polaris", "" if unknown
   recencyDays: number;
   notesModifier: number;
   upvotes: number;
