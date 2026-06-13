@@ -1457,7 +1457,6 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             flow-children="horizontal"
             style={{
               display: 'flex',
-              justifyContent: 'flex-end',
               alignItems: 'center',
               gap: 10,
               marginBottom: 8,
@@ -1468,17 +1467,19 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             <div style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap' }}>
               {t().common.sort}
             </div>
-            <Dropdown
-              strDefaultLabel={t().reports.bestMatch}
-              rgOptions={[
-                { data: 'score', label: t().reports.bestMatch },
-                { data: 'votes', label: t().reports.mostVotes },
-              ]}
-              selectedOption={sortMode}
-              onChange={(opt) => setSortPreference(opt.data as SortMode)}
-            />
+            <div style={{ width: 160, flexShrink: 0 }}>
+              <Dropdown
+                strDefaultLabel={t().reports.bestMatch}
+                rgOptions={[
+                  { data: 'score', label: t().reports.bestMatch },
+                  { data: 'votes', label: t().reports.mostVotes },
+                ]}
+                selectedOption={sortMode}
+                onChange={(opt) => setSortPreference(opt.data as SortMode)}
+              />
+            </div>
             <DialogButton
-              style={{ minWidth: 0, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 6 }}
+              style={{ width: 'auto', height: 40, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
               onClick={() => {
                 const modal = showModal(
                   <ReportFiltersModal
@@ -1498,9 +1499,9 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                 );
               }}
             >
-              {/* funnel icon */}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M10 18h4v-2h-4v2zm-7-12v2h18V6H3zm3 7h12v-2H6v2z"/>
+              {/* sliders/filter icon */}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
               </svg>
               {(() => {
                 const count = [filter !== 'all', archFilter !== 'all', configFilter !== 'all'].filter(Boolean).length;

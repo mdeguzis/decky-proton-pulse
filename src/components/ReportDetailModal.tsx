@@ -588,6 +588,9 @@ function HardwareCompareModal({
 
             <InfoCompareRow label={t().detail.gpu} left={report.gpu || '-'} right={sysInfo?.gpu || '-'} match={breakdown.gpu} />
             <InfoCompareRow label={t().detail.gpuTier} left={report.gpuTier.toUpperCase()} right={systemGpuTier} match={tierMatch} />
+            {report.gpuArchitecture ? (
+              <InfoCompareRow label="GPU Arch" left={report.gpuArchitecture} right="-" match={null} />
+            ) : null}
             <InfoCompareRow label={t().detail.driver} left={report.gpuDriver || '-'} right={sysInfo?.driver_version || '-'} match={breakdown.gpuDriver} />
             <InfoCompareRow label={t().detail.cpu} left={report.cpu || '-'} right={sysInfo?.cpu || '-'} match={breakdown.cpu} />
             <InfoCompareRow label={t().detail.os} left={report.os || '-'} right={sysInfo?.distro || '-'} match={breakdown.os} />

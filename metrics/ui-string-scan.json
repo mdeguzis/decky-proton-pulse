@@ -59,6 +59,34 @@
       "text": "Open Compatibility Platform"
     },
     {
+      "file": "src/components/PerReportAnalysisModal.tsx",
+      "line": 186,
+      "column": 36,
+      "kind": "jsx",
+      "text": "pts"
+    },
+    {
+      "file": "src/components/PerReportAnalysisModal.tsx",
+      "line": 190,
+      "column": 16,
+      "kind": "jsx",
+      "text": "What's this?"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 592,
+      "column": 37,
+      "kind": "string",
+      "text": "GPU Arch"
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 116,
+      "column": 108,
+      "kind": "jsx",
+      "text": "Report Score Tiers"
+    },
+    {
       "file": "src/components/tabs/ConfigureTab.tsx",
       "line": 278,
       "column": 37,

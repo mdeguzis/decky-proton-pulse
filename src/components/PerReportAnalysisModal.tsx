@@ -19,6 +19,8 @@
 // schema on proton-pulse.com/confidence.html so users can cross-reference.
 
 import { ModalRoot, Focusable, DialogButton, showModal } from '@decky/ui';
+import scoringInfo from '../data/scoring-info.json';
+import { ScoringGuideModal } from './ScoringGuideModal';
 import { computeGameStats } from '../lib/gameStats';
 import { computeConfidenceBreakdown } from '../lib/scoring';
 import { useFocusableScroll } from '../lib/useFocusableScroll';
@@ -132,6 +134,13 @@ function PerReportAnalysisModal({ report, allReports, configs, sysInfo, closeMod
   const ratingColor = RATING_COLORS[report.rating] ?? '#888';
   const contributionColor = contributionDelta > 0 ? '#4caf50' : contributionDelta < 0 ? '#e57373' : '#9bb5cc';
 
+  // Qualitative tier derived from scoring-info.json (shared with web app)
+  const scoreTier = [...scoringInfo.reportScoreTiers.tiers]
+    .sort((a, b) => b.min - a.min)
+    .find((tier) => breakdown.total >= tier.min) ?? scoringInfo.reportScoreTiers.tiers[scoringInfo.reportScoreTiers.tiers.length - 1];
+  const scoreLabel = scoreTier.label;
+  const scoreLabelColor = scoreTier.color;
+
   return (
     <ModalRoot onCancel={closeModal}>
       <Focusable
@@ -139,11 +148,8 @@ function PerReportAnalysisModal({ report, allReports, configs, sysInfo, closeMod
         style={{
           display: 'flex',
           flexDirection: 'column',
-          width: 720,
+          width: '100%',
           maxHeight: '85vh',
-          background: '#0f1822',
-          border: '1px solid rgba(102, 192, 244, 0.18)',
-          borderRadius: 6,
           overflow: 'hidden',
         }}
       >
@@ -168,14 +174,23 @@ function PerReportAnalysisModal({ report, allReports, configs, sysInfo, closeMod
               {formatProtonLabel(report.protonVersion)} . {t().common.daysAgo(report.recencyDays)}
             </div>
           </div>
-          {/* Total confidence pill on the right (matches the card's pill style) */}
-          <span style={{
-            background: 'rgba(102, 192, 244, 0.18)',
-            color: '#e0ebf3',
-            fontSize: 13, fontWeight: 700,
-            padding: '4px 14px', borderRadius: 999,
-            border: '1px solid rgba(102, 192, 244, 0.35)',
-          }}>{breakdown.total}</span>
+          {/* Total confidence score + help button */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{
+                background: 'rgba(102, 192, 244, 0.18)',
+                color: '#e0ebf3',
+                fontSize: 13, fontWeight: 700,
+                padding: '4px 14px', borderRadius: 999,
+                border: '1px solid rgba(102, 192, 244, 0.35)',
+              }}>{breakdown.total} pts</span>
+              <DialogButton
+                style={{ width: 'auto', height: 28, minWidth: 0, padding: '0 10px', borderRadius: 999, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}
+                onClick={() => showModal(<ScoringGuideModal />)}
+              >What's this?</DialogButton>
+            </div>
+            <span style={{ fontSize: 9, color: scoreLabelColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{scoreLabel}</span>
+          </div>
         </div>
 
         {/* Scrollable body */}
