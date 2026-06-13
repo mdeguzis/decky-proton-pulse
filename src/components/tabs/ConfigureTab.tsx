@@ -232,6 +232,82 @@ function findClosestInstalledTool(
   return ranked[0]?.tool ?? null;
 }
 
+function ReportFiltersModal({
+  filter, setFilterMode, gpuFilterCounts,
+  archFilter, setArchFilter, availArchitectures, tierFiltered,
+  configFilter, setConfigFilterMode, configFilterCounts,
+  visibleReports,
+  onClose,
+}: {
+  filter: FilterTier;
+  setFilterMode: (f: FilterTier) => void;
+  gpuFilterCounts: Record<FilterTier, number>;
+  archFilter: FilterArch;
+  setArchFilter: (a: FilterArch) => void;
+  availArchitectures: string[];
+  tierFiltered: DisplayReportCard[];
+  configFilter: ConfigFilter;
+  setConfigFilterMode: (f: ConfigFilter) => void;
+  configFilterCounts: Record<ConfigFilter, number>;
+  visibleReports: DisplayReportCard[];
+  onClose: () => void;
+}) {
+  const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10 };
+  const labelStyle: React.CSSProperties = { fontSize: 11, color: '#cfe2f4', fontWeight: 700, width: 100, flexShrink: 0 };
+  return (
+    <ConfirmModal
+      strTitle="Filters"
+      strOKButtonText={t().common.close}
+      onOK={onClose}
+      onCancel={onClose}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 360 }}>
+        <div style={rowStyle}>
+          <div style={labelStyle}>{t().configManager.gpuFilter}</div>
+          <div style={{ flex: 1 }}>
+            <Dropdown
+              strDefaultLabel={gpuFilterOptionLabel(filter, gpuFilterCounts[filter])}
+              rgOptions={FILTER_ORDER.map((tier) => ({ data: tier, label: gpuFilterOptionLabel(tier, gpuFilterCounts[tier]) }))}
+              selectedOption={filter}
+              onChange={(opt) => setFilterMode(opt.data as FilterTier)}
+            />
+          </div>
+        </div>
+        {availArchitectures.length > 1 && (
+          <div style={rowStyle}>
+            <div style={labelStyle}>Architecture</div>
+            <div style={{ flex: 1 }}>
+              <Dropdown
+                strDefaultLabel={archFilter === 'all' ? `All (${tierFiltered.length})` : `${archFilter} (${visibleReports.length})`}
+                rgOptions={[
+                  { data: 'all', label: `All (${tierFiltered.length})` },
+                  ...availArchitectures.map(arch => ({
+                    data: arch,
+                    label: `${arch} (${tierFiltered.filter(r => r.gpuArchitecture === arch).length})`,
+                  })),
+                ]}
+                selectedOption={archFilter}
+                onChange={(opt) => setArchFilter(opt.data as FilterArch)}
+              />
+            </div>
+          </div>
+        )}
+        <div style={rowStyle}>
+          <div style={labelStyle}>{t().configManager.configFilter}</div>
+          <div style={{ flex: 1 }}>
+            <Dropdown
+              strDefaultLabel={configFilterOptionLabel(configFilter, configFilterCounts[configFilter])}
+              rgOptions={CONFIG_FILTER_ORDER.map((value) => ({ data: value, label: configFilterOptionLabel(value, configFilterCounts[value]) }))}
+              selectedOption={configFilter}
+              onChange={(opt) => setConfigFilterMode(opt.data as ConfigFilter)}
+            />
+          </div>
+        </div>
+      </div>
+    </ConfirmModal>
+  );
+}
+
 function MissingVersionModal({
   requiredVersion,
   latestInstalledLabel,
@@ -1377,7 +1453,6 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
               {t().common.shown(sortedReports.length)}
             </div>
           </div>
-          {/* flow-children="horizontal" makes dpad left/right move between the dropdowns */}
           <Focusable
             flow-children="horizontal"
             style={{
@@ -1390,9 +1465,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
               borderBottom: '1px solid #2a3a4a',
             }}
           >
-            <div
-              style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
-            >
+            <div style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap' }}>
               {t().common.sort}
             </div>
             <Dropdown
@@ -1404,53 +1477,36 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
               selectedOption={sortMode}
               onChange={(opt) => setSortPreference(opt.data as SortMode)}
             />
-            <div
-              style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
+            <DialogButton
+              style={{ minWidth: 0, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 6 }}
+              onClick={() => {
+                const modal = showModal(
+                  <ReportFiltersModal
+                    filter={filter}
+                    setFilterMode={setFilterMode}
+                    gpuFilterCounts={gpuFilterCounts}
+                    archFilter={archFilter}
+                    setArchFilter={setArchFilter}
+                    availArchitectures={availArchitectures}
+                    tierFiltered={tierFiltered}
+                    configFilter={configFilter}
+                    setConfigFilterMode={setConfigFilterMode}
+                    configFilterCounts={configFilterCounts}
+                    visibleReports={visibleReports}
+                    onClose={() => modal.Close()}
+                  />,
+                );
+              }}
             >
-              {t().configManager.gpuFilter}
-            </div>
-            <Dropdown
-              strDefaultLabel={gpuFilterOptionLabel(filter, gpuFilterCounts[filter])}
-              rgOptions={FILTER_ORDER.map((tier) => ({
-                data: tier,
-                label: gpuFilterOptionLabel(tier, gpuFilterCounts[tier]),
-              }))}
-              selectedOption={filter}
-              onChange={(opt) => setFilterMode(opt.data as FilterTier)}
-            />
-            {availArchitectures.length > 1 && (<>
-              <div
-                style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
-              >
-                Architecture
-              </div>
-              <Dropdown
-                strDefaultLabel={archFilter === 'all' ? `All (${tierFiltered.length})` : `${archFilter} (${visibleReports.length})`}
-                rgOptions={[
-                  { data: 'all', label: `All (${tierFiltered.length})` },
-                  ...availArchitectures.map(arch => ({
-                    data: arch,
-                    label: `${arch} (${tierFiltered.filter(r => r.gpuArchitecture === arch).length})`,
-                  })),
-                ]}
-                selectedOption={archFilter}
-                onChange={(opt) => setArchFilter(opt.data as FilterArch)}
-              />
-            </>)}
-            <div
-              style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}
-            >
-              {t().configManager.configFilter}
-            </div>
-            <Dropdown
-              strDefaultLabel={configFilterOptionLabel(configFilter, configFilterCounts[configFilter])}
-              rgOptions={CONFIG_FILTER_ORDER.map((value) => ({
-                data: value,
-                label: configFilterOptionLabel(value, configFilterCounts[value]),
-              }))}
-              selectedOption={configFilter}
-              onChange={(opt) => setConfigFilterMode(opt.data as ConfigFilter)}
-            />
+              {/* funnel icon */}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 18h4v-2h-4v2zm-7-12v2h18V6H3zm3 7h12v-2H6v2z"/>
+              </svg>
+              {(() => {
+                const count = [filter !== 'all', archFilter !== 'all', configFilter !== 'all'].filter(Boolean).length;
+                return count > 0 ? `Filters (${count})` : 'Filters';
+              })()}
+            </DialogButton>
           </Focusable>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
             <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
