@@ -153,7 +153,7 @@ export function LogViewerModal({ logs, entryCount, closeModal }: Props) {
           display: 'flex',
           flexDirection: 'column',
           height: 'calc(100vh - 88px)',
-          padding: '12px 16px 20px',
+          padding: '12px 16px 0',
           boxSizing: 'border-box',
         }}
       >
