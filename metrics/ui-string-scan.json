@@ -2,7 +2,9 @@
   "scannedFiles": [
     "src/components/BrandGlyph.tsx",
     "src/components/BrandLogo.tsx",
+    "src/components/BrandLogoWide.tsx",
     "src/components/CacheManagerModal.tsx",
+    "src/components/CompatToolVersionPicker.tsx",
     "src/components/ConfigEditorModal.tsx",
     "src/components/EditReportModal.tsx",
     "src/components/LaunchOptionConflictModal.tsx",
@@ -34,5 +36,34 @@
     "src/patches/libraryGridBadges.ts",
     "src/patches/searchResultsHint.tsx"
   ],
-  "findings": []
+  "findings": [
+    {
+      "file": "src/components/BrandLogoWide.tsx",
+      "line": 23,
+      "column": 11,
+      "kind": "jsx",
+      "text": "Proton"
+    },
+    {
+      "file": "src/components/BrandLogoWide.tsx",
+      "line": 23,
+      "column": 53,
+      "kind": "jsx",
+      "text": "Pulse"
+    },
+    {
+      "file": "src/components/BrandLogoWide.tsx",
+      "line": 26,
+      "column": 11,
+      "kind": "jsx",
+      "text": "Open Compatibility Platform"
+    },
+    {
+      "file": "src/components/tabs/ConfigureTab.tsx",
+      "line": 1425,
+      "column": 17,
+      "kind": "jsx",
+      "text": "Architecture"
+    }
+  ]
 }
