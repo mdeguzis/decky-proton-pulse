@@ -60,8 +60,8 @@
     },
     {
       "file": "src/components/tabs/ConfigureTab.tsx",
-      "line": 1425,
-      "column": 17,
+      "line": 278,
+      "column": 37,
       "kind": "jsx",
       "text": "Architecture"
     }

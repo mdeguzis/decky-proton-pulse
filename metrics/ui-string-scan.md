@@ -5,4 +5,4 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/BrandLogoWide.tsx` | 23 | jsx | Proton |
 | `src/components/BrandLogoWide.tsx` | 23 | jsx | Pulse |
 | `src/components/BrandLogoWide.tsx` | 26 | jsx | Open Compatibility Platform |
-| `src/components/tabs/ConfigureTab.tsx` | 1425 | jsx | Architecture |
+| `src/components/tabs/ConfigureTab.tsx` | 278 | jsx | Architecture |
