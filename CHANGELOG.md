@@ -4,13 +4,15 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.9.0
 
-- Show GPU architecture badge (e.g. RDNA2, Ada) on each report card alongside the GPU tier label
-
-## v1.8.0
-
-- Add Proton-CachyOS to the compatibility tool selector
-- Show the build version in developer update labels (v1.8.0-<commit>) on Settings > Updates
-- Parse the commit sha from both the old and new developer labels so the up-to-date check keeps working
+- GPU architecture badge (e.g. RDNA2, Ada Lovelace) on each report card next to the GPU model
+- GPU architecture filter in the report view so you can narrow results to your GPU family
+- Compatibility tool picker in the profile editor: choose tool type (Proton, Wine, etc.) and version in separate rows
+- Proton-CachyOS added to the compatibility tool selector
+- Per-report analysis modal: press Y on any report card to see a full confidence breakdown for that report
+- Release notes modal: Steam-style overlay that surfaces GitHub release notes on update and lets you browse version history with L/R
+- Scroll-on-focus in the Analysis tab with readable tier badges
+- Show build version in developer update labels (v1.9.0-<commit>) on Settings > Updates
+- Fix: "vDeveloper" label on Settings > Updates page across all locales
 
 ## v1.7.5
 
@@ -144,18 +146,6 @@ All notable changes to Proton Pulse should be recorded here.
 - chore(deploy): y/n prompt for PR push, detect existing PR title/author, clean fork sync
 
 ## Unreleased
-
-- Add GPU architecture filter to report view (#14)
-- Update webui repo references for proton-pulse-web rename
-- Use CompatToolVersionPicker in profile editor
-- Translate compat tool type/version labels across all locales
-- Add CompatToolVersionPicker (type + version rows)
-- Add compat tool type + tool version labels
-- Source buildVersionOptions from shared lib
-- Add per-type version list builder
-- Pure version-list builder with per-family latest slots
-- Show version in developer build labels
-- Place fetched logs in ../logs/decky-proton-pulse subfolder
 
 ## v1.7.2 pre-release
 
