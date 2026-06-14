@@ -42,7 +42,7 @@ export function LogViewer() {
 
   return (
     <div style={{
-      maxHeight: 200,
+      height: 340,
       overflowY: 'auto',
       background: 'rgba(0,0,0,0.4)',
       borderRadius: 4,
