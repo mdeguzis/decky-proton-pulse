@@ -1655,6 +1655,9 @@ export function ReportDetailModal({
               <InfoRow label={t().detail.source} value={sourceLabel} />
               <InfoRow label={t().reports.confidence} value={`${confScore}%`} />
               <InfoRow label={t().detail.gpuTier} value={report.gpuTier.toUpperCase()} />
+              {report.gpuArchitecture ? (
+                <InfoRow label="GPU Arch" value={report.gpuArchitecture} />
+              ) : null}
               <InfoRow label={t().reports.votes} value={`+${localUpvotes} / -${localDownvotes}`} />
               <InfoRow label={t().reports.submitted} value={formatTimestamp(report.timestamp)} />
               {report.isEdited && (
