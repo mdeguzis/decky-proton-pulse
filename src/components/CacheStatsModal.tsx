@@ -3,7 +3,7 @@
 // last 24h of hourly buckets. Each section is a focusable row so D-pad
 // scrolls through them via useFocusableScroll (same as SystemRequirementsTab).
 
-import { Focusable, DialogButton, findSP } from '@decky/ui';
+import { Focusable, DialogButton } from '@decky/ui';
 import { getHourlyBuckets, getSummary, getCombinedCategoryStats, getBadgeScanStats } from '../lib/metrics';
 import type { HourlyBucket } from '../lib/metrics';
 import { useFocusableScroll } from '../lib/useFocusableScroll';
@@ -175,10 +175,6 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
   const hitNum = totalLookups > 0 ? Number(hitPct) : -1;
   const hitColor = hitNum >= 70 ? '#4caf7d' : hitNum >= 40 ? '#f6b347' : hitNum >= 0 ? '#f44336' : undefined;
 
-  const SP = findSP();
-  // 30px top margin + 70px bottom margin to clear the ~50px Steam BPM bottom bar
-  const modalH = SP.innerHeight - 30 - 70;
-
   const sectionStyle = (id: string): React.CSSProperties => ({
     width: '100%', textAlign: 'left',
     background: 'rgba(0,0,0,0.0)', border: 'none', boxShadow: 'none',
@@ -200,11 +196,8 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
     <Focusable
       onCancelButton={closeModal}
       style={{
-        marginTop: 30,
-        marginLeft: 30,
-        marginRight: 30,
-        marginBottom: 70,
-        height: modalH,
+        margin: '30px 30px 70px',
+        height: 'calc(100% - 100px)',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: 'rgba(24, 27, 34, 0.98)',
@@ -234,7 +227,7 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
       </div>
 
       {/* scrollable body -- each section is a PpDialogButton for D-pad nav */}
-      <Focusable style={{ overflowY: 'scroll', flex: 1, padding: '16px 14px 0' }}>
+      <Focusable onCancelButton={closeModal} style={{ overflowY: 'scroll', flex: 1, padding: '16px 14px 0' }}>
 
         <PpDialogButton
           onClick={() => {}}
