@@ -170,19 +170,15 @@ function findCoverContainer(el: HTMLElement): HTMLElement {
   return cover;
 }
 
-// Returns true if the element or its immediate parent contains navigation text
-// like "View more" or "View all" -- these are Steam UI nav tiles, not game covers.
-// Limit to 2 levels: walking further risks hitting shared row containers whose
-// textContent includes sibling "View more" tiles (which would exclude the hero tile).
-function isNavTile(el: HTMLElement): boolean {
-  let cur: HTMLElement | null = el;
-  for (let i = 0; i < 2; i++) {
-    if (!cur) break;
-    const text = (cur.textContent ?? '').trim().toLowerCase();
-    if (text.includes('view more') || text.includes('view all')) return true;
-    cur = cur.parentElement;
-  }
-  return false;
+// Returns true if el is inside a [data-id] container that is a nav tile
+// (i.e., its own textContent includes "View more" or "View all").
+// Using closest('[data-id]') scopes the text check to that tile's own subtree,
+// so it never bleeds into sibling tiles through shared row containers.
+function isInsideNavTile(el: HTMLElement): boolean {
+  const ancestor = el.closest('[data-id]');
+  if (!ancestor) return false;
+  const text = (ancestor.textContent ?? '').toLowerCase();
+  return text.includes('view more') || text.includes('view all');
 }
 
 // Extract appId + cover container from an image element.
@@ -213,14 +209,6 @@ function extractFromImg(img: HTMLImageElement): { appId: string; cover: HTMLElem
   if (h > 0 && h < MIN_TILE_HEIGHT) return null;
   const appId = extractAppIdFromUrl(attr) ?? extractAppIdFromUrl(src);
   if (!appId) return null;
-  // Skip thumbnails inside "View more" / "View all" composite tiles.
-  // closest('[data-id]') scopes the text check to just that tile's own [data-id] container
-  // (not shared row ancestors), so the hero tile's appId is never affected.
-  const tileAncestor = img.closest('[data-id]');
-  if (tileAncestor) {
-    const tileText = (tileAncestor.textContent ?? '').toLowerCase();
-    if (tileText.includes('view more') || tileText.includes('view all')) return null;
-  }
   return { appId, cover: findCoverContainer(img) };
 }
 
@@ -250,10 +238,13 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
     if (!raw) continue;
     const id = parseInt(raw, 10);
     if (id <= 0) continue;
-    // "View more" composite tiles contain multiple <img> thumbnails; real game tiles have one.
-    // Using textContent to detect nav tiles risks false positives on the hero tile (shared
-    // row container includes sibling "View more" text in its subtree).
-    if (el.querySelectorAll('img').length > 1) continue;
+    // "View more" composite tiles contain multiple game-cover <img> thumbnails; real game
+    // tiles have one. Count only CDN game cover imgs (not UI icons/SVGs) to avoid filtering
+    // hero tiles that have non-game <img> elements (compat icons, etc.) alongside the cover.
+    const coverImgs = el.querySelectorAll(
+      'img[src*="steamstatic.com"], img[src*="/apps/"], img[src*="/assets/"], img[src*="/customimages/"]',
+    );
+    if (coverImgs.length > 1) continue;
     const img = el.querySelector('img');
     const cover = (img?.parentElement && img.parentElement !== el)
       ? img.parentElement as HTMLElement
@@ -273,7 +264,7 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   for (const img of Array.from(doc.querySelectorAll(imgSelector)) as HTMLImageElement[]) {
     const hit = extractFromImg(img);
     if (!hit) continue;
-    if (isNavTile(hit.cover)) continue;
+    if (isInsideNavTile(img)) continue;
     if (!seen.has(hit.cover)) { seen.add(hit.cover); results.push(hit); }
   }
 
@@ -281,7 +272,7 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   for (const el of Array.from(doc.querySelectorAll('[style*="background"]')) as HTMLElement[]) {
     const hit = extractFromBgEl(el);
     if (!hit) continue;
-    if (isNavTile(hit.cover)) continue;
+    if (isInsideNavTile(el)) continue;
     if (!seen.has(hit.cover)) { seen.add(hit.cover); results.push(hit); }
   }
 
