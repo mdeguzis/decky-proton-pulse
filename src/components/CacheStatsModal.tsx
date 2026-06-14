@@ -46,7 +46,7 @@ function LineChart({
     );
   }
 
-  const W = 400;
+  const W = 600;
   const H = 80;
   const PAD_L = 32;
   const PAD_R = 8;
@@ -195,7 +195,7 @@ export function CacheStatsBody() {
   };
 
   return (
-    <Focusable style={{ maxHeight: 440, overflowY: 'auto' }}>
+    <Focusable style={{ width: '100%' }}>
 
       <div style={{ fontSize: 11, color: '#3d556a', marginBottom: 8 }}>
         uptime {Math.floor(summary.uptimeMs / 60000)}m

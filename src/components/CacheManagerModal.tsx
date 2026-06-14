@@ -150,14 +150,31 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
 
   if (showStats) {
     return (
-      <ConfirmModal
-        strTitle="Cache Performance"
-        strOKButtonText={t().common.close}
-        onOK={() => setShowStats(false)}
-        onCancel={() => setShowStats(false)}
+      <Focusable
+        style={{
+          position: 'fixed', top: '3%', left: '3%', width: '94%', height: '91%',
+          background: 'rgba(13,22,30,0.97)',
+          borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex', flexDirection: 'column', zIndex: 9999, overflow: 'hidden',
+        }}
       >
-        <CacheStatsBody />
-      </ConfirmModal>
+        {/* header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 8px', flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#c8dcea' }}>Cache Performance</span>
+          <DialogButton
+            onClick={() => setShowStats(false)}
+            style={{ width: 26, height: 26, padding: 0, fontSize: 13, minWidth: 26, lineHeight: '26px', textAlign: 'center' }}
+          >
+            ✕
+          </DialogButton>
+        </div>
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+        {/* scrollable body */}
+        <Focusable style={{ flex: 1, overflowY: 'auto', paddingTop: 4 }}>
+          <CacheStatsBody />
+          <div style={{ height: 24 }} />
+        </Focusable>
+      </Focusable>
     );
   }
 
