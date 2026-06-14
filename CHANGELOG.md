@@ -4,8 +4,14 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## v1.10.0
 
-- Bump VERSION to 1.10.0
-- Sync metrics and README after v1.10.0 release prep
+- Compat tool auto-update now runs at startup for both Proton-GE and CachyOS Proton, throttled to once per 24h
+- Advanced Settings shows compat tool auto-update status with full timestamps and next check time
+- Per-report analysis modal: score pill and What's this button are now horizontally aligned; EXCELLENT tier label sits below
+- Reset Filters button added to the report filter row
+- GPU architecture shown under GPU tier in report details
+- Log viewer inline preview fills the full available space
+- Filters modal has a single Close button
+- Confidence badge in Manage This Game header now matches the Analysis tab
 
 ## v1.9.0
 
