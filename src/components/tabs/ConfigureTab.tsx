@@ -1484,7 +1484,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
               return (
                 <>
                   <DialogButton
-                    style={{ width: 'auto', height: 40, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
+                    style={{ flex: 1, height: 40, padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 0 }}
                     onClick={() => {
                       const modal = showModal(
                         <ReportFiltersModal
