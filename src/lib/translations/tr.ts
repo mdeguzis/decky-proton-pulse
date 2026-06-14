@@ -174,6 +174,8 @@ export const tr: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Oyun sayfasındaki eylem düğmelerinin yanında Proton Pulse kısayolu gösterir. Deneyseldir ve varsayılan olarak kapalıdır.',
     gamePageBadgeStyle: 'Oyun sayfası rozet stili',
     gamePageBadgeStyleDescription: 'Oyun sayfası başlığının sol üst köşesinde gösterilen rozet. Tam katman adını gösterir, Kompakt kısaltır, Minimal yalnızca simgeyi gösterir.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Kütüphane ızgara rozet stili',
     libraryBadgeStyleDescription: 'Kütüphane ızgarasındaki her oyun kutucuğunda ProtonDB katman rozeti. Tam katman adını gösterir, Kompakt kısaltır, Minimal yalnızca simgeyi gösterir.',
     badgeStyleFull: 'Tam',

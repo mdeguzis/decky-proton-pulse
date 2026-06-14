@@ -173,6 +173,8 @@ export const bg: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Показва пряк път на Proton Pulse до бутоните за действие на страницата на играта. Експериментално, деактивирано по подразбиране.',
     gamePageBadgeStyle: 'Стил на значката на страницата на играта',
     gamePageBadgeStyleDescription: 'Значката, показвана горе вляво в заглавката на страницата на играта. Пълен показва името на нивото, Компактен го съкращава, Минимален показва само иконата.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Стил на значката в мрежата на библиотеката',
     libraryBadgeStyleDescription: 'Значката на ниво ProtonDB върху всяка плочка на игра в мрежата на библиотеката. Пълен показва името на нивото, Компактен го съкращава, Минимален показва само иконата.',
     badgeStyleFull: 'Пълен',

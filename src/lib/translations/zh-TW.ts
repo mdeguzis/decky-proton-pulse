@@ -173,6 +173,8 @@ export const zhTW: TranslationTree = {
     experimentalGamePageShortcutDescription: '在遊戲頁面操作按鈕旁顯示 Proton Pulse 捷徑。實驗性功能，預設停用。',
     gamePageBadgeStyle: '遊戲頁面徽章樣式',
     gamePageBadgeStyleDescription: '顯示在遊戲頁面標題左上角的徽章。完整顯示等級名稱，緊湊將其縮寫，最小僅顯示圖示。',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: '庫網格徽章樣式',
     libraryBadgeStyleDescription: '庫網格中每個遊戲磁貼上的 ProtonDB 等級徽章。完整顯示等級名稱，緊湊將其縮寫，最小僅顯示圖示。',
     badgeStyleFull: '完整',

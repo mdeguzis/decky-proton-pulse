@@ -174,6 +174,8 @@ export const de: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Zeigt eine Proton-Pulse-Verknüpfung neben den Aktionsschaltflächen der Spielseite an. Experimentell und standardmäßig deaktiviert.',
     gamePageBadgeStyle: 'Badge-Stil der Spielseite',
     gamePageBadgeStyleDescription: 'Badge oben links im Header der Spielseite. Voll zeigt den Tier-Namen, Kompakt kürzt ihn ab, Minimal zeigt nur das Symbol.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Badge-Stil des Bibliotheksrasters',
     libraryBadgeStyleDescription: 'ProtonDB-Tier-Badge auf jedem Spielkachel im Bibliotheksraster. Voll zeigt den Tier-Namen, Kompakt kürzt ihn ab, Minimal zeigt nur das Symbol.',
     badgeStyleFull: 'Voll',

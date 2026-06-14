@@ -174,6 +174,8 @@ export const ja: TranslationTree = {
     experimentalGamePageShortcutDescription: 'ゲームページのアクションボタンの横に Proton Pulse のショートカットを表示します。実験機能のため既定ではオフです。',
     gamePageBadgeStyle: 'ゲームページバッジスタイル',
     gamePageBadgeStyleDescription: 'ゲームページのヘッダー左上に表示されるバッジ。フルはティア名を表示し、コンパクトは省略し、ミニマルはアイコンのみ表示します。',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'ライブラリグリッドバッジスタイル',
     libraryBadgeStyleDescription: 'ライブラリグリッドの各ゲームタイルに表示されるProtonDBのティアバッジ。フルはティア名を表示し、コンパクトは省略し、ミニマルはアイコンのみ表示します。',
     badgeStyleFull: 'フル',

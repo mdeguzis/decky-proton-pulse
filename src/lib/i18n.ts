@@ -227,6 +227,8 @@ export interface TranslationTree {
     gamePageBadgeStyleDescription: string;
     libraryBadgeStyle: string;
     libraryBadgeStyleDescription: string;
+    libraryBadgeShowNoData: string;
+    libraryBadgeShowNoDataDescription: string;
     badgeStyleFull: string;
     badgeStyleCompact: string;
     badgeStyleMinimal: string;
@@ -989,6 +991,8 @@ export const en: TranslationTree = {
     gamePageBadgeStyleDescription: 'Badge shown in the top-left of the game page header. Full shows the tier name, Compact abbreviates it, Minimal shows only the icon.',
     libraryBadgeStyle: 'Library grid badge style',
     libraryBadgeStyleDescription: 'ProtonDB tier badge on each game tile in the library grid. Full shows the tier name, Compact abbreviates it, Minimal shows only the icon.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     badgeStyleFull: 'Full',
     badgeStyleCompact: 'Compact',
     badgeStyleMinimal: 'Minimal',

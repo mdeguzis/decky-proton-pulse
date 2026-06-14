@@ -173,6 +173,8 @@ export const hu: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Proton Pulse gyorsbillentyűt jelenít meg a műveleti gombok mellett a játékoldalon. Kísérleti, alapértelmezés szerint letiltva.',
     gamePageBadgeStyle: 'Játékoldal jelvénystílus',
     gamePageBadgeStyleDescription: 'A játékoldal fejlécének bal felső sarkában megjelenő jelvény. A Teljes megjeleníti a szint nevét, a Kompakt rövidíti, a Minimális csak az ikont jeleníti meg.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Könyvtárrács jelvénystílus',
     libraryBadgeStyleDescription: 'A ProtonDB-szint jelvénye minden játékcsempén a könyvtárrácsban. A Teljes megjeleníti a szint nevét, a Kompakt rövidíti, a Minimális csak az ikont jeleníti meg.',
     badgeStyleFull: 'Teljes',

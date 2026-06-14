@@ -173,6 +173,8 @@ export const vi: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Hiển thị phím tắt Proton Pulse bên cạnh các nút hành động trên trang trò chơi. Thử nghiệm và tắt theo mặc định.',
     gamePageBadgeStyle: 'Kiểu huy hiệu trang trò chơi',
     gamePageBadgeStyleDescription: 'Huy hiệu hiển thị ở góc trên bên trái tiêu đề trang trò chơi. Đầy đủ hiển thị tên cấp độ, Thu gọn viết tắt tên, Tối thiểu chỉ hiển thị biểu tượng.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Kiểu huy hiệu lưới thư viện',
     libraryBadgeStyleDescription: 'Huy hiệu cấp độ ProtonDB trên mỗi ô trò chơi trong lưới thư viện. Đầy đủ hiển thị tên cấp độ, Thu gọn viết tắt tên, Tối thiểu chỉ hiển thị biểu tượng.',
     badgeStyleFull: 'Đầy đủ',

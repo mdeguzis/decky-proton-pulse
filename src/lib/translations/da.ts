@@ -173,6 +173,8 @@ export const da: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Viser en Proton Pulse-genvej ved siden af handlingsknapperne på spilsiden. Eksperimentelt, som standard deaktiveret.',
     gamePageBadgeStyle: 'Badgestil for spilleside',
     gamePageBadgeStyleDescription: 'Det badge, der vises øverst til venstre i spilsidens header. Fuld viser niveaunavnet, Kompakt forkorter det, Minimal viser kun ikonet.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Badgestil for biblioteksgitter',
     libraryBadgeStyleDescription: 'ProtonDB-niveau-badge på hvert spilfeltet i biblioteksgitteret. Fuld viser niveaunavnet, Kompakt forkorter det, Minimal viser kun ikonet.',
     badgeStyleFull: 'Fuld',

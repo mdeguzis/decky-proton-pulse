@@ -173,6 +173,8 @@ export const el: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Εμφανίζει συντόμευση Proton Pulse δίπλα στα κουμπιά ενεργειών στη σελίδα παιχνιδιού. Πειραματικό, απενεργοποιημένο από προεπιλογή.',
     gamePageBadgeStyle: 'Στυλ σήματος σελίδας παιχνιδιού',
     gamePageBadgeStyleDescription: 'Το σήμα που εμφανίζεται πάνω αριστερά στην κεφαλίδα σελίδας παιχνιδιού. Πλήρες εμφανίζει το όνομα επιπέδου, Συμπαγές το συντομεύει, Ελάχιστο εμφανίζει μόνο το εικονίδιο.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Στυλ σήματος πλέγματος βιβλιοθήκης',
     libraryBadgeStyleDescription: 'Το σήμα επιπέδου ProtonDB σε κάθε πλακίδιο παιχνιδιού στο πλέγμα βιβλιοθήκης. Πλήρες εμφανίζει το όνομα επιπέδου, Συμπαγές το συντομεύει, Ελάχιστο εμφανίζει μόνο το εικονίδιο.',
     badgeStyleFull: 'Πλήρες',

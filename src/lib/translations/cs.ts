@@ -173,6 +173,8 @@ export const cs: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Zobrazí zkratku Proton Pulse vedle tlačítek akcí na stránce hry. Experimentální, ve výchozím nastavení zakázáno.',
     gamePageBadgeStyle: 'Styl odznaku stránky hry',
     gamePageBadgeStyleDescription: 'Odznak zobrazený vlevo nahoře v záhlaví stránky hry. Plný zobrazí název úrovně, Kompaktní ho zkrátí, Minimální zobrazí pouze ikonu.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Styl odznaku mřížky knihovny',
     libraryBadgeStyleDescription: 'Odznak úrovně ProtonDB na každé dlaždici hry v mřížce knihovny. Plný zobrazí název úrovně, Kompaktní ho zkrátí, Minimální zobrazí pouze ikonu.',
     badgeStyleFull: 'Plný',

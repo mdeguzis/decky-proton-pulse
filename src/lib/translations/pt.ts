@@ -173,6 +173,8 @@ export const pt: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Mostra um atalho do Proton Pulse junto aos botoes de acao na pagina do jogo. Experimental, desativado por predefinicao.',
     gamePageBadgeStyle: 'Estilo do emblema da pagina do jogo',
     gamePageBadgeStyleDescription: 'Emblema mostrado no canto superior esquerdo do cabecalho da pagina do jogo. Completo mostra o nome do nivel, Compacto abrevia-o, Minimo mostra apenas o icone.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Estilo do emblema da grelha da biblioteca',
     libraryBadgeStyleDescription: 'Emblema de nivel ProtonDB em cada mosaico de jogo na grelha da biblioteca. Completo mostra o nome do nivel, Compacto abrevia-o, Minimo mostra apenas o icone.',
     badgeStyleFull: 'Completo',

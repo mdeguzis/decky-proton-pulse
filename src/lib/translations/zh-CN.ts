@@ -174,6 +174,8 @@ export const zhCN: TranslationTree = {
     experimentalGamePageShortcutDescription: '在游戏页面操作按钮旁显示 Proton Pulse 快捷入口。该功能为实验性质，默认关闭。',
     gamePageBadgeStyle: '游戏页面徽章样式',
     gamePageBadgeStyleDescription: '显示在游戏页面标题左上角的徽章。完整显示等级名称，紧凑将其缩写，最小仅显示图标。',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: '库网格徽章样式',
     libraryBadgeStyleDescription: '库网格中每个游戏磁贴上的 ProtonDB 等级徽章。完整显示等级名称，紧凑将其缩写，最小仅显示图标。',
     badgeStyleFull: '完整',

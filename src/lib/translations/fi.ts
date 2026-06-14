@@ -173,6 +173,8 @@ export const fi: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Näyttää Proton Pulse -pikakuvakkeen toimintopainikkeiden vieressä pelisivulla. Kokeellinen, oletuksena pois käytöstä.',
     gamePageBadgeStyle: 'Pelisivun merkkityyli',
     gamePageBadgeStyleDescription: 'Pelisivun otsikossa vasemmassa yläkulmassa näytettävä merkki. Täysi näyttää tason nimen, Kompakti lyhentää sen, Minimaalinen näyttää vain kuvakkeen.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Kirjastoruudukon merkkityyli',
     libraryBadgeStyleDescription: 'ProtonDB-tason merkki jokaisessa peliruudussa kirjastoruudukossa. Täysi näyttää tason nimen, Kompakti lyhentää sen, Minimaalinen näyttää vain kuvakkeen.',
     badgeStyleFull: 'Täysi',

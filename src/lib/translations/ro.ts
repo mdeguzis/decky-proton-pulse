@@ -173,6 +173,8 @@ export const ro: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Afiseaza o scurtatura Proton Pulse langa butoanele de actiune de pe pagina jocului. Experimental, dezactivat implicit.',
     gamePageBadgeStyle: 'Stilul insignei paginii jocului',
     gamePageBadgeStyleDescription: 'Insigna afisata in coltul din stanga sus al antetului paginii jocului. Complet afiseaza numele nivelului, Compact il scurteaza, Minimal afiseaza doar pictograma.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Stilul insignei grilei bibliotecii',
     libraryBadgeStyleDescription: 'Insigna de nivel ProtonDB pe fiecare placa de joc din grila bibliotecii. Complet afiseaza numele nivelului, Compact il scurteaza, Minimal afiseaza doar pictograma.',
     badgeStyleFull: 'Complet',

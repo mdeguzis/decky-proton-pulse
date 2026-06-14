@@ -19,6 +19,7 @@ import {
 } from '../lib/metrics';
 
 const PP_BADGE_EL_ATTR = 'data-pp-lib-badge';
+const NO_DATA_COLOR = '#6b21a8'; // purple
 
 export type LibraryBadgeStyle = 'full' | 'compact' | 'minimal' | 'off';
 
@@ -55,6 +56,10 @@ const BADGE_ICON_SVG = '<svg width="15" height="15" viewBox="0 0 36 36" fill="no
 
 function getLibraryBadgeStyle(): LibraryBadgeStyle {
   return getSetting('libraryBadgeStyle', 'full') as LibraryBadgeStyle;
+}
+
+function getShowNoData(): boolean {
+  return getSetting('libraryBadgeShowNoData', false) as boolean;
 }
 
 function getBadgeContent(style: LibraryBadgeStyle, tier: string): { html: string; text: string } {
@@ -254,6 +259,35 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   return results;
 }
 
+function applyNoDataBadgeToCover(cover: HTMLElement, style: LibraryBadgeStyle): void {
+  if (style === 'off') return;
+  const doc = cover.ownerDocument ?? getBpmDocument();
+  const existing = cover.querySelector(`[${PP_BADGE_EL_ATTR}]`) as HTMLElement | null;
+  const label = style === 'minimal' ? BADGE_ICON_SVG : (style === 'compact' ? 'N/D' : 'NO DATA');
+  const isMinimal = style === 'minimal';
+  if (existing) {
+    if (isMinimal) { existing.innerHTML = label; existing.style.padding = '4px'; }
+    else { existing.textContent = label; existing.style.padding = '2px 5px'; }
+    existing.style.background = NO_DATA_COLOR;
+    existing.style.color = '#fff';
+    return;
+  }
+  const badge = doc.createElement('div');
+  badge.setAttribute(PP_BADGE_EL_ATTR, '1');
+  if (isMinimal) { badge.innerHTML = label; } else { badge.textContent = label; }
+  badge.style.cssText = [
+    'position:absolute', 'bottom:4px', 'left:4px', 'z-index:10',
+    isMinimal ? 'padding:4px' : 'padding:2px 5px',
+    'border-radius:3px', 'font-size:9px', 'font-weight:700',
+    'letter-spacing:0.04em', 'pointer-events:none', 'white-space:nowrap',
+    'line-height:1', 'display:flex', 'align-items:center',
+    `background:${NO_DATA_COLOR}`, 'color:#fff',
+  ].join(';');
+  const cs = doc.defaultView?.getComputedStyle(cover);
+  if (cs?.position === 'static') cover.style.position = 'relative';
+  cover.appendChild(badge);
+}
+
 function applyBadgeToCover(cover: HTMLElement, tier: string | null, style: LibraryBadgeStyle): void {
   if (!tier || style === 'off') return;
   const doc = cover.ownerDocument ?? getBpmDocument();
@@ -347,12 +381,17 @@ async function processFetchQueue(): Promise<void> {
           // but skip if the user navigated to a game details page while fetch was in flight.
           const doc = getBpmDocument();
           const style = getLibraryBadgeStyle();
+          const showNoData = getShowNoData();
           let coversUpdatedNow = 0;
           if (!isOnGameDetailsPage()) {
             const visible = findVisibleTiles(doc).filter((t) => t.appId === appId);
             for (const { cover } of visible) {
-              applyBadgeToCover(cover, tier, style);
-              if (tier) countBadgeApplied();
+              if (tier) {
+                applyBadgeToCover(cover, tier, style);
+                countBadgeApplied();
+              } else if (showNoData) {
+                applyNoDataBadgeToCover(cover, style);
+              }
             }
             coversUpdatedNow = visible.length;
           }
@@ -440,6 +479,7 @@ function scanAndQueue(): void {
 
   const now = Date.now();
   const ttl = getCacheTtlMs();
+  const showNoData = getShowNoData();
   for (const { appId, cover } of tiles) {
     countBadgeTileSeen(appId);
     const entry = _tierCache.get(appId);
@@ -448,7 +488,8 @@ function scanAndQueue(): void {
       countBadgeApplied();
       badgedNow++;
     } else if (_nullCache.has(appId) && now - _nullCache.get(appId)! < NULL_EXPIRY_MS) {
-      // fetched recently, came back null -- skip until expiry
+      // fetched recently, came back null
+      if (showNoData) applyNoDataBadgeToCover(cover, style);
     } else if (!_fetchQueue.has(appId)) {
       // expired or never fetched -- queue for refresh
       if (entry) _tierCache.delete(appId); // evict expired entry

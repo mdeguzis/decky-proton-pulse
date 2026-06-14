@@ -174,6 +174,8 @@ export const fr: TranslationTree = {
     experimentalGamePageShortcutDescription: "Affiche un raccourci Proton Pulse à côté des boutons d’action de la page du jeu. Fonction expérimentale désactivée par défaut.",
     gamePageBadgeStyle: 'Style de badge page de jeu',
     gamePageBadgeStyleDescription: "Badge affiché en haut à gauche de l'en-tête de la page du jeu. Complet affiche le nom du niveau, Compact l'abrège, Minimal affiche uniquement l'icône.",
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Style de badge grille de bibliothèque',
     libraryBadgeStyleDescription: "Badge de niveau ProtonDB sur chaque tuile de jeu dans la grille de la bibliothèque. Complet affiche le nom du niveau, Compact l'abrège, Minimal affiche uniquement l'icône.",
     badgeStyleFull: 'Complet',

@@ -174,6 +174,8 @@ export const ko: TranslationTree = {
     experimentalGamePageShortcutDescription: '게임 페이지 동작 버튼 옆에 Proton Pulse 바로가기를 표시합니다. 실험 기능이며 기본값은 꺼짐입니다.',
     gamePageBadgeStyle: '게임 페이지 배지 스타일',
     gamePageBadgeStyleDescription: '게임 페이지 헤더의 왼쪽 상단에 표시되는 배지입니다. 전체는 등급 이름을 표시하고, 컴팩트는 줄여서 표시하며, 최소는 아이콘만 표시합니다.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: '라이브러리 그리드 배지 스타일',
     libraryBadgeStyleDescription: '라이브러리 그리드의 각 게임 타일에 표시되는 ProtonDB 등급 배지입니다. 전체는 등급 이름을 표시하고, 컴팩트는 줄여서 표시하며, 최소는 아이콘만 표시합니다.',
     badgeStyleFull: '전체',

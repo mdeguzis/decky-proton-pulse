@@ -173,6 +173,8 @@ export const sv: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Visar en Proton Pulse-genväg bredvid åtgärdsknapparna på spelsidan. Experimentellt och inaktiverat som standard.',
     gamePageBadgeStyle: 'Badge-stil för spelsida',
     gamePageBadgeStyleDescription: 'Badge som visas uppe till vänster i spelsidans rubrik. Full visar tier-namnet, Kompakt förkortar det, Minimal visar bara ikonen.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Badge-stil för biblioteksraster',
     libraryBadgeStyleDescription: 'ProtonDB tier-badge på varje spelruta i biblioteksrastret. Full visar tier-namnet, Kompakt förkortar det, Minimal visar bara ikonen.',
     badgeStyleFull: 'Full',

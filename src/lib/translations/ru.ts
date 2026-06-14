@@ -204,6 +204,8 @@ export const ru: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Показывает ярлык Proton Pulse рядом с кнопками действий на странице игры. Экспериментальная функция, по умолчанию выключена.',
     gamePageBadgeStyle: 'Стиль значка страницы игры',
     gamePageBadgeStyleDescription: 'Значок в верхнем левом углу заголовка страницы игры. Полный показывает название уровня, Компактный сокращает его, Минимальный показывает только иконку.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Стиль значка сетки библиотеки',
     libraryBadgeStyleDescription: 'Значок уровня ProtonDB на каждой плитке игры в сетке библиотеки. Полный показывает название уровня, Компактный сокращает его, Минимальный показывает только иконку.',
     badgeStyleFull: 'Полный',

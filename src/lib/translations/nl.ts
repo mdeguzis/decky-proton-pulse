@@ -173,6 +173,8 @@ export const nl: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Toont een Proton Pulse-snelkoppeling naast de actieknoppen van de spelpagina. Experimenteel en standaard uitgeschakeld.',
     gamePageBadgeStyle: 'Badgestijl spelpagina',
     gamePageBadgeStyleDescription: 'Badge linksboven in de header van de spelpagina. Volledig toont de tier-naam, Compact verkort die, Minimaal toont alleen het pictogram.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Badgestijl bibliotheekraster',
     libraryBadgeStyleDescription: 'ProtonDB tier-badge op elke speltegel in het bibliotheekraster. Volledig toont de tier-naam, Compact verkort die, Minimaal toont alleen het pictogram.',
     badgeStyleFull: 'Volledig',

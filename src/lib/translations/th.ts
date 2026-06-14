@@ -173,6 +173,8 @@ export const th: TranslationTree = {
     experimentalGamePageShortcutDescription: 'แสดงทางลัด Proton Pulse ถัดจากปุ่มการดำเนินการในหน้าเกม ทดลองใช้และปิดใช้งานโดยค่าเริ่มต้น',
     gamePageBadgeStyle: 'สไตล์เครื่องหมายหน้าเกม',
     gamePageBadgeStyleDescription: 'เครื่องหมายที่แสดงที่มุมบนซ้ายของส่วนหัวหน้าเกม เต็มแสดงชื่อระดับ กระชับย่อชื่อ น้อยที่สุดแสดงเฉพาะไอคอน',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'สไตล์เครื่องหมายตารางห้องสมุด',
     libraryBadgeStyleDescription: 'เครื่องหมายระดับ ProtonDB บนแต่ละกระเบื้องเกมในตารางห้องสมุด เต็มแสดงชื่อระดับ กระชับย่อชื่อ น้อยที่สุดแสดงเฉพาะไอคอน',
     badgeStyleFull: 'เต็ม',

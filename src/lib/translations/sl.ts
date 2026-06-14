@@ -173,6 +173,8 @@ export const sl: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Prikaže bližnjico Proton Pulse poleg gumbov za dejanja na strani igre. Eksperimentalno, privzeto onemogoceno.',
     gamePageBadgeStyle: 'Slog znacke strani igre',
     gamePageBadgeStyleDescription: 'Znacka prikazana v zgornjem levem kotu glave strani igre. Polno prikaže ime ravni, Kompaktno ga skrajša, Minimalno prikaže samo ikono.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Slog znacke mreže knjižnice',
     libraryBadgeStyleDescription: 'Znacka ravni ProtonDB na vsaki ploščici igre v mreži knjižnice. Polno prikaže ime ravni, Kompaktno ga skrajša, Minimalno prikaže samo ikono.',
     badgeStyleFull: 'Polno',

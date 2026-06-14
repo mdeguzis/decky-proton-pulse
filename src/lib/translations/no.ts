@@ -173,6 +173,8 @@ export const no: TranslationTree = {
     experimentalGamePageShortcutDescription: 'Viser en Proton Pulse-snarvei ved siden av handlingsknappene pa spillsiden. Eksperimentell, deaktivert som standard.',
     gamePageBadgeStyle: 'Spillside-merke-stil',
     gamePageBadgeStyleDescription: 'Merket som vises øverst til venstre i spillsidens overskrift. Full viser nivanavnet, Kompakt forkorter det, Minimal viser bare ikonet.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     libraryBadgeStyle: 'Bibliotekrutenett-merke-stil',
     libraryBadgeStyleDescription: 'ProtonDB-niva-merke pa hvert spillflis i bibliotekrutenettet. Full viser nivanavnet, Kompakt forkorter det, Minimal viser bare ikonet.',
     badgeStyleFull: 'Full',
