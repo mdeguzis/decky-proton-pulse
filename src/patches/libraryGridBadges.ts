@@ -241,9 +241,14 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
     // "View more" composite tiles contain multiple game-cover <img> thumbnails; real game
     // tiles have one. Count only CDN game cover imgs (not UI icons/SVGs) to avoid filtering
     // hero tiles that have non-game <img> elements (compat icons, etc.) alongside the cover.
-    const coverImgs = el.querySelectorAll(
+    // Exclude library_hero/library_header background art from the count -- the hero tile
+    // container may include those as a background blur img alongside the portrait cover.
+    const coverImgs = Array.from(el.querySelectorAll(
       'img[src*="steamstatic.com"], img[src*="/apps/"], img[src*="/assets/"], img[src*="/customimages/"]',
-    );
+    ) as NodeListOf<HTMLImageElement>).filter(i => {
+      const s = i.getAttribute('src') ?? i.src ?? '';
+      return !s.includes('library_hero') && !s.includes('library_header');
+    });
     if (coverImgs.length > 1) continue;
     const img = el.querySelector('img');
     const cover = (img?.parentElement && img.parentElement !== el)
@@ -493,6 +498,10 @@ function scanAndQueue(): void {
 
   runDiagnostic(doc);
   const tiles = findVisibleTiles(doc);
+  void logFrontendEvent('DEBUG', 'libraryGridBadges: tiles found', {
+    count: tiles.length,
+    appIds: tiles.map(t => t.appId),
+  });
 
   let badgedNow = 0;
   let queued = 0;
