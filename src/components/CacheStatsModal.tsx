@@ -2,7 +2,7 @@
 // SVG line charts for hit rate, CDN latency, and fetch volume over the
 // last 24h of hourly buckets. Opened from the Stats button in Manage Cache.
 
-import { ConfirmModal, Focusable, DialogButton } from '@decky/ui';
+import { Focusable, DialogButton, findSP } from '@decky/ui';
 import { getHourlyBuckets, getSummary, getCombinedCategoryStats } from '../lib/metrics';
 import type { HourlyBucket } from '../lib/metrics';
 
@@ -184,15 +184,34 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
     : 'n/a';
   const uptimeMin = Math.floor(summary.uptimeMs / 60000);
 
+  const SP = findSP();
+  const modalH = SP.innerHeight - 60;
+
   return (
-    <ConfirmModal
-      strTitle={`Cache Performance  \u00B7  uptime ${uptimeMin}m`}
-      strOKButtonText="Close"
-      onOK={() => closeModal?.()}
-      onCancel={() => closeModal?.()}
+    <Focusable
+      onCancelButton={closeModal}
+      style={{
+        margin: 30,
+        height: modalH,
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'rgba(37, 40, 46, 0.97)',
+        borderRadius: 6,
+        overflow: 'hidden',
+      }}
     >
-      {/* close button top-right */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+      {/* header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 16px',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        flexShrink: 0,
+      }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#e0ebf3', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Cache Performance <span style={{ color: '#3d556a', fontWeight: 400 }}>· uptime {uptimeMin}m</span>
+        </span>
         <DialogButton
           onClick={closeModal}
           style={{ fontSize: 10, padding: '2px 10px', minWidth: 0, height: 24, whiteSpace: 'nowrap' }}
@@ -200,7 +219,9 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
           Close
         </DialogButton>
       </div>
-      <Focusable style={{ overflowY: 'scroll', height: 360, paddingRight: 4 }}>
+
+      {/* scrollable body */}
+      <Focusable style={{ overflowY: 'scroll', flex: 1, padding: '4px 16px' }}>
 
         {/* hit rate */}
         <SectionLabel>Cache hit rate (% per hour)</SectionLabel>
@@ -267,6 +288,6 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
 
         <div style={{ height: 8 }} />
       </Focusable>
-    </ConfirmModal>
+    </Focusable>
   );
 }
