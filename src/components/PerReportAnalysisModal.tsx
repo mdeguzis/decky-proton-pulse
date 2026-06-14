@@ -175,8 +175,12 @@ function PerReportAnalysisModal({ report, allReports, configs, sysInfo, closeMod
             </div>
           </div>
           {/* Total confidence score + help button */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <DialogButton
+              style={{ width: 'auto', height: 28, minWidth: 0, padding: '0 10px', borderRadius: 999, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}
+              onClick={() => showModal(<ScoringGuideModal />)}
+            >What's this?</DialogButton>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <span style={{
                 background: 'rgba(102, 192, 244, 0.18)',
                 color: '#e0ebf3',
@@ -184,12 +188,8 @@ function PerReportAnalysisModal({ report, allReports, configs, sysInfo, closeMod
                 padding: '4px 14px', borderRadius: 999,
                 border: '1px solid rgba(102, 192, 244, 0.35)',
               }}>{breakdown.total} pts</span>
-              <DialogButton
-                style={{ width: 'auto', height: 28, minWidth: 0, padding: '0 10px', borderRadius: 999, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}
-                onClick={() => showModal(<ScoringGuideModal />)}
-              >What's this?</DialogButton>
+              <span style={{ fontSize: 9, color: scoreLabelColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{scoreLabel}</span>
             </div>
-            <span style={{ fontSize: 9, color: scoreLabelColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{scoreLabel}</span>
           </div>
         </div>
 
