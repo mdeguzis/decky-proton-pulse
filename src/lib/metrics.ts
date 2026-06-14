@@ -62,6 +62,17 @@ export interface PrefetchFailureSummary {
   byReason: Record<string, number>;
 }
 
+export interface HourlyBucket {
+  hourKey: number;   // Unix ms rounded to the hour
+  hits: number;
+  misses: number;
+  fetches: number;
+  fetchErrors: number;
+  noData: number;
+  totalFetchMs: number;
+  fetchCount: number; // fetches with timing recorded (for avg)
+}
+
 export interface MetricsSummary {
   counters: CounterSnapshot;
   // per-category aggregates
@@ -69,6 +80,32 @@ export interface MetricsSummary {
   uptimeMs: number;
   collectedAt: string; // ISO timestamp
   entryCount: number;
+}
+
+// --- hourly buckets (last 24h) ---
+
+const MAX_HOURLY_BUCKETS = 24;
+const hourlyBuckets = new Map<number, HourlyBucket>();
+
+function getHourKey(): number {
+  return Math.floor(Date.now() / 3_600_000) * 3_600_000;
+}
+
+function currentBucket(): HourlyBucket {
+  const key = getHourKey();
+  if (!hourlyBuckets.has(key)) {
+    hourlyBuckets.set(key, {
+      hourKey: key, hits: 0, misses: 0, fetches: 0,
+      fetchErrors: 0, noData: 0, totalFetchMs: 0, fetchCount: 0,
+    });
+    const keys = [...hourlyBuckets.keys()].sort((a, b) => a - b);
+    while (keys.length > MAX_HOURLY_BUCKETS) hourlyBuckets.delete(keys.shift()!);
+  }
+  return hourlyBuckets.get(key)!;
+}
+
+export function getHourlyBuckets(): HourlyBucket[] {
+  return [...hourlyBuckets.values()].sort((a, b) => a.hourKey - b.hourKey);
 }
 
 // --- ring buffer + counters ---
@@ -119,6 +156,10 @@ export function startDetailedSpan(category: MetricCategory, label: string) {
   };
 }
 
+const CDN_FETCH_CATEGORIES = new Set<MetricCategory>([
+  'fetch-cdn-index', 'fetch-cdn-year', 'fetch-cdn-votes', 'fetch-live-summary',
+]);
+
 function recordTiming(entry: TimingEntry) {
   if (entries.length < MAX_ENTRIES) {
     entries.push(entry);
@@ -127,18 +168,24 @@ function recordTiming(entry: TimingEntry) {
   }
   writeIdx = (writeIdx + 1) % MAX_ENTRIES;
   totalRecorded++;
+
+  if (CDN_FETCH_CATEGORIES.has(entry.category) && entry.success && !entry.metadata?.noData) {
+    const b = currentBucket();
+    b.totalFetchMs += entry.durationMs;
+    b.fetchCount++;
+  }
 }
 
 // --- counters API ---
 
-export function countCacheHit() { counters.cacheHits++; }
-export function countCacheMiss() { counters.cacheMisses++; }
+export function countCacheHit() { counters.cacheHits++; currentBucket().hits++; }
+export function countCacheMiss() { counters.cacheMisses++; currentBucket().misses++; }
 export function countCacheEviction() { counters.cacheEvictions++; }
-export function countFetchError() { counters.fetchErrors++; }
-export function countNoData() { counters.noDataGames++; }
+export function countFetchError() { counters.fetchErrors++; currentBucket().fetchErrors++; }
+export function countNoData() { counters.noDataGames++; currentBucket().noData++; }
 export function countLocalNonSteamGame(count = 1) { counters.localNonSteamGames += count; }
 export function countPrefetchedGame() { counters.prefetchedGames++; }
-export function countFetch() { counters.totalFetches++; }
+export function countFetch() { counters.totalFetches++; currentBucket().fetches++; }
 
 export function getCounters(): CounterSnapshot {
   return { ...counters };
@@ -317,4 +364,5 @@ export function resetMetrics() {
   counters.localNonSteamGames = 0;
   counters.prefetchedGames = 0;
   counters.totalFetches = 0;
+  hourlyBuckets.clear();
 }
