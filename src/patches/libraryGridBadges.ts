@@ -170,15 +170,20 @@ function findCoverContainer(el: HTMLElement): HTMLElement {
   return cover;
 }
 
-// Returns true if el is inside a [data-id] container that is a nav tile
-// (i.e., its own textContent includes "View more" or "View all").
-// Using closest('[data-id]') scopes the text check to that tile's own subtree,
-// so it never bleeds into sibling tiles through shared row containers.
+// Returns true if el is inside a [data-id] ancestor whose subtree contains nav text.
+// We walk ALL [data-id] ancestors (not just the nearest) because "View more" composite
+// tiles contain sub-tiles that each have their own [data-id] -- closest() would return
+// the sub-tile (no nav text), missing the outer "View more" container.
 function isInsideNavTile(el: HTMLElement): boolean {
-  const ancestor = el.closest('[data-id]');
-  if (!ancestor) return false;
-  const text = (ancestor.textContent ?? '').toLowerCase();
-  return text.includes('view more') || text.includes('view all');
+  let cur = el.parentElement;
+  while (cur && cur !== document.documentElement) {
+    if (cur.hasAttribute('data-id')) {
+      const text = (cur.textContent ?? '').toLowerCase();
+      if (text.includes('view more') || text.includes('view all')) return true;
+    }
+    cur = cur.parentElement;
+  }
+  return false;
 }
 
 // Extract appId + cover container from an image element.
@@ -237,7 +242,9 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
     const raw = el.getAttribute('data-id');
     if (!raw) continue;
     const id = parseInt(raw, 10);
-    if (id <= 0) continue;
+    if (!Number.isFinite(id) || id <= 0) continue;
+    // Skip sub-tiles nested inside a composite nav tile ("View more" mosaic).
+    if (isInsideNavTile(el)) continue;
     // "View more" composite tiles contain multiple game-cover <img> thumbnails; real game
     // tiles have one. Count only CDN game cover imgs (not UI icons/SVGs) to avoid filtering
     // hero tiles that have non-game <img> elements (compat icons, etc.) alongside the cover.
