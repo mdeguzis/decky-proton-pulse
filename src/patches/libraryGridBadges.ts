@@ -170,26 +170,15 @@ function findCoverContainer(el: HTMLElement): HTMLElement {
   return cover;
 }
 
-// Returns true if a cover element contains images from more than one appId,
-// which means it is a composite tile (e.g. "View more in your Library") rather
-// than a single game cover. Composite tiles must be excluded from badging.
-function isCompositeTile(cover: HTMLElement, currentAppId: string): boolean {
-  const imgs = Array.from(cover.querySelectorAll('img')) as HTMLImageElement[];
-  const seen = new Set<string>();
-  for (const img of imgs) {
-    const id = extractAppIdFromUrl(img.getAttribute('src') ?? '') ?? extractAppIdFromUrl(img.src ?? '');
-    if (id) seen.add(id);
-    if (seen.size > 1) return true;
-  }
-  // also check background images on children
-  for (const el of Array.from(cover.querySelectorAll('[style*="background"]')) as HTMLElement[]) {
-    const bg = el.style?.backgroundImage ?? '';
-    const m = bg.match(/url\(['"]?([^'")\s]+)['"]?\)/);
-    if (m) {
-      const id = extractAppIdFromUrl(m[1]);
-      if (id) seen.add(id);
-      if (seen.size > 1) return true;
-    }
+// Returns true if the element or any nearby ancestor contains navigation text
+// like "View more" or "View all" -- these are Steam UI nav tiles, not game covers.
+function isNavTile(el: HTMLElement): boolean {
+  let cur: HTMLElement | null = el;
+  for (let i = 0; i < 6; i++) {
+    if (!cur) break;
+    const text = (cur.textContent ?? '').trim().toLowerCase();
+    if (text.includes('view more') || text.includes('view all')) return true;
+    cur = cur.parentElement;
   }
   return false;
 }
@@ -251,6 +240,7 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
     if (!raw) continue;
     const id = parseInt(raw, 10);
     if (id <= 0) continue;
+    if (isNavTile(el)) continue;
     const img = el.querySelector('img');
     const cover = (img?.parentElement && img.parentElement !== el)
       ? img.parentElement as HTMLElement
@@ -270,7 +260,7 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   for (const img of Array.from(doc.querySelectorAll(imgSelector)) as HTMLImageElement[]) {
     const hit = extractFromImg(img);
     if (!hit) continue;
-    if (isCompositeTile(hit.cover, hit.appId)) continue;
+    if (isNavTile(hit.cover)) continue;
     if (!seen.has(hit.cover)) { seen.add(hit.cover); results.push(hit); }
   }
 
@@ -278,7 +268,7 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   for (const el of Array.from(doc.querySelectorAll('[style*="background"]')) as HTMLElement[]) {
     const hit = extractFromBgEl(el);
     if (!hit) continue;
-    if (isCompositeTile(hit.cover, hit.appId)) continue;
+    if (isNavTile(hit.cover)) continue;
     if (!seen.has(hit.cover)) { seen.add(hit.cover); results.push(hit); }
   }
 
