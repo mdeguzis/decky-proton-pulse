@@ -82,14 +82,42 @@ export interface MetricsSummary {
   entryCount: number;
 }
 
-// --- hourly buckets (last 24h) ---
+// --- hourly buckets (last 24h, persisted to localStorage) ---
 
 const MAX_HOURLY_BUCKETS = 24;
+const HOURLY_STORAGE_KEY = 'pp_hourly_metrics_v1';
 const hourlyBuckets = new Map<number, HourlyBucket>();
 
 function getHourKey(): number {
   return Math.floor(Date.now() / 3_600_000) * 3_600_000;
 }
+
+function saveHourlyBuckets(): void {
+  try {
+    const data = [...hourlyBuckets.values()];
+    localStorage.setItem(HOURLY_STORAGE_KEY, JSON.stringify(data));
+  } catch { /* storage full or unavailable */ }
+}
+
+function loadHourlyBuckets(): void {
+  try {
+    const raw = localStorage.getItem(HOURLY_STORAGE_KEY);
+    if (!raw) return;
+    const cutoff = Date.now() - MAX_HOURLY_BUCKETS * 3_600_000;
+    const saved = JSON.parse(raw) as HourlyBucket[];
+    let loaded = 0;
+    for (const b of saved) {
+      if (typeof b.hourKey === 'number' && b.hourKey > cutoff) {
+        hourlyBuckets.set(b.hourKey, b);
+        loaded++;
+      }
+    }
+    void logFrontendEvent('DEBUG', 'metrics: loaded hourly buckets from storage', { loaded, totalSaved: saved.length });
+  } catch { /* corrupt storage, ignore */ }
+}
+
+// call once at module init to restore previous session data
+loadHourlyBuckets();
 
 function currentBucket(): HourlyBucket {
   const key = getHourKey();
@@ -100,6 +128,10 @@ function currentBucket(): HourlyBucket {
     });
     const keys = [...hourlyBuckets.keys()].sort((a, b) => a - b);
     while (keys.length > MAX_HOURLY_BUCKETS) hourlyBuckets.delete(keys.shift()!);
+    void logFrontendEvent('DEBUG', 'metrics: new hourly bucket', {
+      hour: new Date(key).toISOString(), totalBuckets: hourlyBuckets.size,
+    });
+    saveHourlyBuckets();
   }
   return hourlyBuckets.get(key)!;
 }
@@ -339,6 +371,7 @@ let flushTimer: ReturnType<typeof setInterval> | null = null;
 export function startAutoFlush() {
   if (flushTimer) return;
   flushTimer = setInterval(() => {
+    saveHourlyBuckets();
     void flushMetricsToDisk();
   }, AUTO_FLUSH_INTERVAL_MS);
 }
@@ -365,4 +398,5 @@ export function resetMetrics() {
   counters.prefetchedGames = 0;
   counters.totalFetches = 0;
   hourlyBuckets.clear();
+  try { localStorage.removeItem(HOURLY_STORAGE_KEY); } catch { /* ignore */ }
 }

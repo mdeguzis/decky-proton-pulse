@@ -9,6 +9,7 @@ import { Focusable, DialogButton, ConfirmModal, showModal, TextField } from '@de
 import { toaster } from '../lib/notify';
 import { logFrontendEvent } from '../lib/logger';
 import { invalidate, invalidateAll, getCacheStats, getCachedAppIds, getCached } from '../lib/cache';
+import { runStartupPrefetch } from '../lib/prefetch';
 import type { CacheEntry } from '../lib/cache';
 import { getProtonDBReportsWithDiagnostics } from '../lib/protondb';
 import { getSteamAppOverview } from '../lib/steamApps';
@@ -139,6 +140,7 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
           invalidateAll();
           toaster.toast({ title: extras.cacheManagerTitle(), body: extras.cacheCleared(stats.size), duration: 2000 });
           loadRows();
+          void runStartupPrefetch();
         }}
         onCancel={() => {}}
       />,
