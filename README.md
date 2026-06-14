@@ -199,34 +199,34 @@ Proton Pulse supports 29 languages. Translation coverage is measured during buil
 | Language | Code | Coverage | Status |
 |---|---|---|---|
 | English | en | 100.0% (canonical) | canonical |
-| Deutsch | de | 100.0% | pass |
-| Español | es | 100.0% | pass |
-| Français | fr | 100.0% | pass |
-| Italiano | it | 100.0% | pass |
-| 日本語 | ja | 100.0% | pass |
-| 한국어 | ko | 100.0% | pass |
-| Nederlands | nl | 100.0% | pass |
-| Polski | pl | 100.0% | pass |
-| Português (BR) | pt-BR | 100.0% | pass |
-| Русский | ru | 100.0% | pass |
-| Türkçe | tr | 100.0% | pass |
-| Українська | uk | 100.0% | pass |
-| Svenska | sv | 100.0% | pass |
-| Čeština | cs | 100.0% | pass |
-| ภาษาไทย | th | 100.0% | pass |
-| Tiếng Việt | vi | 100.0% | pass |
-| 简体中文 | zh-CN | 100.0% | pass |
-| 繁體中文 | zh-TW | 100.0% | pass |
-| Български | bg | 100.0% | pass |
-| Dansk | da | 100.0% | pass |
-| Ελληνικά | el | 100.0% | pass |
-| Español (Latinoamérica) | es-419 | 100.0% | pass |
-| Suomi | fi | 100.0% | pass |
-| Magyar | hu | 100.0% | pass |
-| Norsk | no | 100.0% | pass |
-| Português (PT) | pt | 100.0% | pass |
-| Română | ro | 100.0% | pass |
-| Slovenščina | sl | 100.0% | pass |
+| Deutsch | de | 99.0% | fail |
+| Español | es | 99.0% | fail |
+| Français | fr | 99.0% | fail |
+| Italiano | it | 98.9% | fail |
+| 日本語 | ja | 99.0% | fail |
+| 한국어 | ko | 99.0% | fail |
+| Nederlands | nl | 98.9% | fail |
+| Polski | pl | 98.9% | fail |
+| Português (BR) | pt-BR | 99.0% | fail |
+| Русский | ru | 99.0% | fail |
+| Türkçe | tr | 99.0% | fail |
+| Українська | uk | 98.9% | fail |
+| Svenska | sv | 98.9% | fail |
+| Čeština | cs | 98.9% | fail |
+| ภาษาไทย | th | 98.9% | fail |
+| Tiếng Việt | vi | 98.9% | fail |
+| 简体中文 | zh-CN | 99.0% | fail |
+| 繁體中文 | zh-TW | 98.9% | fail |
+| Български | bg | 98.9% | fail |
+| Dansk | da | 98.9% | fail |
+| Ελληνικά | el | 98.9% | fail |
+| Español (Latinoamérica) | es-419 | 98.9% | fail |
+| Suomi | fi | 98.9% | fail |
+| Magyar | hu | 98.9% | fail |
+| Norsk | no | 98.9% | fail |
+| Português (PT) | pt | 98.9% | fail |
+| Română | ro | 98.9% | fail |
+| Slovenščina | sl | 98.9% | fail |
 <!-- translation-coverage:end -->
 
 Want to help translate? See `src/lib/translations/` for the translation files.
