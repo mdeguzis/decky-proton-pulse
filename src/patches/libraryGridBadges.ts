@@ -170,6 +170,30 @@ function findCoverContainer(el: HTMLElement): HTMLElement {
   return cover;
 }
 
+// Returns true if a cover element contains images from more than one appId,
+// which means it is a composite tile (e.g. "View more in your Library") rather
+// than a single game cover. Composite tiles must be excluded from badging.
+function isCompositeTile(cover: HTMLElement, currentAppId: string): boolean {
+  const imgs = Array.from(cover.querySelectorAll('img')) as HTMLImageElement[];
+  const seen = new Set<string>();
+  for (const img of imgs) {
+    const id = extractAppIdFromUrl(img.getAttribute('src') ?? '') ?? extractAppIdFromUrl(img.src ?? '');
+    if (id) seen.add(id);
+    if (seen.size > 1) return true;
+  }
+  // also check background images on children
+  for (const el of Array.from(cover.querySelectorAll('[style*="background"]')) as HTMLElement[]) {
+    const bg = el.style?.backgroundImage ?? '';
+    const m = bg.match(/url\(['"]?([^'")\s]+)['"]?\)/);
+    if (m) {
+      const id = extractAppIdFromUrl(m[1]);
+      if (id) seen.add(id);
+      if (seen.size > 1) return true;
+    }
+  }
+  return false;
+}
+
 // Extract appId + cover container from an image element.
 // Covers two Steam library layouts:
 //   - Home page "Recent Games": [data-id] card wrapping an <img>
@@ -246,6 +270,7 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   for (const img of Array.from(doc.querySelectorAll(imgSelector)) as HTMLImageElement[]) {
     const hit = extractFromImg(img);
     if (!hit) continue;
+    if (isCompositeTile(hit.cover, hit.appId)) continue;
     if (!seen.has(hit.cover)) { seen.add(hit.cover); results.push(hit); }
   }
 
@@ -253,6 +278,7 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   for (const el of Array.from(doc.querySelectorAll('[style*="background"]')) as HTMLElement[]) {
     const hit = extractFromBgEl(el);
     if (!hit) continue;
+    if (isCompositeTile(hit.cover, hit.appId)) continue;
     if (!seen.has(hit.cover)) { seen.add(hit.cover); results.push(hit); }
   }
 
