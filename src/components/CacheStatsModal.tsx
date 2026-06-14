@@ -2,7 +2,7 @@
 // Shows 24h hourly charts for cache hit rate and fetch latency,
 // plus a live counter summary. Opened from the Manage Cache modal.
 
-import { Focusable, DialogButton } from '@decky/ui';
+import { ConfirmModal } from '@decky/ui';
 import { getHourlyBuckets, getSummary, getCombinedCategoryStats } from '../lib/metrics';
 import type { HourlyBucket } from '../lib/metrics';
 
@@ -114,118 +114,85 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
   const uptimeMin = Math.floor(summary.uptimeMs / 60000);
 
   return (
-    <Focusable
-      style={{
-        margin: '30px',
-        padding: '20px 24px',
-        backgroundColor: 'rgba(37, 40, 46, 0.55)',
-        borderRadius: 6,
-        overflowY: 'scroll',
-        maxHeight: 'calc(100vh - 80px)',
-      }}
-      onCancelButton={closeModal}
+    <ConfirmModal
+      strTitle={`Cache Stats  \u00B7  uptime ${uptimeMin}m`}
+      strOKButtonText="Close"
+      onOK={() => closeModal?.()}
+      onCancel={() => closeModal?.()}
     >
-      {/* header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <div style={{
-          fontSize: 13, fontWeight: 700,
-          textTransform: 'uppercase', letterSpacing: '0.08em', color: '#e0ebf3',
-        }}>
-          Cache Stats
+      <div style={{ overflowY: 'auto', maxHeight: 420 }}>
+        {/* hit rate chart */}
+        <SectionLabel>Cache hit rate (% per hour)</SectionLabel>
+        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 8px 4px' }}>
+          <BarChart
+            buckets={buckets}
+            getValue={(b) => {
+              const total = b.hits + b.misses;
+              return total > 0 ? Math.round((b.hits / total) * 100) : 0;
+            }}
+            getLabel={(b) => {
+              const total = b.hits + b.misses;
+              return total > 0 ? `${Math.round((b.hits / total) * 100)}%` : '0%';
+            }}
+            color="#4caf7d"
+            maxValue={100}
+            height={72}
+            suffix="%"
+          />
         </div>
-        <div style={{ fontSize: 10, color: '#4a6070' }}>
-          Uptime: {uptimeMin}m
+
+        {/* fetch latency chart */}
+        <SectionLabel>CDN avg latency (ms per hour)</SectionLabel>
+        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 8px 4px' }}>
+          <BarChart
+            buckets={buckets.filter(b => b.fetchCount > 0)}
+            getValue={(b) => b.fetchCount > 0 ? Math.round(b.totalFetchMs / b.fetchCount) : 0}
+            getLabel={(b) => b.fetchCount > 0 ? `${Math.round(b.totalFetchMs / b.fetchCount)}` : '0'}
+            color="#5ec8f4"
+            height={72}
+            suffix="ms"
+          />
         </div>
-      </div>
 
-      {/* hit rate chart */}
-      <SectionLabel>Cache hit rate (% per hour)</SectionLabel>
-      <div style={{
-        background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 8px 4px',
-      }}>
-        <BarChart
-          buckets={buckets}
-          getValue={(b) => {
-            const total = b.hits + b.misses;
-            return total > 0 ? Math.round((b.hits / total) * 100) : 0;
-          }}
-          getLabel={(b) => {
-            const total = b.hits + b.misses;
-            return total > 0 ? `${Math.round((b.hits / total) * 100)}%` : '0%';
-          }}
-          color="#4caf7d"
-          maxValue={100}
-          height={72}
-          suffix="%"
-        />
-      </div>
+        {/* fetch volume chart */}
+        <SectionLabel>Fetch volume (requests per hour)</SectionLabel>
+        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 8px 4px' }}>
+          <BarChart
+            buckets={buckets}
+            getValue={(b) => b.fetches}
+            getLabel={(b) => `${b.fetches}`}
+            color="#f6b347"
+            height={64}
+          />
+        </div>
 
-      {/* fetch latency chart */}
-      <SectionLabel>CDN fetch avg latency (ms per hour)</SectionLabel>
-      <div style={{
-        background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 8px 4px',
-      }}>
-        <BarChart
-          buckets={buckets.filter(b => b.fetchCount > 0)}
-          getValue={(b) => b.fetchCount > 0 ? Math.round(b.totalFetchMs / b.fetchCount) : 0}
-          getLabel={(b) => b.fetchCount > 0 ? `${Math.round(b.totalFetchMs / b.fetchCount)}` : '0'}
-          color="#5ec8f4"
-          height={72}
-          suffix="ms"
-        />
-      </div>
+        {/* counter summary */}
+        <SectionLabel>Session totals</SectionLabel>
+        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 10px' }}>
+          <StatRow label="Cache hits" value={summary.counters.cacheHits} />
+          <StatRow label="Cache misses" value={summary.counters.cacheMisses} />
+          <StatRow label="Hit rate" value={`${hitPct}%`} />
+          <StatRow label="Total fetches" value={summary.counters.totalFetches} />
+          <StatRow label="Fetch errors" value={summary.counters.fetchErrors} />
+          <StatRow label="No CDN data (404)" value={summary.counters.noDataGames} />
+          <StatRow label="Prefetched games" value={summary.counters.prefetchedGames} />
+          <StatRow label="Cache evictions" value={summary.counters.cacheEvictions} />
+        </div>
 
-      {/* fetch volume chart */}
-      <SectionLabel>Fetch volume (requests per hour)</SectionLabel>
-      <div style={{
-        background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 8px 4px',
-      }}>
-        <BarChart
-          buckets={buckets}
-          getValue={(b) => b.fetches}
-          getLabel={(b) => `${b.fetches}`}
-          color="#f6b347"
-          height={64}
-        />
+        {/* CDN timing summary */}
+        {cdnStats && (
+          <>
+            <SectionLabel>CDN fetch timing (all-time)</SectionLabel>
+            <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 10px' }}>
+              <StatRow label="Requests" value={cdnStats.count} />
+              <StatRow label="Avg" value={`${cdnStats.avgMs}ms`} />
+              <StatRow label="p95" value={`${cdnStats.p95Ms}ms`} />
+              <StatRow label="Max" value={`${cdnStats.maxMs}ms`} />
+              <StatRow label="Errors" value={cdnStats.errorCount} />
+            </div>
+          </>
+        )}
       </div>
-
-      {/* counter summary */}
-      <SectionLabel>Session totals</SectionLabel>
-      <div style={{
-        background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 10px',
-      }}>
-        <StatRow label="Cache hits" value={summary.counters.cacheHits} />
-        <StatRow label="Cache misses" value={summary.counters.cacheMisses} />
-        <StatRow label="Hit rate" value={`${hitPct}%`} />
-        <StatRow label="Total fetches" value={summary.counters.totalFetches} />
-        <StatRow label="Fetch errors" value={summary.counters.fetchErrors} />
-        <StatRow label="No CDN data (404)" value={summary.counters.noDataGames} />
-        <StatRow label="Prefetched games" value={summary.counters.prefetchedGames} />
-        <StatRow label="Cache evictions" value={summary.counters.cacheEvictions} />
-      </div>
-
-      {/* CDN timing summary */}
-      {cdnStats && (
-        <>
-          <SectionLabel>CDN fetch timing (all-time)</SectionLabel>
-          <div style={{
-            background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 10px',
-          }}>
-            <StatRow label="Requests" value={cdnStats.count} />
-            <StatRow label="Avg" value={`${cdnStats.avgMs}ms`} />
-            <StatRow label="p95" value={`${cdnStats.p95Ms}ms`} />
-            <StatRow label="Max" value={`${cdnStats.maxMs}ms`} />
-            <StatRow label="Errors" value={cdnStats.errorCount} />
-          </div>
-        </>
-      )}
-
-      {/* close button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
-        <DialogButton onClick={closeModal} style={{ minWidth: 120, fontSize: 12 }}>
-          Close
-        </DialogButton>
-      </div>
-    </Focusable>
+    </ConfirmModal>
   );
 }

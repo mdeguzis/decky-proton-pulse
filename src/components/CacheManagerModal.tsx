@@ -154,29 +154,27 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
     >
       <div style={{ width: '100%', overflow: 'hidden' }}>
         {/* stats header */}
-        <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>
-            {extras.cacheStatsSummary(stats.size, stats.maxSize, stats.oldestMs !== null ? formatAge(stats.oldestMs) : null)}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <DialogButton
-              onClick={() => {
-                const m = showModal(
-                  <CacheStatsModalContent closeModal={() => m?.Close()} />,
-                );
-              }}
-              style={{ fontSize: 10, padding: '3px 10px', minWidth: 0, height: 'auto' }}
-            >
-              Stats
-            </DialogButton>
-            <Focusable
-              onClick={handleClearAll}
-              onOKButton={handleClearAll}
-              style={{ cursor: 'pointer', color: '#f44336', fontSize: 11 }}
-            >
-              {extras.clearAll()}
-            </Focusable>
-          </div>
+        <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 6 }}>
+          {extras.cacheStatsSummary(stats.size, stats.maxSize, stats.oldestMs !== null ? formatAge(stats.oldestMs) : null)}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <DialogButton
+            onClick={() => {
+              const m = showModal(
+                <CacheStatsModalContent closeModal={() => m?.Close()} />,
+              );
+            }}
+            style={{ fontSize: 10, padding: '3px 10px', minWidth: 0, height: 'auto', flex: 'none' }}
+          >
+            Stats
+          </DialogButton>
+          <Focusable
+            onClick={handleClearAll}
+            onOKButton={handleClearAll}
+            style={{ cursor: 'pointer', color: '#f44336', fontSize: 11, flex: 'none' }}
+          >
+            {extras.clearAll()}
+          </Focusable>
         </div>
         {stats.networkFetchAvgMs !== null && (
           <div style={{ fontSize: 10, color: '#5dade2', marginBottom: 10 }}>
