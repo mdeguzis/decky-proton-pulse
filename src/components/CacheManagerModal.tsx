@@ -166,13 +166,13 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
                   <CacheStatsModalContent closeModal={() => m?.Close()} />,
                 );
               }}
-              style={{ fontSize: 10, padding: '2px 8px', minWidth: 0, height: 26 }}
+              style={{ fontSize: 10, padding: '2px 10px', minWidth: 'max-content', height: 26, whiteSpace: 'nowrap' }}
             >
               Stats
             </DialogButton>
             <DialogButton
               onClick={handleClearAll}
-              style={{ fontSize: 10, padding: '2px 8px', minWidth: 0, height: 26, color: '#f44336' }}
+              style={{ fontSize: 10, padding: '2px 10px', minWidth: 'max-content', height: 26, color: '#f44336', whiteSpace: 'nowrap' }}
             >
               {extras.clearAll()}
             </DialogButton>
