@@ -170,11 +170,13 @@ function findCoverContainer(el: HTMLElement): HTMLElement {
   return cover;
 }
 
-// Returns true if the element or any nearby ancestor contains navigation text
+// Returns true if the element or its immediate parent contains navigation text
 // like "View more" or "View all" -- these are Steam UI nav tiles, not game covers.
+// Limit to 2 levels: walking further risks hitting shared row containers whose
+// textContent includes sibling "View more" tiles (which would exclude the hero tile).
 function isNavTile(el: HTMLElement): boolean {
   let cur: HTMLElement | null = el;
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 2; i++) {
     if (!cur) break;
     const text = (cur.textContent ?? '').trim().toLowerCase();
     if (text.includes('view more') || text.includes('view all')) return true;
