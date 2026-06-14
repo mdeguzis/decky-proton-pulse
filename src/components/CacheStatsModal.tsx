@@ -17,7 +17,10 @@ const PpDialogButton = DialogButton as React.ComponentType<
 >;
 
 function formatHour(hourKey: number): string {
-  return `${new Date(hourKey).getHours().toString().padStart(2, '0')}h`;
+  const d = new Date(hourKey);
+  const h = d.getHours().toString().padStart(2, '0');
+  const m = d.getMinutes().toString().padStart(2, '0');
+  return `${h}:${m}`;
 }
 
 function LineChart({
@@ -57,16 +60,28 @@ function LineChart({
   const yMax = maxValue ?? dataMax;
 
   const n = buckets.length;
-  const xOf = (i: number) => n === 1 ? PAD_L + chartW * 0.1 : PAD_L + (i / (n - 1)) * chartW;
+  const xOf = (i: number) => PAD_L + (n === 1 ? chartW / 2 : (i / (n - 1)) * chartW);
   const yOf = (v: number) => PAD_T + chartH - Math.min(Math.max(v, 0) / yMax, 1) * chartH;
 
-  const pts = buckets.map((b, i) => `${xOf(i).toFixed(1)},${yOf(getValue(b)).toFixed(1)}`);
-  const areaPath = [
-    `M${xOf(0).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
-    ...buckets.map((b, i) => `L${xOf(i).toFixed(1)},${yOf(getValue(b)).toFixed(1)}`),
-    `L${xOf(n - 1).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
-    'Z',
-  ].join(' ');
+  // single-point: draw a horizontal line spanning the full chart width
+  const pts = n === 1
+    ? `${PAD_L.toFixed(1)},${yOf(getValue(buckets[0])).toFixed(1)} ${(PAD_L + chartW).toFixed(1)},${yOf(getValue(buckets[0])).toFixed(1)}`
+    : buckets.map((b, i) => `${xOf(i).toFixed(1)},${yOf(getValue(b)).toFixed(1)}`).join(' ');
+
+  const areaPath = n === 1
+    ? [
+        `M${PAD_L.toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+        `L${PAD_L.toFixed(1)},${yOf(getValue(buckets[0])).toFixed(1)}`,
+        `L${(PAD_L + chartW).toFixed(1)},${yOf(getValue(buckets[0])).toFixed(1)}`,
+        `L${(PAD_L + chartW).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+        'Z',
+      ].join(' ')
+    : [
+        `M${xOf(0).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+        ...buckets.map((b, i) => `L${xOf(i).toFixed(1)},${yOf(getValue(b)).toFixed(1)}`),
+        `L${xOf(n - 1).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+        'Z',
+      ].join(' ');
 
   const labelStep = n <= 6 ? 1 : n <= 12 ? 2 : 4;
   const gridFracs = [0, 0.5, 1];
@@ -160,7 +175,8 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
   const hitColor = hitNum >= 70 ? '#4caf7d' : hitNum >= 40 ? '#f6b347' : hitNum >= 0 ? '#f44336' : undefined;
 
   const SP = findSP();
-  const modalH = SP.innerHeight - 60;
+  // 30px top margin + 70px bottom margin to clear the ~50px Steam BPM bottom bar
+  const modalH = SP.innerHeight - 30 - 70;
 
   const sectionStyle = (id: string): React.CSSProperties => ({
     width: '100%', textAlign: 'left',
@@ -183,7 +199,10 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
     <Focusable
       onCancelButton={closeModal}
       style={{
-        margin: 30,
+        marginTop: 30,
+        marginLeft: 30,
+        marginRight: 30,
+        marginBottom: 70,
         height: modalH,
         display: 'flex',
         flexDirection: 'column',
@@ -214,7 +233,7 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
       </div>
 
       {/* scrollable body -- each section is a PpDialogButton for D-pad nav */}
-      <Focusable style={{ overflowY: 'scroll', flex: 1, padding: '2px 14px' }}>
+      <Focusable style={{ overflowY: 'scroll', flex: 1, padding: '8px 14px 0' }}>
 
         <PpDialogButton
           onClick={() => {}}
@@ -303,7 +322,7 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
           </PpDialogButton>
         )}
 
-        <div style={{ height: 12 }} />
+        <div style={{ height: 24 }} />
       </Focusable>
     </Focusable>
   );

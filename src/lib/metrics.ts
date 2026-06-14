@@ -84,12 +84,14 @@ export interface MetricsSummary {
 
 // --- hourly buckets (last 24h, persisted to localStorage) ---
 
-const MAX_HOURLY_BUCKETS = 24;
-const HOURLY_STORAGE_KEY = 'pp_hourly_metrics_v1';
+// 30-minute buckets, 48 max = last 24h of history
+const BUCKET_MS = 30 * 60 * 1000;
+const MAX_HOURLY_BUCKETS = 48;
+const HOURLY_STORAGE_KEY = 'pp_metrics_buckets_v2';
 const hourlyBuckets = new Map<number, HourlyBucket>();
 
 function getHourKey(): number {
-  return Math.floor(Date.now() / 3_600_000) * 3_600_000;
+  return Math.floor(Date.now() / BUCKET_MS) * BUCKET_MS;
 }
 
 function saveHourlyBuckets(): void {
@@ -368,18 +370,34 @@ export async function flushMetricsToDisk(): Promise<boolean> {
 
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 
+// heartbeat interval -- ticks currentBucket() every 5 min so idle periods
+// still register a slot in the chart, giving a meaningful time lineage
+const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
 export function startAutoFlush() {
   if (flushTimer) return;
   flushTimer = setInterval(() => {
     saveHourlyBuckets();
     void flushMetricsToDisk();
   }, AUTO_FLUSH_INTERVAL_MS);
+
+  if (!heartbeatTimer) {
+    heartbeatTimer = setInterval(() => {
+      currentBucket(); // ensures a slot exists even with no activity
+      saveHourlyBuckets();
+    }, HEARTBEAT_INTERVAL_MS);
+  }
 }
 
 export function stopAutoFlush() {
   if (flushTimer) {
     clearInterval(flushTimer);
     flushTimer = null;
+  }
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
   }
 }
 
