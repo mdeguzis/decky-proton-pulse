@@ -149,6 +149,62 @@ function formatPrefetchReason(reason: string): string {
   }
 }
 
+const COMPAT_TOOL_LABELS: Record<string, string> = {
+  'proton-ge': 'Proton-GE',
+  'proton-cachyos': 'CachyOS Proton',
+};
+
+function formatLastChecked(ts: number): string {
+  if (!ts) return 'Never';
+  const diffH = Math.floor((Date.now() - ts) / 3600000);
+  if (diffH < 1) return 'Less than 1h ago';
+  if (diffH < 24) return `${diffH}h ago`;
+  return `${Math.floor(diffH / 24)}d ago`;
+}
+
+function CompatAutoUpdateStatusBox() {
+  const toolIds = ['proton-ge', 'proton-cachyos'];
+  const infoStyle: React.CSSProperties = {
+    background: '#0d1b2a',
+    border: '1px solid #1b2f44',
+    borderRadius: 8,
+    padding: '10px 14px',
+    margin: '4px 8px 0',
+    fontSize: 11,
+    color: '#a0bdd0',
+    lineHeight: '1.6',
+  };
+  const labelStyle: React.CSSProperties = { color: '#5dade2', display: 'inline-block', width: 130 };
+  return (
+    <div style={infoStyle}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f4ff', marginBottom: 8 }}>
+        Compat Tool Auto-Update
+      </div>
+      {toolIds.map((toolId, i) => {
+        const autoUpdate = getSetting(`compat-auto-update-${toolId}`, false);
+        const lastChecked = Number(getSetting(`proton-pulse:compat-autoupdate-last-${toolId}`, 0));
+        return (
+          <div key={toolId} style={{ paddingTop: i > 0 ? 6 : 0, borderTop: i > 0 ? '1px solid #1b2f44' : undefined, marginTop: i > 0 ? 6 : 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#c8dcea', marginBottom: 2 }}>
+              {COMPAT_TOOL_LABELS[toolId] ?? toolId}
+            </div>
+            <div>
+              <span style={labelStyle}>Auto-update</span>
+              <span style={{ color: autoUpdate ? '#4caf50' : '#e57373', fontWeight: 600 }}>
+                {autoUpdate ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <div>
+              <span style={labelStyle}>Last checked</span>
+              <span style={{ fontFamily: 'monospace' }}>{formatLastChecked(lastChecked)}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // compact metrics info box for the advanced settings area
 function MetricsInfoBox() {
   const extras = t().extras!;
@@ -1430,6 +1486,15 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
       )}
 
       {/* advanced section: cache management */}
+      {advancedEnabled && (
+        <div style={sectionStyle()}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
+            Compat Tools
+          </div>
+          <CompatAutoUpdateStatusBox />
+        </div>
+      )}
+
       {advancedEnabled && (
         <div style={sectionStyle()}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
