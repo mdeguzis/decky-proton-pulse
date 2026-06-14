@@ -233,7 +233,7 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
       </div>
 
       {/* scrollable body -- each section is a PpDialogButton for D-pad nav */}
-      <Focusable style={{ overflowY: 'scroll', flex: 1, padding: '8px 14px 0' }}>
+      <Focusable style={{ overflowY: 'scroll', flex: 1, padding: '16px 14px 0' }}>
 
         <PpDialogButton
           onClick={() => {}}
@@ -322,7 +322,7 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
           </PpDialogButton>
         )}
 
-        <div style={{ height: 24 }} />
+        <div style={{ height: 40 }} />
       </Focusable>
     </Focusable>
   );
