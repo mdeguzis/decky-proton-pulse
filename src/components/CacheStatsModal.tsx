@@ -107,7 +107,7 @@ function LineChart({
       <path d={areaPath} fill={color} fillOpacity={0.13} />
 
       {/* line */}
-      <polyline points={pts.join(' ')} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
 
       {/* dots */}
       {buckets.map((b, i) => (
