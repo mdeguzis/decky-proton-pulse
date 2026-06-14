@@ -1,6 +1,6 @@
 // src/components/tabs/ConfigureTab.tsx
 import { Component, type ErrorInfo, type ReactNode, useState, useEffect, useMemo } from 'react';
-import { Focusable, DialogButton, ConfirmModal, showModal, Dropdown, SteamSpinner } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, ModalRoot, showModal, Dropdown, SteamSpinner } from '@decky/ui';
 import { toaster } from '../../lib/notify';
 import { computeConfidence, bucketByGpuTier } from '../../lib/scoring';
 import {
@@ -255,13 +255,9 @@ function ReportFiltersModal({
   const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10 };
   const labelStyle: React.CSSProperties = { fontSize: 11, color: '#cfe2f4', fontWeight: 700, width: 100, flexShrink: 0 };
   return (
-    <ConfirmModal
-      strTitle="Filters"
-      strOKButtonText={t().common.close}
-      onOK={onClose}
-      onCancel={onClose}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 360 }}>
+    <ModalRoot onCancel={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 0 16px' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 2 }}>Filters</div>
         <div style={rowStyle}>
           <div style={labelStyle}>{t().configManager.gpuFilter}</div>
           <div style={{ flex: 1 }}>
@@ -303,8 +299,13 @@ function ReportFiltersModal({
             />
           </div>
         </div>
+        <Focusable style={{ marginTop: 4 }}>
+          <DialogButton onClick={onClose} style={{ width: '100%', fontSize: 13 }}>
+            {t().common.close}
+          </DialogButton>
+        </Focusable>
       </div>
-    </ConfirmModal>
+    </ModalRoot>
   );
 }
 

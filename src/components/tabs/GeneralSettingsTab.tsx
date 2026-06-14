@@ -991,7 +991,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             {formatVersion(updateStatus?.version)} {t().extras!.updateInstalledRestart!()}
           </div>
         )}
-        <Focusable style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 10 }} flow-children="horizontal">
+        <Focusable style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 10 }} flow-children="horizontal">
           <Dropdown
             rgOptions={[
               { data: 'release', label: t().extras!.updateChannelRelease!() },
