@@ -154,16 +154,27 @@ const COMPAT_TOOL_LABELS: Record<string, string> = {
   'proton-cachyos': 'CachyOS Proton',
 };
 
-function formatLastChecked(ts: number): string {
+const COMPAT_AUTOUPDATE_THROTTLE_MS = 24 * 60 * 60 * 1000;
+
+function fmtTs(ts: number): string {
   if (!ts) return 'Never';
-  const diffH = Math.floor((Date.now() - ts) / 3600000);
-  if (diffH < 1) return 'Less than 1h ago';
-  if (diffH < 24) return `${diffH}h ago`;
-  return `${Math.floor(diffH / 24)}d ago`;
+  const d = new Date(ts);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+function readCompatStatus() {
+  return ['proton-ge', 'proton-cachyos'].map((toolId) => ({
+    toolId,
+    autoUpdate: getSetting(`compat-auto-update-${toolId}`, false) as boolean,
+    lastChecked: Number(getSetting(`proton-pulse:compat-autoupdate-last-${toolId}`, 0)),
+  }));
 }
 
 function CompatAutoUpdateStatusBox() {
-  const toolIds = ['proton-ge', 'proton-cachyos'];
+  const [rows, setRows] = useState(readCompatStatus);
+  const refresh = () => setRows(readCompatStatus());
+
   const infoStyle: React.CSSProperties = {
     background: '#0d1b2a',
     border: '1px solid #1b2f44',
@@ -173,19 +184,23 @@ function CompatAutoUpdateStatusBox() {
     fontSize: 11,
     color: '#a0bdd0',
     lineHeight: '1.6',
+    fontFamily: 'monospace',
   };
   const labelStyle: React.CSSProperties = { color: '#5dade2', display: 'inline-block', width: 130 };
+
   return (
     <div style={infoStyle}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f4ff', marginBottom: 8 }}>
-        Compat Tool Auto-Update
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f4ff', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'inherit' }}>
+        <span>Compat Tool Auto-Update</span>
+        <Focusable onClick={refresh} onOKButton={refresh} style={{ cursor: 'pointer', fontSize: 11, color: '#5dade2', padding: '2px 6px' }}>
+          {t().compatTools.refresh}
+        </Focusable>
       </div>
-      {toolIds.map((toolId, i) => {
-        const autoUpdate = getSetting(`compat-auto-update-${toolId}`, false);
-        const lastChecked = Number(getSetting(`proton-pulse:compat-autoupdate-last-${toolId}`, 0));
+      {rows.map(({ toolId, autoUpdate, lastChecked }, i) => {
+        const nextCheck = lastChecked ? lastChecked + COMPAT_AUTOUPDATE_THROTTLE_MS : 0;
         return (
-          <div key={toolId} style={{ paddingTop: i > 0 ? 6 : 0, borderTop: i > 0 ? '1px solid #1b2f44' : undefined, marginTop: i > 0 ? 6 : 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#c8dcea', marginBottom: 2 }}>
+          <div key={toolId} style={{ paddingTop: i > 0 ? 8 : 0, borderTop: i > 0 ? '1px solid #1b2f44' : undefined, marginTop: i > 0 ? 8 : 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#c8dcea', marginBottom: 2, fontFamily: 'inherit' }}>
               {COMPAT_TOOL_LABELS[toolId] ?? toolId}
             </div>
             <div>
@@ -194,10 +209,8 @@ function CompatAutoUpdateStatusBox() {
                 {autoUpdate ? 'Enabled' : 'Disabled'}
               </span>
             </div>
-            <div>
-              <span style={labelStyle}>Last checked</span>
-              <span style={{ fontFamily: 'monospace' }}>{formatLastChecked(lastChecked)}</span>
-            </div>
+            <div><span style={labelStyle}>Last checked</span>{fmtTs(lastChecked)}</div>
+            <div><span style={labelStyle}>Next check at</span>{autoUpdate && nextCheck ? fmtTs(nextCheck) : 'N/A'}</div>
           </div>
         );
       })}
