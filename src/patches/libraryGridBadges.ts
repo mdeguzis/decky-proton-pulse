@@ -213,6 +213,14 @@ function extractFromImg(img: HTMLImageElement): { appId: string; cover: HTMLElem
   if (h > 0 && h < MIN_TILE_HEIGHT) return null;
   const appId = extractAppIdFromUrl(attr) ?? extractAppIdFromUrl(src);
   if (!appId) return null;
+  // Skip thumbnails inside "View more" / "View all" composite tiles.
+  // closest('[data-id]') scopes the text check to just that tile's own [data-id] container
+  // (not shared row ancestors), so the hero tile's appId is never affected.
+  const tileAncestor = img.closest('[data-id]');
+  if (tileAncestor) {
+    const tileText = (tileAncestor.textContent ?? '').toLowerCase();
+    if (tileText.includes('view more') || tileText.includes('view all')) return null;
+  }
   return { appId, cover: findCoverContainer(img) };
 }
 
