@@ -35,7 +35,8 @@ import { installScreenshotAutomationBridge } from './lib/screenshotAutomation';
 import { initCache } from './lib/cache';
 import { runStartupPrefetch } from './lib/prefetch';
 import { startAutoFlush, stopAutoFlush, flushMetricsToDisk } from './lib/metrics';
-import { getProtonGeManagerState, installProtonGe } from './lib/compatTools';
+import { getCompatManagerState, installCompatTool } from './lib/compatTools';
+import type { CompatToolId } from './types';
 import { startSessionTracking, stopSessionTracking } from './lib/playtime';
 import {
   initCloudSync,
@@ -201,6 +202,47 @@ function Content() {
   );
 }
 
+const COMPAT_AUTOUPDATE_THROTTLE_MS = 24 * 60 * 60 * 1000;
+
+async function runCompatToolAutoUpdate(toolId: CompatToolId): Promise<void> {
+  if (!getSetting(`compat-auto-update-${toolId}`, false)) {
+    void logFrontendEvent('DEBUG', 'Startup compat auto-update skipped', { toolId, reason: 'disabled' });
+    return;
+  }
+  const throttleKey = `proton-pulse:compat-autoupdate-last-${toolId}`;
+  const lastCheck = Number(getSetting(throttleKey, 0));
+  const now = Date.now();
+  if (lastCheck && (now - lastCheck) < COMPAT_AUTOUPDATE_THROTTLE_MS) {
+    void logFrontendEvent('DEBUG', 'Startup compat auto-update skipped', {
+      toolId, reason: 'throttled', hoursSinceLast: Math.round((now - lastCheck) / 36e5),
+    });
+    return;
+  }
+  try {
+    void logFrontendEvent('DEBUG', 'Startup compat auto-update check started', { toolId });
+    const state = await getCompatManagerState(toolId, true);
+    setSetting(throttleKey, now);
+    if (!state.current_release) {
+      void logFrontendEvent('DEBUG', 'Startup compat auto-update finished', { toolId, reason: 'no-current-release' });
+      return;
+    }
+    if (state.current_latest_slot_installed) {
+      void logFrontendEvent('DEBUG', 'Startup compat auto-update finished', { toolId, reason: 'already-up-to-date', tag: state.current_release.tag_name });
+      return;
+    }
+    if (state.install_status.state === 'running') {
+      void logFrontendEvent('DEBUG', 'Startup compat auto-update finished', { toolId, reason: 'install-already-running' });
+      return;
+    }
+    void logFrontendEvent('INFO', 'Startup compat auto-update install needed', { toolId, tag: state.current_release.tag_name });
+    const result = await installCompatTool(toolId, state.current_release.tag_name, true);
+    void logFrontendEvent('INFO', 'Startup compat auto-update result', { toolId, tag: state.current_release.tag_name, result });
+    toaster.toast({ title: 'Proton Pulse', body: result.message });
+  } catch (e) {
+    void logFrontendEvent('ERROR', 'Startup compat auto-update failed', { toolId, error: e instanceof Error ? e.message : String(e) });
+  }
+}
+
 // --- Plugin definition ---
 export default definePlugin(() => {
   void logFrontendEvent('INFO', 'Plugin frontend initializing', { translationsLoaded: TRANSLATIONS_LOADED });
@@ -246,48 +288,11 @@ export default definePlugin(() => {
     startSessionTracking();
   }, 5000);
 
-  // Auto-install latest Proton-GE on load if the user has the setting enabled
-  const geAutoUpdateTimer = setTimeout(() => {
-    if (!getSetting('compat-auto-update-proton-ge', false)) {
-      void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check skipped', {
-        reason: 'disabled',
-      });
-      return;
-    }
-    void (async () => {
-      try {
-        void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check started');
-        const state = await getProtonGeManagerState(true);
-        if (!state.current_release) {
-          void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check finished', {
-            reason: 'no-current-release',
-          });
-          return;
-        }
-        if (state.current_latest_slot_installed) {
-          void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check finished', {
-            reason: 'already-up-to-date',
-            tag: state.current_release.tag_name,
-          });
-          return;
-        }
-        if (state.install_status.state === 'running') {
-          void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update check finished', {
-            reason: 'install-already-running',
-            tag: state.install_status.tag_name,
-          });
-          return;
-        }
-
-        void logFrontendEvent('DEBUG', 'Startup Proton-GE-Latest auto-update install needed', {
-          tag: state.current_release.tag_name,
-        });
-        const result = await installProtonGe(state.current_release.tag_name, true);
-        void logFrontendEvent('INFO', 'Startup auto-install Proton-GE-Latest', { tag: state.current_release.tag_name, result });
-      } catch (e) {
-        void logFrontendEvent('ERROR', 'Startup auto-install Proton-GE failed', { error: e instanceof Error ? e.message : String(e) });
-      }
-    })();
+  // Auto-install latest Proton-GE / CachyOS Proton on startup if enabled.
+  // Throttled to once per 24h per tool so we don't hit GitHub on every boot.
+  const compatAutoUpdateTimer = setTimeout(() => {
+    void runCompatToolAutoUpdate('proton-ge');
+    void runCompatToolAutoUpdate('proton-cachyos');
   }, 8000);
 
   // Startup update check: when the user is on the release or pre-release
@@ -423,7 +428,7 @@ export default definePlugin(() => {
       // flush metrics one last time before shutdown
       stopAutoFlush();
       clearTimeout(prefetchTimer);
-      clearTimeout(geAutoUpdateTimer);
+      clearTimeout(compatAutoUpdateTimer);
       clearTimeout(updateCheckTimer);
       void flushMetricsToDisk();
       routerHook.removeRoute('/proton-pulse');
