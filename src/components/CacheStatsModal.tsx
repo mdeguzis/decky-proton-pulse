@@ -2,7 +2,7 @@
 // SVG line charts for hit rate, CDN latency, and fetch volume over the
 // last 24h of hourly buckets. Opened from the Stats button in Manage Cache.
 
-import { ConfirmModal } from '@decky/ui';
+import { ConfirmModal, Focusable, DialogButton } from '@decky/ui';
 import { getHourlyBuckets, getSummary, getCombinedCategoryStats } from '../lib/metrics';
 import type { HourlyBucket } from '../lib/metrics';
 
@@ -191,7 +191,16 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
       onOK={() => closeModal?.()}
       onCancel={() => closeModal?.()}
     >
-      <div style={{ overflowY: 'auto', maxHeight: 380, paddingRight: 4 }}>
+      {/* close button top-right */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+        <DialogButton
+          onClick={closeModal}
+          style={{ fontSize: 10, padding: '2px 10px', minWidth: 0, height: 24, whiteSpace: 'nowrap' }}
+        >
+          Close
+        </DialogButton>
+      </div>
+      <Focusable style={{ overflowY: 'scroll', height: 360, paddingRight: 4 }}>
 
         {/* hit rate */}
         <SectionLabel>Cache hit rate (% per hour)</SectionLabel>
@@ -257,7 +266,7 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
         )}
 
         <div style={{ height: 8 }} />
-      </div>
+      </Focusable>
     </ConfirmModal>
   );
 }
