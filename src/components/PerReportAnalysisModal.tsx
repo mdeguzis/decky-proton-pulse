@@ -189,7 +189,7 @@ function PerReportAnalysisModal({ report, allReports, configs, sysInfo, closeMod
                 border: '1px solid rgba(102, 192, 244, 0.35)',
               }}>{breakdown.total} pts</span>
             </div>
-            <span style={{ fontSize: 9, color: scoreLabelColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{scoreLabel}</span>
+            <span style={{ fontSize: 9, color: scoreLabelColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginRight: 10 }}>{scoreLabel}</span>
           </div>
         </div>
 
