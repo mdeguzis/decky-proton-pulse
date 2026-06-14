@@ -153,27 +153,29 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
       onCancel={() => closeModal?.()}
     >
       <div style={{ width: '100%', overflow: 'hidden' }}>
-        {/* stats header */}
-        <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 6 }}>
-          {extras.cacheStatsSummary(stats.size, stats.maxSize, stats.oldestMs !== null ? formatAge(stats.oldestMs) : null)}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <DialogButton
-            onClick={() => {
-              const m = showModal(
-                <CacheStatsModalContent closeModal={() => m?.Close()} />,
-              );
-            }}
-            style={{ fontSize: 10, padding: '3px 10px', minWidth: 0, height: 'auto', flex: 'none' }}
-          >
-            Stats
-          </DialogButton>
-          <Focusable
-            onClick={handleClearAll}
-            onOKButton={handleClearAll}
-            style={{ cursor: 'pointer', color: '#f44336', fontSize: 11, flex: 'none' }}
-          >
-            {extras.clearAll()}
+        {/* stats header: summary left, action buttons top-right */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: '#7a9bb5' }}>
+            {extras.cacheStatsSummary(stats.size, stats.maxSize, stats.oldestMs !== null ? formatAge(stats.oldestMs) : null)}
+          </div>
+          <Focusable flow-children="horizontal" style={{ display: 'flex', gap: 6, flex: 'none' }}>
+            <DialogButton
+              autoFocus
+              onClick={() => {
+                const m = showModal(
+                  <CacheStatsModalContent closeModal={() => m?.Close()} />,
+                );
+              }}
+              style={{ fontSize: 10, padding: '2px 8px', minWidth: 0, height: 26 }}
+            >
+              Stats
+            </DialogButton>
+            <DialogButton
+              onClick={handleClearAll}
+              style={{ fontSize: 10, padding: '2px 8px', minWidth: 0, height: 26, color: '#f44336' }}
+            >
+              {extras.clearAll()}
+            </DialogButton>
           </Focusable>
         </div>
         {stats.networkFetchAvgMs !== null && (
