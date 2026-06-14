@@ -152,7 +152,7 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
     return (
       <Focusable
         style={{
-          position: 'fixed', top: '3%', left: '3%', width: '94%', height: '91%',
+          position: 'fixed', top: 62, bottom: 72, left: '3%', right: '3%',
           background: 'rgba(13,22,30,0.97)',
           borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
           display: 'flex', flexDirection: 'column', zIndex: 9999, overflow: 'hidden',
