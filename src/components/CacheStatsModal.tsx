@@ -196,13 +196,17 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
     <Focusable
       onCancelButton={closeModal}
       style={{
-        margin: '30px 30px 70px',
-        height: 'calc(100% - 100px)',
+        position: 'fixed',
+        top: 30,
+        left: 30,
+        right: 30,
+        bottom: 70,
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: 'rgba(24, 27, 34, 0.98)',
         borderRadius: 6,
         overflow: 'hidden',
+        zIndex: 9999,
       }}
     >
       {/* header row: title left, small close button right */}
