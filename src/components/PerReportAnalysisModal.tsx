@@ -175,7 +175,7 @@ function PerReportAnalysisModal({ report, allReports, configs, sysInfo, closeMod
             </div>
           </div>
           {/* Total confidence score + help button */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{
                 background: 'rgba(102, 192, 244, 0.18)',
