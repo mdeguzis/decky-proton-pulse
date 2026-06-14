@@ -150,8 +150,6 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Sync header confidence badge with Analysis tab by using computeGameStats
-
 ## v1.7.2 pre-release
 
 - Bump to 1.7.2 -- updater pre-release channel fix
