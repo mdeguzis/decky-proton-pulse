@@ -1479,36 +1479,52 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                 onChange={(opt) => setSortPreference(opt.data as SortMode)}
               />
             </div>
-            <DialogButton
-              style={{ width: 'auto', height: 40, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
-              onClick={() => {
-                const modal = showModal(
-                  <ReportFiltersModal
-                    filter={filter}
-                    setFilterMode={setFilterMode}
-                    gpuFilterCounts={gpuFilterCounts}
-                    archFilter={archFilter}
-                    setArchFilter={setArchFilter}
-                    availArchitectures={availArchitectures}
-                    tierFiltered={tierFiltered}
-                    configFilter={configFilter}
-                    setConfigFilterMode={setConfigFilterMode}
-                    configFilterCounts={configFilterCounts}
-                    visibleReports={visibleReports}
-                    onClose={() => modal.Close()}
-                  />,
-                );
-              }}
-            >
-              {/* sliders/filter icon */}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
-              </svg>
-              {(() => {
-                const count = [filter !== 'all', archFilter !== 'all', configFilter !== 'all'].filter(Boolean).length;
-                return count > 0 ? `Filters (${count})` : 'Filters';
-              })()}
-            </DialogButton>
+            {(() => {
+              const activeFilterCount = [filter !== 'all', archFilter !== 'all', configFilter !== 'all'].filter(Boolean).length;
+              return (
+                <>
+                  <DialogButton
+                    style={{ width: 'auto', height: 40, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
+                    onClick={() => {
+                      const modal = showModal(
+                        <ReportFiltersModal
+                          filter={filter}
+                          setFilterMode={setFilterMode}
+                          gpuFilterCounts={gpuFilterCounts}
+                          archFilter={archFilter}
+                          setArchFilter={setArchFilter}
+                          availArchitectures={availArchitectures}
+                          tierFiltered={tierFiltered}
+                          configFilter={configFilter}
+                          setConfigFilterMode={setConfigFilterMode}
+                          configFilterCounts={configFilterCounts}
+                          visibleReports={visibleReports}
+                          onClose={() => modal.Close()}
+                        />,
+                      );
+                    }}
+                  >
+                    {/* sliders/filter icon */}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
+                    </svg>
+                    {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+                  </DialogButton>
+                  <DialogButton
+                    style={{ flex: 1, height: 40, padding: '0 12px', fontSize: 12, minWidth: 0 }}
+                    disabled={activeFilterCount === 0}
+                    onClick={() => {
+                      setFilter('all');
+                      setArchFilter('all');
+                      setConfigFilter('all');
+                      setFilterTouched(true);
+                    }}
+                  >
+                    Reset Filters
+                  </DialogButton>
+                </>
+              );
+            })()}
           </Focusable>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
             <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>
