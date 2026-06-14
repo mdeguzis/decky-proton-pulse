@@ -12,7 +12,7 @@ import { getProtonDBSummary } from '../lib/protondb';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { getSetting } from '../lib/settings';
 import { logFrontendEvent } from '../lib/logger';
-import { getCached } from '../lib/cache';
+import { getCached, getCacheTtlMs } from '../lib/cache';
 
 const PP_BADGE_EL_ATTR = 'data-pp-lib-badge';
 
@@ -62,14 +62,44 @@ function getBadgeContent(style: LibraryBadgeStyle, tier: string): { html: string
   return { html: '', text: label };
 }
 
-// Session-level tier cache: appId -> tier string (only entries with actual data).
-const _tierCache = new Map<string, string>();
+const TIER_STORAGE_KEY = 'pp_lib_tier_cache_v1';
 
-// Tracks appIds that were fetched but had no ProtonDB data, with the timestamp
-// of when they were last attempted. Entries expire after NULL_EXPIRY_MS so
-// transient network failures don't permanently suppress badges.
+interface TierEntry { tier: string; cachedAt: number; }
+
+// Persistent tier cache: appId -> { tier, cachedAt }.
+// Loaded from localStorage on setup, saved after each fetch.
+// TTL matches the user's cache-ttl-hours setting (same as main report cache).
+const _tierCache = new Map<string, TierEntry>();
+
+// Tracks appIds fetched but with no ProtonDB data, with the attempt timestamp.
+// Entries expire after NULL_EXPIRY_MS so transient failures get retried.
 const _nullCache = new Map<string, number>(); // appId -> Date.now() of last attempt
-const NULL_EXPIRY_MS = 10 * 60 * 1000; // retry null entries after 10 minutes
+const NULL_EXPIRY_MS = 10 * 60 * 1000;
+
+function loadTierCache(): void {
+  try {
+    const raw = localStorage.getItem(TIER_STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw) as Record<string, TierEntry>;
+    const ttl = getCacheTtlMs();
+    const now = Date.now();
+    let loaded = 0;
+    for (const [appId, entry] of Object.entries(saved)) {
+      if (now - entry.cachedAt < ttl) { _tierCache.set(appId, entry); loaded++; }
+    }
+    void logFrontendEvent('DEBUG', 'libraryGridBadges: loaded tier cache from storage', {
+      loaded, totalSaved: Object.keys(saved).length,
+    });
+  } catch { /* corrupt storage */ }
+}
+
+function saveTierCache(): void {
+  try {
+    const obj: Record<string, TierEntry> = {};
+    for (const [appId, entry] of _tierCache) obj[appId] = entry;
+    localStorage.setItem(TIER_STORAGE_KEY, JSON.stringify(obj));
+  } catch { /* storage full */ }
+}
 
 let _scanInterval: ReturnType<typeof setInterval> | null = null;
 let _mutObs: MutationObserver | null = null;
@@ -297,9 +327,9 @@ async function processFetchQueue(): Promise<void> {
           const summary = await getProtonDBSummary(appId);
           const tier = summary?.tier ?? null;
           if (tier) {
-            _tierCache.set(appId, tier);
+            _tierCache.set(appId, { tier, cachedAt: Date.now() });
+            saveTierCache();
           } else {
-            // No ProtonDB data -- record timestamp so we retry after NULL_EXPIRY_MS
             _nullCache.set(appId, Date.now());
             void logFrontendEvent('DEBUG', 'libraryGridBadges: null tier cached', {
               appId, source: wasCached ? 'cache' : 'network',
@@ -396,13 +426,17 @@ function scanAndQueue(): void {
   let queued = 0;
 
   const now = Date.now();
+  const ttl = getCacheTtlMs();
   for (const { appId, cover } of tiles) {
-    if (_tierCache.has(appId)) {
-      applyBadgeToCover(cover, _tierCache.get(appId)!, style);
+    const entry = _tierCache.get(appId);
+    if (entry && now - entry.cachedAt < ttl) {
+      applyBadgeToCover(cover, entry.tier, style);
       badgedNow++;
     } else if (_nullCache.has(appId) && now - _nullCache.get(appId)! < NULL_EXPIRY_MS) {
       // fetched recently, came back null -- skip until expiry
     } else if (!_fetchQueue.has(appId)) {
+      // expired or never fetched -- queue for refresh
+      if (entry) _tierCache.delete(appId); // evict expired entry
       _fetchQueue.add(appId);
       queued++;
     }
@@ -433,7 +467,8 @@ export function refreshLibraryGridBadges(): void {
 }
 
 export function setupLibraryGridBadges(): void {
-  void logFrontendEvent('INFO', 'libraryGridBadges: setup', {});
+  loadTierCache();
+  void logFrontendEvent('INFO', 'libraryGridBadges: setup', { persistedTiers: _tierCache.size });
 
   window.setTimeout(() => {
     scanAndQueue();
@@ -460,6 +495,7 @@ export function teardownLibraryGridBadges(): void {
   removeAllBadges();
   _tierCache.clear();
   _nullCache.clear();
+  try { localStorage.removeItem(TIER_STORAGE_KEY); } catch { /* ignore */ }
   _bpmDocCache = null;
   _fetchQueue.clear();
   _fetchBusy = false;
