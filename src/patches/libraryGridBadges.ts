@@ -242,9 +242,10 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
     if (!raw) continue;
     const id = parseInt(raw, 10);
     if (id <= 0) continue;
-    // No isNavTile check here: [data-id] containers already require a valid appId (id > 0).
-    // isNavTile uses textContent which can include sibling/child "View more" text inside large
-    // row containers, causing false positives on the hero tile.
+    // "View more" composite tiles contain multiple <img> thumbnails; real game tiles have one.
+    // Using textContent to detect nav tiles risks false positives on the hero tile (shared
+    // row container includes sibling "View more" text in its subtree).
+    if (el.querySelectorAll('img').length > 1) continue;
     const img = el.querySelector('img');
     const cover = (img?.parentElement && img.parentElement !== el)
       ? img.parentElement as HTMLElement
