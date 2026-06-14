@@ -62,9 +62,14 @@ function getBadgeContent(style: LibraryBadgeStyle, tier: string): { html: string
   return { html: '', text: label };
 }
 
-// Session-level tier cache: appId -> tier string | null (null = no ProtonDB data)
-// Undefined = not yet fetched. Survives tile re-renders within a session.
-const _tierCache = new Map<string, string | null>();
+// Session-level tier cache: appId -> tier string (only entries with actual data).
+const _tierCache = new Map<string, string>();
+
+// Tracks appIds that were fetched but had no ProtonDB data, with the timestamp
+// of when they were last attempted. Entries expire after NULL_EXPIRY_MS so
+// transient network failures don't permanently suppress badges.
+const _nullCache = new Map<string, number>(); // appId -> Date.now() of last attempt
+const NULL_EXPIRY_MS = 10 * 60 * 1000; // retry null entries after 10 minutes
 
 let _scanInterval: ReturnType<typeof setInterval> | null = null;
 let _mutObs: MutationObserver | null = null;
@@ -291,10 +296,17 @@ async function processFetchQueue(): Promise<void> {
           const wasCached = !!getCached(appId)?.summary;
           const summary = await getProtonDBSummary(appId);
           const tier = summary?.tier ?? null;
-          // Store in session cache so future scan ticks can apply without re-fetching
-          _tierCache.set(appId, tier);
+          if (tier) {
+            _tierCache.set(appId, tier);
+          } else {
+            // No ProtonDB data -- record timestamp so we retry after NULL_EXPIRY_MS
+            _nullCache.set(appId, Date.now());
+            void logFrontendEvent('DEBUG', 'libraryGridBadges: null tier cached', {
+              appId, source: wasCached ? 'cache' : 'network',
+            });
+          }
           // Apply immediately to any currently visible covers with this appId,
-          // but skip if the user navigated to a game details page while the fetch was in flight.
+          // but skip if the user navigated to a game details page while fetch was in flight.
           const doc = getBpmDocument();
           const style = getLibraryBadgeStyle();
           let coversUpdatedNow = 0;
@@ -383,10 +395,13 @@ function scanAndQueue(): void {
   let badgedNow = 0;
   let queued = 0;
 
+  const now = Date.now();
   for (const { appId, cover } of tiles) {
     if (_tierCache.has(appId)) {
-      const tier = _tierCache.get(appId) ?? null;
-      if (tier) { applyBadgeToCover(cover, tier, style); badgedNow++; }
+      applyBadgeToCover(cover, _tierCache.get(appId)!, style);
+      badgedNow++;
+    } else if (_nullCache.has(appId) && now - _nullCache.get(appId)! < NULL_EXPIRY_MS) {
+      // fetched recently, came back null -- skip until expiry
     } else if (!_fetchQueue.has(appId)) {
       _fetchQueue.add(appId);
       queued++;
@@ -444,6 +459,7 @@ export function teardownLibraryGridBadges(): void {
   if (_mutObs) { _mutObs.disconnect(); _mutObs = null; }
   removeAllBadges();
   _tierCache.clear();
+  _nullCache.clear();
   _bpmDocCache = null;
   _fetchQueue.clear();
   _fetchBusy = false;
