@@ -1,6 +1,6 @@
 // src/components/tabs/ConfigureTab.tsx
 import { Component, type ErrorInfo, type ReactNode, useState, useEffect, useMemo } from 'react';
-import { Focusable, DialogButton, ConfirmModal, showModal, Dropdown, SteamSpinner } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, ModalRoot, showModal, Dropdown, SteamSpinner } from '@decky/ui';
 import { toaster } from '../../lib/notify';
 import { computeConfidence, bucketByGpuTier } from '../../lib/scoring';
 import {
@@ -29,6 +29,7 @@ import { t } from '../../lib/i18n';
 import { addTrackedConfig } from '../../lib/trackedConfigs';
 import { parseLaunchOptions } from '../../lib/launchVars';
 import { computeCombinedTier, type PulseTierResult } from '../../lib/pulseTier';
+import { computeGameStats } from '../../lib/gameStats';
 import { matchesConfigFilter, type ConfigFilter } from '../../lib/reportFilters';
 
 interface Props {
@@ -255,13 +256,9 @@ function ReportFiltersModal({
   const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10 };
   const labelStyle: React.CSSProperties = { fontSize: 11, color: '#cfe2f4', fontWeight: 700, width: 100, flexShrink: 0 };
   return (
-    <ConfirmModal
-      strTitle="Filters"
-      strOKButtonText={t().common.close}
-      onOK={onClose}
-      onCancel={onClose}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 360 }}>
+    <ModalRoot onCancel={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 0 16px' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 2 }}>{t().common.filters}</div>
         <div style={rowStyle}>
           <div style={labelStyle}>{t().configManager.gpuFilter}</div>
           <div style={{ flex: 1 }}>
@@ -275,7 +272,7 @@ function ReportFiltersModal({
         </div>
         {availArchitectures.length > 1 && (
           <div style={rowStyle}>
-            <div style={labelStyle}>Architecture</div>
+            <div style={labelStyle}>{t().configManager.archFilter}</div>
             <div style={{ flex: 1 }}>
               <Dropdown
                 strDefaultLabel={archFilter === 'all' ? `All (${tierFiltered.length})` : `${archFilter} (${visibleReports.length})`}
@@ -303,8 +300,13 @@ function ReportFiltersModal({
             />
           </div>
         </div>
+        <Focusable style={{ marginTop: 4 }}>
+          <DialogButton onClick={onClose} style={{ width: '100%', fontSize: 13 }}>
+            {t().common.close}
+          </DialogButton>
+        </Focusable>
       </div>
-    </ConfirmModal>
+    </ModalRoot>
   );
 }
 
@@ -759,6 +761,12 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   );
 
   const combinedTier = useMemo(() => computeCombinedTier(scored, pulseReports), [scored, pulseReports]);
+  const gameStats = useMemo(() => computeGameStats(scored, pulseReports), [scored, pulseReports]);
+  // Use computeGameStats confidencePct (same as Analysis tab) so header and Analysis agree
+  const combinedTierForHeader = useMemo(
+    () => combinedTier ? { ...combinedTier, confidencePct: gameStats.confidencePct } : null,
+    [combinedTier, gameStats],
+  );
 
   const buckets = bucketByGpuTier(scored as ScoredReport[]) as {
     nvidia: DisplayReportCard[];
@@ -1406,7 +1414,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <GameSummaryHeader appId={appId} appName={effectiveAppName || appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} isInLibrary={isInLibrary} demoFullGameAppId={demoFullGameAppId} demoFullGameName={demoFullGameName} />
+      <GameSummaryHeader appId={appId} appName={effectiveAppName || appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTierForHeader} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} isInLibrary={isInLibrary} demoFullGameAppId={demoFullGameAppId} demoFullGameName={demoFullGameName} />
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
           <SteamSpinner />
@@ -1457,7 +1465,6 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             flow-children="horizontal"
             style={{
               display: 'flex',
-              justifyContent: 'flex-end',
               alignItems: 'center',
               gap: 10,
               marginBottom: 8,
@@ -1468,45 +1475,63 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             <div style={{ fontSize: 10, color: '#cfe2f4', fontWeight: 700, whiteSpace: 'nowrap' }}>
               {t().common.sort}
             </div>
-            <Dropdown
-              strDefaultLabel={t().reports.bestMatch}
-              rgOptions={[
-                { data: 'score', label: t().reports.bestMatch },
-                { data: 'votes', label: t().reports.mostVotes },
-              ]}
-              selectedOption={sortMode}
-              onChange={(opt) => setSortPreference(opt.data as SortMode)}
-            />
-            <DialogButton
-              style={{ minWidth: 0, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 6 }}
-              onClick={() => {
-                const modal = showModal(
-                  <ReportFiltersModal
-                    filter={filter}
-                    setFilterMode={setFilterMode}
-                    gpuFilterCounts={gpuFilterCounts}
-                    archFilter={archFilter}
-                    setArchFilter={setArchFilter}
-                    availArchitectures={availArchitectures}
-                    tierFiltered={tierFiltered}
-                    configFilter={configFilter}
-                    setConfigFilterMode={setConfigFilterMode}
-                    configFilterCounts={configFilterCounts}
-                    visibleReports={visibleReports}
-                    onClose={() => modal.Close()}
-                  />,
-                );
-              }}
-            >
-              {/* funnel icon */}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M10 18h4v-2h-4v2zm-7-12v2h18V6H3zm3 7h12v-2H6v2z"/>
-              </svg>
-              {(() => {
-                const count = [filter !== 'all', archFilter !== 'all', configFilter !== 'all'].filter(Boolean).length;
-                return count > 0 ? `Filters (${count})` : 'Filters';
-              })()}
-            </DialogButton>
+            <div style={{ width: 160, flexShrink: 0 }}>
+              <Dropdown
+                strDefaultLabel={t().reports.bestMatch}
+                rgOptions={[
+                  { data: 'score', label: t().reports.bestMatch },
+                  { data: 'votes', label: t().reports.mostVotes },
+                ]}
+                selectedOption={sortMode}
+                onChange={(opt) => setSortPreference(opt.data as SortMode)}
+              />
+            </div>
+            {(() => {
+              const activeFilterCount = [filter !== 'all', archFilter !== 'all', configFilter !== 'all'].filter(Boolean).length;
+              return (
+                <>
+                  <DialogButton
+                    style={{ flex: 1, height: 40, padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 0 }}
+                    onClick={() => {
+                      const modal = showModal(
+                        <ReportFiltersModal
+                          filter={filter}
+                          setFilterMode={setFilterMode}
+                          gpuFilterCounts={gpuFilterCounts}
+                          archFilter={archFilter}
+                          setArchFilter={setArchFilter}
+                          availArchitectures={availArchitectures}
+                          tierFiltered={tierFiltered}
+                          configFilter={configFilter}
+                          setConfigFilterMode={setConfigFilterMode}
+                          configFilterCounts={configFilterCounts}
+                          visibleReports={visibleReports}
+                          onClose={() => modal.Close()}
+                        />,
+                      );
+                    }}
+                  >
+                    {/* sliders/filter icon */}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
+                    </svg>
+                    {activeFilterCount > 0 ? `${t().common.filters} (${activeFilterCount})` : t().common.filters}
+                  </DialogButton>
+                  <DialogButton
+                    style={{ flex: 1, height: 40, padding: '0 12px', fontSize: 12, minWidth: 0 }}
+                    disabled={activeFilterCount === 0}
+                    onClick={() => {
+                      setFilter('all');
+                      setArchFilter('all');
+                      setConfigFilter('all');
+                      setFilterTouched(true);
+                    }}
+                  >
+                    {t().configManager.resetFilters}
+                  </DialogButton>
+                </>
+              );
+            })()}
           </Focusable>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
             <div style={{ marginBottom: 12, color: '#9db0c4', fontSize: 11 }}>

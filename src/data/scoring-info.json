@@ -186,5 +186,15 @@
         "Hardware match (signed-in only) - average of per-report hardware-match contributions"
       ]
     }
+  },
+  "reportScoreTiers": {
+    "_note": "Thresholds for the per-report confidence score shown in the Report Analysis modal. Max is ~175 (platinum + all bonuses + best-case multipliers). Used by both the plugin and web app.",
+    "maxEstimate": 175,
+    "tiers": [
+      { "label": "Excellent", "min": 120, "color": "#4caf50", "description": "Platinum or gold report, recent, from hardware close to yours. High weight in confidence." },
+      { "label": "Good",      "min": 80,  "color": "#8bc34a", "description": "Solid report with strong rating and reasonable hardware/recency match." },
+      { "label": "Fair",      "min": 50,  "color": "#f59e0b", "description": "Older report, mismatched hardware, or lower rating. Still counts but with less weight." },
+      { "label": "Low",       "min": 0,   "color": "#e57373", "description": "Borked, very old, or hardware mismatch. Minimal contribution to overall confidence." }
+    ]
   }
 }

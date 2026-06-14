@@ -2,17 +2,20 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.10.0
+
+- Compat tool auto-update now runs at startup for both Proton-GE and CachyOS Proton, throttled to once per 24h
+- Advanced Settings shows compat tool auto-update status with full timestamps and next check time
+- Per-report analysis modal: score pill and What's this button are now horizontally aligned; EXCELLENT tier label sits below
+- Reset Filters button added to the report filter row
+- GPU architecture shown under GPU tier in report details
+- Log viewer inline preview fills the full available space
+- Filters modal has a single Close button
+- Confidence badge in Manage This Game header now matches the Analysis tab
+
 ## v1.9.0
 
-- GPU architecture badge (e.g. RDNA2, Ada Lovelace) on each report card next to the GPU model
-- GPU architecture filter in the report view so you can narrow results to your GPU family
-- Compatibility tool picker in the profile editor: choose tool type (Proton, Wine, etc.) and version in separate rows
-- Proton-CachyOS added to the compatibility tool selector
-- Per-report analysis modal: press Y on any report card to see a full confidence breakdown for that report
-- Release notes modal: Steam-style overlay that surfaces GitHub release notes on update and lets you browse version history with L/R
-- Scroll-on-focus in the Analysis tab with readable tier badges
-- Show build version in developer update labels (v1.9.0-<commit>) on Settings > Updates
-- Fix: "vDeveloper" label on Settings > Updates page across all locales
+- Replace filter dropdowns with Filters modal button
 
 ## v1.7.5
 
@@ -146,6 +149,8 @@ All notable changes to Proton Pulse should be recorded here.
 - chore(deploy): y/n prompt for PR push, detect existing PR title/author, clean fork sync
 
 ## Unreleased
+
+- Sync header confidence badge with Analysis tab by using computeGameStats
 
 ## v1.7.2 pre-release
 

@@ -112,6 +112,21 @@ export function ScoringGuideModal({ closeModal }: { closeModal?: () => void }) {
           <div style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.6 }}>
             {scoringInfo.durationAutoFillNote}
           </div>
+
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#7a9bb5', marginTop: 18, marginBottom: 6 }}>Report Score Tiers</div>
+          <div style={{ fontSize: 11, color: '#9bb5cc', marginBottom: 8, lineHeight: 1.5 }}>
+            {`Each report gets a score (max ~${scoringInfo.reportScoreTiers.maxEstimate} pts) based on rating, recency, hardware match, and playtime. The tier shows how much weight this report carries in the overall confidence rating.`}
+          </div>
+          {scoringInfo.reportScoreTiers.tiers.map((tier) => (
+            <div key={tier.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '5px 0', borderBottom: '1px solid #1a2a3a' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, flexShrink: 0, background: tier.color, color: '#111', letterSpacing: '0.05em', textTransform: 'uppercase', marginTop: 2 }}>
+                {tier.label}
+              </span>
+              <span style={{ fontSize: 11, color: '#c8d4e0', lineHeight: 1.5 }}>
+                {`${tier.min}+ pts -- `}{tier.description}
+              </span>
+            </div>
+          ))}
         </div>
       </Focusable>
     </ModalRoot>

@@ -59,11 +59,95 @@
       "text": "Open Compatibility Platform"
     },
     {
+      "file": "src/components/PerReportAnalysisModal.tsx",
+      "line": 183,
+      "column": 16,
+      "kind": "jsx",
+      "text": "What's this?"
+    },
+    {
+      "file": "src/components/PerReportAnalysisModal.tsx",
+      "line": 190,
+      "column": 36,
+      "kind": "jsx",
+      "text": "pts"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 592,
+      "column": 37,
+      "kind": "string",
+      "text": "GPU Arch"
+    },
+    {
+      "file": "src/components/ReportDetailModal.tsx",
+      "line": 1659,
+      "column": 32,
+      "kind": "string",
+      "text": "GPU Arch"
+    },
+    {
+      "file": "src/components/ScoringGuideModal.tsx",
+      "line": 116,
+      "column": 108,
+      "kind": "jsx",
+      "text": "Report Score Tiers"
+    },
+    {
       "file": "src/components/tabs/ConfigureTab.tsx",
-      "line": 278,
+      "line": 261,
+      "column": 91,
+      "kind": "jsx",
+      "text": "Filters"
+    },
+    {
+      "file": "src/components/tabs/ConfigureTab.tsx",
+      "line": 275,
       "column": 37,
       "kind": "jsx",
       "text": "Architecture"
+    },
+    {
+      "file": "src/components/tabs/ConfigureTab.tsx",
+      "line": 1530,
+      "column": 21,
+      "kind": "jsx",
+      "text": "Reset Filters"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 194,
+      "column": 15,
+      "kind": "jsx",
+      "text": "Compat Tool Auto-Update"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 207,
+      "column": 40,
+      "kind": "jsx",
+      "text": "Auto-update"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 212,
+      "column": 43,
+      "kind": "jsx",
+      "text": "Last checked"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 213,
+      "column": 43,
+      "kind": "jsx",
+      "text": "Next check at"
+    },
+    {
+      "file": "src/components/tabs/GeneralSettingsTab.tsx",
+      "line": 1505,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Compat Tools"
     }
   ]
 }

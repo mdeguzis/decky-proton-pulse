@@ -149,6 +149,75 @@ function formatPrefetchReason(reason: string): string {
   }
 }
 
+const COMPAT_TOOL_LABELS: Record<string, string> = {
+  'proton-ge': 'Proton-GE',
+  'proton-cachyos': 'CachyOS Proton',
+};
+
+const COMPAT_AUTOUPDATE_THROTTLE_MS = 24 * 60 * 60 * 1000;
+
+function fmtTs(ts: number): string {
+  if (!ts) return 'Never';
+  const d = new Date(ts);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+function readCompatStatus() {
+  return ['proton-ge', 'proton-cachyos'].map((toolId) => ({
+    toolId,
+    autoUpdate: getSetting(`compat-auto-update-${toolId}`, false) as boolean,
+    lastChecked: Number(getSetting(`proton-pulse:compat-autoupdate-last-${toolId}`, 0)),
+  }));
+}
+
+function CompatAutoUpdateStatusBox() {
+  const [rows, setRows] = useState(readCompatStatus);
+  const refresh = () => setRows(readCompatStatus());
+
+  const infoStyle: React.CSSProperties = {
+    background: '#0d1b2a',
+    border: '1px solid #1b2f44',
+    borderRadius: 8,
+    padding: '10px 14px',
+    margin: '4px 8px 0',
+    fontSize: 11,
+    color: '#a0bdd0',
+    lineHeight: '1.6',
+    fontFamily: 'monospace',
+  };
+  const labelStyle: React.CSSProperties = { color: '#5dade2', display: 'inline-block', width: 130 };
+
+  return (
+    <div style={infoStyle}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f4ff', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'inherit' }}>
+        <span>{t().compatTools.autoUpdateStatus} ({t().compatTools.autoUpdate})</span>
+        <Focusable onClick={refresh} onOKButton={refresh} style={{ cursor: 'pointer', fontSize: 11, color: '#5dade2', padding: '2px 6px' }}>
+          {t().compatTools.refresh}
+        </Focusable>
+      </div>
+      {rows.map(({ toolId, autoUpdate, lastChecked }, i) => {
+        const nextCheck = lastChecked ? lastChecked + COMPAT_AUTOUPDATE_THROTTLE_MS : 0;
+        return (
+          <div key={toolId} style={{ paddingTop: i > 0 ? 8 : 0, borderTop: i > 0 ? '1px solid #1b2f44' : undefined, marginTop: i > 0 ? 8 : 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#c8dcea', marginBottom: 2, fontFamily: 'inherit' }}>
+              {COMPAT_TOOL_LABELS[toolId] ?? toolId}
+            </div>
+            <div>
+              <span style={labelStyle}>{t().compatTools.autoUpdateStatus}</span>
+              <span style={{ color: autoUpdate ? '#4caf50' : '#e57373', fontWeight: 600 }}>
+                {autoUpdate ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <div><span style={labelStyle}>{t().compatTools.lastChecked}</span>{fmtTs(lastChecked)}</div>
+            <div><span style={labelStyle}>{t().compatTools.nextCheckAt}</span>{autoUpdate && nextCheck ? fmtTs(nextCheck) : 'N/A'}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // compact metrics info box for the advanced settings area
 function MetricsInfoBox() {
   const extras = t().extras!;
@@ -935,7 +1004,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
             {formatVersion(updateStatus?.version)} {t().extras!.updateInstalledRestart!()}
           </div>
         )}
-        <Focusable style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} flow-children="horizontal">
+        <Focusable style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 10 }} flow-children="horizontal">
           <Dropdown
             rgOptions={[
               { data: 'release', label: t().extras!.updateChannelRelease!() },
@@ -1430,6 +1499,15 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
       )}
 
       {/* advanced section: cache management */}
+      {advancedEnabled && (
+        <div style={sectionStyle()}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
+            {t().compatTools.compatToolsSection}
+          </div>
+          <CompatAutoUpdateStatusBox />
+        </div>
+      )}
+
       {advancedEnabled && (
         <div style={sectionStyle()}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>

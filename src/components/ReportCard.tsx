@@ -159,11 +159,6 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
           <span style={{ fontSize: 11, color: gpuMismatch ? '#f59e0b' : '#d9e8f4' }}>
             {report.gpuTier.toUpperCase()}
           </span>
-          {report.gpuArchitecture ? (
-            <span style={{ fontSize: 10, color: '#6ba4d4', background: 'rgba(100,160,220,0.15)', border: '1px solid rgba(100,160,220,0.3)', borderRadius: 999, padding: '1px 6px', marginTop: 2 }}>
-              {report.gpuArchitecture}
-            </span>
-          ) : null}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
             <span
               role="button"
