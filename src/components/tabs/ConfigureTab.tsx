@@ -29,6 +29,7 @@ import { t } from '../../lib/i18n';
 import { addTrackedConfig } from '../../lib/trackedConfigs';
 import { parseLaunchOptions } from '../../lib/launchVars';
 import { computeCombinedTier, type PulseTierResult } from '../../lib/pulseTier';
+import { computeGameStats } from '../../lib/gameStats';
 import { matchesConfigFilter, type ConfigFilter } from '../../lib/reportFilters';
 
 interface Props {
@@ -760,6 +761,12 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   );
 
   const combinedTier = useMemo(() => computeCombinedTier(scored, pulseReports), [scored, pulseReports]);
+  const gameStats = useMemo(() => computeGameStats(scored, pulseReports), [scored, pulseReports]);
+  // Use computeGameStats confidencePct (same as Analysis tab) so header and Analysis agree
+  const combinedTierForHeader = useMemo(
+    () => combinedTier ? { ...combinedTier, confidencePct: gameStats.confidencePct } : null,
+    [combinedTier, gameStats],
+  );
 
   const buckets = bucketByGpuTier(scored as ScoredReport[]) as {
     nvidia: DisplayReportCard[];
@@ -1407,7 +1414,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <GameSummaryHeader appId={appId} appName={effectiveAppName || appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTier} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} isInLibrary={isInLibrary} demoFullGameAppId={demoFullGameAppId} demoFullGameName={demoFullGameName} />
+      <GameSummaryHeader appId={appId} appName={effectiveAppName || appName} reportsCount={scored.length} combinedTier={loading ? null : combinedTierForHeader} resolvedSteamAppId={typeof resolvedSteamAppId === 'number' ? resolvedSteamAppId : null} isInLibrary={isInLibrary} demoFullGameAppId={demoFullGameAppId} demoFullGameName={demoFullGameName} />
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}>
           <SteamSpinner />
