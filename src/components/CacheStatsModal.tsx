@@ -1,76 +1,148 @@
 // Cache performance stats modal.
-// Shows 24h hourly charts for cache hit rate and fetch latency,
-// plus a live counter summary. Opened from the Manage Cache modal.
+// SVG line charts for hit rate, CDN latency, and fetch volume over the
+// last 24h of hourly buckets. Opened from the Stats button in Manage Cache.
 
 import { ConfirmModal } from '@decky/ui';
 import { getHourlyBuckets, getSummary, getCombinedCategoryStats } from '../lib/metrics';
 import type { HourlyBucket } from '../lib/metrics';
 
 function formatHour(hourKey: number): string {
-  const d = new Date(hourKey);
-  const h = d.getHours();
-  return `${h.toString().padStart(2, '0')}:00`;
+  return `${new Date(hourKey).getHours().toString().padStart(2, '0')}h`;
 }
 
-// Simple bar chart. Each bucket is one vertical bar.
-function BarChart({
+// SVG line chart with area fill, grid lines, dots, and axis labels.
+function LineChart({
   buckets,
   getValue,
-  getLabel,
   color,
+  unit = '',
   maxValue,
-  height = 60,
-  suffix = '',
 }: {
   buckets: HourlyBucket[];
   getValue: (b: HourlyBucket) => number;
-  getLabel: (b: HourlyBucket) => string;
   color: string;
+  unit?: string;
   maxValue?: number;
-  height?: number;
-  suffix?: string;
 }) {
   if (buckets.length === 0) {
     return (
-      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4a6070', fontSize: 11 }}>
+      <div style={{ height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3a5060', fontSize: 11 }}>
         No data yet this session
       </div>
     );
   }
 
+  const W = 280;
+  const H = 80;
+  const PAD_L = 28;
+  const PAD_R = 6;
+  const PAD_T = 10;
+  const PAD_B = 16;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+
   const values = buckets.map(getValue);
-  const max = maxValue ?? Math.max(...values, 1);
+  const dataMax = Math.max(...values, 1);
+  const yMax = maxValue ?? dataMax;
+
+  const xOf = (i: number) =>
+    buckets.length === 1
+      ? PAD_L + chartW / 2
+      : PAD_L + (i / (buckets.length - 1)) * chartW;
+  const yOf = (v: number) => PAD_T + chartH - Math.min(v / yMax, 1) * chartH;
+
+  const pts = buckets.map((b, i) => `${xOf(i).toFixed(1)},${yOf(getValue(b)).toFixed(1)}`);
+  const polyline = pts.join(' ');
+
+  // area fill: go down to the baseline at both ends
+  const areaPath = [
+    `M${xOf(0).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+    ...buckets.map((b, i) => `L${xOf(i).toFixed(1)},${yOf(getValue(b)).toFixed(1)}`),
+    `L${xOf(buckets.length - 1).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+    'Z',
+  ].join(' ');
+
+  // pick a subset of x-axis labels so they dont overlap
+  const labelStep = buckets.length <= 6 ? 1 : buckets.length <= 12 ? 2 : 4;
+  const gridYs = [0, 0.5, 1].map(f => PAD_T + chartH - f * chartH);
+  const gridLabels = [0, Math.round(yMax * 0.5), yMax];
 
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height, padding: '0 2px' }}>
-      {buckets.map((b, i) => {
-        const val = values[i];
-        const pct = max > 0 ? val / max : 0;
-        const barH = Math.max(pct * (height - 16), val > 0 ? 3 : 0);
-        return (
-          <div
-            key={b.hourKey}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
-            title={`${formatHour(b.hourKey)}: ${getLabel(b)}${suffix}`}
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
+      {/* horizontal grid lines */}
+      {gridYs.map((y, gi) => (
+        <g key={gi}>
+          <line
+            x1={PAD_L} y1={y.toFixed(1)}
+            x2={W - PAD_R} y2={y.toFixed(1)}
+            stroke="rgba(255,255,255,0.06)" strokeWidth={1}
+          />
+          <text x={PAD_L - 3} y={(y + 3).toFixed(1)} textAnchor="end"
+            fontSize={7} fill="#3a5878">
+            {gridLabels[gi]}{unit}
+          </text>
+        </g>
+      ))}
+
+      {/* area fill */}
+      <path d={areaPath} fill={color} fillOpacity={0.12} />
+
+      {/* line */}
+      <polyline points={polyline} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+
+      {/* dots */}
+      {buckets.map((b, i) => (
+        <circle
+          key={i}
+          cx={xOf(i).toFixed(1)}
+          cy={yOf(getValue(b)).toFixed(1)}
+          r={2}
+          fill={color}
+          stroke="rgba(0,0,0,0.4)"
+          strokeWidth={0.5}
+        />
+      ))}
+
+      {/* x-axis labels */}
+      {buckets.map((b, i) =>
+        i % labelStep === 0 ? (
+          <text
+            key={i}
+            x={xOf(i).toFixed(1)}
+            y={H - 2}
+            textAnchor="middle"
+            fontSize={7}
+            fill="#3a5878"
           >
-            <div style={{ fontSize: 8, color: '#4a6070', lineHeight: 1, marginBottom: 1 }}>
-              {val > 0 ? getLabel(b) : ''}
-            </div>
-            <div style={{
-              width: '100%',
-              height: barH,
-              background: color,
-              borderRadius: '2px 2px 0 0',
-              opacity: val > 0 ? 1 : 0.2,
-              minHeight: val > 0 ? 3 : 0,
-            }} />
-            <div style={{ fontSize: 7, color: '#3a5060', lineHeight: 1 }}>
-              {formatHour(b.hourKey).split(':')[0]}
-            </div>
-          </div>
+            {formatHour(b.hourKey)}
+          </text>
+        ) : null,
+      )}
+
+      {/* value labels on dots (show last and max) */}
+      {buckets.map((b, i) => {
+        const v = getValue(b);
+        const isLast = i === buckets.length - 1;
+        const isMax = v === dataMax && v > 0;
+        if (!isLast && !isMax) return null;
+        const x = xOf(i);
+        const y = yOf(v);
+        const labelX = x > W - PAD_R - 20 ? x - 3 : x + 3;
+        return (
+          <text
+            key={`lbl-${i}`}
+            x={labelX.toFixed(1)}
+            y={(y - 3).toFixed(1)}
+            textAnchor={x > W - PAD_R - 20 ? 'end' : 'start'}
+            fontSize={8}
+            fill={color}
+            fontWeight="bold"
+          >
+            {v}{unit}
+          </text>
         );
       })}
-    </div>
+    </svg>
   );
 }
 
@@ -79,22 +151,22 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <div style={{
       fontSize: 10,
       fontWeight: 700,
-      color: '#7a9bb5',
+      color: '#5a7a95',
       textTransform: 'uppercase',
       letterSpacing: '0.08em',
-      marginBottom: 6,
-      marginTop: 14,
+      marginBottom: 4,
+      marginTop: 12,
     }}>
       {children}
     </div>
   );
 }
 
-function StatRow({ label, value }: { label: string; value: string | number }) {
+function StatRow({ label, value, highlight }: { label: string; value: string | number; highlight?: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#c8dcea', padding: '3px 0' }}>
-      <span style={{ color: '#7a9bb5' }}>{label}</span>
-      <span>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <span style={{ color: '#6a8a9a' }}>{label}</span>
+      <span style={{ color: highlight ?? '#c8dcea', fontWeight: highlight ? 700 : 400 }}>{value}</span>
     </div>
   );
 }
@@ -110,80 +182,71 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
   const hitPct = totalLookups > 0
     ? ((summary.counters.cacheHits / totalLookups) * 100).toFixed(1)
     : 'n/a';
-
   const uptimeMin = Math.floor(summary.uptimeMs / 60000);
 
   return (
     <ConfirmModal
-      strTitle={`Cache Stats  \u00B7  uptime ${uptimeMin}m`}
+      strTitle={`Cache Performance  \u00B7  uptime ${uptimeMin}m`}
       strOKButtonText="Close"
       onOK={() => closeModal?.()}
       onCancel={() => closeModal?.()}
     >
-      <div style={{ overflowY: 'auto', maxHeight: 420 }}>
-        {/* hit rate chart */}
+      <div style={{ overflowY: 'auto', maxHeight: 380, paddingRight: 4 }}>
+
+        {/* hit rate */}
         <SectionLabel>Cache hit rate (% per hour)</SectionLabel>
-        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 8px 4px' }}>
-          <BarChart
+        <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 4, padding: '6px 8px' }}>
+          <LineChart
             buckets={buckets}
             getValue={(b) => {
               const total = b.hits + b.misses;
               return total > 0 ? Math.round((b.hits / total) * 100) : 0;
             }}
-            getLabel={(b) => {
-              const total = b.hits + b.misses;
-              return total > 0 ? `${Math.round((b.hits / total) * 100)}%` : '0%';
-            }}
             color="#4caf7d"
+            unit="%"
             maxValue={100}
-            height={72}
-            suffix="%"
           />
         </div>
 
-        {/* fetch latency chart */}
+        {/* CDN latency */}
         <SectionLabel>CDN avg latency (ms per hour)</SectionLabel>
-        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 8px 4px' }}>
-          <BarChart
+        <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 4, padding: '6px 8px' }}>
+          <LineChart
             buckets={buckets.filter(b => b.fetchCount > 0)}
             getValue={(b) => b.fetchCount > 0 ? Math.round(b.totalFetchMs / b.fetchCount) : 0}
-            getLabel={(b) => b.fetchCount > 0 ? `${Math.round(b.totalFetchMs / b.fetchCount)}` : '0'}
             color="#5ec8f4"
-            height={72}
-            suffix="ms"
+            unit="ms"
           />
         </div>
 
-        {/* fetch volume chart */}
+        {/* fetch volume */}
         <SectionLabel>Fetch volume (requests per hour)</SectionLabel>
-        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 8px 4px' }}>
-          <BarChart
+        <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 4, padding: '6px 8px' }}>
+          <LineChart
             buckets={buckets}
             getValue={(b) => b.fetches}
-            getLabel={(b) => `${b.fetches}`}
             color="#f6b347"
-            height={64}
           />
         </div>
 
-        {/* counter summary */}
+        {/* session counters */}
         <SectionLabel>Session totals</SectionLabel>
-        <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 10px' }}>
+        <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 4, padding: '6px 10px' }}>
+          <StatRow label="Hit rate" value={`${hitPct}%`} highlight={Number(hitPct) >= 70 ? '#4caf7d' : Number(hitPct) >= 40 ? '#f6b347' : undefined} />
           <StatRow label="Cache hits" value={summary.counters.cacheHits} />
           <StatRow label="Cache misses" value={summary.counters.cacheMisses} />
-          <StatRow label="Hit rate" value={`${hitPct}%`} />
           <StatRow label="Total fetches" value={summary.counters.totalFetches} />
-          <StatRow label="Fetch errors" value={summary.counters.fetchErrors} />
+          <StatRow label="Fetch errors" value={summary.counters.fetchErrors} highlight={summary.counters.fetchErrors > 0 ? '#f44336' : undefined} />
           <StatRow label="No CDN data (404)" value={summary.counters.noDataGames} />
           <StatRow label="Prefetched games" value={summary.counters.prefetchedGames} />
           <StatRow label="Cache evictions" value={summary.counters.cacheEvictions} />
         </div>
 
-        {/* CDN timing summary */}
+        {/* CDN timing */}
         {cdnStats && (
           <>
             <SectionLabel>CDN fetch timing (all-time)</SectionLabel>
-            <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 4, padding: '8px 10px' }}>
+            <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 4, padding: '6px 10px' }}>
               <StatRow label="Requests" value={cdnStats.count} />
               <StatRow label="Avg" value={`${cdnStats.avgMs}ms`} />
               <StatRow label="p95" value={`${cdnStats.p95Ms}ms`} />
@@ -192,6 +255,8 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
             </div>
           </>
         )}
+
+        <div style={{ height: 8 }} />
       </div>
     </ConfirmModal>
   );
