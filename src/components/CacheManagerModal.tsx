@@ -5,7 +5,7 @@
 // refresh/delete icons on right. Filter at top, sorted by recently accessed.
 
 import { useState, useEffect, useMemo } from 'react';
-import { Focusable, DialogButton, ConfirmModal, showModal, TextField } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, TextField } from '@decky/ui';
 import { toaster } from '../lib/notify';
 import { logFrontendEvent } from '../lib/logger';
 import { invalidate, invalidateAll, getCacheStats, getCachedAppIds, getCached } from '../lib/cache';
@@ -15,7 +15,7 @@ import { getProtonDBReportsWithDiagnostics } from '../lib/protondb';
 import { getSteamAppOverview } from '../lib/steamApps';
 import { getVoteTotals } from '../lib/voting';
 import { t } from '../lib/i18n';
-import { CacheStatsModalContent } from './CacheStatsModal';
+import { CacheStatsBody } from './CacheStatsModal';
 
 interface CacheRow {
   appId: string;
@@ -61,6 +61,7 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
   const [filter, setFilter] = useState('');
   const [rows, setRows] = useState<CacheRow[]>([]);
   const [refreshing, setRefreshing] = useState<Set<string>>(new Set());
+  const [showStats, setShowStats] = useState(false);
 
   const loadRows = () => {
     const ids = getCachedAppIds();
@@ -147,6 +148,19 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
     );
   };
 
+  if (showStats) {
+    return (
+      <ConfirmModal
+        strTitle="Cache Performance"
+        strOKButtonText={t().common.close}
+        onOK={() => setShowStats(false)}
+        onCancel={() => setShowStats(false)}
+      >
+        <CacheStatsBody />
+      </ConfirmModal>
+    );
+  }
+
   return (
     <ConfirmModal
       strTitle={extras.cacheManagerTitle()}
@@ -163,11 +177,7 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
           <Focusable flow-children="horizontal" style={{ display: 'flex', gap: 6, flex: 'none' }}>
             <DialogButton
               autoFocus
-              onClick={() => {
-                const m = showModal(
-                  <CacheStatsModalContent closeModal={() => m?.Close()} />,
-                );
-              }}
+              onClick={() => setShowStats(true)}
               style={{ fontSize: 10, padding: '2px 10px', minWidth: 'max-content', height: 26, whiteSpace: 'nowrap' }}
             >
               Stats

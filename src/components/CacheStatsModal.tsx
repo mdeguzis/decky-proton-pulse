@@ -158,7 +158,9 @@ function StatRow({ label, value, highlight }: { label: string; value: string | n
   );
 }
 
-export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void }) {
+// Rendered inline inside CacheManagerModal's ConfirmModal -- no outer chrome.
+// CacheManagerModal toggles showStats state; this component is the body only.
+export function CacheStatsBody() {
   const { onRowFocus, onRowBlur, focusBorder } = useFocusableScroll({ block: 'nearest' });
 
   const buckets = getHourlyBuckets();
@@ -193,166 +195,93 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
   };
 
   return (
-    <Focusable
-      onCancelButton={closeModal}
-      style={{
-        position: 'fixed',
-        top: 30,
-        left: 30,
-        right: 30,
-        bottom: 70,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: 'rgba(24, 27, 34, 0.98)',
-        borderRadius: 6,
-        overflow: 'hidden',
-        zIndex: 9999,
-      }}
-    >
-      {/* header row: title left, small close button right */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '8px 14px',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        flexShrink: 0,
-      }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#e0ebf3', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Cache Performance{' '}
-          <span style={{ color: '#3d556a', fontWeight: 400, textTransform: 'none' }}>
-            · uptime {Math.floor(summary.uptimeMs / 60000)}m
-          </span>
-        </span>
-        <DialogButton
-          onClick={closeModal}
-          style={{ width: 60, minWidth: 0, height: 24, fontSize: 10, padding: '0 6px', flex: '0 0 60px' }}
-        >
-          Close
-        </DialogButton>
+    <Focusable style={{ maxHeight: 440, overflowY: 'auto' }}>
+
+      <div style={{ fontSize: 11, color: '#3d556a', marginBottom: 8 }}>
+        uptime {Math.floor(summary.uptimeMs / 60000)}m
       </div>
 
-      {/* scrollable body -- each section is a PpDialogButton for D-pad nav */}
-      <Focusable onCancelButton={closeModal} style={{ overflowY: 'scroll', flex: 1, padding: '16px 14px 0' }}>
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('hit-rate')} onBlur={onRowBlur} style={sectionStyle('hit-rate')}>
+        <span style={labelStyle}>Cache hit rate (% / 30 min)</span>
+        <div style={chartBox}>
+          <LineChart buckets={buckets} getValue={(b) => {
+            const t = b.hits + b.misses;
+            return t > 0 ? Math.round((b.hits / t) * 100) : 0;
+          }} color="#4caf7d" unit="%" maxValue={100} />
+        </div>
+      </PpDialogButton>
 
-        <PpDialogButton
-          onClick={() => {}}
-          onFocus={onRowFocus('hit-rate')}
-          onBlur={onRowBlur}
-          style={sectionStyle('hit-rate')}
-        >
-          <span style={labelStyle}>Cache hit rate (% / hour)</span>
-          <div style={chartBox}>
-            <LineChart buckets={buckets} getValue={(b) => {
-              const t = b.hits + b.misses;
-              return t > 0 ? Math.round((b.hits / t) * 100) : 0;
-            }} color="#4caf7d" unit="%" maxValue={100} />
-          </div>
-        </PpDialogButton>
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('cdn-latency')} onBlur={onRowBlur} style={sectionStyle('cdn-latency')}>
+        <span style={labelStyle}>CDN avg latency (ms / 30 min)</span>
+        <div style={chartBox}>
+          <LineChart
+            buckets={buckets.filter(b => b.fetchCount > 0)}
+            getValue={(b) => Math.round(b.totalFetchMs / b.fetchCount)}
+            color="#5ec8f4"
+            unit="ms"
+            emptyNote={
+              totalLookups > 0 && summary.counters.cacheHits === totalLookups
+                ? 'All lookups served from cache -- no CDN fetches needed'
+                : 'No CDN fetches recorded yet'
+            }
+          />
+        </div>
+      </PpDialogButton>
 
-        <PpDialogButton
-          onClick={() => {}}
-          onFocus={onRowFocus('cdn-latency')}
-          onBlur={onRowBlur}
-          style={sectionStyle('cdn-latency')}
-        >
-          <span style={labelStyle}>CDN avg latency (ms / hour)</span>
-          <div style={chartBox}>
-            <LineChart
-              buckets={buckets.filter(b => b.fetchCount > 0)}
-              getValue={(b) => Math.round(b.totalFetchMs / b.fetchCount)}
-              color="#5ec8f4"
-              unit="ms"
-              emptyNote={
-                totalLookups > 0 && summary.counters.cacheHits === totalLookups
-                  ? 'All lookups served from cache -- no CDN fetches needed'
-                  : 'No CDN fetches recorded yet'
-              }
-            />
-          </div>
-        </PpDialogButton>
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('fetch-vol')} onBlur={onRowBlur} style={sectionStyle('fetch-vol')}>
+        <span style={labelStyle}>Fetch volume (requests / 30 min)</span>
+        <div style={chartBox}>
+          <LineChart buckets={buckets} getValue={(b) => b.fetches} color="#f6b347" />
+        </div>
+      </PpDialogButton>
 
-        <PpDialogButton
-          onClick={() => {}}
-          onFocus={onRowFocus('fetch-vol')}
-          onBlur={onRowBlur}
-          style={sectionStyle('fetch-vol')}
-        >
-          <span style={labelStyle}>Fetch volume (requests / hour)</span>
-          <div style={chartBox}>
-            <LineChart buckets={buckets} getValue={(b) => b.fetches} color="#f6b347" />
-          </div>
-        </PpDialogButton>
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('counters')} onBlur={onRowBlur} style={sectionStyle('counters')}>
+        <span style={labelStyle}>Session totals</span>
+        <div style={{ ...chartBox, padding: '6px 10px' }}>
+          <StatRow label="Hit rate" value={`${hitPct}%`} highlight={hitColor} />
+          <StatRow label="Cache hits" value={summary.counters.cacheHits} />
+          <StatRow label="Cache misses" value={summary.counters.cacheMisses} />
+          <StatRow label="Total fetches" value={summary.counters.totalFetches} />
+          <StatRow label="Fetch errors" value={summary.counters.fetchErrors}
+            highlight={summary.counters.fetchErrors > 0 ? '#f44336' : undefined} />
+          <StatRow label="No CDN data (404)" value={summary.counters.noDataGames} />
+          <StatRow label="Prefetched games" value={summary.counters.prefetchedGames} />
+          <StatRow label="Cache evictions" value={summary.counters.cacheEvictions} />
+        </div>
+      </PpDialogButton>
 
-        <PpDialogButton
-          onClick={() => {}}
-          onFocus={onRowFocus('counters')}
-          onBlur={onRowBlur}
-          style={sectionStyle('counters')}
-        >
-          <span style={labelStyle}>Session totals</span>
+      {cdnStats && (
+        <PpDialogButton onClick={() => {}} onFocus={onRowFocus('cdn-timing')} onBlur={onRowBlur} style={sectionStyle('cdn-timing')}>
+          <span style={labelStyle}>CDN fetch timing (all-time)</span>
           <div style={{ ...chartBox, padding: '6px 10px' }}>
-            <StatRow label="Hit rate" value={`${hitPct}%`} highlight={hitColor} />
-            <StatRow label="Cache hits" value={summary.counters.cacheHits} />
-            <StatRow label="Cache misses" value={summary.counters.cacheMisses} />
-            <StatRow label="Total fetches" value={summary.counters.totalFetches} />
-            <StatRow label="Fetch errors" value={summary.counters.fetchErrors}
-              highlight={summary.counters.fetchErrors > 0 ? '#f44336' : undefined} />
-            <StatRow label="No CDN data (404)" value={summary.counters.noDataGames} />
-            <StatRow label="Prefetched games" value={summary.counters.prefetchedGames} />
-            <StatRow label="Cache evictions" value={summary.counters.cacheEvictions} />
+            <StatRow label="Requests" value={cdnStats.count} />
+            <StatRow label="Avg" value={`${cdnStats.avgMs}ms`} />
+            <StatRow label="p95" value={`${cdnStats.p95Ms}ms`} />
+            <StatRow label="Max" value={`${cdnStats.maxMs}ms`} />
+            <StatRow label="Errors" value={cdnStats.errorCount} />
           </div>
         </PpDialogButton>
+      )}
 
-        {cdnStats && (
-          <PpDialogButton
-            onClick={() => {}}
-            onFocus={onRowFocus('cdn-timing')}
-            onBlur={onRowBlur}
-            style={sectionStyle('cdn-timing')}
-          >
-            <span style={labelStyle}>CDN fetch timing (all-time)</span>
-            <div style={{ ...chartBox, padding: '6px 10px' }}>
-              <StatRow label="Requests" value={cdnStats.count} />
-              <StatRow label="Avg" value={`${cdnStats.avgMs}ms`} />
-              <StatRow label="p95" value={`${cdnStats.p95Ms}ms`} />
-              <StatRow label="Max" value={`${cdnStats.maxMs}ms`} />
-              <StatRow label="Errors" value={cdnStats.errorCount} />
-            </div>
-          </PpDialogButton>
-        )}
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('badge-scan')} onBlur={onRowBlur} style={sectionStyle('badge-scan')}>
+        <span style={labelStyle}>Library badge scanner</span>
+        <div style={{ ...chartBox, padding: '6px 10px' }}>
+          <StatRow label="Tiles seen" value={badgeStats.tilesScanned} />
+          <StatRow
+            label="Badges loaded"
+            value={badgeStats.tilesScanned > 0 ? `${badgeStats.badgesApplied} / ${badgeStats.tilesScanned}` : 'n/a'}
+            highlight={badgeStats.badgesApplied > 0 ? '#4caf7d' : undefined}
+          />
+          <StatRow label="No ProtonDB data" value={badgeStats.noDataTiles} />
+          <StatRow
+            label="Avg fetch"
+            value={badgeStats.fetchCount > 0 ? `${Math.round(badgeStats.totalFetchMs / badgeStats.fetchCount)}ms` : 'n/a'}
+          />
+          <StatRow label="Fetch errors" value={badgeStats.fetchErrors}
+            highlight={badgeStats.fetchErrors > 0 ? '#f44336' : undefined} />
+        </div>
+      </PpDialogButton>
 
-        <PpDialogButton
-          onClick={() => {}}
-          onFocus={onRowFocus('badge-scan')}
-          onBlur={onRowBlur}
-          style={sectionStyle('badge-scan')}
-        >
-          <span style={labelStyle}>Library badge scanner</span>
-          <div style={{ ...chartBox, padding: '6px 10px' }}>
-            <StatRow label="Tiles seen" value={badgeStats.tilesScanned} />
-            <StatRow
-              label="Badges loaded"
-              value={badgeStats.tilesScanned > 0
-                ? `${badgeStats.badgesApplied} / ${badgeStats.tilesScanned}`
-                : 'n/a'}
-              highlight={badgeStats.badgesApplied > 0 ? '#4caf7d' : undefined}
-            />
-            <StatRow label="No ProtonDB data" value={badgeStats.noDataTiles} />
-            <StatRow
-              label="Avg fetch"
-              value={badgeStats.fetchCount > 0
-                ? `${Math.round(badgeStats.totalFetchMs / badgeStats.fetchCount)}ms`
-                : 'n/a'}
-            />
-            <StatRow
-              label="Fetch errors"
-              value={badgeStats.fetchErrors}
-              highlight={badgeStats.fetchErrors > 0 ? '#f44336' : undefined}
-            />
-          </div>
-        </PpDialogButton>
-
-        <div style={{ height: 40 }} />
-      </Focusable>
     </Focusable>
   );
 }
