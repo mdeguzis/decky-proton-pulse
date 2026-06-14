@@ -242,7 +242,9 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
     if (!raw) continue;
     const id = parseInt(raw, 10);
     if (id <= 0) continue;
-    if (isNavTile(el)) continue;
+    // No isNavTile check here: [data-id] containers already require a valid appId (id > 0).
+    // isNavTile uses textContent which can include sibling/child "View more" text inside large
+    // row containers, causing false positives on the hero tile.
     const img = el.querySelector('img');
     const cover = (img?.parentElement && img.parentElement !== el)
       ? img.parentElement as HTMLElement
