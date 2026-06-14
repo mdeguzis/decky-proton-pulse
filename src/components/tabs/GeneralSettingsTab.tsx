@@ -341,7 +341,7 @@ function MetricsInfoBox() {
       <div><span style={labelStyle}>{extras.installedCoverage()}</span>{installedCoverage} ({cachedInstalledGames} / {backendInstalledStats.installedSteamGames})</div>
       <div><span style={labelStyle}>{extras.prefetchStatus()}</span>{prefetchStatus}</div>
       <div><span style={labelStyle}>{extras.prefetched()}</span>{extras.gamesCount(counters.prefetchedGames)}</div>
-      <div><span style={labelStyle}>{extras.totalFetches()}</span>{counters.totalFetches}{counters.fetchErrors > 0 ? extras.errorsSuffix(counters.fetchErrors) : ''}</div>
+      <div><span style={labelStyle}>{extras.totalFetches()}</span>{counters.totalFetches}{counters.fetchErrors > 0 ? extras.errorsSuffix(counters.fetchErrors) : ''}{counters.noDataGames > 0 ? ` (${counters.noDataGames} no data)` : ''}</div>
       <div><span style={labelStyle}>{extras.localGames()}</span>{extras.skippedCount(counters.localNonSteamGames)}</div>
       {prefetchFailures.total > 0 && (
         <div>

@@ -40,6 +40,8 @@ export interface CounterSnapshot {
   cacheMisses: number;
   cacheEvictions: number;
   fetchErrors: number;
+  // Games the CDN has no data for (expected 404 -- not a network error)
+  noDataGames: number;
   localNonSteamGames: number;
   prefetchedGames: number;
   totalFetches: number;
@@ -81,6 +83,7 @@ const counters: CounterSnapshot = {
   cacheMisses: 0,
   cacheEvictions: 0,
   fetchErrors: 0,
+  noDataGames: 0,
   localNonSteamGames: 0,
   prefetchedGames: 0,
   totalFetches: 0,
@@ -132,6 +135,7 @@ export function countCacheHit() { counters.cacheHits++; }
 export function countCacheMiss() { counters.cacheMisses++; }
 export function countCacheEviction() { counters.cacheEvictions++; }
 export function countFetchError() { counters.fetchErrors++; }
+export function countNoData() { counters.noDataGames++; }
 export function countLocalNonSteamGame(count = 1) { counters.localNonSteamGames += count; }
 export function countPrefetchedGame() { counters.prefetchedGames++; }
 export function countFetch() { counters.totalFetches++; }
@@ -233,6 +237,7 @@ export function getSummaryText(): string {
   lines.push(`  Cache misses:     ${s.counters.cacheMisses}`);
   lines.push(`  Cache evictions:  ${s.counters.cacheEvictions}`);
   lines.push(`  Fetch errors:     ${s.counters.fetchErrors}`);
+  lines.push(`  No data (404):    ${s.counters.noDataGames}`);
   lines.push(`  Non-Steam local:  ${s.counters.localNonSteamGames}`);
   lines.push(`  Prefetched games: ${s.counters.prefetchedGames}`);
   lines.push(`  Total fetches:    ${s.counters.totalFetches}`);
@@ -308,6 +313,7 @@ export function resetMetrics() {
   counters.cacheMisses = 0;
   counters.cacheEvictions = 0;
   counters.fetchErrors = 0;
+  counters.noDataGames = 0;
   counters.localNonSteamGames = 0;
   counters.prefetchedGames = 0;
   counters.totalFetches = 0;
