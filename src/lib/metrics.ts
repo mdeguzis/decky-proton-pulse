@@ -47,6 +47,15 @@ export interface CounterSnapshot {
   totalFetches: number;
 }
 
+export interface BadgeScanSnapshot {
+  tilesScanned: number;      // unique tiles seen across all scan ticks
+  badgesApplied: number;     // tiles where a tier badge was rendered
+  noDataTiles: number;       // tiles with no ProtonDB data
+  fetchErrors: number;       // network errors during tier fetches
+  totalFetchMs: number;      // cumulative ms for all tier fetches
+  fetchCount: number;        // number of completed tier fetches (for avg)
+}
+
 export interface CategoryStats {
   count: number;
   totalMs: number;
@@ -140,6 +149,32 @@ function currentBucket(): HourlyBucket {
 
 export function getHourlyBuckets(): HourlyBucket[] {
   return [...hourlyBuckets.values()].sort((a, b) => a.hourKey - b.hourKey);
+}
+
+// --- badge scan counters ---
+
+const badgeCounters: BadgeScanSnapshot = {
+  tilesScanned: 0,
+  badgesApplied: 0,
+  noDataTiles: 0,
+  fetchErrors: 0,
+  totalFetchMs: 0,
+  fetchCount: 0,
+};
+
+// Tracks appIds already counted to avoid inflating tilesScanned on repeated scan ticks
+const _badgeSeenIds = new Set<string>();
+
+export function countBadgeTileSeen(appId: string) {
+  if (!_badgeSeenIds.has(appId)) { _badgeSeenIds.add(appId); badgeCounters.tilesScanned++; }
+}
+export function countBadgeApplied() { badgeCounters.badgesApplied++; }
+export function countBadgeNoData() { badgeCounters.noDataTiles++; }
+export function countBadgeFetchError() { badgeCounters.fetchErrors++; }
+export function countBadgeFetchMs(ms: number) { badgeCounters.totalFetchMs += ms; badgeCounters.fetchCount++; }
+
+export function getBadgeScanStats(): BadgeScanSnapshot {
+  return { ...badgeCounters };
 }
 
 // --- ring buffer + counters ---

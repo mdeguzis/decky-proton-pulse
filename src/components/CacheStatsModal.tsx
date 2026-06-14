@@ -4,7 +4,7 @@
 // scrolls through them via useFocusableScroll (same as SystemRequirementsTab).
 
 import { Focusable, DialogButton, findSP } from '@decky/ui';
-import { getHourlyBuckets, getSummary, getCombinedCategoryStats } from '../lib/metrics';
+import { getHourlyBuckets, getSummary, getCombinedCategoryStats, getBadgeScanStats } from '../lib/metrics';
 import type { HourlyBucket } from '../lib/metrics';
 import { useFocusableScroll } from '../lib/useFocusableScroll';
 
@@ -163,6 +163,7 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
 
   const buckets = getHourlyBuckets();
   const summary = getSummary();
+  const badgeStats = getBadgeScanStats();
   const cdnStats = getCombinedCategoryStats([
     'fetch-cdn-index', 'fetch-cdn-year', 'fetch-cdn-votes', 'fetch-live-summary',
   ]);
@@ -321,6 +322,37 @@ export function CacheStatsModalContent({ closeModal }: { closeModal?: () => void
             </div>
           </PpDialogButton>
         )}
+
+        <PpDialogButton
+          onClick={() => {}}
+          onFocus={onRowFocus('badge-scan')}
+          onBlur={onRowBlur}
+          style={sectionStyle('badge-scan')}
+        >
+          <span style={labelStyle}>Library badge scanner</span>
+          <div style={{ ...chartBox, padding: '6px 10px' }}>
+            <StatRow label="Tiles seen" value={badgeStats.tilesScanned} />
+            <StatRow
+              label="Badges loaded"
+              value={badgeStats.tilesScanned > 0
+                ? `${badgeStats.badgesApplied} / ${badgeStats.tilesScanned}`
+                : 'n/a'}
+              highlight={badgeStats.badgesApplied > 0 ? '#4caf7d' : undefined}
+            />
+            <StatRow label="No ProtonDB data" value={badgeStats.noDataTiles} />
+            <StatRow
+              label="Avg fetch"
+              value={badgeStats.fetchCount > 0
+                ? `${Math.round(badgeStats.totalFetchMs / badgeStats.fetchCount)}ms`
+                : 'n/a'}
+            />
+            <StatRow
+              label="Fetch errors"
+              value={badgeStats.fetchErrors}
+              highlight={badgeStats.fetchErrors > 0 ? '#f44336' : undefined}
+            />
+          </div>
+        </PpDialogButton>
 
         <div style={{ height: 40 }} />
       </Focusable>

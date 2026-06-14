@@ -13,6 +13,10 @@ import { RATING_COLORS } from '../lib/reportFormatters';
 import { getSetting } from '../lib/settings';
 import { logFrontendEvent } from '../lib/logger';
 import { getCached, getCacheTtlMs } from '../lib/cache';
+import {
+  countBadgeTileSeen, countBadgeApplied, countBadgeNoData,
+  countBadgeFetchError, countBadgeFetchMs,
+} from '../lib/metrics';
 
 const PP_BADGE_EL_ATTR = 'data-pp-lib-badge';
 
@@ -322,15 +326,19 @@ async function processFetchQueue(): Promise<void> {
   try {
     await Promise.all(
       batch.map(async (appId) => {
+        const t0 = Date.now();
         try {
           const wasCached = !!getCached(appId)?.summary;
           const summary = await getProtonDBSummary(appId);
+          const fetchMs = Date.now() - t0;
+          countBadgeFetchMs(fetchMs);
           const tier = summary?.tier ?? null;
           if (tier) {
             _tierCache.set(appId, { tier, cachedAt: Date.now() });
             saveTierCache();
           } else {
             _nullCache.set(appId, Date.now());
+            countBadgeNoData();
             void logFrontendEvent('DEBUG', 'libraryGridBadges: null tier cached', {
               appId, source: wasCached ? 'cache' : 'network',
             });
@@ -342,16 +350,21 @@ async function processFetchQueue(): Promise<void> {
           let coversUpdatedNow = 0;
           if (!isOnGameDetailsPage()) {
             const visible = findVisibleTiles(doc).filter((t) => t.appId === appId);
-            for (const { cover } of visible) applyBadgeToCover(cover, tier, style);
+            for (const { cover } of visible) {
+              applyBadgeToCover(cover, tier, style);
+              if (tier) countBadgeApplied();
+            }
             coversUpdatedNow = visible.length;
           }
           void logFrontendEvent('DEBUG', 'libraryGridBadges: tier fetched', {
             appId,
             tier,
             source: wasCached ? 'cache' : (summary ? 'network' : 'none'),
+            fetchMs,
             coversUpdatedNow,
           });
         } catch (err) {
+          countBadgeFetchError();
           void logFrontendEvent('WARNING', 'libraryGridBadges: fetch failed', {
             appId,
             error: err instanceof Error ? err.message : String(err),
@@ -428,9 +441,11 @@ function scanAndQueue(): void {
   const now = Date.now();
   const ttl = getCacheTtlMs();
   for (const { appId, cover } of tiles) {
+    countBadgeTileSeen(appId);
     const entry = _tierCache.get(appId);
     if (entry && now - entry.cachedAt < ttl) {
       applyBadgeToCover(cover, entry.tier, style);
+      countBadgeApplied();
       badgedNow++;
     } else if (_nullCache.has(appId) && now - _nullCache.get(appId)! < NULL_EXPIRY_MS) {
       // fetched recently, came back null -- skip until expiry
