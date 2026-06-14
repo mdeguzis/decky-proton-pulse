@@ -191,7 +191,7 @@ function CompatAutoUpdateStatusBox() {
   return (
     <div style={infoStyle}>
       <div style={{ fontSize: 12, fontWeight: 600, color: '#e8f4ff', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'inherit' }}>
-        <span>Compat Tool Auto-Update</span>
+        <span>{t().compatTools.autoUpdateStatus} ({t().compatTools.autoUpdate})</span>
         <Focusable onClick={refresh} onOKButton={refresh} style={{ cursor: 'pointer', fontSize: 11, color: '#5dade2', padding: '2px 6px' }}>
           {t().compatTools.refresh}
         </Focusable>
@@ -204,13 +204,13 @@ function CompatAutoUpdateStatusBox() {
               {COMPAT_TOOL_LABELS[toolId] ?? toolId}
             </div>
             <div>
-              <span style={labelStyle}>Auto-update</span>
+              <span style={labelStyle}>{t().compatTools.autoUpdateStatus}</span>
               <span style={{ color: autoUpdate ? '#4caf50' : '#e57373', fontWeight: 600 }}>
                 {autoUpdate ? 'Enabled' : 'Disabled'}
               </span>
             </div>
-            <div><span style={labelStyle}>Last checked</span>{fmtTs(lastChecked)}</div>
-            <div><span style={labelStyle}>Next check at</span>{autoUpdate && nextCheck ? fmtTs(nextCheck) : 'N/A'}</div>
+            <div><span style={labelStyle}>{t().compatTools.lastChecked}</span>{fmtTs(lastChecked)}</div>
+            <div><span style={labelStyle}>{t().compatTools.nextCheckAt}</span>{autoUpdate && nextCheck ? fmtTs(nextCheck) : 'N/A'}</div>
           </div>
         );
       })}
@@ -1502,7 +1502,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
       {advancedEnabled && (
         <div style={sectionStyle()}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
-            Compat Tools
+            {t().compatTools.compatToolsSection}
           </div>
           <CompatAutoUpdateStatusBox />
         </div>

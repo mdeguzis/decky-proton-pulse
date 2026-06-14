@@ -180,7 +180,7 @@ function PerReportAnalysisModal({ report, allReports, configs, sysInfo, closeMod
               <DialogButton
                 style={{ width: 'auto', height: 28, minWidth: 0, padding: '0 10px', borderRadius: 999, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}
                 onClick={() => showModal(<ScoringGuideModal />)}
-              >What's this?</DialogButton>
+              >{t().extras!.perReportWhatsThis!()}</DialogButton>
               <span style={{
                 background: 'rgba(102, 192, 244, 0.18)',
                 color: '#e0ebf3',

@@ -155,6 +155,7 @@ export interface TranslationTree {
     match: string;
     systemComparison: string;
     gpuTier: string;
+    gpuArch: string;
     source: string;
     sourceProtondb: string;
     sourceProtondbEdited: string;
@@ -242,6 +243,10 @@ export interface TranslationTree {
     installFromZip: string;
     autoUpdate: string;
     autoUpdateDescription: string;
+    autoUpdateStatus: string;
+    lastChecked: string;
+    nextCheckAt: string;
+    compatToolsSection: string;
     refresh: string;
     refreshing: string;
     installed: string;
@@ -409,7 +414,9 @@ export interface TranslationTree {
     protonVersionToggleHint: string;
     protonVersionNone: string;
     gpuFilter: string;
+    archFilter: string;
     configFilter: string;
+    resetFilters: string;
     configTypePulse: string;
     configTypeProtondb: string;
     configTypeProtondbEdited: string;
@@ -748,6 +755,7 @@ export interface TranslationTree {
     protonPulseWebsiteLabel?: () => string;
     // Per-report analysis modal (opened with Y on a focused report card)
     perReportAnalysisTitle?: () => string;
+    perReportWhatsThis?: () => string;
     perReportContribution?: () => string;
     perReportContributionDetail?: (delta: number) => string;
     perReportContributionNeutral?: () => string;
@@ -909,6 +917,7 @@ export const en: TranslationTree = {
     match: 'Match',
     systemComparison: 'System Comparison',
     gpuTier: 'GPU Tier',
+    gpuArch: 'GPU Arch',
     source: 'Source',
     sourceProtondb: 'ProtonDB',
     sourceProtondbEdited: 'ProtonDB (edited)',
@@ -996,6 +1005,10 @@ export const en: TranslationTree = {
     installFromZip: 'Install from ZIP',
     autoUpdate: 'Auto Update',
     autoUpdateDescription: 'Keep the pinned latest Proton-GE release installed whenever Settings opens and refreshes.',
+    autoUpdateStatus: 'Auto-update',
+    lastChecked: 'Last checked',
+    nextCheckAt: 'Next check at',
+    compatToolsSection: 'Compat Tools',
     refresh: 'Refresh',
     refreshing: 'Refreshing...',
     installed: 'Installed',
@@ -1163,7 +1176,9 @@ export const en: TranslationTree = {
     protonVersionToggleHint: 'Enable or disable a pinned Proton version for this configuration.',
     protonVersionNone: 'None',
     gpuFilter: 'GPU',
+    archFilter: 'Architecture',
     configFilter: 'Config',
+    resetFilters: 'Reset Filters',
     configTypePulse: 'Pulse',
     configTypeProtondb: 'ProtonDB',
     configTypeProtondbEdited: 'ProtonDB (edited)',
@@ -1519,6 +1534,7 @@ export const en: TranslationTree = {
     protonPulseWebsiteLabel: () => 'Proton Pulse Website',
     // Per-report analysis modal
     perReportAnalysisTitle: () => 'Report Analysis',
+    perReportWhatsThis: () => "What's this?",
     perReportContribution: () => 'Confidence contribution',
     perReportContributionDetail: (d) => d > 0 ? `+${d} pp to aggregate confidence` : d < 0 ? `${d} pp to aggregate confidence` : 'No change',
     perReportContributionNeutral: () => 'Removing this report would not change aggregate confidence.',

@@ -258,7 +258,7 @@ function ReportFiltersModal({
   return (
     <ModalRoot onCancel={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 0 16px' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 2 }}>Filters</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 2 }}>{t().common.filters}</div>
         <div style={rowStyle}>
           <div style={labelStyle}>{t().configManager.gpuFilter}</div>
           <div style={{ flex: 1 }}>
@@ -272,7 +272,7 @@ function ReportFiltersModal({
         </div>
         {availArchitectures.length > 1 && (
           <div style={rowStyle}>
-            <div style={labelStyle}>Architecture</div>
+            <div style={labelStyle}>{t().configManager.archFilter}</div>
             <div style={{ flex: 1 }}>
               <Dropdown
                 strDefaultLabel={archFilter === 'all' ? `All (${tierFiltered.length})` : `${archFilter} (${visibleReports.length})`}
@@ -1515,7 +1515,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
                     </svg>
-                    {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+                    {activeFilterCount > 0 ? `${t().common.filters} (${activeFilterCount})` : t().common.filters}
                   </DialogButton>
                   <DialogButton
                     style={{ flex: 1, height: 40, padding: '0 12px', fontSize: 12, minWidth: 0 }}
@@ -1527,7 +1527,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                       setFilterTouched(true);
                     }}
                   >
-                    Reset Filters
+                    {t().configManager.resetFilters}
                   </DialogButton>
                 </>
               );
