@@ -148,9 +148,19 @@ export function CacheManagerModalContent({ closeModal, showStatsInitially = fals
     );
   };
 
+  useEffect(() => {
+    if (!showStats) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'GamepadB') setShowStats(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showStats]);
+
   if (showStats) {
     return (
       <Focusable
+        onCancelButton={() => setShowStats(false)}
         style={{
           position: 'fixed', top: 62, bottom: 72, left: '3%', right: '3%',
           background: 'rgba(13,22,30,0.97)',
