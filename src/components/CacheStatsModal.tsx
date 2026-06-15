@@ -3,17 +3,13 @@
 // last 24h of hourly buckets. Each section is a focusable row so D-pad
 // scrolls through them via useFocusableScroll (same as SystemRequirementsTab).
 
-import { Focusable, DialogButton } from '@decky/ui';
+import { DialogButton } from '@decky/ui';
 import { getHourlyBuckets, getSummary, getCombinedCategoryStats, getBadgeScanStats } from '../lib/metrics';
 import type { HourlyBucket } from '../lib/metrics';
 import { useFocusableScroll } from '../lib/useFocusableScroll';
 
-// cast DialogButton to accept onFocus/onBlur (same pattern as ReleaseNotesModal)
 const PpDialogButton = DialogButton as React.ComponentType<
-  React.ComponentProps<typeof DialogButton> & {
-    onFocus?: (e: React.FocusEvent<HTMLElement>) => void;
-    onBlur?: () => void;
-  }
+  React.ComponentProps<typeof DialogButton> & { onFocus?: React.FocusEventHandler; onBlur?: React.FocusEventHandler }
 >;
 
 function formatHour(hourKey: number): string {
@@ -178,9 +174,9 @@ export function CacheStatsBody() {
   const hitColor = hitNum >= 70 ? '#4caf7d' : hitNum >= 40 ? '#f6b347' : hitNum >= 0 ? '#f44336' : undefined;
 
   const sectionStyle = (id: string): React.CSSProperties => ({
-    width: '100%', textAlign: 'left',
-    background: 'rgba(0,0,0,0.0)', border: 'none', boxShadow: 'none',
+    display: 'block', width: '100%', textAlign: 'left',
     padding: '10px 0 4px',
+    outline: 'none', background: 'transparent', border: 'none',
     borderRight: focusBorder(id),
   });
 
@@ -192,10 +188,11 @@ export function CacheStatsBody() {
 
   const chartBox: React.CSSProperties = {
     background: 'rgba(0,0,0,0.25)', borderRadius: 4, padding: '6px 8px', marginBottom: 2,
+    width: '100%', boxSizing: 'border-box',
   };
 
   return (
-    <Focusable style={{ width: '100%' }}>
+    <div style={{ width: '100%', padding: 0, margin: 0 }}>
 
       <div style={{ fontSize: 11, color: '#3d556a', marginBottom: 8 }}>
         uptime {Math.floor(summary.uptimeMs / 60000)}m
@@ -282,6 +279,6 @@ export function CacheStatsBody() {
         </div>
       </PpDialogButton>
 
-    </Focusable>
+    </div>
   );
 }

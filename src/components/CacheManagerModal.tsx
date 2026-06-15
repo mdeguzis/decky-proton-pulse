@@ -56,12 +56,12 @@ function formatAge(ms: number): string {
 }
 
 // the modal content, used with showModal(<CacheManagerModalContent />)
-export function CacheManagerModalContent({ closeModal }: { closeModal?: () => void }) {
+export function CacheManagerModalContent({ closeModal, showStatsInitially = false }: { closeModal?: () => void; showStatsInitially?: boolean }) {
   const extras = t().extras!;
   const [filter, setFilter] = useState('');
   const [rows, setRows] = useState<CacheRow[]>([]);
   const [refreshing, setRefreshing] = useState<Set<string>>(new Set());
-  const [showStats, setShowStats] = useState(false);
+  const [showStats, setShowStats] = useState(showStatsInitially);
 
   const loadRows = () => {
     const ids = getCachedAppIds();
@@ -155,11 +155,11 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
           position: 'fixed', top: 62, bottom: 72, left: '3%', right: '3%',
           background: 'rgba(13,22,30,0.97)',
           borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex', flexDirection: 'column', zIndex: 9999, overflow: 'hidden',
+          zIndex: 9999, overflow: 'hidden',
         }}
       >
-        {/* header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 8px', flexShrink: 0 }}>
+        {/* header - fixed height 49px */}
+        <div style={{ height: 49, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px' }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#c8dcea' }}>Cache Performance</span>
           <DialogButton
             onClick={() => setShowStats(false)}
@@ -168,9 +168,12 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
             ✕
           </DialogButton>
         </div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-        {/* scrollable body */}
-        <Focusable style={{ flex: 1, overflowY: 'auto', paddingTop: 4 }}>
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)' }} />
+        {/* scrollable body: absolute fill, scrollbar hidden so it doesn't eat content width */}
+        <Focusable
+          flow-children="vertical"
+          style={{ position: 'absolute', top: 50, bottom: 0, left: 0, right: 0, overflowY: 'auto', padding: '4px 14px 0', boxSizing: 'border-box', scrollbarWidth: 'none' } as React.CSSProperties}
+        >
           <CacheStatsBody />
           <div style={{ height: 24 }} />
         </Focusable>

@@ -420,7 +420,7 @@ async function processFetchQueue(): Promise<void> {
             for (const { cover } of visible) {
               if (tier) {
                 applyBadgeToCover(cover, tier, style);
-                countBadgeApplied();
+                countBadgeApplied(appId);
               } else if (showNoData) {
                 applyNoDataBadgeToCover(cover, style);
               }
@@ -521,7 +521,7 @@ function scanAndQueue(): void {
     const entry = _tierCache.get(appId);
     if (entry && now - entry.cachedAt < ttl) {
       applyBadgeToCover(cover, entry.tier, style);
-      countBadgeApplied();
+      countBadgeApplied(appId);
       badgedNow++;
     } else if (_nullCache.has(appId) && now - _nullCache.get(appId)! < NULL_EXPIRY_MS) {
       // fetched recently, came back null

@@ -162,13 +162,16 @@ const badgeCounters: BadgeScanSnapshot = {
   fetchCount: 0,
 };
 
-// Tracks appIds already counted to avoid inflating tilesScanned on repeated scan ticks
+// Tracks appIds already counted to avoid inflating counts on repeated scan ticks
 const _badgeSeenIds = new Set<string>();
+const _badgeAppliedIds = new Set<string>();
 
 export function countBadgeTileSeen(appId: string) {
   if (!_badgeSeenIds.has(appId)) { _badgeSeenIds.add(appId); badgeCounters.tilesScanned++; }
 }
-export function countBadgeApplied() { badgeCounters.badgesApplied++; }
+export function countBadgeApplied(appId: string) {
+  if (!_badgeAppliedIds.has(appId)) { _badgeAppliedIds.add(appId); badgeCounters.badgesApplied++; }
+}
 export function countBadgeNoData() { badgeCounters.noDataTiles++; }
 export function countBadgeFetchError() { badgeCounters.fetchErrors++; }
 export function countBadgeFetchMs(ms: number) { badgeCounters.totalFetchMs += ms; badgeCounters.fetchCount++; }
