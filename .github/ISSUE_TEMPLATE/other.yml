@@ -1,5 +1,5 @@
 name: Other
-description: Feature request, question, or anything else
+description: questions, or anything else
 labels: ["other"]
 body:
   - type: dropdown
