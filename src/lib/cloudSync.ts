@@ -151,20 +151,42 @@ export type SyncStatus = 'synced' | 'not-synced';
 
 export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
   const voterId = await getVoterId();
-  const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', {
-    method: 'GET',
-  }, {
+  const linkedUserId = getLinkedProtonPulseUserId();
+
+  // When the account is linked, fetch all configs belonging to this user ID
+  // (regardless of which device/voter_id submitted them) plus any local-only
+  // configs that were never linked. Without the OR, configs pushed from a
+  // different installation show up on the web profile but not here.
+  const query: Record<string, string> = {
     select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,config,updated_at,is_published',
-    voter_id: `eq.${voterId}`,
-  });
+  };
+  if (linkedUserId) {
+    query['or'] = `(voter_id.eq.${voterId},proton_pulse_user_id.eq.${linkedUserId})`;
+  } else {
+    query['voter_id'] = `eq.${voterId}`;
+  }
+
+  const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', { method: 'GET' }, query);
 
   if (error || !data) {
-    void logFrontendEvent('ERROR', 'Cloud sync: fetch failed', { error });
+    void logFrontendEvent('ERROR', 'Cloud sync: fetch failed', { error, linkedUserId: linkedUserId ?? null });
     throw new Error(typeof error === 'string' ? error : 'fetch failed');
   }
 
-  void logFrontendEvent('DEBUG', 'Cloud sync: fetched configs', { count: data.length });
-  return data;
+  // Deduplicate by app_id, keeping the most recently updated row
+  const byApp = new Map<number, CloudConfigRow>();
+  for (const row of data) {
+    const existing = byApp.get(row.app_id);
+    if (!existing || (row.updated_at ?? '') > (existing.updated_at ?? '')) {
+      byApp.set(row.app_id, row);
+    }
+  }
+  const deduped = [...byApp.values()];
+
+  void logFrontendEvent('DEBUG', 'Cloud sync: fetched configs', {
+    raw: data.length, deduped: deduped.length, source: linkedUserId ? 'user_id+voter_id' : 'voter_id',
+  });
+  return deduped;
 }
 
 export async function deleteCloudConfig(appId: number): Promise<boolean> {
