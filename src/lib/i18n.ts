@@ -810,6 +810,9 @@ export interface TranslationTree {
     analysisNoVersionData?: () => string;
     analysisVersionTotal?: (n: number) => string;
     analysisDeepDiveHint?: () => string;
+    // Web app link (QAM sidebar + game header button)
+    manageOnWeb?: () => string;
+    manageOnWebDesc?: () => string;
   };
 }
 
@@ -1591,6 +1594,8 @@ export const en: TranslationTree = {
     analysisNoVersionData: () => 'No Proton version data yet.',
     analysisVersionTotal: (n) => n === 1 ? '1 report' : `${n} reports`,
     analysisDeepDiveHint: () => 'For trend charts and per-report drilldown, open this game on proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
   },
 };
 

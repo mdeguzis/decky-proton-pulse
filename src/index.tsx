@@ -76,6 +76,8 @@ function Content() {
   const [version, setVersion] = useState('...');
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
+  const [focusedAppId, setFocusedAppId] = useState<number | null>(() => pageState.focusedAppId);
+  const [focusedAppName, setFocusedAppName] = useState<string>(() => pageState.focusedAppName);
 
   useEffect(() => {
     void getPluginVersionSafe()
@@ -90,6 +92,15 @@ function Content() {
       });
     });
   }, [debugEnabled]);
+
+  useEffect(() => {
+    const sync = () => {
+      if (pageState.focusedAppId !== focusedAppId) setFocusedAppId(pageState.focusedAppId);
+      if (pageState.focusedAppName !== focusedAppName) setFocusedAppName(pageState.focusedAppName);
+    };
+    const interval = window.setInterval(sync, 500);
+    return () => window.clearInterval(interval);
+  }, [focusedAppId, focusedAppName]);
 
   const navigateTo = (tab: PageId) => {
     void logFrontendEvent('INFO', 'Sidebar navigation requested', { tab });
@@ -119,6 +130,19 @@ function Content() {
 
   return (
     <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {focusedAppId != null && focusedAppId > 0 && (
+        <PanelSection title={focusedAppName || `App ${focusedAppId}`}>
+          <PanelSectionRow>
+            <ButtonItem
+              layout="below"
+              description={extras.manageOnWebDesc ? extras.manageOnWebDesc() : 'Open game page on proton-pulse.com'}
+              onClick={() => Navigation.NavigateToExternalWeb(`https://www.proton-pulse.com/app.html#/app/${focusedAppId}`)}
+            >
+              {extras.manageOnWeb ? extras.manageOnWeb() : 'Manage this game'}
+            </ButtonItem>
+          </PanelSectionRow>
+        </PanelSection>
+      )}
       <PanelSection>
         <PanelSectionRow>
           <ButtonItem

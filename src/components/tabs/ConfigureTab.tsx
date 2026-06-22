@@ -1,6 +1,6 @@
 // src/components/tabs/ConfigureTab.tsx
 import { Component, type ErrorInfo, type ReactNode, useState, useEffect, useMemo } from 'react';
-import { Focusable, DialogButton, ConfirmModal, ModalRoot, showModal, Dropdown, SteamSpinner } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, ModalRoot, showModal, Dropdown, SteamSpinner, Navigation } from '@decky/ui';
 import { toaster } from '../../lib/notify';
 import { computeConfidence, bucketByGpuTier } from '../../lib/scoring';
 import {
@@ -436,7 +436,8 @@ function GameSummaryHeader({
     : resolvedName;
   const tierColor = combinedTier && combinedTier.count > 0 ? (RATING_COLORS[combinedTier.tier] ?? '#888') : null;
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+    <>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 4 }}>
       <img
         src={STEAM_HEADER_URL(headerAppId)}
         // 50px lines up the title row + appID subtitle row with the GOLD +
@@ -527,6 +528,26 @@ function GameSummaryHeader({
         )}
       </div>
     </div>
+    {headerAppId > 0 && (
+      <DialogButton
+        style={{
+          padding: '4px 10px',
+          fontSize: 11,
+          minHeight: 0,
+          height: 28,
+          background: 'rgba(100,160,255,0.12)',
+          border: '1px solid rgba(100,160,255,0.3)',
+          color: '#7ab4f5',
+          borderRadius: 4,
+          marginBottom: 6,
+          width: '100%',
+        }}
+        onClick={() => Navigation.NavigateToExternalWeb(`https://www.proton-pulse.com/app.html#/app/${headerAppId}`)}
+      >
+        {t().extras!.manageOnWeb ? t().extras!.manageOnWeb() : 'Manage this game on proton-pulse.com'}
+      </DialogButton>
+    )}
+    </>
   );
 }
 
