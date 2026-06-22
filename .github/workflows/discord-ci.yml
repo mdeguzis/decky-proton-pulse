@@ -1,0 +1,41 @@
+name: Discord CI Status
+
+# Posts to the #builds-CI Discord channel when a build/check workflow fails.
+# Lives on the default branch because workflow_run only reads the default branch.
+# Low-noise on purpose: failures only. The DISCORD_WEBHOOK secret is the builds
+# channel webhook URL (not the /github variant; the action posts a Discord embed).
+
+on:
+  workflow_run:
+    workflows:
+      - Ubuntu Build
+      - Build Arch Linux
+      - Build Debian
+      - Build Fedora
+      - Build Windows
+      - Build Termux
+      - Decky Latest (Ubuntu)
+      - Decky Latest (Arch Linux)
+      - Decky Latest (Debian)
+      - Decky Latest (Fedora)
+      - Coverage Badges
+      - i18n coverage check
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Discord on failure
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: failure
+          nofail: true
+          title: "${{ github.event.workflow_run.name }} failed"
+          description: "Branch `${{ github.event.workflow_run.head_branch }}` - [view run](${{ github.event.workflow_run.html_url }})"
+          url: ${{ github.event.workflow_run.html_url }}
