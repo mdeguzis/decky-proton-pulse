@@ -94,7 +94,7 @@ def get_game_requirements(app_id: str) -> dict[str, Any]:
     }
 
     try:
-        url = f'https://store.steampowered.com/api/appdetails?appids={app_id}'
+        url = f'https://store.steampowered.com/api/appdetails?appids={app_id}&l=english'
         data = curl_json(url, timeout=10)
 
         app_data = data.get(str(app_id), {})  # type: ignore[union-attr]
