@@ -768,6 +768,8 @@ export const ja: TranslationTree = {
     analysisNoVersionData: () => 'Protonバージョンのデータがまだありません。',
     analysisVersionTotal: (n) => `${n}件のレポート`,
     analysisDeepDiveHint: () => 'トレンドグラフやレポート詳細は proton-pulse.com で確認できます。',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
   },
 };
 

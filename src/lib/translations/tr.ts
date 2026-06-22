@@ -768,6 +768,8 @@ export const tr: TranslationTree = {
     analysisNoVersionData: () => 'Henüz Proton sürümü verisi yok.',
     analysisVersionTotal: (n) => n === 1 ? "1 rapor" : `${n} rapor`,
     analysisDeepDiveHint: () => 'Eğilim grafikleri ve rapor detayları için oyunu proton-pulse.com üzerinde açın.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
   },
 };
 

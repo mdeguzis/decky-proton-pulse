@@ -705,6 +705,8 @@ export const hu: TranslationTree = {
     analysisNoVersionData: () => 'Még nincs Proton verzió adat.',
     analysisVersionTotal: (n) => n === 1 ? "1 jelentés" : `${n} jelentés`,
     analysisDeepDiveHint: () => 'A trendgrafikonokért és részletekért nyisd meg a játékot a proton-pulse.com oldalon.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
     reportFormYes: () => "Igen",
     reportFormNo: () => "Nem",
     reportFormInstallStartupSection: () => "Telepítés és indítás",

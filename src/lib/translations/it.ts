@@ -705,6 +705,8 @@ export const it: TranslationTree = {
     analysisNoVersionData: () => 'Nessun dato sulle versioni di Proton.',
     analysisVersionTotal: (n) => n === 1 ? "1 segnalazione" : `${n} segnalazioni`,
     analysisDeepDiveHint: () => 'Per grafici di tendenza e dettagli, apri il gioco su proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
     reportFormYes: () => "Sì",
     reportFormNo: () => "No",
     reportFormInstallStartupSection: () => "Installazione e avvio",

@@ -768,6 +768,8 @@ export const zhCN: TranslationTree = {
     analysisNoVersionData: () => '暂无 Proton 版本数据。',
     analysisVersionTotal: (n) => `${n} 份报告`,
     analysisDeepDiveHint: () => '趋势图和每份报告的详情请访问 proton-pulse.com。',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
   },
 };
 

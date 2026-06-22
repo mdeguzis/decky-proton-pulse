@@ -705,6 +705,8 @@ export const ro: TranslationTree = {
     analysisNoVersionData: () => 'Încă nu sunt date despre versiunea Proton.',
     analysisVersionTotal: (n) => n === 1 ? "1 raport" : `${n} rapoarte`,
     analysisDeepDiveHint: () => 'Pentru grafice și detalii, deschide jocul pe proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
     reportFormYes: () => "Da",
     reportFormNo: () => "Nu",
     reportFormInstallStartupSection: () => "Instalare și pornire",

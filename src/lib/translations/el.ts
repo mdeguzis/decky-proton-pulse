@@ -705,6 +705,8 @@ export const el: TranslationTree = {
     analysisNoVersionData: () => 'Χωρίς δεδομένα έκδοσης Proton ακόμα.',
     analysisVersionTotal: (n) => n === 1 ? "1 αναφορά" : `${n} αναφορές`,
     analysisDeepDiveHint: () => 'Για γραφήματα τάσης και ανάλυση ανά αναφορά, ανοίξτε το παιχνίδι στο proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
     reportFormYes: () => "Ναι",
     reportFormNo: () => "Όχι",
     reportFormInstallStartupSection: () => "Εγκατάσταση και εκκίνηση",

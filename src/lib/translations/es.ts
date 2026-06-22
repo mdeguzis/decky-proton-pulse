@@ -768,6 +768,8 @@ export const es: TranslationTree = {
     analysisNoVersionData: () => 'Aún sin datos de versión de Proton.',
     analysisVersionTotal: (n) => n === 1 ? "1 informe" : `${n} informes`,
     analysisDeepDiveHint: () => 'Para gráficos de tendencia y desglose por informe, abre el juego en proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
   },
 };
 

@@ -705,6 +705,8 @@ export const uk: TranslationTree = {
     analysisNoVersionData: () => 'Поки немає даних про версії Proton.',
     analysisVersionTotal: (n) => n === 1 ? "1 звіт" : `${n} звітів`,
     analysisDeepDiveHint: () => 'Графіки тенденцій і деталі звітів доступні на proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
     reportFormYes: () => "Так",
     reportFormNo: () => "Ні",
     reportFormInstallStartupSection: () => "Встановлення та запуск",

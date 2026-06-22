@@ -798,6 +798,8 @@ export const ru: TranslationTree = {
     analysisNoVersionData: () => 'Данных о версии Proton пока нет.',
     analysisVersionTotal: (n) => n === 1 ? "1 отчёт" : `${n} отчётов`,
     analysisDeepDiveHint: () => 'Графики и подробности отчётов доступны на proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
   },
 };
 

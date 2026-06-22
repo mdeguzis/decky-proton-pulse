@@ -705,6 +705,8 @@ export const nl: TranslationTree = {
     analysisNoVersionData: () => 'Nog geen Proton-versiedata.',
     analysisVersionTotal: (n) => n === 1 ? "1 melding" : `${n} meldingen`,
     analysisDeepDiveHint: () => 'Voor grafieken en details per melding, open het spel op proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
     reportFormYes: () => "Ja",
     reportFormNo: () => "Nee",
     reportFormInstallStartupSection: () => "Installatie en opstart",

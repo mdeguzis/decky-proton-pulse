@@ -768,6 +768,8 @@ export const ko: TranslationTree = {
     analysisNoVersionData: () => '아직 Proton 버전 데이터가 없습니다.',
     analysisVersionTotal: (n) => `보고서 ${n}건`,
     analysisDeepDiveHint: () => '추세 차트와 보고서별 상세는 proton-pulse.com에서 확인하세요.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
   },
 };
 

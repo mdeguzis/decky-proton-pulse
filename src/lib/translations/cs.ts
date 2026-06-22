@@ -705,6 +705,8 @@ export const cs: TranslationTree = {
     analysisNoVersionData: () => 'Žádná data o verzi Protonu.',
     analysisVersionTotal: (n) => n === 1 ? "1 hlášení" : `${n} hlášení`,
     analysisDeepDiveHint: () => 'Pro grafy trendů a detaily otevřete hru na proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
     reportFormYes: () => "Ano",
     reportFormNo: () => "Ne",
     reportFormInstallStartupSection: () => "Instalace a spuštění",

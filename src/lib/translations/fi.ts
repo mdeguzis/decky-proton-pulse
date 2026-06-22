@@ -705,6 +705,8 @@ export const fi: TranslationTree = {
     analysisNoVersionData: () => 'Ei vielä Proton-versiotietoja.',
     analysisVersionTotal: (n) => n === 1 ? "1 raportti" : `${n} raporttia`,
     analysisDeepDiveHint: () => 'Trendikaaviot ja raporttikohtaiset tiedot löydät proton-pulse.com sivulta.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
     reportFormYes: () => "Kyllä",
     reportFormNo: () => "Ei",
     reportFormInstallStartupSection: () => "Asennus ja käynnistys",
