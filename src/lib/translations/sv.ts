@@ -147,6 +147,7 @@ export const sv: TranslationTree = {
     requirementColumn: 'Krav',
     minOursColumn: 'Min / Vår',
     oursLabel: 'Vår:',
+    gpuArch: 'GPU Arch',
   },
   editReport: {
     title: 'Redigera rapport',
@@ -766,5 +767,6 @@ export const sv: TranslationTree = {
     managePlaytimeTotal: () => "Speltid (totalt)",
     managePlaytimeThisConfig: () => "Speltid (denna konfig)",
     nativeLinuxBadge: () => "Native Linux-version tillgänglig",
+    perReportWhatsThis: () => "What's this?",
   },
 };

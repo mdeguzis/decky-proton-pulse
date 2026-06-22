@@ -147,6 +147,7 @@ export const sl: TranslationTree = {
     requirementColumn: 'Zahteva',
     minOursColumn: 'Min / Naše',
     oursLabel: 'Naše:',
+    gpuArch: 'GPU Arch',
   },
   editReport: {
     title: 'Uredi porocilo',
@@ -766,5 +767,6 @@ export const sl: TranslationTree = {
     managePlaytimeTotal: () => "Čas igranja (skupaj)",
     managePlaytimeThisConfig: () => "Čas igranja (ta konfiguracija)",
     nativeLinuxBadge: () => "Na voljo izvorna različica Linux",
+    perReportWhatsThis: () => "What's this?",
   },
 };

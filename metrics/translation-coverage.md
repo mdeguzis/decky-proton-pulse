@@ -5,31 +5,31 @@ Proton Pulse supports 29 languages. Translation coverage is measured during buil
 | Language | Code | Coverage | Status |
 |---|---|---|---|
 | English | en | 100.0% (canonical) | canonical |
-| Deutsch | de | 99.0% | fail |
-| Español | es | 99.0% | fail |
-| Français | fr | 99.0% | fail |
-| Italiano | it | 98.9% | fail |
-| 日本語 | ja | 99.0% | fail |
-| 한국어 | ko | 99.0% | fail |
-| Nederlands | nl | 98.9% | fail |
-| Polski | pl | 98.9% | fail |
-| Português (BR) | pt-BR | 99.0% | fail |
-| Русский | ru | 99.0% | fail |
-| Türkçe | tr | 99.0% | fail |
-| Українська | uk | 98.9% | fail |
-| Svenska | sv | 98.9% | fail |
-| Čeština | cs | 98.9% | fail |
-| ภาษาไทย | th | 98.9% | fail |
-| Tiếng Việt | vi | 98.9% | fail |
-| 简体中文 | zh-CN | 99.0% | fail |
-| 繁體中文 | zh-TW | 98.9% | fail |
-| Български | bg | 98.9% | fail |
-| Dansk | da | 98.9% | fail |
-| Ελληνικά | el | 98.9% | fail |
-| Español (Latinoamérica) | es-419 | 98.9% | fail |
-| Suomi | fi | 98.9% | fail |
-| Magyar | hu | 98.9% | fail |
-| Norsk | no | 98.9% | fail |
-| Português (PT) | pt | 98.9% | fail |
-| Română | ro | 98.9% | fail |
-| Slovenščina | sl | 98.9% | fail |
+| Deutsch | de | 98.4% | fail |
+| Español | es | 98.4% | fail |
+| Français | fr | 98.4% | fail |
+| Italiano | it | 99.1% | fail |
+| 日本語 | ja | 98.4% | fail |
+| 한국어 | ko | 98.4% | fail |
+| Nederlands | nl | 99.1% | fail |
+| Polski | pl | 99.1% | fail |
+| Português (BR) | pt-BR | 98.4% | fail |
+| Русский | ru | 98.4% | fail |
+| Türkçe | tr | 98.4% | fail |
+| Українська | uk | 99.1% | fail |
+| Svenska | sv | 99.1% | fail |
+| Čeština | cs | 99.1% | fail |
+| ภาษาไทย | th | 99.1% | fail |
+| Tiếng Việt | vi | 99.1% | fail |
+| 简体中文 | zh-CN | 98.4% | fail |
+| 繁體中文 | zh-TW | 99.1% | fail |
+| Български | bg | 99.1% | fail |
+| Dansk | da | 99.1% | fail |
+| Ελληνικά | el | 99.1% | fail |
+| Español (Latinoamérica) | es-419 | 99.1% | fail |
+| Suomi | fi | 99.1% | fail |
+| Magyar | hu | 99.1% | fail |
+| Norsk | no | 99.1% | fail |
+| Português (PT) | pt | 99.1% | fail |
+| Română | ro | 99.1% | fail |
+| Slovenščina | sl | 99.1% | fail |

@@ -147,6 +147,7 @@ export const pt: TranslationTree = {
     requirementColumn: 'Requisito',
     minOursColumn: 'Min / Nosso',
     oursLabel: 'Nosso:',
+    gpuArch: 'GPU Arch',
   },
   editReport: {
     title: 'Editar relatorio',
@@ -766,5 +767,6 @@ export const pt: TranslationTree = {
     managePlaytimeTotal: () => "Tempo de jogo (total)",
     managePlaytimeThisConfig: () => "Tempo de jogo (esta config)",
     nativeLinuxBadge: () => "Versão nativa Linux disponível",
+    perReportWhatsThis: () => "What's this?",
   },
 };

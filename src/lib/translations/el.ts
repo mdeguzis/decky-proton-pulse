@@ -147,6 +147,7 @@ export const el: TranslationTree = {
     requirementColumn: 'Απαίτηση',
     minOursColumn: 'Ελάχ. / Δικό μας',
     oursLabel: 'Δικό μας:',
+    gpuArch: 'GPU Arch',
   },
   editReport: {
     title: 'Επεξεργασία αναφοράς',
@@ -766,5 +767,6 @@ export const el: TranslationTree = {
     managePlaytimeTotal: () => "Χρόνος παιχνιδιού (σύνολο)",
     managePlaytimeThisConfig: () => "Χρόνος παιχνιδιού (αυτή η ρύθμιση)",
     nativeLinuxBadge: () => "Διαθέσιμη εγγενής έκδοση Linux",
+    perReportWhatsThis: () => "What's this?",
   },
 };

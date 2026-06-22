@@ -147,6 +147,7 @@ export const zhTW: TranslationTree = {
     requirementColumn: '需求',
     minOursColumn: '最低 / 我們的',
     oursLabel: '我們的:',
+    gpuArch: 'GPU Arch',
   },
   editReport: {
     title: '編輯報告',
@@ -766,5 +767,6 @@ export const zhTW: TranslationTree = {
     managePlaytimeTotal: () => "遊戲時間 (總計)",
     managePlaytimeThisConfig: () => "遊戲時間 (此配置)",
     nativeLinuxBadge: () => "可用原生 Linux 版本",
+    perReportWhatsThis: () => "What's this?",
   },
 };

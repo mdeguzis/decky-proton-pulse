@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 100,
-  "totalKeys": 700,
+  "totalKeys": 704,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 700,
-      "total": 700,
+      "translated": 704,
+      "total": 704,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -17,17 +17,21 @@
       "code": "de",
       "name": "Deutsch",
       "translated": 693,
-      "total": 700,
-      "coveragePercent": 99,
+      "total": 704,
+      "coveragePercent": 98.4,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
         "compatTools.autoUpdateStatus",
         "compatTools.lastChecked",
         "compatTools.nextCheckAt",
         "compatTools.compatToolsSection",
         "configManager.archFilter",
-        "configManager.resetFilters"
+        "configManager.resetFilters",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
       "typeMismatches": []
     },
@@ -35,17 +39,21 @@
       "code": "es",
       "name": "Español",
       "translated": 693,
-      "total": 700,
-      "coveragePercent": 99,
+      "total": 704,
+      "coveragePercent": 98.4,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
         "compatTools.autoUpdateStatus",
         "compatTools.lastChecked",
         "compatTools.nextCheckAt",
         "compatTools.compatToolsSection",
         "configManager.archFilter",
-        "configManager.resetFilters"
+        "configManager.resetFilters",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
       "typeMismatches": []
     },
@@ -53,54 +61,60 @@
       "code": "fr",
       "name": "Français",
       "translated": 693,
-      "total": 700,
-      "coveragePercent": 99,
+      "total": 704,
+      "coveragePercent": 98.4,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters"
-      ],
-      "typeMismatches": []
-    },
-    {
-      "code": "it",
-      "name": "Italiano",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
-        "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
         "compatTools.autoUpdateStatus",
         "compatTools.lastChecked",
         "compatTools.nextCheckAt",
         "compatTools.compatToolsSection",
         "configManager.archFilter",
         "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
+      "typeMismatches": []
+    },
+    {
+      "code": "it",
+      "name": "Italiano",
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
       "translated": 693,
-      "total": 700,
-      "coveragePercent": 99,
+      "total": 704,
+      "coveragePercent": 98.4,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
         "compatTools.autoUpdateStatus",
         "compatTools.lastChecked",
         "compatTools.nextCheckAt",
         "compatTools.compatToolsSection",
         "configManager.archFilter",
-        "configManager.resetFilters"
+        "configManager.resetFilters",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
       "typeMismatches": []
     },
@@ -108,73 +122,77 @@
       "code": "ko",
       "name": "한국어",
       "translated": 693,
-      "total": 700,
-      "coveragePercent": 99,
+      "total": 704,
+      "coveragePercent": 98.4,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
         "compatTools.autoUpdateStatus",
         "compatTools.lastChecked",
         "compatTools.nextCheckAt",
         "compatTools.compatToolsSection",
         "configManager.archFilter",
-        "configManager.resetFilters"
+        "configManager.resetFilters",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
       "typeMismatches": []
     },
     {
       "code": "nl",
       "name": "Nederlands",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pl",
       "name": "Polski",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pt-BR",
       "name": "Português (BR)",
       "translated": 693,
-      "total": 700,
-      "coveragePercent": 99,
+      "total": 704,
+      "coveragePercent": 98.4,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
         "compatTools.autoUpdateStatus",
         "compatTools.lastChecked",
         "compatTools.nextCheckAt",
         "compatTools.compatToolsSection",
         "configManager.archFilter",
-        "configManager.resetFilters"
+        "configManager.resetFilters",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
       "typeMismatches": []
     },
@@ -182,17 +200,21 @@
       "code": "ru",
       "name": "Русский",
       "translated": 693,
-      "total": 700,
-      "coveragePercent": 99,
+      "total": 704,
+      "coveragePercent": 98.4,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
         "compatTools.autoUpdateStatus",
         "compatTools.lastChecked",
         "compatTools.nextCheckAt",
         "compatTools.compatToolsSection",
         "configManager.archFilter",
-        "configManager.resetFilters"
+        "configManager.resetFilters",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
       "typeMismatches": []
     },
@@ -200,340 +222,316 @@
       "code": "tr",
       "name": "Türkçe",
       "translated": 693,
-      "total": 700,
-      "coveragePercent": 99,
+      "total": 704,
+      "coveragePercent": 98.4,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
         "compatTools.autoUpdateStatus",
         "compatTools.lastChecked",
         "compatTools.nextCheckAt",
         "compatTools.compatToolsSection",
         "configManager.archFilter",
-        "configManager.resetFilters"
+        "configManager.resetFilters",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
       "typeMismatches": []
     },
     {
       "code": "uk",
       "name": "Українська",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "sv",
       "name": "Svenska",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "cs",
       "name": "Čeština",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "th",
       "name": "ภาษาไทย",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "vi",
       "name": "Tiếng Việt",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "zh-CN",
       "name": "简体中文",
       "translated": 693,
-      "total": 700,
-      "coveragePercent": 99,
+      "total": 704,
+      "coveragePercent": 98.4,
       "missingKeys": [],
       "sameAsEnglishKeys": [
         "detail.gpuArch",
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
         "compatTools.autoUpdateStatus",
         "compatTools.lastChecked",
         "compatTools.nextCheckAt",
         "compatTools.compatToolsSection",
         "configManager.archFilter",
-        "configManager.resetFilters"
+        "configManager.resetFilters",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
       "typeMismatches": []
     },
     {
       "code": "zh-TW",
       "name": "繁體中文",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "bg",
       "name": "Български",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "da",
       "name": "Dansk",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "el",
       "name": "Ελληνικά",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "es-419",
       "name": "Español (Latinoamérica)",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "fi",
       "name": "Suomi",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "hu",
       "name": "Magyar",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "no",
       "name": "Norsk",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pt",
       "name": "Português (PT)",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ro",
       "name": "Română",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "sl",
       "name": "Slovenščina",
-      "translated": 692,
-      "total": 700,
-      "coveragePercent": 98.9,
-      "missingKeys": [
+      "translated": 698,
+      "total": 704,
+      "coveragePercent": 99.1,
+      "missingKeys": [],
+      "sameAsEnglishKeys": [
         "detail.gpuArch",
-        "compatTools.autoUpdateStatus",
-        "compatTools.lastChecked",
-        "compatTools.nextCheckAt",
-        "compatTools.compatToolsSection",
-        "configManager.archFilter",
-        "configManager.resetFilters",
-        "extras.perReportWhatsThis"
+        "settings.libraryBadgeShowNoData",
+        "settings.libraryBadgeShowNoDataDescription",
+        "extras.perReportWhatsThis",
+        "extras.manageOnWeb",
+        "extras.manageOnWebDesc"
       ],
-      "sameAsEnglishKeys": [],
       "typeMismatches": []
     }
   ]

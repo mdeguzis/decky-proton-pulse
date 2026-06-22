@@ -147,6 +147,7 @@ export const hu: TranslationTree = {
     requirementColumn: 'Követelmény',
     minOursColumn: 'Min / A miénk',
     oursLabel: 'A miénk:',
+    gpuArch: 'GPU Arch',
   },
   editReport: {
     title: 'Jelentés szerkesztése',
@@ -766,5 +767,6 @@ export const hu: TranslationTree = {
     managePlaytimeTotal: () => "Játékidő (összes)",
     managePlaytimeThisConfig: () => "Játékidő (ez a konfiguráció)",
     nativeLinuxBadge: () => "Natív Linux verzió elérhető",
+    perReportWhatsThis: () => "What's this?",
   },
 };

@@ -147,6 +147,7 @@ export const th: TranslationTree = {
     requirementColumn: 'ความต้องการ',
     minOursColumn: 'ขั้นต่ำ / ของเรา',
     oursLabel: 'ของเรา:',
+    gpuArch: 'GPU Arch',
   },
   editReport: {
     title: 'แก้ไขรายงาน',
@@ -766,5 +767,6 @@ export const th: TranslationTree = {
     managePlaytimeTotal: () => "เวลาเล่น (รวม)",
     managePlaytimeThisConfig: () => "เวลาเล่น (การกำหนดค่านี้)",
     nativeLinuxBadge: () => "มีบิวด์ Linux ดั้งเดิม",
+    perReportWhatsThis: () => "What's this?",
   },
 };

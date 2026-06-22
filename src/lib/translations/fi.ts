@@ -147,6 +147,7 @@ export const fi: TranslationTree = {
     requirementColumn: 'Vaatimus',
     minOursColumn: 'Min / Meidän',
     oursLabel: 'Meidän:',
+    gpuArch: 'GPU Arch',
   },
   editReport: {
     title: 'Muokkaa raporttia',
@@ -766,5 +767,6 @@ export const fi: TranslationTree = {
     managePlaytimeTotal: () => "Peliaika (yhteensä)",
     managePlaytimeThisConfig: () => "Peliaika (tämä määritys)",
     nativeLinuxBadge: () => "Natiivi Linux-versio saatavilla",
+    perReportWhatsThis: () => "What's this?",
   },
 };
