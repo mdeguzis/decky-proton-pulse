@@ -7,15 +7,67 @@ See: https://store.steampowered.com/api/appdetails?appids={appid}
 
 from __future__ import annotations
 
+import json
 import re
+import time
+from pathlib import Path
 from typing import Any
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
 from .http_client import curl_json
 
-# simple in-memory cache so we don't hit Steam for the same game twice
+# In-memory cache for the current session
 _cache: dict[str, dict[str, Any]] = {}
+
+# Disk cache: requirements rarely change, so keep for 7 days
+_DISK_CACHE_TTL = 7 * 24 * 3600
+
+
+def _disk_cache_path(app_id: str) -> Path:
+    root = Path(decky.DECKY_PLUGIN_RUNTIME_DIR) / 'requirements_cache'
+    root.mkdir(parents=True, exist_ok=True)
+    return root / f'{app_id}.json'
+
+
+def _load_disk_cache(app_id: str) -> dict[str, Any] | None:
+    path = _disk_cache_path(app_id)
+    try:
+        if not path.exists():
+            return None
+        payload = json.loads(path.read_text())
+        age = time.time() - payload.get('cached_at', 0)
+        if age > _DISK_CACHE_TTL:
+            decky.logger.debug(f'Game requirements disk cache expired for {app_id} (age={int(age)}s)')
+            return None
+        decky.logger.debug(f'Game requirements loaded from disk cache for {app_id} (age={int(age)}s)')
+        return payload['data']
+    except Exception as exc:
+        decky.logger.debug(f'Game requirements disk cache read failed for {app_id}: {exc}')
+        return None
+
+
+def _load_stale_disk_cache(app_id: str) -> dict[str, Any] | None:
+    """Return disk cache regardless of age - used as fallback when fetch fails."""
+    path = _disk_cache_path(app_id)
+    try:
+        if not path.exists():
+            return None
+        payload = json.loads(path.read_text())
+        age = time.time() - payload.get('cached_at', 0)
+        decky.logger.warning(f'Game requirements: using stale disk cache for {app_id} (age={int(age)}s)')
+        return payload['data']
+    except Exception as exc:
+        decky.logger.debug(f'Game requirements stale disk cache read failed for {app_id}: {exc}')
+        return None
+
+
+def _save_disk_cache(app_id: str, data: dict[str, Any]) -> None:
+    try:
+        path = _disk_cache_path(app_id)
+        path.write_text(json.dumps({'cached_at': time.time(), 'data': data}))
+    except Exception as exc:
+        decky.logger.debug(f'Game requirements disk cache write failed for {app_id}: {exc}')
 
 # grabs "8 GB RAM" or "4096 MB RAM" from the HTML blob
 _RAM_PATTERN = re.compile(r'(\d+)\s*(GB|MB)\s*RAM', re.IGNORECASE)
@@ -81,9 +133,17 @@ def get_game_requirements(app_id: str) -> dict[str, Any]:
       min_gpu: str | None          -- minimum GPU string, or None
       raw_minimum: str | None      -- the raw HTML minimum requirements string
       fields: list[dict] | None    -- parsed [{label, value}, ...] pairs
+      from_cache: bool             -- True if served from disk cache
+      error: str | None            -- set when fetch failed and no cache was available
     """
     if app_id in _cache:
         return _cache[app_id]
+
+    # Check disk cache before hitting Steam
+    disk_cached = _load_disk_cache(app_id)
+    if disk_cached is not None:
+        _cache[app_id] = disk_cached
+        return disk_cached
 
     result: dict[str, Any] = {
         'min_ram_gb': None,
@@ -91,6 +151,8 @@ def get_game_requirements(app_id: str) -> dict[str, Any]:
         'min_gpu': None,
         'raw_minimum': None,
         'fields': None,
+        'from_cache': False,
+        'error': None,
     }
 
     try:
@@ -100,12 +162,14 @@ def get_game_requirements(app_id: str) -> dict[str, Any]:
         app_data = data.get(str(app_id), {})  # type: ignore[union-attr]
         if not app_data.get('success'):
             decky.logger.debug(f'Steam Store API: no data for app {app_id}')
+            _save_disk_cache(app_id, result)
             _cache[app_id] = result
             return result
 
         pc_reqs = app_data.get('data', {}).get('pc_requirements', {})
         if isinstance(pc_reqs, list):
             # some games return an empty list instead of a dict
+            _save_disk_cache(app_id, result)
             _cache[app_id] = result
             return result
 
@@ -119,13 +183,22 @@ def get_game_requirements(app_id: str) -> dict[str, Any]:
             result['min_gpu'] = _find_field(fields, 'graphics', 'gpu', 'video')
 
         decky.logger.debug(
-            f'Game requirements for {app_id}: '
+            f'Game requirements fetched for {app_id}: '
             f'min_ram={result["min_ram_gb"]}GB '
             f'min_cpu={result["min_cpu"]} '
             f'min_gpu={result["min_gpu"]}'
         )
+        _save_disk_cache(app_id, result)
+
     except Exception as exc:
-        decky.logger.warning(f'Failed to fetch game requirements for {app_id}: {exc}')
+        error_msg = str(exc)
+        decky.logger.warning(f'Failed to fetch game requirements for {app_id}: {error_msg}')
+        # Serve stale disk cache rather than returning empty on transient errors
+        stale = _load_stale_disk_cache(app_id)
+        if stale is not None:
+            _cache[app_id] = stale
+            return stale
+        result['error'] = error_msg
 
     _cache[app_id] = result
     return result
