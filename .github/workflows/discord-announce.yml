@@ -1,27 +1,35 @@
 name: Discord Release Announce
 
-# Posts to #announcements when a release is published.
+# Posts to #announcements on stable releases only.
 # Replaces the native GitHub-Discord webhook which fires on all release sub-events
-# (deleted, created, prereleased, published) and shows blank embeds for the first three.
+# (deleted, created, prereleased, published) producing blank embeds for the first three.
+# DISCORD_ANNOUNCE_WEBHOOK must use the discord.com base URL (no /github suffix).
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      test_message:
+        description: "Test message to send"
+        required: false
+        default: "Webhook test"
 
 permissions:
   contents: read
 
 jobs:
   announce:
+    if: github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false
     runs-on: ubuntu-latest
     steps:
       - name: Post release to Discord
         env:
           WEBHOOK: ${{ secrets.DISCORD_ANNOUNCE_WEBHOOK }}
-          RELEASE_NAME: ${{ github.event.release.name }}
-          RELEASE_URL: ${{ github.event.release.html_url }}
-          RELEASE_BODY: ${{ github.event.release.body }}
-          IS_PRERELEASE: ${{ github.event.release.prerelease }}
+          RELEASE_NAME: ${{ github.event.release.name || 'Test' }}
+          RELEASE_URL: ${{ github.event.release.html_url || 'https://github.com/mdeguzis/decky-proton-pulse' }}
+          RELEASE_BODY: ${{ github.event.release.body || github.event.inputs.test_message }}
+          IS_TEST: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           python3 - <<'EOF'
           import json, os, urllib.request
@@ -30,14 +38,14 @@ jobs:
           name = os.environ["RELEASE_NAME"]
           url = os.environ["RELEASE_URL"]
           body = os.environ["RELEASE_BODY"][:1500]
-          is_pre = os.environ["IS_PRERELEASE"] == "true"
+          is_test = os.environ["IS_TEST"] == "true"
 
-          color = 16776960 if is_pre else 5763719  # yellow for dev, green for stable
-          prefix = "Dev build" if is_pre else "New release"
+          color = 8421504 if is_test else 5763719  # grey for test, green for release
+          title = f"[test] {name}" if is_test else f"New release: {name}"
 
           payload = json.dumps({
               "embeds": [{
-                  "title": f"{prefix}: {name}",
+                  "title": title,
                   "url": url,
                   "description": body,
                   "color": color,
