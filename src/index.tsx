@@ -130,19 +130,18 @@ function Content() {
 
   return (
     <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {focusedAppId != null && focusedAppId > 0 && (
-        <PanelSection title={focusedAppName || `App ${focusedAppId}`}>
+      <PanelSection>
+        {focusedAppId != null && focusedAppId > 0 && (
           <PanelSectionRow>
             <ButtonItem
               layout="below"
+              description={focusedAppName || undefined}
               onClick={() => navigateTo('manage-game', focusedAppId, focusedAppName)}
             >
               {extras.manageOnWeb ? extras.manageOnWeb() : 'Manage this game'}
             </ButtonItem>
           </PanelSectionRow>
-        </PanelSection>
-      )}
-      <PanelSection>
+        )}
         <PanelSectionRow>
           <ButtonItem
             layout="below"
