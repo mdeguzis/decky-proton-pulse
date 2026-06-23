@@ -161,24 +161,6 @@ function Content() {
         <PanelSectionRow>
           <ButtonItem
             layout="below"
-            onClick={() => navigateTo('compatibility-tools')}
-            description={t().sidebar.compatibilityToolsDesc}
-          >
-            {t().sidebar.compatibilityTools}
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={() => navigateTo('logs')}
-            description={t().sidebar.viewLogsDesc}
-          >
-            {t().sidebar.viewLogs}
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
             onClick={() => navigateTo('settings')}
             description={t().sidebar.settingsDesc}
           >
