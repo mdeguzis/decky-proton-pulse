@@ -1,8 +1,8 @@
 name: Discord Release Announce
 
 # Posts to #announcements on stable releases only.
-# Replaces the native GitHub-Discord webhook which fires on all release sub-events
-# (deleted, created, prereleased, published) producing blank embeds for the first three.
+# Uses plain text content (not embeds) -- Discord announcement channels do not
+# render webhook embeds visibly on mobile even though the API returns 204.
 # DISCORD_ANNOUNCE_WEBHOOK must use the discord.com base URL (no /github suffix).
 
 on:
@@ -32,7 +32,7 @@ jobs:
           IS_TEST: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           python3 - <<'EOF'
-          import json, os, urllib.request
+          import json, os, subprocess, sys
 
           webhook = os.environ["WEBHOOK"]
           name = os.environ["RELEASE_NAME"]
@@ -40,19 +40,11 @@ jobs:
           body = os.environ["RELEASE_BODY"][:1500]
           is_test = os.environ["IS_TEST"] == "true"
 
-          color = 8421504 if is_test else 5763719  # grey for test, green for release
-          title = f"[test] {name}" if is_test else f"New release: {name}"
+          prefix = "[test] " if is_test else ""
+          content = f"**{prefix}{name}**\n{url}\n\n{body}"
 
-          payload = json.dumps({
-              "embeds": [{
-                  "title": title,
-                  "url": url,
-                  "description": body,
-                  "color": color,
-              }]
-          }).encode()
+          payload = json.dumps({"content": content}).encode()
 
-          import subprocess, sys
           result = subprocess.run(
               ["curl", "-s", "-w", "\n%{http_code}", "-X", "POST", webhook,
                "-H", "Content-Type: application/json", "-d", payload.decode()],
