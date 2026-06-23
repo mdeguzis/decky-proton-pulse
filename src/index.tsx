@@ -102,10 +102,10 @@ function Content() {
     return () => window.clearInterval(interval);
   }, [focusedAppId, focusedAppName]);
 
-  const navigateTo = (tab: PageId) => {
-    void logFrontendEvent('INFO', 'Sidebar navigation requested', { tab });
+  const navigateTo = (tab: PageId, appId: number | null = null, appName = '') => {
+    void logFrontendEvent('INFO', 'Sidebar navigation requested', { tab, appId });
     rememberReturnPath(globalThis.location?.pathname);
-    const payload = { tab, appId: null, appName: '' };
+    const payload = { tab, appId, appName };
     const pathname = globalThis.location?.pathname ?? '';
     const alreadyOpen = pathname.includes('/proton-pulse');
     if (alreadyOpen) {
@@ -135,8 +135,7 @@ function Content() {
           <PanelSectionRow>
             <ButtonItem
               layout="below"
-              description={extras.manageOnWebDesc ? extras.manageOnWebDesc() : 'Open game page on proton-pulse.com'}
-              onClick={() => Navigation.NavigateToExternalWeb(`https://www.proton-pulse.com/app.html#/app/${focusedAppId}`)}
+              onClick={() => navigateTo('manage-game', focusedAppId, focusedAppName)}
             >
               {extras.manageOnWeb ? extras.manageOnWeb() : 'Manage this game'}
             </ButtonItem>
