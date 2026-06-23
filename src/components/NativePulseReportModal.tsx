@@ -13,6 +13,7 @@ import { logFrontendEvent } from '../lib/logger';
 import { isSteamShortcutApp } from '../lib/steamApps';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { deriveRating, FAULT_KEYS, type FaultKey, type YesNo } from '../lib/scoring';
+import { type GameSourceInfo, appTypeFromSource, nativeAppIdFromSource } from '../lib/gameSource';
 
 interface Props {
   appId: number;
@@ -23,7 +24,7 @@ interface Props {
   autoDurationMinutes?: number;
   launchOptions?: string;
   configKey?: string;
-  resolvedSteamAppId?: number | null;
+  gameSource?: GameSourceInfo | null;
   closeModal?: () => void;
 }
 
@@ -243,11 +244,14 @@ export function NativePulseReportModal({
   autoDuration, autoDurationMinutes,
   launchOptions: initialLaunchOptions = '',
   configKey,
-  resolvedSteamAppId,
+  gameSource,
   closeModal,
 }: Props) {
   const isShortcut = isSteamShortcutApp(appId);
-  const submitAppId = isShortcut && resolvedSteamAppId ? resolvedSteamAppId : appId;
+  const submitAppId = gameSource && !gameSource.is_steam
+    ? nativeAppIdFromSource(gameSource, appId)
+    : String(appId);
+  const submitAppType = gameSource ? appTypeFromSource(gameSource) : 'steam';
 
   // --- Install & Startup ---
   const [canInstall, setCanInstall] = useState<YesNo | null>(null);
@@ -467,6 +471,7 @@ export function NativePulseReportModal({
       configKey:         configKey || undefined,
       durationMinutes:   autoDurationMinutes ?? null,
       source:            'user',
+      appType:           submitAppType,
       vramMb:            sysInfo.vram_mb ?? null,
       cpuCores:          sysInfo.cpu_cores ?? null,
       displayResolution: sysInfo.display_resolution ?? null,
@@ -486,7 +491,7 @@ export function NativePulseReportModal({
     }
   };
 
-  if (isShortcut && !resolvedSteamAppId) {
+  if (isShortcut && !gameSource?.gog_product_id && !gameSource?.epic_game_id) {
     return (
       <ModalRoot onCancel={closeModal}>
         <div style={{ padding: 16, color: '#9dc4e8', fontSize: 12 }}>
@@ -518,8 +523,8 @@ export function NativePulseReportModal({
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#e8f4ff' }}>{t().nativeReport.title}</div>
             <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 2 }}>
-              {appName}{isShortcut && resolvedSteamAppId
-                ? ` . Non-Steam (Steam app id: ${resolvedSteamAppId})`
+              {appName}{isShortcut
+                ? ` . ${submitAppType.toUpperCase()} (id: ${submitAppId})`
                 : (appId ? ` . App ${appId}` : '')}
             </div>
           </div>

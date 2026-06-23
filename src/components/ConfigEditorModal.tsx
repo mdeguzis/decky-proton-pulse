@@ -31,6 +31,7 @@ import { t } from '../lib/i18n';
 import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } from '../lib/playtime';
 import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
+import { getGameSource, type GameSourceInfo } from '../lib/gameSource';
 import type { GpuVendor, ProtonGeManagerState, SystemInfo } from '../types';
 import type { VersionOption } from '../lib/compatToolVersions';
 import { CompatToolVersionPicker } from './CompatToolVersionPicker';
@@ -920,6 +921,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         void pushConfig(config);
         const { minutes } = await getEffectivePlaytimeMinutes(appId, existingConfig ? buildConfigKey(existingConfig) : undefined);
         const autoDuration = bucketPlaytimeMinutes(minutes);
+        const gsInfo = isSteamShortcutApp(appId) ? await getGameSource(appId, appName) : null;
         showModal(
           <NativePulseReportModal
             appId={appId}
@@ -928,6 +930,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
             protonVersion={protonVersion || ''}
             autoDuration={autoDuration}
             launchOptions={resolvedLaunchOptions}
+            gameSource={gsInfo}
           />,
         );
       }
@@ -949,15 +952,21 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   // have to pick a bucket manually - totally transparent
   const handlePublish = async () => {
     if (!appId) return;
-    if (isSteamShortcutApp(appId)) {
-      toaster.toast({ title: 'Proton Pulse', body: extras.shortcutCannotSubmit() });
-      return;
-    }
     if (!protonVersion) {
       toaster.toast({ title: 'Proton Pulse', body: t().configure.applyFailed('Proton version is required') });
       return;
     }
     void logFrontendEvent('INFO', 'Publish to Pulse clicked', { appId, appName });
+
+    let gameSource: GameSourceInfo | null = null;
+    if (isSteamShortcutApp(appId)) {
+      gameSource = await getGameSource(appId, appName);
+      if (!gameSource?.gog_product_id && !gameSource?.epic_game_id) {
+        toaster.toast({ title: 'Proton Pulse', body: extras.shortcutCannotSubmit() });
+        return;
+      }
+    }
+
     const configKey = existingConfig ? buildConfigKey(existingConfig) : undefined;
     const { minutes, trackedMinutes, steamMinutes, configMinutes } = await getEffectivePlaytimeMinutes(appId, configKey);
     const autoDuration = bucketPlaytimeMinutes(minutes);
@@ -974,6 +983,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         autoDurationMinutes={minutes}
         launchOptions={preview}
         configKey={configKey}
+        gameSource={gameSource}
       />,
     );
   };
