@@ -1,0 +1,55 @@
+name: Discord Release Announce
+
+# Posts to #announcements when a release is published.
+# Replaces the native GitHub-Discord webhook which fires on all release sub-events
+# (deleted, created, prereleased, published) and shows blank embeds for the first three.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post release to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_ANNOUNCE_WEBHOOK }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          IS_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request
+
+          webhook = os.environ["WEBHOOK"]
+          name = os.environ["RELEASE_NAME"]
+          url = os.environ["RELEASE_URL"]
+          body = os.environ["RELEASE_BODY"][:1500]
+          is_pre = os.environ["IS_PRERELEASE"] == "true"
+
+          color = 16776960 if is_pre else 5763719  # yellow for dev, green for stable
+          prefix = "Dev build" if is_pre else "New release"
+
+          payload = json.dumps({
+              "embeds": [{
+                  "title": f"{prefix}: {name}",
+                  "url": url,
+                  "description": body,
+                  "color": color,
+              }]
+          }).encode()
+
+          req = urllib.request.Request(
+              webhook,
+              data=payload,
+              headers={"Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req) as resp:
+              print(f"Discord response: {resp.status}")
+          EOF
