@@ -52,12 +52,14 @@ jobs:
               }]
           }).encode()
 
-          req = urllib.request.Request(
-              webhook,
-              data=payload,
-              headers={"Content-Type": "application/json"},
-              method="POST",
+          import subprocess, sys
+          result = subprocess.run(
+              ["curl", "-s", "-w", "\n%{http_code}", "-X", "POST", webhook,
+               "-H", "Content-Type: application/json", "-d", payload.decode()],
+              capture_output=True, text=True,
           )
-          with urllib.request.urlopen(req) as resp:
-              print(f"Discord response: {resp.status}")
+          print(result.stdout)
+          if result.returncode != 0 or not result.stdout.strip().endswith("204"):
+              print(result.stderr, file=sys.stderr)
+              sys.exit(1)
           EOF
