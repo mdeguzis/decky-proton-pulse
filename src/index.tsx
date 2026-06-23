@@ -78,6 +78,7 @@ function Content() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
   const [focusedAppId, setFocusedAppId] = useState<number | null>(() => pageState.focusedAppId);
   const [focusedAppName, setFocusedAppName] = useState<string>(() => pageState.focusedAppName);
+  const [anyGameRunning, setAnyGameRunning] = useState(false);
 
   useEffect(() => {
     void getPluginVersionSafe()
@@ -97,6 +98,12 @@ function Content() {
     const sync = () => {
       if (pageState.focusedAppId !== focusedAppId) setFocusedAppId(pageState.focusedAppId);
       if (pageState.focusedAppName !== focusedAppName) setFocusedAppName(pageState.focusedAppName);
+      try {
+        const running = (SteamClient as any).GameSessions?.GetRunningApps?.() ?? [];
+        setAnyGameRunning(running.length > 0);
+      } catch {
+        setAnyGameRunning(false);
+      }
     };
     const interval = window.setInterval(sync, 500);
     return () => window.clearInterval(interval);
@@ -131,7 +138,7 @@ function Content() {
   return (
     <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <PanelSection>
-        {focusedAppId != null && focusedAppId > 0 && (
+        {focusedAppId != null && focusedAppId > 0 && !anyGameRunning && (
           <PanelSectionRow>
             <ButtonItem
               layout="below"
