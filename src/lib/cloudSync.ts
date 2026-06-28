@@ -326,28 +326,36 @@ export interface RestoreResult {
 
 export async function restoreCloudConfigs(): Promise<RestoreResult> {
   const cloudRows = await fetchCloudConfigs();
-  const localConfigs = getTrackedConfigs();
-  const localAppIds = new Set(localConfigs.map((c) => c.appId));
 
+  // Restore pulls cloud configs DOWN onto this device. Every cloud row should land
+  // locally, including games this device does not track yet -- that is the entire
+  // point of a restore (new device, reinstall, configs pushed from another linked
+  // device). The earlier guard skipped any cloud row whose app_id was not already
+  // tracked locally, which meant a fresh device restored nothing. addTrackedConfig
+  // upserts by appId, so existing local entries are overwritten with the cloud copy.
+  // fetchCloudConfigs already deduplicates by app_id (newest wins), so there is no
+  // skip case left here.
   let restored = 0;
-  let skipped = 0;
+  let failed = 0;
 
   for (const row of cloudRows) {
-    if (!localAppIds.has(row.app_id)) {
-      skipped++;
-      continue;
-    }
     try {
       addTrackedConfig(row.config);
       restored++;
-    } catch {
-      // failed count handled below
+    } catch (err) {
+      failed++;
+      void logFrontendEvent('ERROR', 'Cloud sync: restore of one config failed', {
+        appId: row.app_id,
+        appName: row.app_name,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
-  const failed = cloudRows.length - restored - skipped;
-  void logFrontendEvent('INFO', 'Cloud sync: restore complete', { restored, skipped, failed });
-  return { restored, skipped, failed };
+  void logFrontendEvent('INFO', 'Cloud sync: restore complete', {
+    restored, skipped: 0, failed, fetched: cloudRows.length,
+  });
+  return { restored, skipped: 0, failed };
 }
 
 export async function pushAllConfigs(): Promise<PushAllResult> {

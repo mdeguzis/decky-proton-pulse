@@ -435,12 +435,17 @@ describe('restoreCloudConfigs', () => {
     expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudCfg);
   });
 
-  it('skips cloud configs that have no matching local entry', async () => {
+  it('restores cloud configs that have no matching local entry', async () => {
+    // The point of restore: pull down games this device does not track yet
+    // (new device, reinstall, configs pushed from another linked device).
     mockGetTrackedConfigs.mockReturnValue([]);
 
+    const cloudA = makeConfig({ appId: 100, appName: 'Cloud Only A' });
+    const cloudB = makeConfig({ appId: 200, appName: 'Cloud Only B' });
     mockRestRequest.mockResolvedValueOnce({
       data: [
-        { voter_id: 'abc123voterId', app_id: 100, app_name: 'Cloud Only Game', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T00:00:00Z' },
+        { voter_id: 'abc123voterId', app_id: 100, app_name: 'Cloud Only A', config: cloudA, updated_at: '2026-04-11T00:00:00Z' },
+        { voter_id: 'abc123voterId', app_id: 200, app_name: 'Cloud Only B', config: cloudB, updated_at: '2026-04-11T00:00:00Z' },
       ],
       error: null,
       status: 200,
@@ -449,8 +454,9 @@ describe('restoreCloudConfigs', () => {
     const { restoreCloudConfigs } = await import('./cloudSync');
     const result = await restoreCloudConfigs();
 
-    expect(result).toEqual({ restored: 0, skipped: 1, failed: 0 });
-    expect(mockAddTrackedConfig).not.toHaveBeenCalled();
+    expect(result).toEqual({ restored: 2, skipped: 0, failed: 0 });
+    expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudA);
+    expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudB);
   });
 
   it('throws when cloud fetch fails', async () => {
