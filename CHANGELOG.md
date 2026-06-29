@@ -2,6 +2,17 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## v1.11.0
+
+- Manage This Game button added to the QAM sidebar and the game header
+- GOG and Epic (Heroic) non-Steam games can now be submitted
+- Restore from cloud now pulls down every config, not just games already tracked on this device
+- Cloud sync fetches your configs by linked account, so configs from other devices come down too
+- Game requirements are cached for 7 days with an offline fallback
+- Cache stats overlay redesigned with a top-right close and wider charts
+- Cloud config app_id handling is type-agnostic ahead of the web schema change
+- Assorted library badge, scroll, compat tool, and translation fixes
+
 ## v1.10.0
 
 - Compat tool auto-update now runs at startup for both Proton-GE and CachyOS Proton, throttled to once per 24h
