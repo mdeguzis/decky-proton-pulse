@@ -132,7 +132,10 @@ export interface CloudConfigRow {
   voter_id: string;
   proton_pulse_user_id?: string | null;
   installation_id?: string | null;
-  app_id: number;
+  // app_id can arrive as a number (bigint column) or a string (text column).
+  // The Supabase column type may differ across tables/versions, so never compare
+  // it to a local numeric appId without normalizing both sides via String().
+  app_id: number | string;
   app_name: string;
   config: TrackedConfig;
   updated_at: string;
@@ -173,12 +176,15 @@ export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
     throw new Error(typeof error === 'string' ? error : 'fetch failed');
   }
 
-  // Deduplicate by app_id, keeping the most recently updated row
-  const byApp = new Map<number, CloudConfigRow>();
+  // Deduplicate by app_id, keeping the most recently updated row. Key on the
+  // string form since app_id may be a number or a string depending on the column
+  // type; mixing the two would defeat the dedup.
+  const byApp = new Map<string, CloudConfigRow>();
   for (const row of data) {
-    const existing = byApp.get(row.app_id);
+    const key = String(row.app_id);
+    const existing = byApp.get(key);
     if (!existing || (row.updated_at ?? '') > (existing.updated_at ?? '')) {
-      byApp.set(row.app_id, row);
+      byApp.set(key, row);
     }
   }
   const deduped = [...byApp.values()];
@@ -313,7 +319,11 @@ export function getCloudSyncStatus(
   appId: number,
   cloudConfigs: CloudConfigRow[],
 ): SyncStatus {
-  const cloudRow = cloudConfigs.find((r) => r.app_id === appId);
+  // Normalize both sides: app_id may be a number (bigint column) or a string
+  // (text column) depending on the Supabase schema, while appId is always a
+  // local number. A raw === would silently fail across the type boundary.
+  const target = String(appId);
+  const cloudRow = cloudConfigs.find((r) => String(r.app_id) === target);
   if (!cloudRow) return 'not-synced';
   return 'synced';
 }

@@ -413,6 +413,16 @@ describe('getCloudSyncStatus', () => {
     const { getCloudSyncStatus } = await import('./cloudSync');
     expect(getCloudSyncStatus(999, [])).toBe('not-synced');
   });
+
+  it('matches when the cloud row app_id is a string (text column) but the local appId is a number', async () => {
+    // user_proton_configs.app_id may come back as a string from a text column.
+    // The status lookup must normalize both sides instead of a raw === compare.
+    const { getCloudSyncStatus } = await import('./cloudSync');
+    const cloudConfigs = [
+      { voter_id: 'abc', app_id: '100', app_name: 'Game', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T01:00:00Z' },
+    ];
+    expect(getCloudSyncStatus(100, cloudConfigs)).toBe('synced');
+  });
 });
 
 describe('restoreCloudConfigs', () => {
