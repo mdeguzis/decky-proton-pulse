@@ -51,9 +51,11 @@ vi.mock('./localDataBackup', () => ({
 import { restRequest } from './voting';
 import type { TrackedConfig } from './trackedConfigs';
 import { getTrackedConfigs, addTrackedConfig, onConfigSaved } from './trackedConfigs';
+import { getLinkedProtonPulseUserId } from './protonPulseAccount';
 import { applyPluginSettingsBackupPayload, buildPluginSettingsBackupPayload } from './localDataBackup';
 
 const mockRestRequest = vi.mocked(restRequest);
+const mockGetLinkedProtonPulseUserId = vi.mocked(getLinkedProtonPulseUserId);
 const mockGetTrackedConfigs = vi.mocked(getTrackedConfigs);
 const mockAddTrackedConfig = vi.mocked(addTrackedConfig);
 const mockOnConfigSaved = vi.mocked(onConfigSaved);
@@ -224,6 +226,20 @@ describe('plugin settings cloud sync', () => {
     expect(body.payload.entries).toEqual({ theme: '"dark"' });
   });
 
+  it('returns false when the plugin settings push errors', async () => {
+    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'push failed', status: 500 });
+
+    const { pushPluginSettings } = await import('./cloudSync');
+    expect(await pushPluginSettings()).toBe(false);
+  });
+
+  it('returns false when the plugin settings push throws', async () => {
+    mockRestRequest.mockRejectedValueOnce(new Error('offline'));
+
+    const { pushPluginSettings } = await import('./cloudSync');
+    expect(await pushPluginSettings()).toBe(false);
+  });
+
   it('fetches plugin settings from Supabase', async () => {
     mockRestRequest.mockResolvedValueOnce({
       data: [{
@@ -349,6 +365,18 @@ describe('fetchCloudConfigs', () => {
     expect(result[0].app_id).toBe(12345);
     expect(result[0].proton_pulse_user_id).toBe('pp-user-123');
     expect(result[0].config.appId).toBe(12345);
+  });
+
+  it('filters by voter id alone when no account is linked', async () => {
+    mockGetLinkedProtonPulseUserId.mockReturnValueOnce(null);
+    mockRestRequest.mockResolvedValueOnce({ data: [], error: null, status: 200 });
+
+    const { fetchCloudConfigs } = await import('./cloudSync');
+    await fetchCloudConfigs();
+
+    const query = mockRestRequest.mock.calls[0][2] as Record<string, string>;
+    expect(query.voter_id).toBe('eq.abc123voterId');
+    expect(query.or).toBeUndefined();
   });
 
   it('throws on error response', async () => {

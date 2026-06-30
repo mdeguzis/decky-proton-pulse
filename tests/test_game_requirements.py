@@ -23,6 +23,76 @@ _EMPTY = {
 }
 
 
+def test_disk_cache_round_trip() -> None:
+    app_id = "diskcache-roundtrip"
+    path = game_requirements._disk_cache_path(app_id)
+    if path.exists():
+        path.unlink()
+    data = {"min_ram_gb": 8, "raw_minimum": "8 GB RAM"}
+    game_requirements._save_disk_cache(app_id, data)
+    assert path.exists()
+    assert game_requirements._load_disk_cache(app_id) == data
+    path.unlink()
+
+
+def test_load_disk_cache_missing_returns_none() -> None:
+    assert game_requirements._load_disk_cache("diskcache-does-not-exist") is None
+
+
+def test_load_disk_cache_expired_returns_none() -> None:
+    import json
+    import time
+
+    app_id = "diskcache-expired"
+    path = game_requirements._disk_cache_path(app_id)
+    stale_at = time.time() - (game_requirements._DISK_CACHE_TTL + 100)
+    path.write_text(json.dumps({"cached_at": stale_at, "data": {"min_ram_gb": 4}}))
+    try:
+        assert game_requirements._load_disk_cache(app_id) is None
+    finally:
+        path.unlink()
+
+
+def test_load_stale_disk_cache_ignores_age() -> None:
+    import json
+    import time
+
+    app_id = "diskcache-stale"
+    path = game_requirements._disk_cache_path(app_id)
+    stale_at = time.time() - (game_requirements._DISK_CACHE_TTL + 100)
+    payload = {"min_ram_gb": 16}
+    path.write_text(json.dumps({"cached_at": stale_at, "data": payload}))
+    try:
+        # fresh load rejects it, stale load returns it anyway
+        assert game_requirements._load_disk_cache(app_id) is None
+        assert game_requirements._load_stale_disk_cache(app_id) == payload
+    finally:
+        path.unlink()
+
+
+def test_load_stale_disk_cache_missing_returns_none() -> None:
+    assert game_requirements._load_stale_disk_cache("diskcache-stale-missing") is None
+
+
+def test_disk_cache_corrupt_file_returns_none() -> None:
+    app_id = "diskcache-corrupt"
+    path = game_requirements._disk_cache_path(app_id)
+    path.write_text("{not valid json")
+    try:
+        assert game_requirements._load_disk_cache(app_id) is None
+        assert game_requirements._load_stale_disk_cache(app_id) is None
+    finally:
+        path.unlink()
+
+
+def test_save_disk_cache_swallows_write_errors() -> None:
+    from unittest.mock import patch
+
+    # Path.write_text raising must not propagate out of _save_disk_cache.
+    with patch("pathlib.Path.write_text", side_effect=OSError("disk full")):
+        game_requirements._save_disk_cache("diskcache-writefail", {"min_ram_gb": 8})
+
+
 def test_parse_min_ram_gb_handles_gb_and_mb() -> None:
     assert game_requirements._parse_min_ram_gb("Requires 8 GB RAM") == 8
     assert game_requirements._parse_min_ram_gb("Needs 4096 MB RAM") == 4

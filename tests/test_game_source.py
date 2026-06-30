@@ -16,6 +16,46 @@ def setup_function() -> None:
 
 # --- is_steam_app ---
 
+def test_find_heroic_native_id_from_gog_url() -> None:
+    entry = {"launchoptions": "heroic://launch/gog/1207658924"}
+    assert game_source._find_heroic_native_id(entry) == ("1207658924", None)
+
+
+def test_find_heroic_native_id_from_epic_url() -> None:
+    entry = {"exe": "heroic://launch/legendary/Fortnite_Live"}
+    assert game_source._find_heroic_native_id(entry) == (None, "Fortnite_Live")
+
+
+def test_find_heroic_native_id_from_library_json(tmp_path: Path) -> None:
+    import json
+
+    lib_file = tmp_path / "gog_library.json"
+    lib_file.write_text(json.dumps({
+        "games": [
+            {"title": "The Witcher 3", "app_name": "1207664663"},
+            {"title": "Other Game", "app_name": "not-a-number"},
+        ]
+    }))
+    entry = {"appname": "the witcher 3"}
+    with patch.object(game_source, "_HEROIC_LIBRARY_CANDIDATES", [lib_file]):
+        assert game_source._find_heroic_native_id(entry) == ("1207664663", None)
+
+
+def test_find_heroic_native_id_no_match(tmp_path: Path) -> None:
+    missing = tmp_path / "nope.json"
+    entry = {"appname": "unknown game", "launchoptions": "", "exe": ""}
+    with patch.object(game_source, "_HEROIC_LIBRARY_CANDIDATES", [missing]):
+        assert game_source._find_heroic_native_id(entry) == (None, None)
+
+
+def test_find_heroic_native_id_corrupt_library_json(tmp_path: Path) -> None:
+    bad = tmp_path / "gog_library.json"
+    bad.write_text("{not valid json")
+    entry = {"appname": "anything", "launchoptions": "", "exe": ""}
+    with patch.object(game_source, "_HEROIC_LIBRARY_CANDIDATES", [bad]):
+        assert game_source._find_heroic_native_id(entry) == (None, None)
+
+
 def test_is_steam_app_true_for_small_id() -> None:
     assert game_source.is_steam_app("570") is True
     assert game_source.is_steam_app("2561580") is True
