@@ -249,6 +249,13 @@
       "text": "Fetch errors"
     },
     {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 862,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Save draft"
+    },
+    {
       "file": "src/components/PerReportAnalysisModal.tsx",
       "line": 190,
       "column": 36,

@@ -32,6 +32,7 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/CacheStatsModal.tsx` | 272 | string | No ProtonDB data |
 | `src/components/CacheStatsModal.tsx` | 274 | string | Avg fetch |
 | `src/components/CacheStatsModal.tsx` | 277 | string | Fetch errors |
+| `src/components/NativePulseReportModal.tsx` | 862 | jsx | Save draft |
 | `src/components/PerReportAnalysisModal.tsx` | 190 | jsx | pts |
 | `src/components/ReleaseNotesModal.tsx` | 277 | jsx | Loading |
 | `src/components/ScoringGuideModal.tsx` | 116 | jsx | Report Score Tiers |

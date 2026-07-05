@@ -2,7 +2,7 @@
 // Submit a native Proton Pulse compatibility report, auto-capturing hardware.
 // Form structure mirrors ProtonDB's submission flow so ratings are comparable.
 
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ModalRoot, Focusable, DialogButton, DialogCheckbox, TextField, DropdownItem, showModal } from '@decky/ui';
 import { ScoringGuideModal } from './ScoringGuideModal';
 import { toaster } from '../lib/notify';
@@ -10,10 +10,11 @@ import { submitUserConfig, VALID_OS, type ValidOS } from '../lib/userConfigs';
 import type { SystemInfo, ProtonRating } from '../types';
 import { t } from '../lib/i18n';
 import { logFrontendEvent } from '../lib/logger';
-import { isSteamShortcutApp } from '../lib/steamApps';
+import { isSteamShortcutApp, resolveAppName } from '../lib/steamApps';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { deriveRating, FAULT_KEYS, type FaultKey, type YesNo } from '../lib/scoring';
 import { type GameSourceInfo, appTypeFromSource, nativeAppIdFromSource } from '../lib/gameSource';
+import { saveReportDraft, loadReportDraft, clearReportDraft } from '../lib/reportDraft';
 
 interface Props {
   appId: number;
@@ -353,6 +354,51 @@ export function NativePulseReportModal({
   const autoDurationActive = !!autoDuration && autoDuration !== 'unreported';
   const ramStr = sysInfo?.ram_gb != null ? `${sysInfo.ram_gb} GB` : '';
 
+  // Draft persistence. Restore any saved answers on mount so a submission
+  // that failed for a fixable reason (missing title, network flake) does
+  // not force the user to re-fill the entire form. Draft is cleared on
+  // successful submit and can be manually written with the Save draft
+  // button below.
+  const [draftSavedNote, setDraftSavedNote] = useState<string | null>(null);
+  useEffect(() => {
+    const loaded = loadReportDraft(appId, configKey ?? null);
+    if (!loaded) return;
+    const d = loaded.draft as any;
+    if (d.canInstall !== undefined) setCanInstall(d.canInstall);
+    if (d.canStart !== undefined) setCanStart(d.canStart);
+    if (d.canPlay !== undefined) setCanPlay(d.canPlay);
+    if (typeof d.proton === 'string') setProton(d.proton);
+    if (d.protonType !== undefined) setProtonType(d.protonType);
+    if (Array.isArray(d.tinkeringMethods)) setTinkeringMethods(new Set(d.tinkeringMethods));
+    if (d.faults && typeof d.faults === 'object') setFaults(d.faults);
+    if (d.onlineMultiplayer !== undefined) setOnlineMultiplayer(d.onlineMultiplayer);
+    if (d.localMultiplayer !== undefined) setLocalMultiplayer(d.localMultiplayer);
+    if (d.verdict !== undefined) setVerdict(d.verdict);
+    if (d.verdictOob !== undefined) setVerdictOob(d.verdictOob);
+    if (typeof d.summary === 'string') setSummary(d.summary);
+    if (typeof d.notes === 'string') setNotes(d.notes);
+    if (typeof d.duration === 'string') setDuration(d.duration);
+    if (typeof d.os === 'string') setOs(d.os as ValidOS);
+    const when = new Date(loaded.savedAt).toLocaleString();
+    setDraftSavedNote(`Draft restored from ${when}. Continue where you left off, or press Save draft again to refresh it.`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSaveDraft = () => {
+    saveReportDraft(appId, configKey ?? null, {
+      canInstall, canStart, canPlay,
+      proton, protonType,
+      tinkeringMethods: [...tinkeringMethods],
+      faults,
+      onlineMultiplayer, localMultiplayer,
+      verdict, verdictOob,
+      summary, notes,
+      duration, os,
+    });
+    const when = new Date().toLocaleTimeString();
+    setDraftSavedNote(`Draft saved at ${when}. Answers will be restored next time you open this report.`);
+  };
+
   const derivedRating = deriveRating({
     canInstall,
     canStart,
@@ -424,10 +470,13 @@ export function NativePulseReportModal({
 
     // Title is required so reports always carry the human-readable game name.
     // Steam usually gives us appName via GetAppOverviewByAppID, but the lookup
-    // can fall back to empty for unrecognized shortcuts. Block submission with
-    // a clear message rather than uploading a title-less row
-    if (!appName || !appName.trim()) {
-      setError('Game title is missing - this usually means Steam did not recognize the game. Go back, ensure the title is set on the game properties, then re-try.');
+    // can fall back to empty for unrecognized shortcuts. Do a last-resort
+    // lookup here against SteamClient + appStore + collectionStore before
+    // failing the submission -- covers the case where the caller opened the
+    // modal before Steam populated the overview for a freshly added game.
+    const resolvedName = resolveAppName(appId, appName);
+    if (!resolvedName) {
+      setError('Game title is missing - this usually means Steam did not recognize the game. Save your draft with the button below, then set the title on the game properties in Steam and re-open this dialog to resume.');
       return;
     }
 
@@ -455,7 +504,7 @@ export function NativePulseReportModal({
 
     const result = await submitUserConfig({
       appId:             String(submitAppId),
-      title:             appName,
+      title:             resolvedName,
       cpu:               sysInfo.cpu,
       gpu:               sysInfo.gpu,
       gpuDriver:         sysInfo.driver_version ?? undefined,
@@ -484,6 +533,7 @@ export function NativePulseReportModal({
     if (result.ok) {
       void logFrontendEvent('INFO', 'Native Pulse report submitted', { appId, derivedRating });
       toaster.toast({ title: 'Proton Pulse', body: t().nativeReport.submitted });
+      clearReportDraft(appId, configKey ?? null);
       closeModal?.();
     } else {
       void logFrontendEvent('ERROR', 'Native Pulse report failed', { appId, error: result.error });
@@ -790,6 +840,11 @@ export function NativePulseReportModal({
             {error}
           </div>
         )}
+        {draftSavedNote && (
+          <div style={{ fontSize: 11, color: '#9dc4e8', padding: '6px 10px', marginTop: 8, background: 'rgba(157,196,232,0.10)', border: '1px solid rgba(157,196,232,0.35)', borderRadius: 4 }}>
+            {draftSavedNote}
+          </div>
+        )}
 
         <Focusable style={{ display: 'flex', gap: 8, marginTop: 8, marginBottom: 8, flexWrap: 'wrap', flexShrink: 0 }}>
           <DialogButton
@@ -798,6 +853,13 @@ export function NativePulseReportModal({
             style={{ flex: 1, minWidth: 120, padding: '8px 16px', fontSize: 12 }}
           >
             {submitting ? t().common.loading : t().nativeReport.submit}
+          </DialogButton>
+          <DialogButton
+            onClick={handleSaveDraft}
+            disabled={submitting}
+            style={{ minWidth: 100, padding: '8px 12px', fontSize: 12, background: '#3a4a5a' }}
+          >
+            Save draft
           </DialogButton>
           <DialogButton
             onClick={() => closeModal?.()}
