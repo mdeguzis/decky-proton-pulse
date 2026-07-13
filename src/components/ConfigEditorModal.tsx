@@ -32,6 +32,7 @@ import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } fr
 import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
 import { getGameSource, type GameSourceInfo } from '../lib/gameSource';
+import { GameBanner } from './GameBanner';
 import type { GpuVendor, ProtonGeManagerState, SystemInfo } from '../types';
 import type { VersionOption } from '../lib/compatToolVersions';
 import { CompatToolVersionPicker } from './CompatToolVersionPicker';
@@ -49,9 +50,6 @@ interface Props {
   screenshotMode?: 'custom-toggle-manager' | 'upload-preview' | 'native-pulse-report';
   closeModal?: () => void;
 }
-
-const STEAM_HEADER_URL = (id: number) =>
-  `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
 type Category = LaunchVarDef['category'];
 type SectionKey = Category | 'custom';
@@ -695,6 +693,24 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   const [managerState, setManagerState] = useState<ProtonGeManagerState | null>(null);
   const [loadingVersions, setLoadingVersions] = useState(true);
   const [installing, setInstalling] = useState<string | null>(null);
+  // Non-Steam shortcuts carry a source (Heroic / GOG / Epic / ...). We fetch
+  // it on mount so the header pill can show the actual launcher instead of
+  // the generic "steam shortcut" text or a misleading "Custom" label.
+  const [headerGameSource, setHeaderGameSource] = useState<GameSourceInfo | null>(null);
+  useEffect(() => {
+    if (!appId || !isShortcut) return;
+    let alive = true;
+    void getGameSource(appId, appName).then((info) => {
+      if (!alive) return;
+      setHeaderGameSource(info);
+      void logFrontendEvent('DEBUG', 'ConfigEditor: header game source loaded', {
+        appId,
+        source: info?.source ?? null,
+        is_steam: info?.is_steam ?? null,
+      });
+    });
+    return () => { alive = false; };
+  }, [appId, appName, isShortcut]);
   const screenshotModeOpenedRef = useRef(false);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<SectionKey>>(
     () => initialCollapsed(gpuVendor),
@@ -1132,10 +1148,9 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {appId && (
-              <img
-                src={STEAM_HEADER_URL(appId)}
+              <GameBanner
+                appId={appId}
                 style={{ height: 32, borderRadius: 3, objectFit: 'cover' }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             )}
             <div>
@@ -1143,7 +1158,11 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
                   {appName || (appId ? `App ${appId}` : t().configManager.createConfig)}
                 </div>
-                {customToggles.length > 0 && (
+                {/* Store / launcher pill: shows the identified source (Heroic,
+                    GOG, Epic, ...) for non-Steam shortcuts. Falls back to
+                    "Custom" only when the game cannot be resolved to a known
+                    store so the label matches what the game page badge shows. */}
+                {isShortcut && (
                   <div
                     style={{
                       fontSize: 9,
@@ -1155,13 +1174,15 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
                       lineHeight: 1.2,
                     }}
                   >
-                    {t().configManager.customToggleBadge}
+                    {headerGameSource?.source || t().configManager.customToggleBadge}
                   </div>
                 )}
               </div>
               {appId && (
                 <div style={{ fontSize: 9, color: '#7a9bb5' }}>
-                  {isShortcut ? extras.nonSteamShortcut() : extras.appIdLabel(appId)}
+                  {isShortcut
+                    ? (headerGameSource?.source || extras.nonSteamShortcut())
+                    : extras.appIdLabel(appId)}
                 </div>
               )}
             </div>

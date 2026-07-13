@@ -1,7 +1,26 @@
 // Talks to Steam's internal SteamClient.Apps API to look up app details
 // like launch options. Uses RegisterForAppDetails which is callback-based,
 // so everything here wraps it in a promise with a timeout fallback.
+import { callable } from '@decky/api';
 import { logFrontendEvent } from './logger';
+
+const _getGridArtwork = callable<[number], { dataUrl: string | null }>('get_grid_artwork');
+
+// Returns a data URL for the local Steam grid artwork (user-set header) for
+// this app id. Non-Steam shortcuts commonly use this to carry Heroic / GOG /
+// Epic cover art. Returns null if nothing is set or the backend errors.
+export async function getGridArtworkDataUrl(appId: number): Promise<string | null> {
+  try {
+    const result = await _getGridArtwork(appId);
+    return result.dataUrl ?? null;
+  } catch (err) {
+    void logFrontendEvent('DEBUG', 'getGridArtworkDataUrl failed', {
+      appId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
+}
 
 interface SteamAppDetailsResult {
   details: any | null;

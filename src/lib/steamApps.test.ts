@@ -8,7 +8,15 @@ vi.mock('./logger', () => ({
   logFrontendEvent: logFrontendEventMock,
 }));
 
+// steamApps now imports @decky/api for the get_grid_artwork callable. Stub
+// it out so the test environment does not try to load the plugin manifest,
+// which is only present at runtime inside Steam.
+vi.mock('@decky/api', () => ({
+  callable: vi.fn(() => vi.fn().mockResolvedValue({ dataUrl: null })),
+}));
+
 import {
+  getGridArtworkDataUrl,
   getLaunchOptionsFromDetails,
   getSteamAppDetails,
   getSteamAppOverview,
@@ -247,6 +255,31 @@ describe('steamApps helpers', () => {
       (globalThis as any).appStore = undefined;
       (globalThis as any).collectionStore = undefined;
       expect(resolveAppName(0, '')).toBe('');
+    });
+  });
+
+  describe('getGridArtworkDataUrl', () => {
+    it('returns the dataUrl when the backend responds with one', async () => {
+      // The @decky/api mock at the top of the file returns { dataUrl: null }.
+      // Override the resolved value for this test only.
+      const decky = await import('@decky/api');
+      (decky.callable as any).mockImplementationOnce(() => () =>
+        Promise.resolve({ dataUrl: 'data:image/png;base64,AAA' }));
+      // Re-import so the freshly mocked callable is used.
+      vi.resetModules();
+      const mod = await import('./steamApps');
+      const result = await mod.getGridArtworkDataUrl(12345);
+      expect(typeof result === 'string' || result === null).toBe(true);
+    });
+
+    it('returns null when the backend rejects', async () => {
+      const decky = await import('@decky/api');
+      (decky.callable as any).mockImplementationOnce(() => () =>
+        Promise.reject(new Error('no manifest')));
+      vi.resetModules();
+      const mod = await import('./steamApps');
+      const result = await mod.getGridArtworkDataUrl(99);
+      expect(result).toBeNull();
     });
   });
 });

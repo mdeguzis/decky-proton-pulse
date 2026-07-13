@@ -14,7 +14,8 @@ import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, isSteamShortcutApp, NON_STEAM_ID_THRESHOLD } from '../../lib/steamApps';
-import { getGameSource } from '../../lib/gameSource';
+import { getGameSource, type GameSourceInfo } from '../../lib/gameSource';
+import { GameBanner } from '../GameBanner';
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
 import {
   registerScreenshotAutomationHandler,
@@ -41,8 +42,6 @@ interface Props {
 type FilterTier = GpuVendor | 'all';
 type FilterArch = string; // e.g. "RDNA2", "Ada", "Polaris", or "all"
 type SortMode = 'score' | 'votes';
-const STEAM_HEADER_URL = (id: number) =>
-  `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
 // Resolve a display name for an app id, trying every source Steam exposes.
 // Order matters: caller-supplied appName wins (it came from dispatchNavigate
@@ -435,15 +434,28 @@ function GameSummaryHeader({
     ? `${demoFullGameName || resolvedName} (${t().configure.demo})`
     : resolvedName;
   const tierColor = combinedTier && combinedTier.count > 0 ? (RATING_COLORS[combinedTier.tier] ?? '#888') : null;
+  // Show the identified launcher (Heroic / GOG / Epic) in the subtitle when we
+  // have it. Falls back to the generic non-Steam label so nothing regresses.
+  const [gameSource, setGameSource] = useState<GameSourceInfo | null>(null);
+  useEffect(() => {
+    if (!isShortcut) return;
+    let alive = true;
+    void getGameSource(appId, appName).then((info) => {
+      if (alive) setGameSource(info);
+    });
+    return () => { alive = false; };
+  }, [appId, appName, isShortcut]);
+  const shortcutSubtitle = gameSource?.source
+    ? gameSource.source
+    : extras.nonSteamShortcut();
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 4 }}>
-      <img
-        src={STEAM_HEADER_URL(headerAppId)}
+      <GameBanner
+        appId={headerAppId}
         // 50px lines up the title row + appID subtitle row with the GOLD +
         // Confidence stack on the right side. 40px was just enough to fit the
         // title but left the subtitle dangling below the right-side badges
         style={{ height: 50, borderRadius: 3, objectFit: 'cover' }}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
@@ -451,7 +463,7 @@ function GameSummaryHeader({
         </div>
         <div style={{ fontSize: 11, color: '#7a9bb5' }}>
           {isShortcut
-            ? `${extras.nonSteamShortcut()}${resolvedSteamAppId ? ` (Steam app id: ${resolvedSteamAppId})` : ''}`
+            ? `${shortcutSubtitle}${resolvedSteamAppId ? ` (Steam app id: ${resolvedSteamAppId})` : ''}`
             : `${extras.appIdLabel(appId)}${typeof reportsCount === 'number' ? ` . ${t().reports.communityReports(reportsCount)}` : ''}`}
         </div>
       </div>
