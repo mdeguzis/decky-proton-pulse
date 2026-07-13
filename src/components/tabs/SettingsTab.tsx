@@ -1064,7 +1064,7 @@ export function SettingsTab() {
           <div style={{ ...focusClipRowStyle(), margin: '0 10px 8px' }}>
             <ToggleField
               label={extras.compatAutoUpdateCurrentVersion()}
-              description={t().compatTools.autoUpdateDescription}
+              description={t().compatTools.autoUpdateDescription.replace('Proton-GE', COMPAT_TOOL_OPTIONS.find((o) => o.id === selectedTool)?.label ?? selectedTool)}
               checked={autoUpdateCurrent}
               onChange={handleAutoUpdateToggle}
             />
