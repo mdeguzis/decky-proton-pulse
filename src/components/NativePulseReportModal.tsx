@@ -926,7 +926,7 @@ export function NativePulseReportModal({
           </DialogButton>
           <DialogButton
             onClick={() => closeModal?.()}
-            style={{ flex: 1, minWidth: 0, padding: '8px 12px', fontSize: 12, background: '#555' }}
+            style={{ flex: 1, minWidth: 0, padding: '8px 12px', fontSize: 12 }}
           >
             {t().common.close}
           </DialogButton>
