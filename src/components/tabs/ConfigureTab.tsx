@@ -436,7 +436,7 @@ function GameSummaryHeader({
     : resolvedName;
   const tierColor = combinedTier && combinedTier.count > 0 ? (RATING_COLORS[combinedTier.tier] ?? '#888') : null;
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 4 }}>
       <img
         src={STEAM_HEADER_URL(headerAppId)}
         // 50px lines up the title row + appID subtitle row with the GOLD +

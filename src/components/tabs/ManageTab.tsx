@@ -512,7 +512,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   };
 
   const handleRestoreOne = (config: TrackedConfig) => {
-    const cloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
+    const cloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
     if (!cloudRow) {
       toaster.toast({ title: 'Proton Pulse', body: t().configManager.cloudRestoreNoBackup });
       return;
@@ -542,7 +542,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
       : cloudOffline
         ? 'Local only (offline)'
         : (menuSyncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced);
-    const menuCloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
+    const menuCloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
     const menuIsPublished = menuCloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
 
     const infoRows: { label: string; value: string }[] = [
@@ -689,7 +689,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           const name = displayName(config);
           const isShortcut = isSteamShortcutApp(config.appId);
           const syncStatus: SyncStatus = (cloudLoading || cloudOffline) ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
-          const cloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
+          const cloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
           const isPublished = cloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
           const appIdLabel = isShortcut
             ? `${extras.nonSteamShortcut()}${config.resolvedSteamAppId ? ` (Steam app id: ${config.resolvedSteamAppId})` : ''}`
