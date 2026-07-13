@@ -768,5 +768,7 @@ export const th: TranslationTree = {
     managePlaytimeThisConfig: () => "เวลาเล่น (การกำหนดค่านี้)",
     nativeLinuxBadge: () => "มีบิวด์ Linux ดั้งเดิม",
     perReportWhatsThis: () => `นี่คืออะไร?`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };

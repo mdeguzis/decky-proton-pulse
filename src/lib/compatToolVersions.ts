@@ -67,7 +67,11 @@ export function buildVersionOptions(
   return combined;
 }
 
-export type CompatToolType = 'all' | CompatToolId;
+// 'valve' is Steam's bundled Proton (not managed by us). It shows up in the
+// picker so users can pick their currently-installed Valve versions when
+// creating a config, matching the Valve Proton entry on the Submit Report
+// screen (see src/lib/protonTypes.ts).
+export type CompatToolType = 'all' | 'valve' | CompatToolId;
 
 type ManagerStateLike = Pick<ProtonGeManagerState, 'releases' | 'installed_tools'>;
 
@@ -78,6 +82,14 @@ export function versionOptionsForType(
 ): VersionOption[] {
   if (type === 'all') {
     return buildVersionOptions(managerState.releases, managerState.installed_tools);
+  }
+  if (type === 'valve') {
+    // Steam-provided Proton, source === 'valve' on the installed record.
+    // No release list -- Valve Proton is only shown if it is installed.
+    return buildVersionOptions(
+      [],
+      managerState.installed_tools.filter((t) => (t as { source?: string }).source === 'valve'),
+    );
   }
   if (type === 'proton-ge') {
     return buildVersionOptions(

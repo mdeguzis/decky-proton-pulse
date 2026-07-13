@@ -768,5 +768,7 @@ export const no: TranslationTree = {
     managePlaytimeThisConfig: () => "Speletid (denne konfig)",
     nativeLinuxBadge: () => "Innebygd Linux-versjon tilgjengelig",
     perReportWhatsThis: () => `Hva er dette?`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };

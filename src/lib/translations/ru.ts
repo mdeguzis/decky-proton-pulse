@@ -800,6 +800,8 @@ export const ru: TranslationTree = {
     analysisDeepDiveHint: () => 'Графики и подробности отчётов доступны на proton-pulse.com.',
     manageOnWeb: () => `Управлять этой игрой`,
     manageOnWebDesc: () => `Открыть страницу игры на proton-pulse.com`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };
 

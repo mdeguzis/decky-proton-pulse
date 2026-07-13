@@ -708,7 +708,9 @@ export interface TranslationTree {
     reportFormMultiplayerOnline?: () => string;
     reportFormMultiplayerLocal?: () => string;
     reportFormProtonDefault?: () => string;
+    reportFormProtonValve?: () => string;
     reportFormProtonGE?: () => string;
+    reportFormProtonCachyOS?: () => string;
     reportFormProtonOlder?: () => string;
     reportFormProtonNative?: () => string;
     reportFormProtonNotListed?: () => string;
@@ -1135,7 +1137,7 @@ export const en: TranslationTree = {
     filterGames: 'Filter games...',
     configureCurrentGame: 'Configure Current Game',
     emptyState: 'No saved configurations yet. Apply a report from Manage This Game to get started.',
-    deleteConfirm: (name) => `Delete config for ${name}? This will clear the game's launch options.`,
+    deleteConfirm: (name) => `Delete config for ${name}? This clears the game's launch options and also removes your synced config and any submitted report from the Proton Pulse cloud.`,
     deleteConfirmTitle: 'Delete Configuration',
     deleteAction: 'Delete',
     infoAction: 'Info',
@@ -1492,7 +1494,9 @@ export const en: TranslationTree = {
     reportFormMultiplayerOnline: () => 'Did you try to play multiplayer online?',
     reportFormMultiplayerLocal: () => 'Did you try to play multiplayer locally (couch play)?',
     reportFormProtonDefault: () => 'Default Proton (current)',
-    reportFormProtonGE: () => 'Glorious Eggroll (GE)',
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonGE: () => 'Proton-GE',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
     reportFormProtonOlder: () => 'Switched to an older version',
     reportFormProtonNative: () => 'Native - No Proton',
     reportFormProtonNotListed: () => 'Not Listed',

@@ -770,6 +770,8 @@ export const es: TranslationTree = {
     analysisDeepDiveHint: () => 'Para gráficos de tendencia y desglose por informe, abre el juego en proton-pulse.com.',
     manageOnWeb: () => `Gestionar este juego`,
     manageOnWebDesc: () => `Abrir la página del juego en proton-pulse.com`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };
 

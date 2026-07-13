@@ -770,6 +770,8 @@ export const ko: TranslationTree = {
     analysisDeepDiveHint: () => '추세 차트와 보고서별 상세는 proton-pulse.com에서 확인하세요.',
     manageOnWeb: () => `이 게임 관리`,
     manageOnWebDesc: () => `proton-pulse.com에서 게임 페이지 열기`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };
 

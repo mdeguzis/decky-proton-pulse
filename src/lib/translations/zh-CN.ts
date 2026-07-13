@@ -770,6 +770,8 @@ export const zhCN: TranslationTree = {
     analysisDeepDiveHint: () => '趋势图和每份报告的详情请访问 proton-pulse.com。',
     manageOnWeb: () => `管理此游戏`,
     manageOnWebDesc: () => `在 proton-pulse.com 上打开游戏页面`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };
 

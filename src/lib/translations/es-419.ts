@@ -768,5 +768,7 @@ export const es419: TranslationTree = {
     managePlaytimeThisConfig: () => "Tiempo de juego (esta config)",
     nativeLinuxBadge: () => "Versión nativa de Linux disponible",
     perReportWhatsThis: () => `¿Qué es esto?`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };

@@ -99,4 +99,21 @@ describe('versionOptionsForType', () => {
     expect(values).toContain('Proton-CachyOS-Latest');
     expect(values).toContain('proton-cachyos-10.0');
   });
+
+  it('valve: returns only installed tools whose source is valve', () => {
+    const stateWithValve = {
+      releases: [{ tag_name: 'GE-Proton10-1' }],
+      installed_tools: [
+        tool({ directory_name: 'Proton 9.0 (Beta)', display_name: 'Proton 9.0 (Beta)', internal_name: 'proton_9', source: 'valve' }),
+        tool({ directory_name: 'Proton Experimental', display_name: 'Proton Experimental', internal_name: 'proton_experimental', source: 'valve' }),
+        tool({ directory_name: 'GE-Proton10-1', display_name: 'GE-Proton10-1', internal_name: 'GE-Proton10-1', source: 'custom', tool_id: 'proton-ge' }),
+      ],
+    } as any;
+    const opts = versionOptionsForType('valve', stateWithValve, null);
+    const displayNames = opts.map((o) => o.displayName);
+    expect(displayNames).toContain('Proton 9.0 (Beta)');
+    expect(displayNames).toContain('Proton Experimental');
+    expect(displayNames).not.toContain('GE-Proton10-1');
+    expect(opts.every((o) => o.installed)).toBe(true);
+  });
 });

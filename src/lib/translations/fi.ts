@@ -768,5 +768,7 @@ export const fi: TranslationTree = {
     managePlaytimeThisConfig: () => "Peliaika (tämä määritys)",
     nativeLinuxBadge: () => "Natiivi Linux-versio saatavilla",
     perReportWhatsThis: () => `Mikä tämä on?`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };

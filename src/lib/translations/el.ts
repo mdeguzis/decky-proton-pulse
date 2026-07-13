@@ -768,5 +768,7 @@ export const el: TranslationTree = {
     managePlaytimeThisConfig: () => "Χρόνος παιχνιδιού (αυτή η ρύθμιση)",
     nativeLinuxBadge: () => "Διαθέσιμη εγγενής έκδοση Linux",
     perReportWhatsThis: () => `Τι είναι αυτό;`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };

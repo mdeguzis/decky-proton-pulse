@@ -34,6 +34,7 @@ export function CompatToolVersionPicker({
 
   const typeOptions = [
     { data: 'all', label: t().detail.compatToolTypeAll ?? 'All' },
+    { data: 'valve', label: 'Valve Proton' },
     ...COMPAT_TOOL_OPTIONS.map((o) => ({ data: o.id, label: o.label })),
   ];
 

@@ -768,5 +768,7 @@ export const hu: TranslationTree = {
     managePlaytimeThisConfig: () => "Játékidő (ez a konfiguráció)",
     nativeLinuxBadge: () => "Natív Linux verzió elérhető",
     perReportWhatsThis: () => `Mi ez?`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };

@@ -768,5 +768,7 @@ export const zhTW: TranslationTree = {
     managePlaytimeThisConfig: () => "遊戲時間 (此配置)",
     nativeLinuxBadge: () => "可用原生 Linux 版本",
     perReportWhatsThis: () => `這是什麼？`,
+    reportFormProtonValve: () => 'Valve Proton',
+    reportFormProtonCachyOS: () => 'Proton-CachyOS',
   },
 };
