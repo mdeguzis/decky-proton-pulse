@@ -67,7 +67,7 @@ ifneq ($(wildcard $(BREW_NODE)/node),)
   PNPM := $(shell command -v pnpm 2>/dev/null || echo "npx pnpm")
 endif
 
-.PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise setup-remote-dev deploy deploy-local deploy-reload deploy-reload-local build-and-deploy build-and-deploy-local clean \
+.PHONY: default help build install watch test coverage coverage-diff test-ts test-py typecheck sync-translations check-translations check-ui-strings translate setup setup-termux-ssh ensure-mise setup-remote-dev deploy deploy-local deploy-reload deploy-reload-local build-and-deploy build-and-deploy-local clean \
         logs get-logs get-cef-capture take-screenshot take-video publish-screenshots-wiki take-screenshot-wiki \
         package release github-release github-pre-release github-dev-release \
         capture-project-screenshots \
@@ -97,6 +97,7 @@ help:
 	@printf "  %-27s %s\n" "test" "Run all tests, print a per-language coverage table, and enforce minimums"
 	@printf "  %-27s %s\n" "coverage" "Run both coverage suites and fail below the enforced minimums"
 	@printf "  %-27s %s\n" "coverage-diff" "Fail if changed lines drop below the diff coverage minimum"
+	@printf "  %-27s %s\n" "sync-translations" "Auto-fill missing translation keys with English fallbacks"
 	@printf "  %-27s %s\n" "check-translations" "Enforce translation coverage and refresh coverage metrics"
 	@printf "  %-27s %s\n" "check-ui-strings" "Scan UI sources for likely hardcoded English strings"
 	@printf "  %-27s %s\n" "translate" "Alias for check-translations"
@@ -232,6 +233,9 @@ coverage: node_modules
 coverage-diff: node_modules
 	$(PNPM) run coverage:check
 	$(PNPM) run coverage:diff
+
+sync-translations: node_modules
+	$(PNPM) run sync-translations
 
 check-translations: node_modules
 	$(PNPM) run sync-version

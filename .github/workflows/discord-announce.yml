@@ -1,0 +1,57 @@
+name: Discord Release Announce
+
+# Posts to #announcements on stable releases only.
+# Uses plain text content (not embeds) -- Discord announcement channels do not
+# render webhook embeds visibly on mobile even though the API returns 204.
+# DISCORD_ANNOUNCE_WEBHOOK must use the discord.com base URL (no /github suffix).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      test_message:
+        description: "Test message to send"
+        required: false
+        default: "Webhook test"
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    if: github.event_name == 'workflow_dispatch' || github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post release to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_ANNOUNCE_WEBHOOK }}
+          RELEASE_NAME: ${{ github.event.release.name || 'Test' }}
+          RELEASE_URL: ${{ github.event.release.html_url || 'https://github.com/mdeguzis/decky-proton-pulse' }}
+          RELEASE_BODY: ${{ github.event.release.body || github.event.inputs.test_message }}
+          IS_TEST: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, subprocess, sys
+
+          webhook = os.environ["WEBHOOK"]
+          name = os.environ["RELEASE_NAME"]
+          url = os.environ["RELEASE_URL"]
+          body = os.environ["RELEASE_BODY"][:1500]
+          is_test = os.environ["IS_TEST"] == "true"
+
+          prefix = "[test] " if is_test else ""
+          content = f"**{prefix}{name}**\n{url}\n\n{body}"
+
+          payload = json.dumps({"content": content}).encode()
+
+          result = subprocess.run(
+              ["curl", "-s", "-w", "\n%{http_code}", "-X", "POST", webhook,
+               "-H", "Content-Type: application/json", "-d", payload.decode()],
+              capture_output=True, text=True,
+          )
+          print(result.stdout)
+          if result.returncode != 0 or not result.stdout.strip().endswith("204"):
+              print(result.stderr, file=sys.stderr)
+              sys.exit(1)
+          EOF
