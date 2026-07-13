@@ -419,9 +419,9 @@ export function NativePulseReportModal({
     const errs: Record<string, boolean> = {};
 
     // Install & Startup always required
-    if (!canInstall) errs.canInstall = true;
-    if (!canStart)   errs.canStart   = true;
-    if (!canPlay)    errs.canPlay    = true;
+    if (canInstall === null) errs.canInstall = true;
+    if (canStart === null)   errs.canStart   = true;
+    if (canPlay === null)    errs.canPlay    = true;
 
     if (!installFailed) {
       // Proton type required
@@ -448,9 +448,7 @@ export function NativePulseReportModal({
 
     if (Object.keys(errs).length) {
       setFieldErrors(errs);
-      setError(installFailed
-        ? 'Please answer all Install & Startup questions.'
-        : 'Please answer all required questions. Concluding notes must be at least 10 characters.');
+      setError('Please fill in all highlighted fields before submitting.');
       return;
     }
     setFieldErrors({});
@@ -849,7 +847,7 @@ export function NativePulseReportModal({
         <Focusable style={{ display: 'flex', gap: 8, marginTop: 8, marginBottom: 8, flexWrap: 'wrap', flexShrink: 0 }}>
           <DialogButton
             onClick={handleSubmit}
-            disabled={submitting || (canInstall === null)}
+            disabled={submitting}
             style={{ flex: 1, minWidth: 120, padding: '8px 16px', fontSize: 12 }}
           >
             {submitting ? t().common.loading : t().nativeReport.submit}
