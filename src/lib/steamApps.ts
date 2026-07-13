@@ -14,6 +14,34 @@ export function getSteamAppOverview(appId: number): any | null {
   return overview && typeof overview === 'object' ? overview : null;
 }
 
+// Best-effort synchronous display name resolution. Tries SteamClient +
+// appStore overviews and collectionStore, matching the multi-tier lookup
+// used by the library route observer in index.tsx. Returns the fallback
+// (or '') when nothing works. Callers that already carry a name should
+// pass it as fallback so we prefer their value.
+export function resolveAppName(appId: number, fallback = ''): string {
+  const trimmed = fallback ? String(fallback).trim() : '';
+  if (trimmed) return trimmed;
+  const g = globalThis as any;
+  const ov = g.SteamClient?.Apps?.GetAppOverviewByAppID?.(appId)
+    ?? g.appStore?.GetAppOverviewByAppID?.(appId)
+    ?? null;
+  const fromOv = ov?.display_name || ov?.strDisplayName || ov?.app_name || ov?.appname || '';
+  if (fromOv) return String(fromOv);
+  try {
+    const collection = g.collectionStore?.allAppsCollection;
+    const allApps = Array.isArray(collection?.allApps)
+      ? collection.allApps
+      : collection?.apps && Symbol.iterator in collection.apps
+        ? Array.from(collection.apps)
+        : [];
+    const entry = allApps.find((app: any) => Number(app?.appid) === Number(appId));
+    const fromEntry = entry?.display_name || entry?.strDisplayName || entry?.app_name || entry?.appname || entry?.name || '';
+    if (fromEntry) return String(fromEntry);
+  } catch { /* not available */ }
+  return '';
+}
+
 // Non-Steam shortcut IDs are CRC32-based with the high bit set, always >= 2^31.
 // Real Steam app IDs are currently in the low millions.
 export const NON_STEAM_ID_THRESHOLD = 2_000_000_000;

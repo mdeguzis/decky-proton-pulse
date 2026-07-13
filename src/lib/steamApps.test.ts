@@ -14,12 +14,17 @@ import {
   getSteamAppOverview,
   getSteamPlaytimeForeverMinutes,
   isSteamShortcutApp,
+  resolveAppName,
 } from './steamApps';
 
 const originalSteamClient = (globalThis as any).SteamClient;
+const originalAppStore = (globalThis as any).appStore;
+const originalCollection = (globalThis as any).collectionStore;
 
 afterEach(() => {
   (globalThis as any).SteamClient = originalSteamClient;
+  (globalThis as any).appStore = originalAppStore;
+  (globalThis as any).collectionStore = originalCollection;
   logFrontendEventMock.mockClear();
 });
 
@@ -202,6 +207,46 @@ describe('steamApps helpers', () => {
         Apps: { GetAppOverviewByAppID: () => ({ minutes_playtime_forever: 0, nPlaytimeForever: -5 }) },
       };
       expect(await getSteamPlaytimeForeverMinutes(620)).toBe(0);
+    });
+  });
+
+  describe('resolveAppName', () => {
+    it('prefers the caller-supplied fallback so we never overwrite a good name', () => {
+      (globalThis as any).SteamClient = {
+        Apps: { GetAppOverviewByAppID: () => ({ display_name: 'Something Else' }) },
+      };
+      expect(resolveAppName(730, 'Counter-Strike 2')).toBe('Counter-Strike 2');
+    });
+
+    it('trims whitespace-only fallbacks and looks up SteamClient instead', () => {
+      (globalThis as any).SteamClient = {
+        Apps: { GetAppOverviewByAppID: () => ({ display_name: 'Portal 2' }) },
+      };
+      expect(resolveAppName(620, '   ')).toBe('Portal 2');
+    });
+
+    it('falls back to appStore when SteamClient is absent', () => {
+      (globalThis as any).SteamClient = {};
+      (globalThis as any).appStore = {
+        GetAppOverviewByAppID: () => ({ strDisplayName: 'From appStore' }),
+      };
+      expect(resolveAppName(1, '')).toBe('From appStore');
+    });
+
+    it('falls back to collectionStore for shortcuts when overview APIs return null', () => {
+      (globalThis as any).SteamClient = { Apps: { GetAppOverviewByAppID: () => null } };
+      (globalThis as any).appStore = { GetAppOverviewByAppID: () => null };
+      (globalThis as any).collectionStore = {
+        allAppsCollection: { allApps: [{ appid: 999, display_name: 'Shortcut Name' }] },
+      };
+      expect(resolveAppName(999, '')).toBe('Shortcut Name');
+    });
+
+    it('returns empty string when every lookup layer fails', () => {
+      (globalThis as any).SteamClient = {};
+      (globalThis as any).appStore = undefined;
+      (globalThis as any).collectionStore = undefined;
+      expect(resolveAppName(0, '')).toBe('');
     });
   });
 });
