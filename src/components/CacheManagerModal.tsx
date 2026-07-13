@@ -5,15 +5,17 @@
 // refresh/delete icons on right. Filter at top, sorted by recently accessed.
 
 import { useState, useEffect, useMemo } from 'react';
-import { Focusable, DialogButton, ConfirmModal, showModal, TextField } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, TextField } from '@decky/ui';
 import { toaster } from '../lib/notify';
 import { logFrontendEvent } from '../lib/logger';
 import { invalidate, invalidateAll, getCacheStats, getCachedAppIds, getCached } from '../lib/cache';
+import { runStartupPrefetch } from '../lib/prefetch';
 import type { CacheEntry } from '../lib/cache';
 import { getProtonDBReportsWithDiagnostics } from '../lib/protondb';
 import { getSteamAppOverview } from '../lib/steamApps';
 import { getVoteTotals } from '../lib/voting';
 import { t } from '../lib/i18n';
+import { CacheStatsBody } from './CacheStatsModal';
 
 interface CacheRow {
   appId: string;
@@ -54,11 +56,12 @@ function formatAge(ms: number): string {
 }
 
 // the modal content, used with showModal(<CacheManagerModalContent />)
-export function CacheManagerModalContent({ closeModal }: { closeModal?: () => void }) {
+export function CacheManagerModalContent({ closeModal, showStatsInitially = false }: { closeModal?: () => void; showStatsInitially?: boolean }) {
   const extras = t().extras!;
   const [filter, setFilter] = useState('');
   const [rows, setRows] = useState<CacheRow[]>([]);
   const [refreshing, setRefreshing] = useState<Set<string>>(new Set());
+  const [showStats, setShowStats] = useState(showStatsInitially);
 
   const loadRows = () => {
     const ids = getCachedAppIds();
@@ -138,11 +141,55 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
           invalidateAll();
           toaster.toast({ title: extras.cacheManagerTitle(), body: extras.cacheCleared(stats.size), duration: 2000 });
           loadRows();
+          void runStartupPrefetch();
         }}
         onCancel={() => {}}
       />,
     );
   };
+
+  useEffect(() => {
+    if (!showStats) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'GamepadB') setShowStats(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showStats]);
+
+  if (showStats) {
+    return (
+      <Focusable
+        onCancelButton={() => setShowStats(false)}
+        style={{
+          position: 'fixed', top: 62, bottom: 72, left: '3%', right: '3%',
+          background: 'rgba(13,22,30,0.97)',
+          borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
+          zIndex: 9999, overflow: 'hidden',
+        }}
+      >
+        {/* header - fixed height 49px */}
+        <div style={{ height: 49, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px' }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#c8dcea' }}>Cache Performance</span>
+          <DialogButton
+            onClick={() => setShowStats(false)}
+            style={{ width: 26, height: 26, padding: 0, fontSize: 13, minWidth: 26, lineHeight: '26px', textAlign: 'center' }}
+          >
+            ✕
+          </DialogButton>
+        </div>
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)' }} />
+        {/* scrollable body: absolute fill, scrollbar hidden so it doesn't eat content width */}
+        <Focusable
+          flow-children="vertical"
+          style={{ position: 'absolute', top: 50, bottom: 0, left: 0, right: 0, overflowY: 'auto', padding: '4px 14px 0', boxSizing: 'border-box', scrollbarWidth: 'none' } as React.CSSProperties}
+        >
+          <CacheStatsBody />
+          <div style={{ height: 24 }} />
+        </Focusable>
+      </Focusable>
+    );
+  }
 
   return (
     <ConfirmModal
@@ -152,17 +199,25 @@ export function CacheManagerModalContent({ closeModal }: { closeModal?: () => vo
       onCancel={() => closeModal?.()}
     >
       <div style={{ width: '100%', overflow: 'hidden' }}>
-        {/* stats header */}
-        <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
-          <span>
+        {/* stats header: summary left, action buttons top-right */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: '#7a9bb5' }}>
             {extras.cacheStatsSummary(stats.size, stats.maxSize, stats.oldestMs !== null ? formatAge(stats.oldestMs) : null)}
-          </span>
-          <Focusable
-            onClick={handleClearAll}
-            onOKButton={handleClearAll}
-            style={{ cursor: 'pointer', color: '#f44336', fontSize: 11 }}
-          >
-            {extras.clearAll()}
+          </div>
+          <Focusable flow-children="horizontal" style={{ display: 'flex', gap: 6, flex: 'none' }}>
+            <DialogButton
+              autoFocus
+              onClick={() => setShowStats(true)}
+              style={{ fontSize: 10, padding: '2px 10px', minWidth: 'max-content', height: 26, whiteSpace: 'nowrap' }}
+            >
+              Stats
+            </DialogButton>
+            <DialogButton
+              onClick={handleClearAll}
+              style={{ fontSize: 10, padding: '2px 10px', minWidth: 'max-content', height: 26, color: '#f44336', whiteSpace: 'nowrap' }}
+            >
+              {extras.clearAll()}
+            </DialogButton>
           </Focusable>
         </div>
         {stats.networkFetchAvgMs !== null && (

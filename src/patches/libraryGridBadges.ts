@@ -12,9 +12,14 @@ import { getProtonDBSummary } from '../lib/protondb';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { getSetting } from '../lib/settings';
 import { logFrontendEvent } from '../lib/logger';
-import { getCached } from '../lib/cache';
+import { getCached, getCacheTtlMs } from '../lib/cache';
+import {
+  countBadgeTileSeen, countBadgeApplied, countBadgeNoData,
+  countBadgeFetchError, countBadgeFetchMs,
+} from '../lib/metrics';
 
 const PP_BADGE_EL_ATTR = 'data-pp-lib-badge';
+const NO_DATA_COLOR = '#6b21a8'; // purple
 
 export type LibraryBadgeStyle = 'full' | 'compact' | 'minimal' | 'off';
 
@@ -53,6 +58,10 @@ function getLibraryBadgeStyle(): LibraryBadgeStyle {
   return getSetting('libraryBadgeStyle', 'full') as LibraryBadgeStyle;
 }
 
+function getShowNoData(): boolean {
+  return getSetting('libraryBadgeShowNoData', false) as boolean;
+}
+
 function getBadgeContent(style: LibraryBadgeStyle, tier: string): { html: string; text: string } {
   if (style === 'minimal') {
     return { html: BADGE_ICON_SVG, text: '' };
@@ -62,9 +71,44 @@ function getBadgeContent(style: LibraryBadgeStyle, tier: string): { html: string
   return { html: '', text: label };
 }
 
-// Session-level tier cache: appId -> tier string | null (null = no ProtonDB data)
-// Undefined = not yet fetched. Survives tile re-renders within a session.
-const _tierCache = new Map<string, string | null>();
+const TIER_STORAGE_KEY = 'pp_lib_tier_cache_v1';
+
+interface TierEntry { tier: string; cachedAt: number; }
+
+// Persistent tier cache: appId -> { tier, cachedAt }.
+// Loaded from localStorage on setup, saved after each fetch.
+// TTL matches the user's cache-ttl-hours setting (same as main report cache).
+const _tierCache = new Map<string, TierEntry>();
+
+// Tracks appIds fetched but with no ProtonDB data, with the attempt timestamp.
+// Entries expire after NULL_EXPIRY_MS so transient failures get retried.
+const _nullCache = new Map<string, number>(); // appId -> Date.now() of last attempt
+const NULL_EXPIRY_MS = 10 * 60 * 1000;
+
+function loadTierCache(): void {
+  try {
+    const raw = localStorage.getItem(TIER_STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw) as Record<string, TierEntry>;
+    const ttl = getCacheTtlMs();
+    const now = Date.now();
+    let loaded = 0;
+    for (const [appId, entry] of Object.entries(saved)) {
+      if (now - entry.cachedAt < ttl) { _tierCache.set(appId, entry); loaded++; }
+    }
+    void logFrontendEvent('DEBUG', 'libraryGridBadges: loaded tier cache from storage', {
+      loaded, totalSaved: Object.keys(saved).length,
+    });
+  } catch { /* corrupt storage */ }
+}
+
+function saveTierCache(): void {
+  try {
+    const obj: Record<string, TierEntry> = {};
+    for (const [appId, entry] of _tierCache) obj[appId] = entry;
+    localStorage.setItem(TIER_STORAGE_KEY, JSON.stringify(obj));
+  } catch { /* storage full */ }
+}
 
 let _scanInterval: ReturnType<typeof setInterval> | null = null;
 let _mutObs: MutationObserver | null = null;
@@ -126,6 +170,22 @@ function findCoverContainer(el: HTMLElement): HTMLElement {
   return cover;
 }
 
+// Returns true if el is inside a [data-id] ancestor whose subtree contains nav text.
+// We walk ALL [data-id] ancestors (not just the nearest) because "View more" composite
+// tiles contain sub-tiles that each have their own [data-id] -- closest() would return
+// the sub-tile (no nav text), missing the outer "View more" container.
+function isInsideNavTile(el: HTMLElement): boolean {
+  let cur = el.parentElement;
+  while (cur && cur !== document.documentElement) {
+    if (cur.hasAttribute('data-id')) {
+      const text = (cur.textContent ?? '').toLowerCase();
+      if (text.includes('view more') || text.includes('view all')) return true;
+    }
+    cur = cur.parentElement;
+  }
+  return false;
+}
+
 // Extract appId + cover container from an image element.
 // Covers two Steam library layouts:
 //   - Home page "Recent Games": [data-id] card wrapping an <img>
@@ -182,7 +242,21 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
     const raw = el.getAttribute('data-id');
     if (!raw) continue;
     const id = parseInt(raw, 10);
-    if (id <= 0) continue;
+    if (!Number.isFinite(id) || id <= 0) continue;
+    // Skip sub-tiles nested inside a composite nav tile ("View more" mosaic).
+    if (isInsideNavTile(el)) continue;
+    // "View more" composite tiles contain multiple game-cover <img> thumbnails; real game
+    // tiles have one. Count only CDN game cover imgs (not UI icons/SVGs) to avoid filtering
+    // hero tiles that have non-game <img> elements (compat icons, etc.) alongside the cover.
+    // Exclude library_hero/library_header background art from the count -- the hero tile
+    // container may include those as a background blur img alongside the portrait cover.
+    const coverImgs = Array.from(el.querySelectorAll(
+      'img[src*="steamstatic.com"], img[src*="/apps/"], img[src*="/assets/"], img[src*="/customimages/"]',
+    ) as NodeListOf<HTMLImageElement>).filter(i => {
+      const s = i.getAttribute('src') ?? i.src ?? '';
+      return !s.includes('library_hero') && !s.includes('library_header');
+    });
+    if (coverImgs.length > 1) continue;
     const img = el.querySelector('img');
     const cover = (img?.parentElement && img.parentElement !== el)
       ? img.parentElement as HTMLElement
@@ -202,6 +276,7 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   for (const img of Array.from(doc.querySelectorAll(imgSelector)) as HTMLImageElement[]) {
     const hit = extractFromImg(img);
     if (!hit) continue;
+    if (isInsideNavTile(img)) continue;
     if (!seen.has(hit.cover)) { seen.add(hit.cover); results.push(hit); }
   }
 
@@ -209,10 +284,40 @@ function findVisibleTiles(doc: Document): Array<{ appId: string; cover: HTMLElem
   for (const el of Array.from(doc.querySelectorAll('[style*="background"]')) as HTMLElement[]) {
     const hit = extractFromBgEl(el);
     if (!hit) continue;
+    if (isInsideNavTile(el)) continue;
     if (!seen.has(hit.cover)) { seen.add(hit.cover); results.push(hit); }
   }
 
   return results;
+}
+
+function applyNoDataBadgeToCover(cover: HTMLElement, style: LibraryBadgeStyle): void {
+  if (style === 'off') return;
+  const doc = cover.ownerDocument ?? getBpmDocument();
+  const existing = cover.querySelector(`[${PP_BADGE_EL_ATTR}]`) as HTMLElement | null;
+  const label = style === 'minimal' ? BADGE_ICON_SVG : (style === 'compact' ? 'N/D' : 'NO DATA');
+  const isMinimal = style === 'minimal';
+  if (existing) {
+    if (isMinimal) { existing.innerHTML = label; existing.style.padding = '4px'; }
+    else { existing.textContent = label; existing.style.padding = '2px 5px'; }
+    existing.style.background = NO_DATA_COLOR;
+    existing.style.color = '#fff';
+    return;
+  }
+  const badge = doc.createElement('div');
+  badge.setAttribute(PP_BADGE_EL_ATTR, '1');
+  if (isMinimal) { badge.innerHTML = label; } else { badge.textContent = label; }
+  badge.style.cssText = [
+    'position:absolute', 'bottom:4px', 'left:4px', 'z-index:10',
+    isMinimal ? 'padding:4px' : 'padding:2px 5px',
+    'border-radius:3px', 'font-size:9px', 'font-weight:700',
+    'letter-spacing:0.04em', 'pointer-events:none', 'white-space:nowrap',
+    'line-height:1', 'display:flex', 'align-items:center',
+    `background:${NO_DATA_COLOR}`, 'color:#fff',
+  ].join(';');
+  const cs = doc.defaultView?.getComputedStyle(cover);
+  if (cs?.position === 'static') cover.style.position = 'relative';
+  cover.appendChild(badge);
 }
 
 function applyBadgeToCover(cover: HTMLElement, tier: string | null, style: LibraryBadgeStyle): void {
@@ -287,29 +392,50 @@ async function processFetchQueue(): Promise<void> {
   try {
     await Promise.all(
       batch.map(async (appId) => {
+        const t0 = Date.now();
         try {
           const wasCached = !!getCached(appId)?.summary;
           const summary = await getProtonDBSummary(appId);
+          const fetchMs = Date.now() - t0;
+          countBadgeFetchMs(fetchMs);
           const tier = summary?.tier ?? null;
-          // Store in session cache so future scan ticks can apply without re-fetching
-          _tierCache.set(appId, tier);
+          if (tier) {
+            _tierCache.set(appId, { tier, cachedAt: Date.now() });
+            saveTierCache();
+          } else {
+            _nullCache.set(appId, Date.now());
+            countBadgeNoData();
+            void logFrontendEvent('DEBUG', 'libraryGridBadges: null tier cached', {
+              appId, source: wasCached ? 'cache' : 'network',
+            });
+          }
           // Apply immediately to any currently visible covers with this appId,
-          // but skip if the user navigated to a game details page while the fetch was in flight.
+          // but skip if the user navigated to a game details page while fetch was in flight.
           const doc = getBpmDocument();
           const style = getLibraryBadgeStyle();
+          const showNoData = getShowNoData();
           let coversUpdatedNow = 0;
           if (!isOnGameDetailsPage()) {
             const visible = findVisibleTiles(doc).filter((t) => t.appId === appId);
-            for (const { cover } of visible) applyBadgeToCover(cover, tier, style);
+            for (const { cover } of visible) {
+              if (tier) {
+                applyBadgeToCover(cover, tier, style);
+                countBadgeApplied(appId);
+              } else if (showNoData) {
+                applyNoDataBadgeToCover(cover, style);
+              }
+            }
             coversUpdatedNow = visible.length;
           }
           void logFrontendEvent('DEBUG', 'libraryGridBadges: tier fetched', {
             appId,
             tier,
             source: wasCached ? 'cache' : (summary ? 'network' : 'none'),
+            fetchMs,
             coversUpdatedNow,
           });
         } catch (err) {
+          countBadgeFetchError();
           void logFrontendEvent('WARNING', 'libraryGridBadges: fetch failed', {
             appId,
             error: err instanceof Error ? err.message : String(err),
@@ -379,15 +505,30 @@ function scanAndQueue(): void {
 
   runDiagnostic(doc);
   const tiles = findVisibleTiles(doc);
+  void logFrontendEvent('DEBUG', 'libraryGridBadges: tiles found', {
+    count: tiles.length,
+    appIds: tiles.map(t => t.appId),
+  });
 
   let badgedNow = 0;
   let queued = 0;
 
+  const now = Date.now();
+  const ttl = getCacheTtlMs();
+  const showNoData = getShowNoData();
   for (const { appId, cover } of tiles) {
-    if (_tierCache.has(appId)) {
-      const tier = _tierCache.get(appId) ?? null;
-      if (tier) { applyBadgeToCover(cover, tier, style); badgedNow++; }
+    countBadgeTileSeen(appId);
+    const entry = _tierCache.get(appId);
+    if (entry && now - entry.cachedAt < ttl) {
+      applyBadgeToCover(cover, entry.tier, style);
+      countBadgeApplied(appId);
+      badgedNow++;
+    } else if (_nullCache.has(appId) && now - _nullCache.get(appId)! < NULL_EXPIRY_MS) {
+      // fetched recently, came back null
+      if (showNoData) applyNoDataBadgeToCover(cover, style);
     } else if (!_fetchQueue.has(appId)) {
+      // expired or never fetched -- queue for refresh
+      if (entry) _tierCache.delete(appId); // evict expired entry
       _fetchQueue.add(appId);
       queued++;
     }
@@ -418,7 +559,8 @@ export function refreshLibraryGridBadges(): void {
 }
 
 export function setupLibraryGridBadges(): void {
-  void logFrontendEvent('INFO', 'libraryGridBadges: setup', {});
+  loadTierCache();
+  void logFrontendEvent('INFO', 'libraryGridBadges: setup', { persistedTiers: _tierCache.size });
 
   window.setTimeout(() => {
     scanAndQueue();
@@ -444,6 +586,8 @@ export function teardownLibraryGridBadges(): void {
   if (_mutObs) { _mutObs.disconnect(); _mutObs = null; }
   removeAllBadges();
   _tierCache.clear();
+  _nullCache.clear();
+  try { localStorage.removeItem(TIER_STORAGE_KEY); } catch { /* ignore */ }
   _bpmDocCache = null;
   _fetchQueue.clear();
   _fetchBusy = false;

@@ -40,9 +40,20 @@ export interface CounterSnapshot {
   cacheMisses: number;
   cacheEvictions: number;
   fetchErrors: number;
+  // Games the CDN has no data for (expected 404 -- not a network error)
+  noDataGames: number;
   localNonSteamGames: number;
   prefetchedGames: number;
   totalFetches: number;
+}
+
+export interface BadgeScanSnapshot {
+  tilesScanned: number;      // unique tiles seen across all scan ticks
+  badgesApplied: number;     // tiles where a tier badge was rendered
+  noDataTiles: number;       // tiles with no ProtonDB data
+  fetchErrors: number;       // network errors during tier fetches
+  totalFetchMs: number;      // cumulative ms for all tier fetches
+  fetchCount: number;        // number of completed tier fetches (for avg)
 }
 
 export interface CategoryStats {
@@ -60,6 +71,17 @@ export interface PrefetchFailureSummary {
   byReason: Record<string, number>;
 }
 
+export interface HourlyBucket {
+  hourKey: number;   // Unix ms rounded to the hour
+  hits: number;
+  misses: number;
+  fetches: number;
+  fetchErrors: number;
+  noData: number;
+  totalFetchMs: number;
+  fetchCount: number; // fetches with timing recorded (for avg)
+}
+
 export interface MetricsSummary {
   counters: CounterSnapshot;
   // per-category aggregates
@@ -67,6 +89,95 @@ export interface MetricsSummary {
   uptimeMs: number;
   collectedAt: string; // ISO timestamp
   entryCount: number;
+}
+
+// --- hourly buckets (last 24h, persisted to localStorage) ---
+
+// 30-minute buckets, 48 max = last 24h of history
+const BUCKET_MS = 30 * 60 * 1000;
+const MAX_HOURLY_BUCKETS = 48;
+const HOURLY_STORAGE_KEY = 'pp_metrics_buckets_v2';
+const hourlyBuckets = new Map<number, HourlyBucket>();
+
+function getHourKey(): number {
+  return Math.floor(Date.now() / BUCKET_MS) * BUCKET_MS;
+}
+
+function saveHourlyBuckets(): void {
+  try {
+    const data = [...hourlyBuckets.values()];
+    localStorage.setItem(HOURLY_STORAGE_KEY, JSON.stringify(data));
+  } catch { /* storage full or unavailable */ }
+}
+
+function loadHourlyBuckets(): void {
+  try {
+    const raw = localStorage.getItem(HOURLY_STORAGE_KEY);
+    if (!raw) return;
+    const cutoff = Date.now() - MAX_HOURLY_BUCKETS * 3_600_000;
+    const saved = JSON.parse(raw) as HourlyBucket[];
+    let loaded = 0;
+    for (const b of saved) {
+      if (typeof b.hourKey === 'number' && b.hourKey > cutoff) {
+        hourlyBuckets.set(b.hourKey, b);
+        loaded++;
+      }
+    }
+    void logFrontendEvent('DEBUG', 'metrics: loaded hourly buckets from storage', { loaded, totalSaved: saved.length });
+  } catch { /* corrupt storage, ignore */ }
+}
+
+// call once at module init to restore previous session data
+loadHourlyBuckets();
+
+function currentBucket(): HourlyBucket {
+  const key = getHourKey();
+  if (!hourlyBuckets.has(key)) {
+    hourlyBuckets.set(key, {
+      hourKey: key, hits: 0, misses: 0, fetches: 0,
+      fetchErrors: 0, noData: 0, totalFetchMs: 0, fetchCount: 0,
+    });
+    const keys = [...hourlyBuckets.keys()].sort((a, b) => a - b);
+    while (keys.length > MAX_HOURLY_BUCKETS) hourlyBuckets.delete(keys.shift()!);
+    void logFrontendEvent('DEBUG', 'metrics: new hourly bucket', {
+      hour: new Date(key).toISOString(), totalBuckets: hourlyBuckets.size,
+    });
+    saveHourlyBuckets();
+  }
+  return hourlyBuckets.get(key)!;
+}
+
+export function getHourlyBuckets(): HourlyBucket[] {
+  return [...hourlyBuckets.values()].sort((a, b) => a.hourKey - b.hourKey);
+}
+
+// --- badge scan counters ---
+
+const badgeCounters: BadgeScanSnapshot = {
+  tilesScanned: 0,
+  badgesApplied: 0,
+  noDataTiles: 0,
+  fetchErrors: 0,
+  totalFetchMs: 0,
+  fetchCount: 0,
+};
+
+// Tracks appIds already counted to avoid inflating counts on repeated scan ticks
+const _badgeSeenIds = new Set<string>();
+const _badgeAppliedIds = new Set<string>();
+
+export function countBadgeTileSeen(appId: string) {
+  if (!_badgeSeenIds.has(appId)) { _badgeSeenIds.add(appId); badgeCounters.tilesScanned++; }
+}
+export function countBadgeApplied(appId: string) {
+  if (!_badgeAppliedIds.has(appId)) { _badgeAppliedIds.add(appId); badgeCounters.badgesApplied++; }
+}
+export function countBadgeNoData() { badgeCounters.noDataTiles++; }
+export function countBadgeFetchError() { badgeCounters.fetchErrors++; }
+export function countBadgeFetchMs(ms: number) { badgeCounters.totalFetchMs += ms; badgeCounters.fetchCount++; }
+
+export function getBadgeScanStats(): BadgeScanSnapshot {
+  return { ...badgeCounters };
 }
 
 // --- ring buffer + counters ---
@@ -81,6 +192,7 @@ const counters: CounterSnapshot = {
   cacheMisses: 0,
   cacheEvictions: 0,
   fetchErrors: 0,
+  noDataGames: 0,
   localNonSteamGames: 0,
   prefetchedGames: 0,
   totalFetches: 0,
@@ -116,6 +228,10 @@ export function startDetailedSpan(category: MetricCategory, label: string) {
   };
 }
 
+const CDN_FETCH_CATEGORIES = new Set<MetricCategory>([
+  'fetch-cdn-index', 'fetch-cdn-year', 'fetch-cdn-votes', 'fetch-live-summary',
+]);
+
 function recordTiming(entry: TimingEntry) {
   if (entries.length < MAX_ENTRIES) {
     entries.push(entry);
@@ -124,17 +240,24 @@ function recordTiming(entry: TimingEntry) {
   }
   writeIdx = (writeIdx + 1) % MAX_ENTRIES;
   totalRecorded++;
+
+  if (CDN_FETCH_CATEGORIES.has(entry.category) && entry.success && !entry.metadata?.noData) {
+    const b = currentBucket();
+    b.totalFetchMs += entry.durationMs;
+    b.fetchCount++;
+  }
 }
 
 // --- counters API ---
 
-export function countCacheHit() { counters.cacheHits++; }
-export function countCacheMiss() { counters.cacheMisses++; }
+export function countCacheHit() { counters.cacheHits++; currentBucket().hits++; }
+export function countCacheMiss() { counters.cacheMisses++; currentBucket().misses++; }
 export function countCacheEviction() { counters.cacheEvictions++; }
-export function countFetchError() { counters.fetchErrors++; }
+export function countFetchError() { counters.fetchErrors++; currentBucket().fetchErrors++; }
+export function countNoData() { counters.noDataGames++; currentBucket().noData++; }
 export function countLocalNonSteamGame(count = 1) { counters.localNonSteamGames += count; }
 export function countPrefetchedGame() { counters.prefetchedGames++; }
-export function countFetch() { counters.totalFetches++; }
+export function countFetch() { counters.totalFetches++; currentBucket().fetches++; }
 
 export function getCounters(): CounterSnapshot {
   return { ...counters };
@@ -233,6 +356,7 @@ export function getSummaryText(): string {
   lines.push(`  Cache misses:     ${s.counters.cacheMisses}`);
   lines.push(`  Cache evictions:  ${s.counters.cacheEvictions}`);
   lines.push(`  Fetch errors:     ${s.counters.fetchErrors}`);
+  lines.push(`  No data (404):    ${s.counters.noDataGames}`);
   lines.push(`  Non-Steam local:  ${s.counters.localNonSteamGames}`);
   lines.push(`  Prefetched games: ${s.counters.prefetchedGames}`);
   lines.push(`  Total fetches:    ${s.counters.totalFetches}`);
@@ -284,17 +408,34 @@ export async function flushMetricsToDisk(): Promise<boolean> {
 
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 
+// heartbeat interval -- ticks currentBucket() every 5 min so idle periods
+// still register a slot in the chart, giving a meaningful time lineage
+const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
 export function startAutoFlush() {
   if (flushTimer) return;
   flushTimer = setInterval(() => {
+    saveHourlyBuckets();
     void flushMetricsToDisk();
   }, AUTO_FLUSH_INTERVAL_MS);
+
+  if (!heartbeatTimer) {
+    heartbeatTimer = setInterval(() => {
+      currentBucket(); // ensures a slot exists even with no activity
+      saveHourlyBuckets();
+    }, HEARTBEAT_INTERVAL_MS);
+  }
 }
 
 export function stopAutoFlush() {
   if (flushTimer) {
     clearInterval(flushTimer);
     flushTimer = null;
+  }
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
   }
 }
 
@@ -308,7 +449,10 @@ export function resetMetrics() {
   counters.cacheMisses = 0;
   counters.cacheEvictions = 0;
   counters.fetchErrors = 0;
+  counters.noDataGames = 0;
   counters.localNonSteamGames = 0;
   counters.prefetchedGames = 0;
   counters.totalFetches = 0;
+  hourlyBuckets.clear();
+  try { localStorage.removeItem(HOURLY_STORAGE_KEY); } catch { /* ignore */ }
 }
