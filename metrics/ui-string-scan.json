@@ -4,6 +4,7 @@
     "src/components/BrandLogo.tsx",
     "src/components/BrandLogoWide.tsx",
     "src/components/CacheManagerModal.tsx",
+    "src/components/CacheStatsModal.tsx",
     "src/components/CompatToolVersionPicker.tsx",
     "src/components/ConfigEditorModal.tsx",
     "src/components/EditReportModal.tsx",
@@ -59,11 +60,228 @@
       "text": "Open Compatibility Platform"
     },
     {
+      "file": "src/components/CacheManagerModal.tsx",
+      "line": 173,
+      "column": 77,
+      "kind": "jsx",
+      "text": "Cache Performance"
+    },
+    {
+      "file": "src/components/CacheManagerModal.tsx",
+      "line": 213,
+      "column": 15,
+      "kind": "jsx",
+      "text": "Stats"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 198,
+      "column": 9,
+      "kind": "jsx",
+      "text": "uptime"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 202,
+      "column": 34,
+      "kind": "jsx",
+      "text": "Cache hit rate (% / 30 min)"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 212,
+      "column": 34,
+      "kind": "jsx",
+      "text": "CDN avg latency (ms / 30 min)"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 229,
+      "column": 34,
+      "kind": "jsx",
+      "text": "Fetch volume (requests / 30 min)"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 236,
+      "column": 34,
+      "kind": "jsx",
+      "text": "Session totals"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 238,
+      "column": 26,
+      "kind": "string",
+      "text": "Hit rate"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 239,
+      "column": 26,
+      "kind": "string",
+      "text": "Cache hits"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 240,
+      "column": 26,
+      "kind": "string",
+      "text": "Cache misses"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 241,
+      "column": 26,
+      "kind": "string",
+      "text": "Total fetches"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 242,
+      "column": 26,
+      "kind": "string",
+      "text": "Fetch errors"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 244,
+      "column": 26,
+      "kind": "string",
+      "text": "No CDN data (404)"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 245,
+      "column": 26,
+      "kind": "string",
+      "text": "Prefetched games"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 246,
+      "column": 26,
+      "kind": "string",
+      "text": "Cache evictions"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 252,
+      "column": 36,
+      "kind": "jsx",
+      "text": "CDN fetch timing (all-time)"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 254,
+      "column": 28,
+      "kind": "string",
+      "text": "Requests"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 255,
+      "column": 28,
+      "kind": "string",
+      "text": "Avg"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 256,
+      "column": 28,
+      "kind": "string",
+      "text": "p95"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 257,
+      "column": 28,
+      "kind": "string",
+      "text": "Max"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 258,
+      "column": 28,
+      "kind": "string",
+      "text": "Errors"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 264,
+      "column": 34,
+      "kind": "jsx",
+      "text": "Library badge scanner"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 266,
+      "column": 26,
+      "kind": "string",
+      "text": "Tiles seen"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 268,
+      "column": 19,
+      "kind": "string",
+      "text": "Badges loaded"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 272,
+      "column": 26,
+      "kind": "string",
+      "text": "No ProtonDB data"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 274,
+      "column": 19,
+      "kind": "string",
+      "text": "Avg fetch"
+    },
+    {
+      "file": "src/components/CacheStatsModal.tsx",
+      "line": 277,
+      "column": 26,
+      "kind": "string",
+      "text": "Fetch errors"
+    },
+    {
+      "file": "src/components/ConfigEditorModal.tsx",
+      "line": 955,
+      "column": 52,
+      "kind": "string",
+      "text": "No game selected. Open a game config first."
+    },
+    {
+      "file": "src/components/ConfigEditorModal.tsx",
+      "line": 996,
+      "column": 52,
+      "kind": "string",
+      "text": "No game selected. Open a game config first."
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 860,
+      "column": 13,
+      "kind": "jsx",
+      "text": "Save draft"
+    },
+    {
       "file": "src/components/PerReportAnalysisModal.tsx",
       "line": 190,
       "column": 36,
       "kind": "jsx",
       "text": "pts"
+    },
+    {
+      "file": "src/components/ReleaseNotesModal.tsx",
+      "line": 277,
+      "column": 16,
+      "kind": "jsx",
+      "text": "Loading"
     },
     {
       "file": "src/components/ScoringGuideModal.tsx",

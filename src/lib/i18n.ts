@@ -227,6 +227,8 @@ export interface TranslationTree {
     gamePageBadgeStyleDescription: string;
     libraryBadgeStyle: string;
     libraryBadgeStyleDescription: string;
+    libraryBadgeShowNoData: string;
+    libraryBadgeShowNoDataDescription: string;
     badgeStyleFull: string;
     badgeStyleCompact: string;
     badgeStyleMinimal: string;
@@ -808,6 +810,9 @@ export interface TranslationTree {
     analysisNoVersionData?: () => string;
     analysisVersionTotal?: (n: number) => string;
     analysisDeepDiveHint?: () => string;
+    // Web app link (QAM sidebar + game header button)
+    manageOnWeb?: () => string;
+    manageOnWebDesc?: () => string;
   };
 }
 
@@ -989,6 +994,8 @@ export const en: TranslationTree = {
     gamePageBadgeStyleDescription: 'Badge shown in the top-left of the game page header. Full shows the tier name, Compact abbreviates it, Minimal shows only the icon.',
     libraryBadgeStyle: 'Library grid badge style',
     libraryBadgeStyleDescription: 'ProtonDB tier badge on each game tile in the library grid. Full shows the tier name, Compact abbreviates it, Minimal shows only the icon.',
+    libraryBadgeShowNoData: 'Show "No Data" badge',
+    libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
     badgeStyleFull: 'Full',
     badgeStyleCompact: 'Compact',
     badgeStyleMinimal: 'Minimal',
@@ -1290,7 +1297,7 @@ export const en: TranslationTree = {
     failedToOpenIssuePage: () => 'Could not open the issue page.',
     nonSteamShortcut: () => 'Non-Steam shortcut',
     appIdLabel: (appId) => `AppID ${appId}`,
-    shortcutCannotSubmit: () => 'Non-Steam shortcuts cannot be submitted to ProtonDB.',
+    shortcutCannotSubmit: () => 'This shortcut cannot be submitted. Only GOG and Epic games via Heroic are supported for non-Steam submissions.',
     shortcutSubmissionHint: () => 'ProtonDB only accepts Steam app submissions. You can still use a local config for this shortcut, but you should not submit it there.',
     confidenceOutOfTen: (score) => `${score}% confidence`,
     alreadyUpvoted: () => 'You already upvoted this report',
@@ -1587,6 +1594,8 @@ export const en: TranslationTree = {
     analysisNoVersionData: () => 'No Proton version data yet.',
     analysisVersionTotal: (n) => n === 1 ? '1 report' : `${n} reports`,
     analysisDeepDiveHint: () => 'For trend charts and per-report drilldown, open this game on proton-pulse.com.',
+    manageOnWeb: () => 'Manage this game',
+    manageOnWebDesc: () => 'Open game page on proton-pulse.com',
   },
 };
 
