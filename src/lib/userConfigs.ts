@@ -47,6 +47,7 @@ const RAM_RE = /^\d+ GB$/;
 
 const VALID_GPU_VENDORS = ['nvidia', 'amd', 'intel', 'other'] as const;
 const VALID_SOURCES = ['user', 'web', 'protondb', 'protondb-local'] as const;
+const VALID_APP_TYPES = ['steam', 'gog', 'epic', 'nonsteam'] as const;
 
 // --- Types ---
 
@@ -71,6 +72,7 @@ export interface UserConfigInput {
   enabledVars?: Record<string, string>;
   confidenceScore?: number | null;
   source?: 'user' | 'protondb' | 'protondb-local';
+  appType?: 'steam' | 'gog' | 'epic' | 'nonsteam';
   configKey?: string;
   vramMb?: number | null;
   cpuCores?: number | null;
@@ -128,6 +130,9 @@ export function validateUserConfig(input: UserConfigInput): string | null {
   }
   if (input.source && !(VALID_SOURCES as readonly string[]).includes(input.source)) {
     return `Invalid source: ${input.source}`;
+  }
+  if (input.appType && !(VALID_APP_TYPES as readonly string[]).includes(input.appType)) {
+    return `Invalid appType: ${input.appType}`;
   }
   if (input.confidenceScore != null && (input.confidenceScore < 0 || input.confidenceScore > 200)) {
     return `confidenceScore must be 0-200, got ${input.confidenceScore}`;
@@ -215,6 +220,7 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
         enabled_vars: input.enabledVars ?? {},
         confidence_score: input.confidenceScore ?? null,
         source: input.source ?? 'user',
+        app_type: input.appType ?? 'steam',
         config_key: input.configKey ?? null,
         vram_mb: input.vramMb ?? null,
         cpu_cores: input.cpuCores ?? null,

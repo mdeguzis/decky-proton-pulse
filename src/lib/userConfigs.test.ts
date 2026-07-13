@@ -112,6 +112,11 @@ describe('validateUserConfig', () => {
     const { validateUserConfig } = await import('./userConfigs');
     expect(validateUserConfig({ ...validInput(), confidenceScore: 999 })).toMatch(/confidenceScore/i);
   });
+
+  it('rejects invalid appType', async () => {
+    const { validateUserConfig } = await import('./userConfigs');
+    expect(validateUserConfig({ ...validInput(), appType: 'bogus' as any })).toMatch(/appType/i);
+  });
 });
 
 describe('submitUserConfig', () => {

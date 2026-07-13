@@ -51,9 +51,11 @@ vi.mock('./localDataBackup', () => ({
 import { restRequest } from './voting';
 import type { TrackedConfig } from './trackedConfigs';
 import { getTrackedConfigs, addTrackedConfig, onConfigSaved } from './trackedConfigs';
+import { getLinkedProtonPulseUserId } from './protonPulseAccount';
 import { applyPluginSettingsBackupPayload, buildPluginSettingsBackupPayload } from './localDataBackup';
 
 const mockRestRequest = vi.mocked(restRequest);
+const mockGetLinkedProtonPulseUserId = vi.mocked(getLinkedProtonPulseUserId);
 const mockGetTrackedConfigs = vi.mocked(getTrackedConfigs);
 const mockAddTrackedConfig = vi.mocked(addTrackedConfig);
 const mockOnConfigSaved = vi.mocked(onConfigSaved);
@@ -224,6 +226,20 @@ describe('plugin settings cloud sync', () => {
     expect(body.payload.entries).toEqual({ theme: '"dark"' });
   });
 
+  it('returns false when the plugin settings push errors', async () => {
+    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'push failed', status: 500 });
+
+    const { pushPluginSettings } = await import('./cloudSync');
+    expect(await pushPluginSettings()).toBe(false);
+  });
+
+  it('returns false when the plugin settings push throws', async () => {
+    mockRestRequest.mockRejectedValueOnce(new Error('offline'));
+
+    const { pushPluginSettings } = await import('./cloudSync');
+    expect(await pushPluginSettings()).toBe(false);
+  });
+
   it('fetches plugin settings from Supabase', async () => {
     mockRestRequest.mockResolvedValueOnce({
       data: [{
@@ -351,6 +367,18 @@ describe('fetchCloudConfigs', () => {
     expect(result[0].config.appId).toBe(12345);
   });
 
+  it('filters by voter id alone when no account is linked', async () => {
+    mockGetLinkedProtonPulseUserId.mockReturnValueOnce(null);
+    mockRestRequest.mockResolvedValueOnce({ data: [], error: null, status: 200 });
+
+    const { fetchCloudConfigs } = await import('./cloudSync');
+    await fetchCloudConfigs();
+
+    const query = mockRestRequest.mock.calls[0][2] as Record<string, string>;
+    expect(query.voter_id).toBe('eq.abc123voterId');
+    expect(query.or).toBeUndefined();
+  });
+
   it('throws on error response', async () => {
     mockRestRequest.mockResolvedValueOnce({ data: null, error: 'broken', status: 500 });
 
@@ -413,6 +441,16 @@ describe('getCloudSyncStatus', () => {
     const { getCloudSyncStatus } = await import('./cloudSync');
     expect(getCloudSyncStatus(999, [])).toBe('not-synced');
   });
+
+  it('matches when the cloud row app_id is a string (text column) but the local appId is a number', async () => {
+    // user_proton_configs.app_id may come back as a string from a text column.
+    // The status lookup must normalize both sides instead of a raw === compare.
+    const { getCloudSyncStatus } = await import('./cloudSync');
+    const cloudConfigs = [
+      { voter_id: 'abc', app_id: '100', app_name: 'Game', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T01:00:00Z' },
+    ];
+    expect(getCloudSyncStatus(100, cloudConfigs)).toBe('synced');
+  });
 });
 
 describe('restoreCloudConfigs', () => {
@@ -435,12 +473,17 @@ describe('restoreCloudConfigs', () => {
     expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudCfg);
   });
 
-  it('skips cloud configs that have no matching local entry', async () => {
+  it('restores cloud configs that have no matching local entry', async () => {
+    // The point of restore: pull down games this device does not track yet
+    // (new device, reinstall, configs pushed from another linked device).
     mockGetTrackedConfigs.mockReturnValue([]);
 
+    const cloudA = makeConfig({ appId: 100, appName: 'Cloud Only A' });
+    const cloudB = makeConfig({ appId: 200, appName: 'Cloud Only B' });
     mockRestRequest.mockResolvedValueOnce({
       data: [
-        { voter_id: 'abc123voterId', app_id: 100, app_name: 'Cloud Only Game', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T00:00:00Z' },
+        { voter_id: 'abc123voterId', app_id: 100, app_name: 'Cloud Only A', config: cloudA, updated_at: '2026-04-11T00:00:00Z' },
+        { voter_id: 'abc123voterId', app_id: 200, app_name: 'Cloud Only B', config: cloudB, updated_at: '2026-04-11T00:00:00Z' },
       ],
       error: null,
       status: 200,
@@ -449,8 +492,9 @@ describe('restoreCloudConfigs', () => {
     const { restoreCloudConfigs } = await import('./cloudSync');
     const result = await restoreCloudConfigs();
 
-    expect(result).toEqual({ restored: 0, skipped: 1, failed: 0 });
-    expect(mockAddTrackedConfig).not.toHaveBeenCalled();
+    expect(result).toEqual({ restored: 2, skipped: 0, failed: 0 });
+    expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudA);
+    expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudB);
   });
 
   it('throws when cloud fetch fails', async () => {
