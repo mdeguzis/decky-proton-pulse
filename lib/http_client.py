@@ -32,7 +32,6 @@ def curl_json(
         "20",
         "--retry",
         "2",
-        "--retry-all-errors",
         "--retry-delay",
         "2",
         "--max-time",
