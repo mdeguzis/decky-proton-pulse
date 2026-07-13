@@ -35,7 +35,6 @@ import { getGameSource, type GameSourceInfo } from '../lib/gameSource';
 import type { GpuVendor, ProtonGeManagerState, SystemInfo } from '../types';
 import type { VersionOption } from '../lib/compatToolVersions';
 import { CompatToolVersionPicker } from './CompatToolVersionPicker';
-import { resolveLaunchOptionsWithPrompt } from './LaunchOptionConflictModal';
 import { callable } from '@decky/api';
 
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
@@ -893,8 +892,18 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     });
   };
 
-  const doApply = async (resolvedLaunchOptions: string, andUpload = false) => {
+  // Apply launch options to Steam + persist. Two independent knobs:
+  //   pushCloud     -- also upload the config to user_proton_configs.
+  //   openReport    -- also open NativePulseReportModal for report submission.
+  // Save uses { pushCloud: true, openReport: false } -- persist without
+  // nagging for a report. Submit Report uses openReport separately via
+  // handlePublish so the two intents stay independent.
+  const doApply = async (
+    resolvedLaunchOptions: string,
+    opts: { pushCloud?: boolean; openReport?: boolean } = {},
+  ) => {
     if (!appId) return;
+    const { pushCloud = false, openReport = false } = opts;
     try {
       await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
       const config: TrackedConfig = {
@@ -917,8 +926,10 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         isNonSteam: isSteamShortcutApp(appId),
       };
       addTrackedConfig(config);
-      if (andUpload) {
+      if (pushCloud) {
         void pushConfig(config);
+      }
+      if (openReport) {
         const { minutes } = await getEffectivePlaytimeMinutes(appId, existingConfig ? buildConfigKey(existingConfig) : undefined);
         const autoDuration = bucketPlaytimeMinutes(minutes);
         const gsInfo = isSteamShortcutApp(appId) ? await getGameSource(appId, appName) : null;
@@ -934,7 +945,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           />,
         );
       }
-      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions, andUpload });
+      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions, pushCloud, openReport });
       toaster.toast({ title: 'Proton Pulse', body: t().toast.savedToProtonPulse });
       onSave();
       closeModal?.();
@@ -991,7 +1002,13 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     );
   };
 
-  const handleApply = async () => {
+  // Save: apply launch options + push to cloud, no report modal. Skips the
+  // UploadPreviewModal middleman and the Append/Replace prompt (see
+  // LaunchOptionConflictModal -- resolveLaunchOptionsWithPrompt now always
+  // replaces). Report submission is a separate "Submit Report" action so
+  // Save can be a quick "persist my config" action without nagging the user
+  // to fill in playtime / hardware / notes.
+  const handleSave = async () => {
     if (!appId) {
       toaster.toast({ title: 'Proton Pulse', body: 'No game selected. Open a game config first.' });
       return;
@@ -1001,35 +1018,11 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
       toaster.toast({ title: 'Proton Pulse', body: t().configManager.profileNameRequired });
       return;
     }
-    const finalLaunchOptions = preview;
     try {
       syncScopedCustomToggles(appId, customToggles);
-      const currentDetails = await getSteamAppDetails(appId);
-      const resolvedLaunchOptions = await resolveLaunchOptionsWithPrompt(
-        appName,
-        getLaunchOptionsFromDetails(currentDetails.details),
-        finalLaunchOptions,
-      );
-      if (!resolvedLaunchOptions) {
-        toaster.toast({ title: 'Proton Pulse', body: t().configure.applyCancelled });
-        return;
-      }
-
-      showModal(
-        <UploadPreviewModal
-          appName={appName}
-          profileName={profileName.trim()}
-          protonVersion={protonVersion || ''}
-          launchOptions={resolvedLaunchOptions}
-          enabledVars={allVars}
-          systemInfo={systemInfo}
-          loadingSystemInfo={loadingSystemInfo}
-          onApply={() => void doApply(resolvedLaunchOptions)}
-          onUpload={() => void doApply(resolvedLaunchOptions, true)}
-        />,
-      );
+      await doApply(preview, { pushCloud: true, openReport: false });
     } catch (e) {
-      void logFrontendEvent('ERROR', 'Config editor apply failed', {
+      void logFrontendEvent('ERROR', 'Config editor save failed', {
         appId,
         error: e instanceof Error ? e.message : String(e),
       });
@@ -1175,16 +1168,16 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           </div>
           <Focusable style={{ display: 'flex', gap: 8 }}>
             <DialogButton
-              onClick={handleApply}
+              onClick={() => { void handleSave(); }}
               style={{ minWidth: 80, padding: '6px 16px', fontSize: 12 }}
             >
-              {t().common.apply}
+              {t().common.save}
             </DialogButton>
             <DialogButton
               onClick={() => { void handlePublish(); }}
               style={{ minWidth: 140, padding: '6px 16px', fontSize: 12 }}
             >
-              {extras.publishToPulse()}
+              {t().nativeReport.submit}
             </DialogButton>
             <DialogButton
               onClick={openCustomToggleModal}

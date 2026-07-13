@@ -1,6 +1,5 @@
 import { ModalRoot, DialogButton, Focusable, showModal } from '@decky/ui';
 import { t } from '../lib/i18n';
-import { appendLaunchOptions, normalizeLaunchOptionsForComparison } from '../lib/launchVars';
 
 export type LaunchOptionConflictChoice = 'append' | 'replace' | 'cancel';
 
@@ -83,42 +82,17 @@ export function showLaunchOptionConflictPreview(
   );
 }
 
+// Applying a config always REPLACES the current launch options with the
+// incoming set. The old Append / Replace / Cancel prompt was noisy and
+// almost every user picked Replace anyway. The append path stays around
+// (appendLaunchOptions helper, LaunchOptionConflictModal component) for
+// screenshot-mode previews and possible future explicit callers, but the
+// primary resolver is now unconditional.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function resolveLaunchOptionsWithPrompt(
-  appName: string,
-  currentLaunchOptions: string,
+  _appName: string,
+  _currentLaunchOptions: string,
   incomingLaunchOptions: string,
 ): Promise<string | null> {
-  const currentNormalized = normalizeLaunchOptionsForComparison(currentLaunchOptions);
-  const incomingNormalized = normalizeLaunchOptionsForComparison(incomingLaunchOptions);
-
-  if (!currentNormalized || currentNormalized === incomingNormalized) {
-    return incomingLaunchOptions;
-  }
-
-  return await new Promise<string | null>((resolve) => {
-    let settled = false;
-    const modal = showModal(
-      <LaunchOptionConflictModal
-        appName={appName}
-        currentLaunchOptions={currentLaunchOptions}
-        incomingLaunchOptions={incomingLaunchOptions}
-        onResolve={(choice) => {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          modal?.Close();
-          if (choice === 'append') {
-            resolve(appendLaunchOptions(currentLaunchOptions, incomingLaunchOptions));
-            return;
-          }
-          if (choice === 'replace') {
-            resolve(incomingLaunchOptions);
-            return;
-          }
-          resolve(null);
-        }}
-      />,
-    );
-  });
+  return incomingLaunchOptions;
 }
