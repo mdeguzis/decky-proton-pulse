@@ -22,7 +22,7 @@ import { logFrontendEvent } from '../lib/logger';
 import { getProtonDBSummary } from '../lib/protondb';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { t } from '../lib/i18n';
-import { type GameSourceInfo, getGameSource } from '../lib/gameSource';
+import { type GameSourceInfo, getGameSource, sourceStoreLabel } from '../lib/gameSource';
 
 const SOURCE_COLORS: Record<string, { bg: string; color: string }> = {
   Heroic:      { bg: '#7b3fb5', color: '#f0e0ff' },
@@ -210,6 +210,14 @@ function BadgeIcon({ appId }: { appId: number }) {
   // (always show something -- source badge alone only when launcher is identified)
   const showTierBadge = !isNonSteam || hasResolvedSteamId || !sourceColors;
   const showSourceBadge = isNonSteam && !!sourceColors;
+  // Store label (Epic Games / GOG) when the launcher (Heroic / Lutris / ...)
+  // carries the underlying store id. Heroic launching a Legendary game means
+  // it is an Epic Games title, and that matters for report context.
+  const storeLabel = sourceStoreLabel(sourceInfo);
+  const storeColors = storeLabel === 'Epic Games' ? SOURCE_COLORS.Epic
+    : storeLabel === 'GOG' ? SOURCE_COLORS.GOG
+    : null;
+  const showStoreBadge = isNonSteam && !!storeLabel && !!storeColors && storeLabel !== sourceLabel;
 
   const navigate = () => {
     const appName =
@@ -313,6 +321,26 @@ function BadgeIcon({ appId }: { appId: number }) {
           }}
         >
           {sourceLabel}
+        </div>
+      )}
+      {showStoreBadge && (
+        <div
+          title={t().common.openInProtonPulse}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '5px 8px',
+            borderRadius: 4,
+            background: storeColors.bg,
+            color: storeColors.color,
+            fontWeight: 700,
+            fontSize: 11,
+            whiteSpace: 'nowrap',
+            letterSpacing: '0.04em',
+            cursor: 'pointer',
+          }}
+        >
+          {storeLabel}
         </div>
       )}
     </Focusable>
