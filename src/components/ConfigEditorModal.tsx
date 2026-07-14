@@ -1154,47 +1154,12 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               />
             )}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
-                  {appName || (appId ? `App ${appId}` : t().configManager.createConfig)}
-                </div>
-                {/* Store / launcher pills: launcher first (Heroic), then the
-                    underlying store (Epic Games / GOG) when known. Heroic is a
-                    launcher, not a store -- Legendary/GOG are the stores that
-                    ship the game itself. Falls back to "Custom" only when the
-                    game cannot be resolved. */}
-                {isShortcut && (
-                  <>
-                    <div
-                      style={{
-                        fontSize: 9,
-                        fontWeight: 700,
-                        color: '#9dc4e8',
-                        border: '1px solid rgba(157,196,232,0.45)',
-                        borderRadius: 999,
-                        padding: '2px 8px',
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {headerGameSource?.source || t().configManager.customToggleBadge}
-                    </div>
-                    {sourceStoreLabel(headerGameSource) && (
-                      <div
-                        style={{
-                          fontSize: 9,
-                          fontWeight: 700,
-                          color: '#f9c9a0',
-                          border: '1px solid rgba(249,201,160,0.45)',
-                          borderRadius: 999,
-                          padding: '2px 8px',
-                          lineHeight: 1.2,
-                        }}
-                      >
-                        {sourceStoreLabel(headerGameSource)}
-                      </div>
-                    )}
-                  </>
-                )}
+              {/* Title only -- launcher + store are covered by the subtitle
+                  right below. Pills used to also render here but that was
+                  the same info twice and it crowded long titles. B on the
+                  gamepad closes the modal, so no in-header Cancel either. */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
+                {appName || (appId ? `App ${appId}` : t().configManager.createConfig)}
               </div>
               {appId && (
                 <div style={{ fontSize: 9, color: '#7a9bb5' }}>
@@ -1225,12 +1190,6 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               style={{ minWidth: 164, padding: '6px 18px', fontSize: 12 }}
             >
               {t().configManager.customToggleButton}
-            </DialogButton>
-            <DialogButton
-              onClick={() => closeModal?.()}
-              style={{ minWidth: 80, padding: '6px 16px', fontSize: 12, background: '#555' }}
-            >
-              {t().common.cancel}
             </DialogButton>
           </Focusable>
         </div>
