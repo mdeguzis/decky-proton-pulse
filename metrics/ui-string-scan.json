@@ -8,6 +8,7 @@
     "src/components/CompatToolVersionPicker.tsx",
     "src/components/ConfigEditorModal.tsx",
     "src/components/EditReportModal.tsx",
+    "src/components/GameBanner.tsx",
     "src/components/LaunchOptionConflictModal.tsx",
     "src/components/LogViewer.tsx",
     "src/components/LogViewerModal.tsx",
@@ -249,22 +250,36 @@
       "text": "Fetch errors"
     },
     {
+      "file": "src/components/CompatToolVersionPicker.tsx",
+      "line": 37,
+      "column": 29,
+      "kind": "string",
+      "text": "Valve Proton"
+    },
+    {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 955,
+      "line": 982,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 996,
+      "line": 1029,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 860,
+      "line": 724,
+      "column": 42,
+      "kind": "string",
+      "text": "- Type below or pick installed -"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 925,
       "column": 13,
       "kind": "jsx",
       "text": "Save draft"

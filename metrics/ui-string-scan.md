@@ -32,9 +32,11 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/CacheStatsModal.tsx` | 272 | string | No ProtonDB data |
 | `src/components/CacheStatsModal.tsx` | 274 | string | Avg fetch |
 | `src/components/CacheStatsModal.tsx` | 277 | string | Fetch errors |
-| `src/components/ConfigEditorModal.tsx` | 955 | string | No game selected. Open a game config first. |
-| `src/components/ConfigEditorModal.tsx` | 996 | string | No game selected. Open a game config first. |
-| `src/components/NativePulseReportModal.tsx` | 860 | jsx | Save draft |
+| `src/components/CompatToolVersionPicker.tsx` | 37 | string | Valve Proton |
+| `src/components/ConfigEditorModal.tsx` | 982 | string | No game selected. Open a game config first. |
+| `src/components/ConfigEditorModal.tsx` | 1029 | string | No game selected. Open a game config first. |
+| `src/components/NativePulseReportModal.tsx` | 724 | string | - Type below or pick installed - |
+| `src/components/NativePulseReportModal.tsx` | 925 | jsx | Save draft |
 | `src/components/PerReportAnalysisModal.tsx` | 190 | jsx | pts |
 | `src/components/ReleaseNotesModal.tsx` | 277 | jsx | Loading |
 | `src/components/ScoringGuideModal.tsx` | 116 | jsx | Report Score Tiers |
