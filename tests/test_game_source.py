@@ -162,6 +162,21 @@ def test_infer_source_epic() -> None:
 def test_infer_source_gog() -> None:
     assert game_source._infer_source_from_shortcut({"exe": "/gog/galaxy/start"}) == "GOG"
 
+def test_infer_source_gog_install_folder_no_galaxy() -> None:
+    # Real-world Deck case: GOG game installed to ~/Games/GOG/... with the
+    # shortcut pointing straight at the exe. Used to fall through to
+    # Non-Steam because "galaxy" was required alongside "gog".
+    assert game_source._infer_source_from_shortcut({"exe": "/home/deck/Games/GOG/Planet of Lana/gamelaunch.sh"}) == "GOG"
+
+def test_infer_source_gog_common_folder_variants() -> None:
+    for path in [
+        "/home/deck/GOG Games/Planet of Lana/gamelaunch.sh",
+        "/home/deck/gog-games/planet/gamelaunch.sh",
+        "/home/deck/gog_games/game.sh",
+        "/opt/gogcom/game.sh",
+    ]:
+        assert game_source._infer_source_from_shortcut({"exe": path}) == "GOG", path
+
 def test_infer_source_itchio() -> None:
     assert game_source._infer_source_from_shortcut({"exe": "/itch-setup"}) == "itch.io"
 

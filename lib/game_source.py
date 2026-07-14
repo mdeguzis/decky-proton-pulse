@@ -268,10 +268,23 @@ def _infer_source_from_shortcut(entry: dict[str, Any]) -> str:
         return "Bottles"
     if "com.epicgames" in combined or "epic games" in combined:
         return "Epic"
-    if "gog" in combined and "galaxy" in combined:
+    # GOG: originally we required both "gog" AND "galaxy" so the check would
+    # only fire on the Windows Galaxy client, but on Deck the shortcut often
+    # points straight at a GOG install folder like ~/Games/GOG/{game}/ with
+    # no Heroic and no Galaxy in the string. Broaden to any of the common
+    # GOG install-path markers people actually use.
+    gog_markers = (
+        "gog galaxy", "goggalaxy",
+        "gog games", "gog-games", "gog_games",
+        "/gog/", "\\gog\\",
+        "gogcom", "gog.com/",
+    )
+    if any(m in combined for m in gog_markers):
+        decky.logger.debug("game_source: matched GOG via marker in %r", combined[:200])
         return "GOG"
     if "itch.io" in combined or "itch-setup" in combined:
         return "itch.io"
+    decky.logger.debug("game_source: no launcher match, returning Non-Steam. combined=%r", combined[:200])
     return "Non-Steam"
 
 
