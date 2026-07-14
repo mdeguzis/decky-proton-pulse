@@ -263,6 +263,12 @@ Tips:
 * If you are debugging a game page patch, open the game page first, then refresh the target list so the correct CEF view is visible.
 * Use the inspector console to confirm route changes, DOM anchor selection, and injected button state when UI patches do not show up where expected.
 
+## Security
+
+Found a security issue? See [`SECURITY.md`](https://github.com/mdeguzis/decky-proton-pulse/blob/main/SECURITY.md) for the vulnerability disclosure policy. Preferred report channel is a [private GitHub security advisory](https://github.com/mdeguzis/decky-proton-pulse/security/advisories/new); email fallback is <mdeguzis@gmail.com>. Response SLA: 72 hours to acknowledge, one week for initial assessment. Safe-harbor language for good-faith research is included in the policy.
+
+The plugin's cloud sync and submit paths share the [Proton Pulse web app](https://github.com/mdeguzis/proton-pulse-web) Supabase backend, so it inherits the automated gates documented on the [Security Guardrails wiki](https://github.com/mdeguzis/proton-pulse-web/wiki/Security-Guardrails) (CodeQL, Dependabot, npm audit, VirusTotal, Row-Level Security, per-IP rate limits, content moderation). Plugin-specific hardening (launch-option validation, self-updater signature checks, plugin-link pairing) is documented on the plugin wiki [Security page](https://github.com/mdeguzis/decky-proton-pulse/wiki/Security).
+
 ## License
 
 This project is licensed under the [GNU General Public License v3.0](https://github.com/mdeguzis/decky-proton-pulse/blob/main/LICENSE) or later. Upstream license copies are in the [LICENSES/](https://github.com/mdeguzis/decky-proton-pulse/tree/main/LICENSES) directory.
