@@ -31,7 +31,7 @@ import { t } from '../lib/i18n';
 import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } from '../lib/playtime';
 import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
-import { getGameSource, type GameSourceInfo } from '../lib/gameSource';
+import { getGameSource, sourceStoreLabel, type GameSourceInfo } from '../lib/gameSource';
 import { GameBanner } from './GameBanner';
 import type { GpuVendor, ProtonGeManagerState, SystemInfo } from '../types';
 import type { VersionOption } from '../lib/compatToolVersions';
@@ -1158,30 +1158,50 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
                   {appName || (appId ? `App ${appId}` : t().configManager.createConfig)}
                 </div>
-                {/* Store / launcher pill: shows the identified source (Heroic,
-                    GOG, Epic, ...) for non-Steam shortcuts. Falls back to
-                    "Custom" only when the game cannot be resolved to a known
-                    store so the label matches what the game page badge shows. */}
+                {/* Store / launcher pills: launcher first (Heroic), then the
+                    underlying store (Epic Games / GOG) when known. Heroic is a
+                    launcher, not a store -- Legendary/GOG are the stores that
+                    ship the game itself. Falls back to "Custom" only when the
+                    game cannot be resolved. */}
                 {isShortcut && (
-                  <div
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: '#9dc4e8',
-                      border: '1px solid rgba(157,196,232,0.45)',
-                      borderRadius: 999,
-                      padding: '2px 8px',
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {headerGameSource?.source || t().configManager.customToggleBadge}
-                  </div>
+                  <>
+                    <div
+                      style={{
+                        fontSize: 9,
+                        fontWeight: 700,
+                        color: '#9dc4e8',
+                        border: '1px solid rgba(157,196,232,0.45)',
+                        borderRadius: 999,
+                        padding: '2px 8px',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {headerGameSource?.source || t().configManager.customToggleBadge}
+                    </div>
+                    {sourceStoreLabel(headerGameSource) && (
+                      <div
+                        style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          color: '#f9c9a0',
+                          border: '1px solid rgba(249,201,160,0.45)',
+                          borderRadius: 999,
+                          padding: '2px 8px',
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        {sourceStoreLabel(headerGameSource)}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               {appId && (
                 <div style={{ fontSize: 9, color: '#7a9bb5' }}>
                   {isShortcut
-                    ? (headerGameSource?.source || extras.nonSteamShortcut())
+                    ? [headerGameSource?.source, sourceStoreLabel(headerGameSource)]
+                        .filter(Boolean)
+                        .join(' . ') || extras.nonSteamShortcut()
                     : extras.appIdLabel(appId)}
                 </div>
               )}

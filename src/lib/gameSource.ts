@@ -30,6 +30,17 @@ export function nativeAppIdFromSource(info: GameSourceInfo, fallbackId: number):
   return String(fallbackId);
 }
 
+// Human-readable store name inferred from Heroic / launcher metadata. Heroic
+// carries the underlying store in its launch URL (heroic://launch/gog/... or
+// heroic://launch/legendary/... which is Epic). Returns null when the store
+// cannot be identified so the caller only shows the launcher pill.
+export function sourceStoreLabel(info: GameSourceInfo | null | undefined): string | null {
+  if (!info) return null;
+  if (info.epic_game_id) return 'Epic Games';
+  if (info.gog_product_id) return 'GOG';
+  return null;
+}
+
 const _getGameSource = callable<[string, string], GameSourceInfo>('get_game_source');
 const _getShortcutName = callable<[string], string>('get_shortcut_name');
 

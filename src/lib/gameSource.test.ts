@@ -18,6 +18,7 @@ import {
   nativeAppIdFromSource,
   getGameSource,
   getShortcutName,
+  sourceStoreLabel,
   type GameSourceInfo,
 } from './gameSource';
 
@@ -86,6 +87,22 @@ describe('getGameSource', () => {
   it('returns null when the call throws', async () => {
     callableMocks.get('get_game_source')!.mockRejectedValue(new Error('offline'));
     expect(await getGameSource(620, 'Portal 2')).toBeNull();
+  });
+});
+
+describe('sourceStoreLabel', () => {
+  it('returns Epic Games when an epic_game_id is set (Heroic + Legendary)', () => {
+    expect(sourceStoreLabel(info({ source: 'Heroic', epic_game_id: 'legendary-abc' }))).toBe('Epic Games');
+  });
+  it('returns GOG when a gog_product_id is set', () => {
+    expect(sourceStoreLabel(info({ source: 'Heroic', gog_product_id: '1234' }))).toBe('GOG');
+  });
+  it('returns null when neither store id is set', () => {
+    expect(sourceStoreLabel(info({ source: 'Heroic' }))).toBeNull();
+  });
+  it('returns null when the info is null or undefined', () => {
+    expect(sourceStoreLabel(null)).toBeNull();
+    expect(sourceStoreLabel(undefined)).toBeNull();
   });
 });
 
