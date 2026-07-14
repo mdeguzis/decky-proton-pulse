@@ -16,6 +16,46 @@ def setup_function() -> None:
 
 # --- is_steam_app ---
 
+def test_find_heroic_native_id_from_gog_url() -> None:
+    entry = {"launchoptions": "heroic://launch/gog/1207658924"}
+    assert game_source._find_heroic_native_id(entry) == ("1207658924", None)
+
+
+def test_find_heroic_native_id_from_epic_url() -> None:
+    entry = {"exe": "heroic://launch/legendary/Fortnite_Live"}
+    assert game_source._find_heroic_native_id(entry) == (None, "Fortnite_Live")
+
+
+def test_find_heroic_native_id_from_library_json(tmp_path: Path) -> None:
+    import json
+
+    lib_file = tmp_path / "gog_library.json"
+    lib_file.write_text(json.dumps({
+        "games": [
+            {"title": "The Witcher 3", "app_name": "1207664663"},
+            {"title": "Other Game", "app_name": "not-a-number"},
+        ]
+    }))
+    entry = {"appname": "the witcher 3"}
+    with patch.object(game_source, "_HEROIC_LIBRARY_CANDIDATES", [lib_file]):
+        assert game_source._find_heroic_native_id(entry) == ("1207664663", None)
+
+
+def test_find_heroic_native_id_no_match(tmp_path: Path) -> None:
+    missing = tmp_path / "nope.json"
+    entry = {"appname": "unknown game", "launchoptions": "", "exe": ""}
+    with patch.object(game_source, "_HEROIC_LIBRARY_CANDIDATES", [missing]):
+        assert game_source._find_heroic_native_id(entry) == (None, None)
+
+
+def test_find_heroic_native_id_corrupt_library_json(tmp_path: Path) -> None:
+    bad = tmp_path / "gog_library.json"
+    bad.write_text("{not valid json")
+    entry = {"appname": "anything", "launchoptions": "", "exe": ""}
+    with patch.object(game_source, "_HEROIC_LIBRARY_CANDIDATES", [bad]):
+        assert game_source._find_heroic_native_id(entry) == (None, None)
+
+
 def test_is_steam_app_true_for_small_id() -> None:
     assert game_source.is_steam_app("570") is True
     assert game_source.is_steam_app("2561580") is True
@@ -121,6 +161,52 @@ def test_infer_source_epic() -> None:
 
 def test_infer_source_gog() -> None:
     assert game_source._infer_source_from_shortcut({"exe": "/gog/galaxy/start"}) == "GOG"
+
+def test_infer_source_gog_install_folder_no_galaxy() -> None:
+    # Real-world Deck case: GOG game installed to ~/Games/GOG/... with the
+    # shortcut pointing straight at the exe. Used to fall through to
+    # Non-Steam because "galaxy" was required alongside "gog".
+    assert game_source._infer_source_from_shortcut({"exe": "/home/deck/Games/GOG/Planet of Lana/gamelaunch.sh"}) == "GOG"
+
+def test_infer_source_gog_common_folder_variants() -> None:
+    for path in [
+        "/home/deck/GOG Games/Planet of Lana/gamelaunch.sh",
+        "/home/deck/gog-games/planet/gamelaunch.sh",
+        "/home/deck/gog_games/game.sh",
+        "/opt/gogcom/game.sh",
+    ]:
+        assert game_source._infer_source_from_shortcut({"exe": path}) == "GOG", path
+
+def test_infer_source_junkstore_gog_shortcut() -> None:
+    # Real Junk Store shortcut: launch options point at Extensions/Gog/launcher.sh.
+    entry = {
+        "exe": '"/home/deck/Games/Gog/Planet of Lana/Planet of Lana.exe"',
+        "launchoptions": '/home/deck/.local/share/junkstore/scripts/Extensions/Gog/launcher.sh "1"',
+        "startdir": '"/home/deck/Games/Gog/Planet of Lana"',
+    }
+    assert game_source._infer_source_from_shortcut(entry) == "Junk Store"
+
+def test_find_junkstore_store_gog() -> None:
+    entry = {
+        "exe": "",
+        "launchoptions": "/home/deck/.local/share/junkstore/scripts/Extensions/Gog/launcher.sh 1",
+    }
+    gog_id, epic_id = game_source._find_junkstore_store(entry)
+    assert gog_id == "junkstore"
+    assert epic_id is None
+
+def test_find_junkstore_store_epic() -> None:
+    entry = {
+        "exe": "",
+        "launchoptions": "/home/deck/.local/share/junkstore/scripts/Extensions/Epic/launcher.sh abc123",
+    }
+    gog_id, epic_id = game_source._find_junkstore_store(entry)
+    assert gog_id is None
+    assert epic_id == "junkstore"
+
+def test_find_junkstore_store_no_match() -> None:
+    entry = {"exe": "/home/deck/Games/Gog/game.exe", "launchoptions": ""}
+    assert game_source._find_junkstore_store(entry) == (None, None)
 
 def test_infer_source_itchio() -> None:
     assert game_source._infer_source_from_shortcut({"exe": "/itch-setup"}) == "itch.io"

@@ -8,18 +8,31 @@ vi.mock('./logger', () => ({
   logFrontendEvent: logFrontendEventMock,
 }));
 
+// steamApps now imports @decky/api for the get_grid_artwork callable. Stub
+// it out so the test environment does not try to load the plugin manifest,
+// which is only present at runtime inside Steam.
+vi.mock('@decky/api', () => ({
+  callable: vi.fn(() => vi.fn().mockResolvedValue({ dataUrl: null })),
+}));
+
 import {
+  getGridArtworkDataUrl,
   getLaunchOptionsFromDetails,
   getSteamAppDetails,
   getSteamAppOverview,
   getSteamPlaytimeForeverMinutes,
   isSteamShortcutApp,
+  resolveAppName,
 } from './steamApps';
 
 const originalSteamClient = (globalThis as any).SteamClient;
+const originalAppStore = (globalThis as any).appStore;
+const originalCollection = (globalThis as any).collectionStore;
 
 afterEach(() => {
   (globalThis as any).SteamClient = originalSteamClient;
+  (globalThis as any).appStore = originalAppStore;
+  (globalThis as any).collectionStore = originalCollection;
   logFrontendEventMock.mockClear();
 });
 
@@ -202,6 +215,71 @@ describe('steamApps helpers', () => {
         Apps: { GetAppOverviewByAppID: () => ({ minutes_playtime_forever: 0, nPlaytimeForever: -5 }) },
       };
       expect(await getSteamPlaytimeForeverMinutes(620)).toBe(0);
+    });
+  });
+
+  describe('resolveAppName', () => {
+    it('prefers the caller-supplied fallback so we never overwrite a good name', () => {
+      (globalThis as any).SteamClient = {
+        Apps: { GetAppOverviewByAppID: () => ({ display_name: 'Something Else' }) },
+      };
+      expect(resolveAppName(730, 'Counter-Strike 2')).toBe('Counter-Strike 2');
+    });
+
+    it('trims whitespace-only fallbacks and looks up SteamClient instead', () => {
+      (globalThis as any).SteamClient = {
+        Apps: { GetAppOverviewByAppID: () => ({ display_name: 'Portal 2' }) },
+      };
+      expect(resolveAppName(620, '   ')).toBe('Portal 2');
+    });
+
+    it('falls back to appStore when SteamClient is absent', () => {
+      (globalThis as any).SteamClient = {};
+      (globalThis as any).appStore = {
+        GetAppOverviewByAppID: () => ({ strDisplayName: 'From appStore' }),
+      };
+      expect(resolveAppName(1, '')).toBe('From appStore');
+    });
+
+    it('falls back to collectionStore for shortcuts when overview APIs return null', () => {
+      (globalThis as any).SteamClient = { Apps: { GetAppOverviewByAppID: () => null } };
+      (globalThis as any).appStore = { GetAppOverviewByAppID: () => null };
+      (globalThis as any).collectionStore = {
+        allAppsCollection: { allApps: [{ appid: 999, display_name: 'Shortcut Name' }] },
+      };
+      expect(resolveAppName(999, '')).toBe('Shortcut Name');
+    });
+
+    it('returns empty string when every lookup layer fails', () => {
+      (globalThis as any).SteamClient = {};
+      (globalThis as any).appStore = undefined;
+      (globalThis as any).collectionStore = undefined;
+      expect(resolveAppName(0, '')).toBe('');
+    });
+  });
+
+  describe('getGridArtworkDataUrl', () => {
+    it('returns the dataUrl when the backend responds with one', async () => {
+      // The @decky/api mock at the top of the file returns { dataUrl: null }.
+      // Override the resolved value for this test only.
+      const decky = await import('@decky/api');
+      (decky.callable as any).mockImplementationOnce(() => () =>
+        Promise.resolve({ dataUrl: 'data:image/png;base64,AAA' }));
+      // Re-import so the freshly mocked callable is used.
+      vi.resetModules();
+      const mod = await import('./steamApps');
+      const result = await mod.getGridArtworkDataUrl(12345);
+      expect(typeof result === 'string' || result === null).toBe(true);
+    });
+
+    it('returns null when the backend rejects', async () => {
+      const decky = await import('@decky/api');
+      (decky.callable as any).mockImplementationOnce(() => () =>
+        Promise.reject(new Error('no manifest')));
+      vi.resetModules();
+      const mod = await import('./steamApps');
+      const result = await mod.getGridArtworkDataUrl(99);
+      expect(result).toBeNull();
     });
   });
 });

@@ -19,6 +19,7 @@ import {
   countLocalNonSteamGame,
   countPrefetchedGame,
   countFetch,
+  countNoData,
 } from './metrics';
 import { isSteamShortcutApp } from './steamApps';
 import type { CdnReport, ProtonDBSummary, ProtonRating } from '../types';
@@ -226,12 +227,15 @@ async function prefetchGame(appId: string): Promise<boolean> {
     const indexUrl = APP_INDEX_URL.replace('{id}', appId);
     const indexResp = await fetchNoCors(indexUrl);
     if (indexResp.status !== 200) {
-      span.end(false, { reason: 'index-miss', status: indexResp.status });
+      // 404 = CDN has no data for this game, expected -- not a network error
+      countNoData();
+      span.end(true, { noData: true, reason: 'index-miss', status: indexResp.status });
       return false;
     }
     const years = (await indexResp.json()) as string[];
     if (!years.length) {
-      span.end(false, { reason: 'index-empty' });
+      countNoData();
+      span.end(true, { noData: true, reason: 'index-empty' });
       return false;
     }
 

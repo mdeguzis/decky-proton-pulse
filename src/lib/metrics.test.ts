@@ -34,6 +34,13 @@ import {
   flushMetricsToDisk,
   startAutoFlush,
   stopAutoFlush,
+  countBadgeTileSeen,
+  countBadgeApplied,
+  countBadgeNoData,
+  countBadgeFetchError,
+  countBadgeFetchMs,
+  getBadgeScanStats,
+  getHourlyBuckets,
 } from './metrics';
 
 beforeEach(() => {
@@ -243,5 +250,51 @@ describe('flush and timers', () => {
     stopAutoFlush();
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
     expect(exportMetricsCallableMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('badge scan counters', () => {
+  it('accumulates badge counters and dedups by app id', () => {
+    const before = getBadgeScanStats();
+    countBadgeTileSeen('app-1');
+    countBadgeTileSeen('app-1'); // dedup: should not double count
+    countBadgeApplied('app-1');
+    countBadgeApplied('app-1'); // dedup
+    countBadgeNoData();
+    countBadgeFetchError();
+    countBadgeFetchMs(12);
+    const after = getBadgeScanStats();
+
+    expect(after.tilesScanned).toBe(before.tilesScanned + 1);
+    expect(after.badgesApplied).toBe(before.badgesApplied + 1);
+    expect(after.noDataTiles).toBe(before.noDataTiles + 1);
+    expect(after.fetchErrors).toBe(before.fetchErrors + 1);
+    expect(after.totalFetchMs).toBe(before.totalFetchMs + 12);
+    expect(after.fetchCount).toBe(before.fetchCount + 1);
+  });
+});
+
+describe('hourly buckets', () => {
+  it('returns a sorted array', () => {
+    expect(Array.isArray(getHourlyBuckets())).toBe(true);
+  });
+
+  it('loads buckets from storage on init', async () => {
+    vi.resetModules();
+    const saved = [{ hourKey: Date.now(), spans: {}, counters: {} }];
+    (globalThis as unknown as { localStorage: Storage }).localStorage = {
+      getItem: () => JSON.stringify(saved),
+      setItem: () => {},
+      removeItem: () => {},
+      clear: () => {},
+      key: () => null,
+      length: 0,
+    };
+    try {
+      const mod = await import('./metrics');
+      expect(mod.getHourlyBuckets().length).toBeGreaterThanOrEqual(1);
+    } finally {
+      delete (globalThis as unknown as { localStorage?: Storage }).localStorage;
+    }
   });
 });

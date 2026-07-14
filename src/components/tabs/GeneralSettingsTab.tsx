@@ -341,7 +341,7 @@ function MetricsInfoBox() {
       <div><span style={labelStyle}>{extras.installedCoverage()}</span>{installedCoverage} ({cachedInstalledGames} / {backendInstalledStats.installedSteamGames})</div>
       <div><span style={labelStyle}>{extras.prefetchStatus()}</span>{prefetchStatus}</div>
       <div><span style={labelStyle}>{extras.prefetched()}</span>{extras.gamesCount(counters.prefetchedGames)}</div>
-      <div><span style={labelStyle}>{extras.totalFetches()}</span>{counters.totalFetches}{counters.fetchErrors > 0 ? extras.errorsSuffix(counters.fetchErrors) : ''}</div>
+      <div><span style={labelStyle}>{extras.totalFetches()}</span>{counters.totalFetches}{counters.fetchErrors > 0 ? extras.errorsSuffix(counters.fetchErrors) : ''}{counters.noDataGames > 0 ? ` (${counters.noDataGames} no data)` : ''}</div>
       <div><span style={labelStyle}>{extras.localGames()}</span>{extras.skippedCount(counters.localNonSteamGames)}</div>
       {prefetchFailures.total > 0 && (
         <div>
@@ -506,6 +506,7 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
   const [cefDebuggingStatus, setCefDebuggingStatus] = useState<CefDebuggingStatus | null>(null);
   const [gamePageBadgeStyle, setGamePageBadgeStyle] = useState<string>(() => getSetting('gamePageBadgeStyle', 'full'));
   const [libraryBadgeStyle, setLibraryBadgeStyle] = useState<string>(() => getSetting('libraryBadgeStyle', 'full'));
+  const [libraryBadgeShowNoData, setLibraryBadgeShowNoData] = useState(() => getSetting('libraryBadgeShowNoData', false));
   const [doubleBToExit, setDoubleBToExit] = useState(() => getSetting('doubleBToExit', false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
@@ -1170,6 +1171,19 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
                setSetting('libraryBadgeStyle', style);
                refreshLibraryGridBadges();
                void logFrontendEvent('INFO', 'Library badge style changed', { style });
+             }}
+           />
+         </div>
+         <div style={focusClipRowStyle()}>
+           <ToggleField
+             label={t().settings.libraryBadgeShowNoData}
+             description={t().settings.libraryBadgeShowNoDataDescription}
+             checked={libraryBadgeShowNoData}
+             onChange={(enabled) => {
+               setLibraryBadgeShowNoData(enabled);
+               setSetting('libraryBadgeShowNoData', enabled);
+               refreshLibraryGridBadges();
+               void logFrontendEvent('INFO', 'Library badge show no-data toggled', { enabled });
              }}
            />
          </div>

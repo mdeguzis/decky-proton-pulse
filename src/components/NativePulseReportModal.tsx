@@ -2,7 +2,7 @@
 // Submit a native Proton Pulse compatibility report, auto-capturing hardware.
 // Form structure mirrors ProtonDB's submission flow so ratings are comparable.
 
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ModalRoot, Focusable, DialogButton, DialogCheckbox, TextField, DropdownItem, showModal } from '@decky/ui';
 import { ScoringGuideModal } from './ScoringGuideModal';
 import { toaster } from '../lib/notify';
@@ -10,9 +10,19 @@ import { submitUserConfig, VALID_OS, type ValidOS } from '../lib/userConfigs';
 import type { SystemInfo, ProtonRating } from '../types';
 import { t } from '../lib/i18n';
 import { logFrontendEvent } from '../lib/logger';
-import { isSteamShortcutApp } from '../lib/steamApps';
+import { isSteamShortcutApp, resolveAppName } from '../lib/steamApps';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { deriveRating, FAULT_KEYS, type FaultKey, type YesNo } from '../lib/scoring';
+import { type GameSourceInfo, appTypeFromSource, nativeAppIdFromSource } from '../lib/gameSource';
+import { saveReportDraft, loadReportDraft, clearReportDraft } from '../lib/reportDraft';
+import {
+  protonKindOptions,
+  normalizeProtonKind,
+  type ProtonKind,
+} from '../lib/protonTypes';
+import { getProtonGeManagerState } from '../lib/compatTools';
+import { buildVersionOptions } from '../lib/compatToolVersions';
+import type { ProtonGeManagerState } from '../types';
 
 interface Props {
   appId: number;
@@ -23,7 +33,7 @@ interface Props {
   autoDurationMinutes?: number;
   launchOptions?: string;
   configKey?: string;
-  resolvedSteamAppId?: number | null;
+  gameSource?: GameSourceInfo | null;
   closeModal?: () => void;
 }
 
@@ -180,20 +190,11 @@ type TinkeringMethod = typeof TINKERING_METHODS[number];
 
 // --- Proton type options ---
 
-// Stable data tokens. Labels live in the translation tree (extras.reportFormProton*)
-// and are resolved at render time so language switches re-render correctly
-const PROTON_TYPE_DATA = ['current', 'ge', 'older', 'native', 'notListed'] as const;
-type ProtonType = typeof PROTON_TYPE_DATA[number];
-const protonTypeOptions = () => {
-  const labels: Record<ProtonType, () => string> = {
-    current:   t().extras!.reportFormProtonDefault!,
-    ge:        t().extras!.reportFormProtonGE!,
-    older:     t().extras!.reportFormProtonOlder!,
-    native:    t().extras!.reportFormProtonNative!,
-    notListed: t().extras!.reportFormProtonNotListed!,
-  };
-  return PROTON_TYPE_DATA.map(data => ({ data, label: labels[data]() }));
-};
+// Proton "kind" catalog is centralized in src/lib/protonTypes.ts so the
+// Create Config screen and this Submit Report screen stay in sync. The old
+// tokens ('current', 'ge', 'older') are normalized on load; new drafts and
+// submissions use ('valve', 'proton-ge', 'proton-cachyos', 'native', 'notListed').
+type ProtonType = ProtonKind;
 
 // --- Derived rating badge ---
 
@@ -243,11 +244,14 @@ export function NativePulseReportModal({
   autoDuration, autoDurationMinutes,
   launchOptions: initialLaunchOptions = '',
   configKey,
-  resolvedSteamAppId,
+  gameSource,
   closeModal,
 }: Props) {
   const isShortcut = isSteamShortcutApp(appId);
-  const submitAppId = isShortcut && resolvedSteamAppId ? resolvedSteamAppId : appId;
+  const submitAppId = gameSource && !gameSource.is_steam
+    ? nativeAppIdFromSource(gameSource, appId)
+    : String(appId);
+  const submitAppType = gameSource ? appTypeFromSource(gameSource) : 'steam';
 
   // --- Install & Startup ---
   const [canInstall, setCanInstall] = useState<YesNo | null>(null);
@@ -264,6 +268,8 @@ export function NativePulseReportModal({
   const refMultiplayer         = useRef<HTMLDivElement | null>(null);
   const refLocalMultiplayer    = useRef<HTMLDivElement | null>(null);
   const refVerdict             = useRef<HTMLDivElement | null>(null);
+  const refVerdictOob          = useRef<HTMLDivElement | null>(null);
+  const refNotes               = useRef<HTMLDivElement | null>(null);
   // One ref per fault question, same order as FAULT_KEYS
   const faultRefs           = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -298,14 +304,15 @@ export function NativePulseReportModal({
   const [proton,          setProton]          = useState(initialProton);
   const [protonType,      setProtonType]      = useState<ProtonType | null>(() => {
     const v = initialProton.toLowerCase();
-    if (v.includes('ge-proton') || v.includes('proton-ge')) return 'ge';
-    if (v.startsWith('proton ') || v.match(/^proton\d/i)) return 'current';
-    if (v.includes('proton')) return 'current';
+    if (v.includes('ge-proton') || v.includes('proton-ge')) return 'proton-ge';
+    if (v.includes('cachyos')) return 'proton-cachyos';
+    if (v.startsWith('proton ') || v.match(/^proton\d/i)) return 'valve';
+    if (v.includes('proton')) return 'valve';
     if (v === 'native' || v === 'no proton') return 'native';
     return null;
   });
   const [tinkeringMethods, setTinkeringMethods] = useState<Set<TinkeringMethod>>(new Set());
-  const isTinker = (protonType && protonType !== 'current') || tinkeringMethods.size > 0;
+  const isTinker = (protonType && protonType !== 'valve') || tinkeringMethods.size > 0;
 
   const toggleTinkering = (method: TinkeringMethod) =>
     setTinkeringMethods(prev => {
@@ -349,6 +356,78 @@ export function NativePulseReportModal({
   const autoDurationActive = !!autoDuration && autoDuration !== 'unreported';
   const ramStr = sysInfo?.ram_gb != null ? `${sysInfo.ram_gb} GB` : '';
 
+  // Installed Proton versions -- source of truth is getProtonGeManagerState,
+  // same call CompatToolVersionPicker uses. Lets the version field be a
+  // dropdown of what the user actually has installed instead of a free-text
+  // guess. Free text is still accepted for "not listed" cases.
+  const [installedVersions, setInstalledVersions] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    getProtonGeManagerState()
+      .then((state: ProtonGeManagerState) => {
+        if (!alive) return;
+        const opts = buildVersionOptions(state.releases, state.installed_tools)
+          .filter((o) => o.installed)
+          .map((o) => o.value);
+        setInstalledVersions(opts);
+        void logFrontendEvent('DEBUG', 'NativePulseReport: loaded installed versions', {
+          count: opts.length,
+          source: 'getProtonGeManagerState',
+        });
+      })
+      .catch((err) => {
+        void logFrontendEvent('WARNING', 'NativePulseReport: failed to load installed versions', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+    return () => { alive = false; };
+  }, []);
+
+  // Draft persistence. Restore any saved answers on mount so a submission
+  // that failed for a fixable reason (missing title, network flake) does
+  // not force the user to re-fill the entire form. Draft is cleared on
+  // successful submit and can be manually written with the Save draft
+  // button below.
+  const [draftSavedNote, setDraftSavedNote] = useState<string | null>(null);
+  useEffect(() => {
+    const loaded = loadReportDraft(appId, configKey ?? null);
+    if (!loaded) return;
+    const d = loaded.draft as any;
+    if (d.canInstall !== undefined) setCanInstall(d.canInstall);
+    if (d.canStart !== undefined) setCanStart(d.canStart);
+    if (d.canPlay !== undefined) setCanPlay(d.canPlay);
+    if (typeof d.proton === 'string') setProton(d.proton);
+    if (d.protonType !== undefined) setProtonType(normalizeProtonKind(d.protonType));
+    if (Array.isArray(d.tinkeringMethods)) setTinkeringMethods(new Set(d.tinkeringMethods));
+    if (d.faults && typeof d.faults === 'object') setFaults(d.faults);
+    if (d.onlineMultiplayer !== undefined) setOnlineMultiplayer(d.onlineMultiplayer);
+    if (d.localMultiplayer !== undefined) setLocalMultiplayer(d.localMultiplayer);
+    if (d.verdict !== undefined) setVerdict(d.verdict);
+    if (d.verdictOob !== undefined) setVerdictOob(d.verdictOob);
+    if (typeof d.summary === 'string') setSummary(d.summary);
+    if (typeof d.notes === 'string') setNotes(d.notes);
+    if (typeof d.duration === 'string') setDuration(d.duration);
+    if (typeof d.os === 'string') setOs(d.os as ValidOS);
+    const when = new Date(loaded.savedAt).toLocaleString();
+    setDraftSavedNote(`Draft restored from ${when}. Continue where you left off, or press Save draft again to refresh it.`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSaveDraft = () => {
+    saveReportDraft(appId, configKey ?? null, {
+      canInstall, canStart, canPlay,
+      proton, protonType,
+      tinkeringMethods: [...tinkeringMethods],
+      faults,
+      onlineMultiplayer, localMultiplayer,
+      verdict, verdictOob,
+      summary, notes,
+      duration, os,
+    });
+    const when = new Date().toLocaleTimeString();
+    setDraftSavedNote(`Draft saved at ${when}. Answers will be restored next time you open this report.`);
+  };
+
   const derivedRating = deriveRating({
     canInstall,
     canStart,
@@ -369,9 +448,9 @@ export function NativePulseReportModal({
     const errs: Record<string, boolean> = {};
 
     // Install & Startup always required
-    if (!canInstall) errs.canInstall = true;
-    if (!canStart)   errs.canStart   = true;
-    if (!canPlay)    errs.canPlay    = true;
+    if (canInstall === null) errs.canInstall = true;
+    if (canStart === null)   errs.canStart   = true;
+    if (canPlay === null)    errs.canPlay    = true;
 
     if (!installFailed) {
       // Proton type required
@@ -398,9 +477,7 @@ export function NativePulseReportModal({
 
     if (Object.keys(errs).length) {
       setFieldErrors(errs);
-      setError(installFailed
-        ? 'Please answer all Install & Startup questions.'
-        : 'Please answer all required questions. Concluding notes must be at least 10 characters.');
+      setError('Please fill out this required field for submission.');
       return;
     }
     setFieldErrors({});
@@ -420,10 +497,13 @@ export function NativePulseReportModal({
 
     // Title is required so reports always carry the human-readable game name.
     // Steam usually gives us appName via GetAppOverviewByAppID, but the lookup
-    // can fall back to empty for unrecognized shortcuts. Block submission with
-    // a clear message rather than uploading a title-less row
-    if (!appName || !appName.trim()) {
-      setError('Game title is missing - this usually means Steam did not recognize the game. Go back, ensure the title is set on the game properties, then re-try.');
+    // can fall back to empty for unrecognized shortcuts. Do a last-resort
+    // lookup here against SteamClient + appStore + collectionStore before
+    // failing the submission -- covers the case where the caller opened the
+    // modal before Steam populated the overview for a freshly added game.
+    const resolvedName = resolveAppName(appId, appName);
+    if (!resolvedName) {
+      setError('Game title is missing - this usually means Steam did not recognize the game. Save your draft with the button below, then set the title on the game properties in Steam and re-open this dialog to resume.');
       return;
     }
 
@@ -451,7 +531,7 @@ export function NativePulseReportModal({
 
     const result = await submitUserConfig({
       appId:             String(submitAppId),
-      title:             appName,
+      title:             resolvedName,
       cpu:               sysInfo.cpu,
       gpu:               sysInfo.gpu,
       gpuDriver:         sysInfo.driver_version ?? undefined,
@@ -467,6 +547,7 @@ export function NativePulseReportModal({
       configKey:         configKey || undefined,
       durationMinutes:   autoDurationMinutes ?? null,
       source:            'user',
+      appType:           submitAppType,
       vramMb:            sysInfo.vram_mb ?? null,
       cpuCores:          sysInfo.cpu_cores ?? null,
       displayResolution: sysInfo.display_resolution ?? null,
@@ -479,6 +560,7 @@ export function NativePulseReportModal({
     if (result.ok) {
       void logFrontendEvent('INFO', 'Native Pulse report submitted', { appId, derivedRating });
       toaster.toast({ title: 'Proton Pulse', body: t().nativeReport.submitted });
+      clearReportDraft(appId, configKey ?? null);
       closeModal?.();
     } else {
       void logFrontendEvent('ERROR', 'Native Pulse report failed', { appId, error: result.error });
@@ -486,7 +568,7 @@ export function NativePulseReportModal({
     }
   };
 
-  if (isShortcut && !resolvedSteamAppId) {
+  if (isShortcut && !gameSource?.gog_product_id && !gameSource?.epic_game_id) {
     return (
       <ModalRoot onCancel={closeModal}>
         <div style={{ padding: 16, color: '#9dc4e8', fontSize: 12 }}>
@@ -518,8 +600,8 @@ export function NativePulseReportModal({
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#e8f4ff' }}>{t().nativeReport.title}</div>
             <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 2 }}>
-              {appName}{isShortcut && resolvedSteamAppId
-                ? ` . Non-Steam (Steam app id: ${resolvedSteamAppId})`
+              {appName}{isShortcut
+                ? ` . ${submitAppType.toUpperCase()} (id: ${submitAppId})`
                 : (appId ? ` . App ${appId}` : '')}
             </div>
           </div>
@@ -620,26 +702,42 @@ export function NativePulseReportModal({
               {/* refProtonType on the wrapper div so querySelector('button') finds the DropdownItem button for focus */}
               <div ref={refProtonType} style={fieldErrors.protonType ? { outline: '1px solid #f59e0b', borderRadius: 4 } : {}}>
                 <DropdownItem
-                  rgOptions={protonTypeOptions()}
+                  rgOptions={protonKindOptions()}
                   selectedOption={protonType ?? null}
                   onChange={(opt) => { setProtonType(opt.data as ProtonType); setFieldErrors(p => ({ ...p, protonType: false })); scrollToRef(refProtonVersion, 'protonVersion'); }}
                   label={t().extras!.reportFormProtonVersion!()}
                 />
               </div>
 
-              {/* Proton version: 50/50 label left / input right; hint below the row */}
+              {/* Proton version: dropdown of installed versions + free-text
+                  fallback for anything not on disk. Installed versions come
+                  from the same source CompatToolVersionPicker uses so both
+                  screens stay in sync. */}
               <div ref={refProtonVersion} style={fieldErrors.proton ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1, fontSize: 12, color: fieldErrors.proton ? '#ef4444' : '#c8d4e0', lineHeight: 1.4 }}>
-                    {t().nativeReport.protonVersion} <span style={{ color: '#ef4444' }}>*</span>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <TextField
-                      value={proton}
-                      onChange={(e) => { setProton(e.target.value); setFieldErrors(p => ({ ...p, proton: false })); setError(null); }}
-                    />
-                  </div>
+                <div style={{ fontSize: 12, color: fieldErrors.proton ? '#ef4444' : '#c8d4e0', lineHeight: 1.4, marginBottom: 4 }}>
+                  {t().nativeReport.protonVersion} <span style={{ color: '#ef4444' }}>*</span>
                 </div>
+                {installedVersions.length > 0 && (
+                  <DropdownItem
+                    label={t().nativeReport.protonVersion}
+                    rgOptions={[
+                      { data: '', label: '- Type below or pick installed -' },
+                      ...installedVersions.map((v) => ({ data: v, label: v })),
+                    ]}
+                    selectedOption={installedVersions.includes(proton) ? proton : ''}
+                    onChange={(opt) => {
+                      const v = String(opt.data ?? '');
+                      if (!v) return;
+                      setProton(v);
+                      setFieldErrors(p => ({ ...p, proton: false }));
+                      setError(null);
+                    }}
+                  />
+                )}
+                <TextField
+                  value={proton}
+                  onChange={(e) => { setProton(e.target.value); setFieldErrors(p => ({ ...p, proton: false })); setError(null); }}
+                />
                 <div style={{ fontSize: 10, color: '#7a9bb5', marginTop: 4 }}>{t().nativeReport.protonVersionHint}</div>
               </div>
 
@@ -713,19 +811,39 @@ export function NativePulseReportModal({
                 <YesNoDropdown
                   label={t().nativeReport.verdictQuestion}
                   value={verdict}
-                  onChange={(v) => { setVerdict(v); setFieldErrors(p => ({ ...p, verdict: false })); setError(null); }}
+                  onChange={(v) => {
+                    setVerdict(v);
+                    setFieldErrors(p => ({ ...p, verdict: false }));
+                    setError(null);
+                    // Auto-advance: if OOB is going to render (verdict=yes AND
+                    // no faults), scroll to it. Otherwise jump straight to
+                    // notes so the user is not left hunting for the next
+                    // field.
+                    if (v === 'yes' && !anyFaultForOob) {
+                      scrollToRef(refVerdictOob, 'verdictOob');
+                    } else {
+                      scrollToRef(refNotes, 'notes');
+                    }
+                  }}
                   hasError={!!fieldErrors.verdict}
                 />
               </div>
 
               {/* OOB - only shown when verdict=yes and 0 faults (platinum path) */}
               {verdict === 'yes' && !anyFaultForOob && (
-                <YesNoDropdown
-                  label={t().extras!.reportFormOutOfBoxQuestion!()}
-                  value={verdictOob}
-                  onChange={(v) => { setVerdictOob(v); setFieldErrors(p => ({ ...p, verdictOob: false })); setError(null); }}
-                  hasError={!!fieldErrors.verdictOob}
-                />
+                <div ref={refVerdictOob}>
+                  <YesNoDropdown
+                    label={t().extras!.reportFormOutOfBoxQuestion!()}
+                    value={verdictOob}
+                    onChange={(v) => {
+                      setVerdictOob(v);
+                      setFieldErrors(p => ({ ...p, verdictOob: false }));
+                      setError(null);
+                      scrollToRef(refNotes, 'notes');
+                    }}
+                    hasError={!!fieldErrors.verdictOob}
+                  />
+                </div>
               )}
 
               {/* Tinker OOB confirmation - shown when tinkering and verdict=yes */}
@@ -736,7 +854,7 @@ export function NativePulseReportModal({
               )}
 
               {/* Concluding Notes */}
-              <div style={fieldErrors.notes ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
+              <div ref={refNotes} style={fieldErrors.notes ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
                 <TextField
                   label={`Concluding Notes * (min 10 chars)`}
                   description={t().nativeReport.notesHint}
@@ -785,18 +903,30 @@ export function NativePulseReportModal({
             {error}
           </div>
         )}
+        {draftSavedNote && (
+          <div style={{ fontSize: 11, color: '#9dc4e8', padding: '6px 10px', marginTop: 8, background: 'rgba(157,196,232,0.10)', border: '1px solid rgba(157,196,232,0.35)', borderRadius: 4 }}>
+            {draftSavedNote}
+          </div>
+        )}
 
-        <Focusable style={{ display: 'flex', gap: 8, marginTop: 8, marginBottom: 8, flexWrap: 'wrap', flexShrink: 0 }}>
+        <Focusable style={{ display: 'flex', gap: 8, marginTop: 8, marginBottom: 8, flexWrap: 'nowrap', flexShrink: 0 }}>
           <DialogButton
             onClick={handleSubmit}
-            disabled={submitting || (canInstall === null)}
-            style={{ flex: 1, minWidth: 120, padding: '8px 16px', fontSize: 12 }}
+            disabled={submitting}
+            style={{ flex: 1, minWidth: 0, padding: '8px 12px', fontSize: 12 }}
           >
             {submitting ? t().common.loading : t().nativeReport.submit}
           </DialogButton>
           <DialogButton
+            onClick={handleSaveDraft}
+            disabled={submitting}
+            style={{ flex: 1, minWidth: 0, padding: '8px 12px', fontSize: 12 }}
+          >
+            Save draft
+          </DialogButton>
+          <DialogButton
             onClick={() => closeModal?.()}
-            style={{ minWidth: 70, padding: '8px 12px', fontSize: 12, background: '#555' }}
+            style={{ flex: 1, minWidth: 0, padding: '8px 12px', fontSize: 12 }}
           >
             {t().common.close}
           </DialogButton>

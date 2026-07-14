@@ -260,6 +260,13 @@ def _infer_source_from_shortcut(entry: dict[str, Any]) -> str:
     ]
     combined = " ".join(parts).lower()
 
+    # Junk Store is another Decky plugin (github.com/ebenbruyns/junkstore) that
+    # adds Epic + GOG support inside Game Mode. Its shortcuts point at
+    # ~/.local/share/junkstore/scripts/Extensions/{Epic|Gog}/launcher.sh, so
+    # the "junkstore" marker in the launch options is the reliable signal.
+    # Checked before Heroic so a co-installed plugin does not shadow it.
+    if "junkstore" in combined:
+        return "Junk Store"
     if "heroic" in combined or "com.heroicgameslauncher" in combined:
         return "Heroic"
     if "lutris" in combined:
@@ -268,11 +275,104 @@ def _infer_source_from_shortcut(entry: dict[str, Any]) -> str:
         return "Bottles"
     if "com.epicgames" in combined or "epic games" in combined:
         return "Epic"
-    if "gog" in combined and "galaxy" in combined:
+    # GOG: originally we required both "gog" AND "galaxy" so the check would
+    # only fire on the Windows Galaxy client, but on Deck the shortcut often
+    # points straight at a GOG install folder like ~/Games/GOG/{game}/ with
+    # no Heroic and no Galaxy in the string. Broaden to any of the common
+    # GOG install-path markers people actually use.
+    gog_markers = (
+        "gog galaxy", "goggalaxy",
+        "gog games", "gog-games", "gog_games",
+        "/gog/", "\\gog\\",
+        "gogcom", "gog.com/",
+    )
+    if any(m in combined for m in gog_markers):
+        decky.logger.debug("game_source: matched GOG via marker in %r", combined[:200])
         return "GOG"
     if "itch.io" in combined or "itch-setup" in combined:
         return "itch.io"
+    decky.logger.debug("game_source: no launcher match, returning Non-Steam. combined=%r", combined[:200])
     return "Non-Steam"
+
+
+_HEROIC_GOG_URL_RE = re.compile(r'heroic://launch/gog/(\d+)', re.IGNORECASE)
+_HEROIC_EPIC_URL_RE = re.compile(r'heroic://launch/legendary/([A-Za-z0-9_-]+)', re.IGNORECASE)
+
+# Heroic stores its GOG/Epic library in one of these locations depending on version.
+_HEROIC_LIBRARY_CANDIDATES = [
+    Path.home() / ".config" / "heroic" / "store_cache" / "gog_library.json",
+    Path.home() / ".config" / "heroic" / "gog_store" / "library.json",
+    Path.home() / ".var" / "app" / "com.heroicgameslauncher.hgl" / "config" / "heroic" / "store_cache" / "gog_library.json",
+    Path.home() / ".var" / "app" / "com.heroicgameslauncher.hgl" / "config" / "heroic" / "gog_store" / "library.json",
+]
+
+
+def _find_heroic_native_id(entry: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Return (gog_product_id, epic_game_id) extracted from a Heroic shortcut entry.
+
+    Tries the launch options URL first (heroic://launch/gog/<id>), then searches
+    Heroic's library JSON as a fallback using the shortcut's app name.
+    """
+    launch_opts = str(entry.get("launchoptions", ""))
+    exe = str(entry.get("exe", ""))
+    combined = f"{exe} {launch_opts}"
+
+    gog_m = _HEROIC_GOG_URL_RE.search(combined)
+    if gog_m:
+        return gog_m.group(1), None
+
+    epic_m = _HEROIC_EPIC_URL_RE.search(combined)
+    if epic_m:
+        return None, epic_m.group(1)
+
+    # Fallback: search Heroic's library JSON by title.
+    app_name = str(entry.get("appname", "")).strip().lower()
+    for lib_path in _HEROIC_LIBRARY_CANDIDATES:
+        try:
+            if not lib_path.exists():
+                continue
+            data = json.loads(lib_path.read_text(encoding="utf-8"))
+            games = data if isinstance(data, list) else data.get("games", [])
+            for game in games:
+                if str(game.get("title", "")).strip().lower() == app_name:
+                    product_id = str(game.get("app_name", ""))
+                    if product_id.isdigit():
+                        decky.logger.debug("game_source: GOG product_id=%s from library JSON for %r", product_id, app_name)
+                        return product_id, None
+        except Exception as exc:
+            decky.logger.debug("game_source: heroic library read failed: %s", exc)
+
+    return None, None
+
+
+# Junk Store shortcuts point at scripts under
+#   ~/.local/share/junkstore/scripts/Extensions/{Epic|Gog}/launcher.sh
+# The Extensions/ subfolder is the store. We do not (yet) have a way to pull
+# the concrete GOG product id / Epic game id from Junk Store, so we return a
+# sentinel string so the frontend's sourceStoreLabel() picks up the store.
+_JUNKSTORE_STORE_RE = re.compile(r'junkstore[/\\]scripts[/\\]extensions[/\\](gog|epic)', re.IGNORECASE)
+
+
+def _find_junkstore_store(entry: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Return (gog_product_id, epic_game_id) for a Junk Store shortcut.
+
+    Both are sentinel strings ("junkstore") when detected -- the callers only
+    check truthiness. The actual product id would need Junk Store's internal
+    catalog and is not required for the store badge.
+    """
+    launch_opts = str(entry.get("launchoptions", ""))
+    exe = str(entry.get("exe", ""))
+    combined = f"{exe} {launch_opts}"
+
+    m = _JUNKSTORE_STORE_RE.search(combined)
+    if not m:
+        return None, None
+    store = m.group(1).lower()
+    if store == "gog":
+        return "junkstore", None
+    if store == "epic":
+        return None, "junkstore"
+    return None, None
 
 
 # --- Public callable ---
@@ -302,6 +402,8 @@ def get_game_source(app_id: str, title: str = "") -> dict[str, Any]:
             "steam_app_id_match": None,
             "full_game_app_id": demo[0] if demo else None,
             "full_game_name": demo[1] if demo else None,
+            "gog_product_id": None,
+            "epic_game_id": None,
         }
         _source_cache[cache_key] = result
         return result
@@ -345,10 +447,25 @@ def get_game_source(app_id: str, title: str = "") -> dict[str, Any]:
         except Exception as exc:
             decky.logger.warning("get_game_source: name lookup failed: %s", exc)
 
+    gog_product_id: str | None = None
+    epic_game_id: str | None = None
+
     if matched_entry is not None:
         source = _infer_source_from_shortcut(matched_entry)
         if not title:
             title = str(matched_entry.get("appname", "")).strip()
+        if source == "Heroic":
+            gog_product_id, epic_game_id = _find_heroic_native_id(matched_entry)
+            if gog_product_id:
+                decky.logger.debug("get_game_source: Heroic GOG product_id=%s", gog_product_id)
+            elif epic_game_id:
+                decky.logger.debug("get_game_source: Heroic Epic game_id=%s", epic_game_id)
+        elif source == "Junk Store":
+            gog_product_id, epic_game_id = _find_junkstore_store(matched_entry)
+            if gog_product_id:
+                decky.logger.debug("get_game_source: Junk Store GOG shortcut for %r", title)
+            elif epic_game_id:
+                decky.logger.debug("get_game_source: Junk Store Epic shortcut for %r", title)
 
     decky.logger.debug("get_game_source: app_id=%s title=%r source=%s matched=%s",
                        app_id, title, source, matched_entry is not None)
@@ -388,6 +505,8 @@ def get_game_source(app_id: str, title: str = "") -> dict[str, Any]:
         "steam_app_id_match": steam_match,
         "full_game_app_id": demo[0] if demo else None,
         "full_game_name": demo[1] if demo else None,
+        "gog_product_id": gog_product_id,
+        "epic_game_id": epic_game_id,
     }
     decky.logger.debug("get_game_source: result=%s", result)
     _source_cache[cache_key] = result

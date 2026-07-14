@@ -1,0 +1,284 @@
+// Cache performance stats modal.
+// SVG line charts for hit rate, CDN latency, and fetch volume over the
+// last 24h of hourly buckets. Each section is a focusable row so D-pad
+// scrolls through them via useFocusableScroll (same as SystemRequirementsTab).
+
+import { DialogButton } from '@decky/ui';
+import { getHourlyBuckets, getSummary, getCombinedCategoryStats, getBadgeScanStats } from '../lib/metrics';
+import type { HourlyBucket } from '../lib/metrics';
+import { useFocusableScroll } from '../lib/useFocusableScroll';
+
+const PpDialogButton = DialogButton as React.ComponentType<
+  React.ComponentProps<typeof DialogButton> & { onFocus?: React.FocusEventHandler; onBlur?: React.FocusEventHandler }
+>;
+
+function formatHour(hourKey: number): string {
+  const d = new Date(hourKey);
+  const h = d.getHours().toString().padStart(2, '0');
+  const m = d.getMinutes().toString().padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+function LineChart({
+  buckets,
+  getValue,
+  color,
+  unit = '',
+  maxValue,
+  emptyNote,
+}: {
+  buckets: HourlyBucket[];
+  getValue: (b: HourlyBucket) => number;
+  color: string;
+  unit?: string;
+  maxValue?: number;
+  emptyNote?: string;
+}) {
+  if (buckets.length === 0) {
+    return (
+      <div style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3a5060', fontSize: 11 }}>
+        {emptyNote ?? 'No data yet this session'}
+      </div>
+    );
+  }
+
+  const W = 600;
+  const H = 80;
+  const PAD_L = 32;
+  const PAD_R = 8;
+  const PAD_T = 12;
+  const PAD_B = 18;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+
+  const values = buckets.map(getValue);
+  const dataMax = Math.max(...values, 1);
+  const yMax = maxValue ?? dataMax;
+
+  const n = buckets.length;
+  const xOf = (i: number) => PAD_L + (n === 1 ? chartW / 2 : (i / (n - 1)) * chartW);
+  const yOf = (v: number) => PAD_T + chartH - Math.min(Math.max(v, 0) / yMax, 1) * chartH;
+
+  // single-point: draw a horizontal line spanning the full chart width
+  const pts = n === 1
+    ? `${PAD_L.toFixed(1)},${yOf(getValue(buckets[0])).toFixed(1)} ${(PAD_L + chartW).toFixed(1)},${yOf(getValue(buckets[0])).toFixed(1)}`
+    : buckets.map((b, i) => `${xOf(i).toFixed(1)},${yOf(getValue(b)).toFixed(1)}`).join(' ');
+
+  const areaPath = n === 1
+    ? [
+        `M${PAD_L.toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+        `L${PAD_L.toFixed(1)},${yOf(getValue(buckets[0])).toFixed(1)}`,
+        `L${(PAD_L + chartW).toFixed(1)},${yOf(getValue(buckets[0])).toFixed(1)}`,
+        `L${(PAD_L + chartW).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+        'Z',
+      ].join(' ')
+    : [
+        `M${xOf(0).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+        ...buckets.map((b, i) => `L${xOf(i).toFixed(1)},${yOf(getValue(b)).toFixed(1)}`),
+        `L${xOf(n - 1).toFixed(1)},${(PAD_T + chartH).toFixed(1)}`,
+        'Z',
+      ].join(' ');
+
+  const labelStep = n <= 6 ? 1 : n <= 12 ? 2 : 4;
+  const gridFracs = [0, 0.5, 1];
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
+      {/* grid lines + y labels */}
+      {gridFracs.map((f, gi) => {
+        const y = PAD_T + chartH - f * chartH;
+        const label = f === 0 ? '0' : f === 1 ? `${yMax}` : `${Math.round(yMax * f)}`;
+        return (
+          <g key={gi}>
+            <line x1={PAD_L} y1={y.toFixed(1)} x2={W - PAD_R} y2={y.toFixed(1)}
+              stroke="rgba(255,255,255,0.07)" strokeWidth={1} />
+            <text x={PAD_L - 3} y={(y + 3.5).toFixed(1)} textAnchor="end" fontSize={8} fill="#3a5878">
+              {label}{unit}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* area */}
+      <path d={areaPath} fill={color} fillOpacity={0.13} />
+
+      {/* line */}
+      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+
+      {/* dots */}
+      {buckets.map((b, i) => (
+        <circle key={i} cx={xOf(i).toFixed(1)} cy={yOf(getValue(b)).toFixed(1)}
+          r={2.5} fill={color} stroke="rgba(0,0,0,0.5)" strokeWidth={0.8} />
+      ))}
+
+      {/* x-axis hour labels */}
+      {buckets.map((b, i) => i % labelStep !== 0 ? null : (
+        <text key={i} x={xOf(i).toFixed(1)} y={H - 3} textAnchor="middle" fontSize={8} fill="#3a5878">
+          {formatHour(b.hourKey)}
+        </text>
+      ))}
+
+      {/* value callouts: last point and max */}
+      {(() => {
+        const shown = new Set<number>();
+        const labels: React.ReactNode[] = [];
+        const maxIdx = values.indexOf(dataMax);
+        [n - 1, maxIdx].forEach((i) => {
+          if (i < 0 || shown.has(i)) return;
+          shown.add(i);
+          const v = values[i];
+          if (v === 0) return;
+          const cx = xOf(i);
+          const cy = yOf(v);
+          const anchor = cx > W - PAD_R - 30 ? 'end' : 'start';
+          const lx = anchor === 'end' ? cx - 4 : cx + 4;
+          labels.push(
+            <text key={i} x={lx.toFixed(1)} y={(cy - 4).toFixed(1)}
+              textAnchor={anchor} fontSize={9} fill={color} fontWeight="bold">
+              {v}{unit}
+            </text>,
+          );
+        });
+        return labels;
+      })()}
+    </svg>
+  );
+}
+
+function StatRow({ label, value, highlight }: { label: string; value: string | number; highlight?: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <span style={{ color: '#6a8a9a' }}>{label}</span>
+      <span style={{ color: highlight ?? '#c8dcea', fontWeight: highlight ? 700 : 400 }}>{value}</span>
+    </div>
+  );
+}
+
+// Rendered inline inside CacheManagerModal's ConfirmModal -- no outer chrome.
+// CacheManagerModal toggles showStats state; this component is the body only.
+export function CacheStatsBody() {
+  const { onRowFocus, onRowBlur, focusBorder } = useFocusableScroll({ block: 'nearest' });
+
+  const buckets = getHourlyBuckets();
+  const summary = getSummary();
+  const badgeStats = getBadgeScanStats();
+  const cdnStats = getCombinedCategoryStats([
+    'fetch-cdn-index', 'fetch-cdn-year', 'fetch-cdn-votes', 'fetch-live-summary',
+  ]);
+
+  const totalLookups = summary.counters.cacheHits + summary.counters.cacheMisses;
+  const hitPct = totalLookups > 0
+    ? ((summary.counters.cacheHits / totalLookups) * 100).toFixed(1)
+    : 'n/a';
+  const hitNum = totalLookups > 0 ? Number(hitPct) : -1;
+  const hitColor = hitNum >= 70 ? '#4caf7d' : hitNum >= 40 ? '#f6b347' : hitNum >= 0 ? '#f44336' : undefined;
+
+  const sectionStyle = (id: string): React.CSSProperties => ({
+    display: 'block', width: '100%', textAlign: 'left',
+    padding: '10px 0 4px',
+    outline: 'none', background: 'transparent', border: 'none',
+    borderRight: focusBorder(id),
+  });
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 10, fontWeight: 700, color: '#5a7a95',
+    textTransform: 'uppercase', letterSpacing: '0.08em',
+    display: 'block', marginBottom: 4,
+  };
+
+  const chartBox: React.CSSProperties = {
+    background: 'rgba(0,0,0,0.25)', borderRadius: 4, padding: '6px 8px', marginBottom: 2,
+    width: '100%', boxSizing: 'border-box',
+  };
+
+  return (
+    <div style={{ width: '100%', padding: 0, margin: 0 }}>
+
+      <div style={{ fontSize: 11, color: '#3d556a', marginBottom: 8 }}>
+        uptime {Math.floor(summary.uptimeMs / 60000)}m
+      </div>
+
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('hit-rate')} onBlur={onRowBlur} style={sectionStyle('hit-rate')}>
+        <span style={labelStyle}>Cache hit rate (% / 30 min)</span>
+        <div style={chartBox}>
+          <LineChart buckets={buckets} getValue={(b) => {
+            const t = b.hits + b.misses;
+            return t > 0 ? Math.round((b.hits / t) * 100) : 0;
+          }} color="#4caf7d" unit="%" maxValue={100} />
+        </div>
+      </PpDialogButton>
+
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('cdn-latency')} onBlur={onRowBlur} style={sectionStyle('cdn-latency')}>
+        <span style={labelStyle}>CDN avg latency (ms / 30 min)</span>
+        <div style={chartBox}>
+          <LineChart
+            buckets={buckets.filter(b => b.fetchCount > 0)}
+            getValue={(b) => Math.round(b.totalFetchMs / b.fetchCount)}
+            color="#5ec8f4"
+            unit="ms"
+            emptyNote={
+              totalLookups > 0 && summary.counters.cacheHits === totalLookups
+                ? 'All lookups served from cache -- no CDN fetches needed'
+                : 'No CDN fetches recorded yet'
+            }
+          />
+        </div>
+      </PpDialogButton>
+
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('fetch-vol')} onBlur={onRowBlur} style={sectionStyle('fetch-vol')}>
+        <span style={labelStyle}>Fetch volume (requests / 30 min)</span>
+        <div style={chartBox}>
+          <LineChart buckets={buckets} getValue={(b) => b.fetches} color="#f6b347" />
+        </div>
+      </PpDialogButton>
+
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('counters')} onBlur={onRowBlur} style={sectionStyle('counters')}>
+        <span style={labelStyle}>Session totals</span>
+        <div style={{ ...chartBox, padding: '6px 10px' }}>
+          <StatRow label="Hit rate" value={`${hitPct}%`} highlight={hitColor} />
+          <StatRow label="Cache hits" value={summary.counters.cacheHits} />
+          <StatRow label="Cache misses" value={summary.counters.cacheMisses} />
+          <StatRow label="Total fetches" value={summary.counters.totalFetches} />
+          <StatRow label="Fetch errors" value={summary.counters.fetchErrors}
+            highlight={summary.counters.fetchErrors > 0 ? '#f44336' : undefined} />
+          <StatRow label="No CDN data (404)" value={summary.counters.noDataGames} />
+          <StatRow label="Prefetched games" value={summary.counters.prefetchedGames} />
+          <StatRow label="Cache evictions" value={summary.counters.cacheEvictions} />
+        </div>
+      </PpDialogButton>
+
+      {cdnStats && (
+        <PpDialogButton onClick={() => {}} onFocus={onRowFocus('cdn-timing')} onBlur={onRowBlur} style={sectionStyle('cdn-timing')}>
+          <span style={labelStyle}>CDN fetch timing (all-time)</span>
+          <div style={{ ...chartBox, padding: '6px 10px' }}>
+            <StatRow label="Requests" value={cdnStats.count} />
+            <StatRow label="Avg" value={`${cdnStats.avgMs}ms`} />
+            <StatRow label="p95" value={`${cdnStats.p95Ms}ms`} />
+            <StatRow label="Max" value={`${cdnStats.maxMs}ms`} />
+            <StatRow label="Errors" value={cdnStats.errorCount} />
+          </div>
+        </PpDialogButton>
+      )}
+
+      <PpDialogButton onClick={() => {}} onFocus={onRowFocus('badge-scan')} onBlur={onRowBlur} style={sectionStyle('badge-scan')}>
+        <span style={labelStyle}>Library badge scanner</span>
+        <div style={{ ...chartBox, padding: '6px 10px' }}>
+          <StatRow label="Tiles seen" value={badgeStats.tilesScanned} />
+          <StatRow
+            label="Badges loaded"
+            value={badgeStats.tilesScanned > 0 ? `${badgeStats.badgesApplied} / ${badgeStats.tilesScanned}` : 'n/a'}
+            highlight={badgeStats.badgesApplied > 0 ? '#4caf7d' : undefined}
+          />
+          <StatRow label="No ProtonDB data" value={badgeStats.noDataTiles} />
+          <StatRow
+            label="Avg fetch"
+            value={badgeStats.fetchCount > 0 ? `${Math.round(badgeStats.totalFetchMs / badgeStats.fetchCount)}ms` : 'n/a'}
+          />
+          <StatRow label="Fetch errors" value={badgeStats.fetchErrors}
+            highlight={badgeStats.fetchErrors > 0 ? '#f44336' : undefined} />
+        </div>
+      </PpDialogButton>
+
+    </div>
+  );
+}

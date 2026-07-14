@@ -1,5 +1,5 @@
 // src/components/tabs/ManageTab.tsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, TextField } from '@decky/ui';
 import { toaster } from '../../lib/notify';
 import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
@@ -8,13 +8,8 @@ import { t } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } from '../../lib/screenshotAutomation';
 import { ConfigEditorModal } from '../ConfigEditorModal';
 import { NativePulseReportModal } from '../NativePulseReportModal';
-import { callable } from '@decky/api';
 import { getCompatToolForApp, getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
-
-const _getGridArtwork = callable<[number], { dataUrl: string | null }>('get_grid_artwork');
-async function getGridArtworkDataUrl(appId: number): Promise<string | null> {
-  try { return (await _getGridArtwork(appId)).dataUrl ?? null; } catch { return null; }
-}
+import { GameBanner } from '../GameBanner';
 import type { GpuVendor, SystemInfo } from '../../types';
 import {
   fetchCloudConfigs,
@@ -42,28 +37,6 @@ interface Props {
   appName: string;
   gpuVendor: GpuVendor | null;
   sysInfo: SystemInfo | null;
-}
-
-const STEAM_HEADER_URL = (id: number) =>
-  `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
-
-// Shows the Steam CDN banner and silently falls back to local grid artwork for
-// non-Steam shortcuts where the CDN URL returns nothing.
-function GameBanner({ appId, style }: { appId: number; style?: React.CSSProperties }) {
-  const [src, setSrc] = useState(STEAM_HEADER_URL(appId));
-  const triedGrid = useRef(false);
-
-  const handleError = () => {
-    if (triedGrid.current) { setSrc(''); return; }
-    triedGrid.current = true;
-    void getGridArtworkDataUrl(appId).then((dataUrl) => {
-      if (dataUrl) setSrc(dataUrl);
-      else setSrc('');
-    });
-  };
-
-  if (!src) return null;
-  return <img src={src} style={style} onError={handleError} />;
 }
 
 function formatDate(value: number | string | null | undefined): string {
@@ -512,7 +485,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   };
 
   const handleRestoreOne = (config: TrackedConfig) => {
-    const cloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
+    const cloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
     if (!cloudRow) {
       toaster.toast({ title: 'Proton Pulse', body: t().configManager.cloudRestoreNoBackup });
       return;
@@ -542,7 +515,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
       : cloudOffline
         ? 'Local only (offline)'
         : (menuSyncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced);
-    const menuCloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
+    const menuCloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
     const menuIsPublished = menuCloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
 
     const infoRows: { label: string; value: string }[] = [
@@ -689,7 +662,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           const name = displayName(config);
           const isShortcut = isSteamShortcutApp(config.appId);
           const syncStatus: SyncStatus = (cloudLoading || cloudOffline) ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
-          const cloudRow = cloudConfigs.find((r) => r.app_id === config.appId);
+          const cloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
           const isPublished = cloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
           const appIdLabel = isShortcut
             ? `${extras.nonSteamShortcut()}${config.resolvedSteamAppId ? ` (Steam app id: ${config.resolvedSteamAppId})` : ''}`

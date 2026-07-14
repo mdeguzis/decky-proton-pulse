@@ -31,10 +31,11 @@ import { t } from '../lib/i18n';
 import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } from '../lib/playtime';
 import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
+import { getGameSource, sourceStoreLabel, type GameSourceInfo } from '../lib/gameSource';
+import { GameBanner } from './GameBanner';
 import type { GpuVendor, ProtonGeManagerState, SystemInfo } from '../types';
 import type { VersionOption } from '../lib/compatToolVersions';
 import { CompatToolVersionPicker } from './CompatToolVersionPicker';
-import { resolveLaunchOptionsWithPrompt } from './LaunchOptionConflictModal';
 import { callable } from '@decky/api';
 
 const getSystemInfo = callable<[], SystemInfo>('get_system_info');
@@ -49,9 +50,6 @@ interface Props {
   screenshotMode?: 'custom-toggle-manager' | 'upload-preview' | 'native-pulse-report';
   closeModal?: () => void;
 }
-
-const STEAM_HEADER_URL = (id: number) =>
-  `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
 type Category = LaunchVarDef['category'];
 type SectionKey = Category | 'custom';
@@ -695,6 +693,24 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   const [managerState, setManagerState] = useState<ProtonGeManagerState | null>(null);
   const [loadingVersions, setLoadingVersions] = useState(true);
   const [installing, setInstalling] = useState<string | null>(null);
+  // Non-Steam shortcuts carry a source (Heroic / GOG / Epic / ...). We fetch
+  // it on mount so the header pill can show the actual launcher instead of
+  // the generic "steam shortcut" text or a misleading "Custom" label.
+  const [headerGameSource, setHeaderGameSource] = useState<GameSourceInfo | null>(null);
+  useEffect(() => {
+    if (!appId || !isShortcut) return;
+    let alive = true;
+    void getGameSource(appId, appName).then((info) => {
+      if (!alive) return;
+      setHeaderGameSource(info);
+      void logFrontendEvent('DEBUG', 'ConfigEditor: header game source loaded', {
+        appId,
+        source: info?.source ?? null,
+        is_steam: info?.is_steam ?? null,
+      });
+    });
+    return () => { alive = false; };
+  }, [appId, appName, isShortcut]);
   const screenshotModeOpenedRef = useRef(false);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<SectionKey>>(
     () => initialCollapsed(gpuVendor),
@@ -892,8 +908,18 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     });
   };
 
-  const doApply = async (resolvedLaunchOptions: string, andUpload = false) => {
+  // Apply launch options to Steam + persist. Two independent knobs:
+  //   pushCloud     -- also upload the config to user_proton_configs.
+  //   openReport    -- also open NativePulseReportModal for report submission.
+  // Save uses { pushCloud: true, openReport: false } -- persist without
+  // nagging for a report. Submit Report uses openReport separately via
+  // handlePublish so the two intents stay independent.
+  const doApply = async (
+    resolvedLaunchOptions: string,
+    opts: { pushCloud?: boolean; openReport?: boolean } = {},
+  ) => {
     if (!appId) return;
+    const { pushCloud = false, openReport = false } = opts;
     try {
       await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
       const config: TrackedConfig = {
@@ -916,10 +942,13 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         isNonSteam: isSteamShortcutApp(appId),
       };
       addTrackedConfig(config);
-      if (andUpload) {
+      if (pushCloud) {
         void pushConfig(config);
+      }
+      if (openReport) {
         const { minutes } = await getEffectivePlaytimeMinutes(appId, existingConfig ? buildConfigKey(existingConfig) : undefined);
         const autoDuration = bucketPlaytimeMinutes(minutes);
+        const gsInfo = isSteamShortcutApp(appId) ? await getGameSource(appId, appName) : null;
         showModal(
           <NativePulseReportModal
             appId={appId}
@@ -928,10 +957,11 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
             protonVersion={protonVersion || ''}
             autoDuration={autoDuration}
             launchOptions={resolvedLaunchOptions}
+            gameSource={gsInfo}
           />,
         );
       }
-      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions, andUpload });
+      void logFrontendEvent('INFO', 'Config editor applied', { appId, appName, launchOptions: resolvedLaunchOptions, pushCloud, openReport });
       toaster.toast({ title: 'Proton Pulse', body: t().toast.savedToProtonPulse });
       onSave();
       closeModal?.();
@@ -948,16 +978,25 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   // Duration is pulled from the local playtime tracker so the user doesn't
   // have to pick a bucket manually - totally transparent
   const handlePublish = async () => {
-    if (!appId) return;
-    if (isSteamShortcutApp(appId)) {
-      toaster.toast({ title: 'Proton Pulse', body: extras.shortcutCannotSubmit() });
+    if (!appId) {
+      toaster.toast({ title: 'Proton Pulse', body: 'No game selected. Open a game config first.' });
       return;
     }
     if (!protonVersion) {
-      toaster.toast({ title: 'Proton Pulse', body: t().configure.applyFailed('Proton version is required') });
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.applyFailed('Proton version is required. Select a Proton version above.') });
       return;
     }
     void logFrontendEvent('INFO', 'Publish to Pulse clicked', { appId, appName });
+
+    let gameSource: GameSourceInfo | null = null;
+    if (isSteamShortcutApp(appId)) {
+      gameSource = await getGameSource(appId, appName);
+      if (!gameSource?.gog_product_id && !gameSource?.epic_game_id) {
+        toaster.toast({ title: 'Proton Pulse', body: extras.shortcutCannotSubmit() });
+        return;
+      }
+    }
+
     const configKey = existingConfig ? buildConfigKey(existingConfig) : undefined;
     const { minutes, trackedMinutes, steamMinutes, configMinutes } = await getEffectivePlaytimeMinutes(appId, configKey);
     const autoDuration = bucketPlaytimeMinutes(minutes);
@@ -974,46 +1013,32 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         autoDurationMinutes={minutes}
         launchOptions={preview}
         configKey={configKey}
+        gameSource={gameSource}
       />,
     );
   };
 
-  const handleApply = async () => {
-    if (!appId) return;
+  // Save: apply launch options + push to cloud, no report modal. Skips the
+  // UploadPreviewModal middleman and the Append/Replace prompt (see
+  // LaunchOptionConflictModal -- resolveLaunchOptionsWithPrompt now always
+  // replaces). Report submission is a separate "Submit Report" action so
+  // Save can be a quick "persist my config" action without nagging the user
+  // to fill in playtime / hardware / notes.
+  const handleSave = async () => {
+    if (!appId) {
+      toaster.toast({ title: 'Proton Pulse', body: 'No game selected. Open a game config first.' });
+      return;
+    }
     if (!profileName.trim()) {
       setProfileNameTouched(true);
       toaster.toast({ title: 'Proton Pulse', body: t().configManager.profileNameRequired });
       return;
     }
-    const finalLaunchOptions = preview;
     try {
       syncScopedCustomToggles(appId, customToggles);
-      const currentDetails = await getSteamAppDetails(appId);
-      const resolvedLaunchOptions = await resolveLaunchOptionsWithPrompt(
-        appName,
-        getLaunchOptionsFromDetails(currentDetails.details),
-        finalLaunchOptions,
-      );
-      if (!resolvedLaunchOptions) {
-        toaster.toast({ title: 'Proton Pulse', body: t().configure.applyCancelled });
-        return;
-      }
-
-      showModal(
-        <UploadPreviewModal
-          appName={appName}
-          profileName={profileName.trim()}
-          protonVersion={protonVersion || ''}
-          launchOptions={resolvedLaunchOptions}
-          enabledVars={allVars}
-          systemInfo={systemInfo}
-          loadingSystemInfo={loadingSystemInfo}
-          onApply={() => void doApply(resolvedLaunchOptions)}
-          onUpload={() => void doApply(resolvedLaunchOptions, true)}
-        />,
-      );
+      await doApply(preview, { pushCloud: true, openReport: false });
     } catch (e) {
-      void logFrontendEvent('ERROR', 'Config editor apply failed', {
+      void logFrontendEvent('ERROR', 'Config editor save failed', {
         appId,
         error: e instanceof Error ? e.message : String(e),
       });
@@ -1123,66 +1148,48 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {appId && (
-              <img
-                src={STEAM_HEADER_URL(appId)}
+              <GameBanner
+                appId={appId}
                 style={{ height: 32, borderRadius: 3, objectFit: 'cover' }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             )}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
-                  {appName || (appId ? `App ${appId}` : t().configManager.createConfig)}
-                </div>
-                {customToggles.length > 0 && (
-                  <div
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: '#9dc4e8',
-                      border: '1px solid rgba(157,196,232,0.45)',
-                      borderRadius: 999,
-                      padding: '2px 8px',
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {t().configManager.customToggleBadge}
-                  </div>
-                )}
+              {/* Title only -- launcher + store are covered by the subtitle
+                  right below. Pills used to also render here but that was
+                  the same info twice and it crowded long titles. B on the
+                  gamepad closes the modal, so no in-header Cancel either. */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#e8f4ff' }}>
+                {appName || (appId ? `App ${appId}` : t().configManager.createConfig)}
               </div>
               {appId && (
                 <div style={{ fontSize: 9, color: '#7a9bb5' }}>
-                  {isShortcut ? extras.nonSteamShortcut() : extras.appIdLabel(appId)}
+                  {isShortcut
+                    ? [headerGameSource?.source, sourceStoreLabel(headerGameSource)]
+                        .filter(Boolean)
+                        .join(' . ') || extras.nonSteamShortcut()
+                    : extras.appIdLabel(appId)}
                 </div>
               )}
             </div>
           </div>
           <Focusable style={{ display: 'flex', gap: 8 }}>
             <DialogButton
-              onClick={handleApply}
-              disabled={!appId}
+              onClick={() => { void handleSave(); }}
               style={{ minWidth: 80, padding: '6px 16px', fontSize: 12 }}
             >
-              {t().common.apply}
+              {t().common.save}
             </DialogButton>
             <DialogButton
               onClick={() => { void handlePublish(); }}
-              disabled={!appId}
               style={{ minWidth: 140, padding: '6px 16px', fontSize: 12 }}
             >
-              {extras.publishToPulse()}
+              {t().nativeReport.submit}
             </DialogButton>
             <DialogButton
               onClick={openCustomToggleModal}
               style={{ minWidth: 164, padding: '6px 18px', fontSize: 12 }}
             >
               {t().configManager.customToggleButton}
-            </DialogButton>
-            <DialogButton
-              onClick={() => closeModal?.()}
-              style={{ minWidth: 80, padding: '6px 16px', fontSize: 12, background: '#555' }}
-            >
-              {t().common.cancel}
             </DialogButton>
           </Focusable>
         </div>

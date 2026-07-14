@@ -76,6 +76,9 @@ function Content() {
   const [version, setVersion] = useState('...');
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
+  const [focusedAppId, setFocusedAppId] = useState<number | null>(() => pageState.focusedAppId);
+  const [focusedAppName, setFocusedAppName] = useState<string>(() => pageState.focusedAppName);
+  const [anyGameRunning, setAnyGameRunning] = useState(false);
 
   useEffect(() => {
     void getPluginVersionSafe()
@@ -91,10 +94,25 @@ function Content() {
     });
   }, [debugEnabled]);
 
-  const navigateTo = (tab: PageId) => {
-    void logFrontendEvent('INFO', 'Sidebar navigation requested', { tab });
+  useEffect(() => {
+    const sync = () => {
+      if (pageState.focusedAppId !== focusedAppId) setFocusedAppId(pageState.focusedAppId);
+      if (pageState.focusedAppName !== focusedAppName) setFocusedAppName(pageState.focusedAppName);
+      try {
+        const running = (SteamClient as any).GameSessions?.GetRunningApps?.() ?? [];
+        setAnyGameRunning(running.length > 0);
+      } catch {
+        setAnyGameRunning(false);
+      }
+    };
+    const interval = window.setInterval(sync, 500);
+    return () => window.clearInterval(interval);
+  }, [focusedAppId, focusedAppName]);
+
+  const navigateTo = (tab: PageId, appId: number | null = null, appName = '') => {
+    void logFrontendEvent('INFO', 'Sidebar navigation requested', { tab, appId });
     rememberReturnPath(globalThis.location?.pathname);
-    const payload = { tab, appId: null, appName: '' };
+    const payload = { tab, appId, appName };
     const pathname = globalThis.location?.pathname ?? '';
     const alreadyOpen = pathname.includes('/proton-pulse');
     if (alreadyOpen) {
@@ -120,6 +138,17 @@ function Content() {
   return (
     <Focusable style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <PanelSection>
+        {focusedAppId != null && focusedAppId > 0 && !anyGameRunning && (
+          <PanelSectionRow>
+            <ButtonItem
+              layout="below"
+              description={focusedAppName || undefined}
+              onClick={() => navigateTo('manage-game', focusedAppId, focusedAppName)}
+            >
+              {extras.manageOnWeb ? extras.manageOnWeb() : 'Manage this game'}
+            </ButtonItem>
+          </PanelSectionRow>
+        )}
         <PanelSectionRow>
           <ButtonItem
             layout="below"
@@ -127,24 +156,6 @@ function Content() {
             description={t().sidebar.manageConfigurationsDesc}
           >
             {t().sidebar.manageConfigurations}
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={() => navigateTo('compatibility-tools')}
-            description={t().sidebar.compatibilityToolsDesc}
-          >
-            {t().sidebar.compatibilityTools}
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={() => navigateTo('logs')}
-            description={t().sidebar.viewLogsDesc}
-          >
-            {t().sidebar.viewLogs}
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>

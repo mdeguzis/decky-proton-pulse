@@ -132,7 +132,10 @@ export interface CloudConfigRow {
   voter_id: string;
   proton_pulse_user_id?: string | null;
   installation_id?: string | null;
-  app_id: number;
+  // app_id can arrive as a number (bigint column) or a string (text column).
+  // The Supabase column type may differ across tables/versions, so never compare
+  // it to a local numeric appId without normalizing both sides via String().
+  app_id: number | string;
   app_name: string;
   config: TrackedConfig;
   updated_at: string;
@@ -151,20 +154,45 @@ export type SyncStatus = 'synced' | 'not-synced';
 
 export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
   const voterId = await getVoterId();
-  const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', {
-    method: 'GET',
-  }, {
+  const linkedUserId = getLinkedProtonPulseUserId();
+
+  // When the account is linked, fetch all configs belonging to this user ID
+  // (regardless of which device/voter_id submitted them) plus any local-only
+  // configs that were never linked. Without the OR, configs pushed from a
+  // different installation show up on the web profile but not here.
+  const query: Record<string, string> = {
     select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,config,updated_at,is_published',
-    voter_id: `eq.${voterId}`,
-  });
+  };
+  if (linkedUserId) {
+    query['or'] = `(voter_id.eq.${voterId},proton_pulse_user_id.eq.${linkedUserId})`;
+  } else {
+    query['voter_id'] = `eq.${voterId}`;
+  }
+
+  const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', { method: 'GET' }, query);
 
   if (error || !data) {
-    void logFrontendEvent('ERROR', 'Cloud sync: fetch failed', { error });
+    void logFrontendEvent('ERROR', 'Cloud sync: fetch failed', { error, linkedUserId: linkedUserId ?? null });
     throw new Error(typeof error === 'string' ? error : 'fetch failed');
   }
 
-  void logFrontendEvent('DEBUG', 'Cloud sync: fetched configs', { count: data.length });
-  return data;
+  // Deduplicate by app_id, keeping the most recently updated row. Key on the
+  // string form since app_id may be a number or a string depending on the column
+  // type; mixing the two would defeat the dedup.
+  const byApp = new Map<string, CloudConfigRow>();
+  for (const row of data) {
+    const key = String(row.app_id);
+    const existing = byApp.get(key);
+    if (!existing || (row.updated_at ?? '') > (existing.updated_at ?? '')) {
+      byApp.set(key, row);
+    }
+  }
+  const deduped = [...byApp.values()];
+
+  void logFrontendEvent('DEBUG', 'Cloud sync: fetched configs', {
+    raw: data.length, deduped: deduped.length, source: linkedUserId ? 'user_id+voter_id' : 'voter_id',
+  });
+  return deduped;
 }
 
 export async function deleteCloudConfig(appId: number): Promise<boolean> {
@@ -291,7 +319,11 @@ export function getCloudSyncStatus(
   appId: number,
   cloudConfigs: CloudConfigRow[],
 ): SyncStatus {
-  const cloudRow = cloudConfigs.find((r) => r.app_id === appId);
+  // Normalize both sides: app_id may be a number (bigint column) or a string
+  // (text column) depending on the Supabase schema, while appId is always a
+  // local number. A raw === would silently fail across the type boundary.
+  const target = String(appId);
+  const cloudRow = cloudConfigs.find((r) => String(r.app_id) === target);
   if (!cloudRow) return 'not-synced';
   return 'synced';
 }
@@ -304,28 +336,36 @@ export interface RestoreResult {
 
 export async function restoreCloudConfigs(): Promise<RestoreResult> {
   const cloudRows = await fetchCloudConfigs();
-  const localConfigs = getTrackedConfigs();
-  const localAppIds = new Set(localConfigs.map((c) => c.appId));
 
+  // Restore pulls cloud configs DOWN onto this device. Every cloud row should land
+  // locally, including games this device does not track yet -- that is the entire
+  // point of a restore (new device, reinstall, configs pushed from another linked
+  // device). The earlier guard skipped any cloud row whose app_id was not already
+  // tracked locally, which meant a fresh device restored nothing. addTrackedConfig
+  // upserts by appId, so existing local entries are overwritten with the cloud copy.
+  // fetchCloudConfigs already deduplicates by app_id (newest wins), so there is no
+  // skip case left here.
   let restored = 0;
-  let skipped = 0;
+  let failed = 0;
 
   for (const row of cloudRows) {
-    if (!localAppIds.has(row.app_id)) {
-      skipped++;
-      continue;
-    }
     try {
       addTrackedConfig(row.config);
       restored++;
-    } catch {
-      // failed count handled below
+    } catch (err) {
+      failed++;
+      void logFrontendEvent('ERROR', 'Cloud sync: restore of one config failed', {
+        appId: row.app_id,
+        appName: row.app_name,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
-  const failed = cloudRows.length - restored - skipped;
-  void logFrontendEvent('INFO', 'Cloud sync: restore complete', { restored, skipped, failed });
-  return { restored, skipped, failed };
+  void logFrontendEvent('INFO', 'Cloud sync: restore complete', {
+    restored, skipped: 0, failed, fetched: cloudRows.length,
+  });
+  return { restored, skipped: 0, failed };
 }
 
 export async function pushAllConfigs(): Promise<PushAllResult> {

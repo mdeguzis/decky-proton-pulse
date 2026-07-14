@@ -3,13 +3,94 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from lib import game_requirements
 
 
 def setup_function() -> None:
     game_requirements._cache.clear()
+
+
+_EMPTY = {
+    'min_ram_gb': None,
+    'min_cpu': None,
+    'min_gpu': None,
+    'raw_minimum': None,
+    'fields': None,
+    'from_cache': False,
+    'error': None,
+}
+
+
+def test_disk_cache_round_trip() -> None:
+    app_id = "diskcache-roundtrip"
+    path = game_requirements._disk_cache_path(app_id)
+    if path.exists():
+        path.unlink()
+    data = {"min_ram_gb": 8, "raw_minimum": "8 GB RAM"}
+    game_requirements._save_disk_cache(app_id, data)
+    assert path.exists()
+    assert game_requirements._load_disk_cache(app_id) == data
+    path.unlink()
+
+
+def test_load_disk_cache_missing_returns_none() -> None:
+    assert game_requirements._load_disk_cache("diskcache-does-not-exist") is None
+
+
+def test_load_disk_cache_expired_returns_none() -> None:
+    import json
+    import time
+
+    app_id = "diskcache-expired"
+    path = game_requirements._disk_cache_path(app_id)
+    stale_at = time.time() - (game_requirements._DISK_CACHE_TTL + 100)
+    path.write_text(json.dumps({"cached_at": stale_at, "data": {"min_ram_gb": 4}}))
+    try:
+        assert game_requirements._load_disk_cache(app_id) is None
+    finally:
+        path.unlink()
+
+
+def test_load_stale_disk_cache_ignores_age() -> None:
+    import json
+    import time
+
+    app_id = "diskcache-stale"
+    path = game_requirements._disk_cache_path(app_id)
+    stale_at = time.time() - (game_requirements._DISK_CACHE_TTL + 100)
+    payload = {"min_ram_gb": 16}
+    path.write_text(json.dumps({"cached_at": stale_at, "data": payload}))
+    try:
+        # fresh load rejects it, stale load returns it anyway
+        assert game_requirements._load_disk_cache(app_id) is None
+        assert game_requirements._load_stale_disk_cache(app_id) == payload
+    finally:
+        path.unlink()
+
+
+def test_load_stale_disk_cache_missing_returns_none() -> None:
+    assert game_requirements._load_stale_disk_cache("diskcache-stale-missing") is None
+
+
+def test_disk_cache_corrupt_file_returns_none() -> None:
+    app_id = "diskcache-corrupt"
+    path = game_requirements._disk_cache_path(app_id)
+    path.write_text("{not valid json")
+    try:
+        assert game_requirements._load_disk_cache(app_id) is None
+        assert game_requirements._load_stale_disk_cache(app_id) is None
+    finally:
+        path.unlink()
+
+
+def test_save_disk_cache_swallows_write_errors() -> None:
+    from unittest.mock import patch
+
+    # Path.write_text raising must not propagate out of _save_disk_cache.
+    with patch("pathlib.Path.write_text", side_effect=OSError("disk full")):
+        game_requirements._save_disk_cache("diskcache-writefail", {"min_ram_gb": 8})
 
 
 def test_parse_min_ram_gb_handles_gb_and_mb() -> None:
@@ -37,20 +118,31 @@ def test_strip_html_tags_and_parse_requirement_fields() -> None:
     assert game_requirements._strip_html_tags("<div>Hello <b>Deck</b></div>") == "Hello Deck"
 
 
-def test_get_game_requirements_parses_and_caches_result() -> None:
+def test_get_game_requirements_returns_disk_cache_without_network() -> None:
+    cached = {**_EMPTY, 'min_ram_gb': 16, 'from_cache': True}
+    with (
+        patch("lib.game_requirements._load_disk_cache", return_value=cached),
+        patch("lib.game_requirements.curl_json") as curl_json,
+    ):
+        result = game_requirements.get_game_requirements("123")
+
+    assert result['min_ram_gb'] == 16
+    curl_json.assert_not_called()
+
+
+def test_get_game_requirements_parses_saves_disk_cache_and_memoizes() -> None:
     app_id = "123"
     html = (
         "<strong>OS:</strong> Windows 10<br>"
         "<strong>Memory:</strong> 8 GB RAM<br>"
     )
-    payload = {
-        app_id: {
-            "success": True,
-            "data": {"pc_requirements": {"minimum": html}},
-        }
-    }
+    payload = {app_id: {"success": True, "data": {"pc_requirements": {"minimum": html}}}}
 
-    with patch("lib.game_requirements.curl_json", return_value=payload) as curl_json:
+    with (
+        patch("lib.game_requirements._load_disk_cache", return_value=None),
+        patch("lib.game_requirements._save_disk_cache") as save,
+        patch("lib.game_requirements.curl_json", return_value=payload) as curl_json,
+    ):
         first = game_requirements.get_game_requirements(app_id)
         second = game_requirements.get_game_requirements(app_id)
 
@@ -60,32 +152,61 @@ def test_get_game_requirements_parses_and_caches_result() -> None:
         {"label": "OS", "value": "Windows 10"},
         {"label": "Memory", "value": "8 GB RAM"},
     ]
-    assert second == first
+    assert first["error"] is None
+    assert second is first
     curl_json.assert_called_once()
+    save.assert_called_once_with(app_id, first)
 
 
 def test_get_game_requirements_handles_missing_or_list_requirements() -> None:
     app_id = "456"
     no_success = {app_id: {"success": False}}
-    with patch("lib.game_requirements.curl_json", return_value=no_success):
+    with (
+        patch("lib.game_requirements._load_disk_cache", return_value=None),
+        patch("lib.game_requirements._save_disk_cache"),
+        patch("lib.game_requirements.curl_json", return_value=no_success),
+    ):
         result = game_requirements.get_game_requirements(app_id)
-    assert result == {"min_ram_gb": None, "min_cpu": None, "min_gpu": None, "raw_minimum": None, "fields": None}
+    assert result["min_ram_gb"] is None
+    assert result["error"] is None
 
     game_requirements._cache.clear()
     list_payload = {app_id: {"success": True, "data": {"pc_requirements": []}}}
-    with patch("lib.game_requirements.curl_json", return_value=list_payload):
-        result = game_requirements.get_game_requirements(app_id)
-    assert result == {"min_ram_gb": None, "min_cpu": None, "min_gpu": None, "raw_minimum": None, "fields": None}
-
-
-def test_get_game_requirements_handles_exception_and_logs_warning() -> None:
     with (
+        patch("lib.game_requirements._load_disk_cache", return_value=None),
+        patch("lib.game_requirements._save_disk_cache"),
+        patch("lib.game_requirements.curl_json", return_value=list_payload),
+    ):
+        result = game_requirements.get_game_requirements(app_id)
+    assert result["min_ram_gb"] is None
+    assert result["error"] is None
+
+
+def test_get_game_requirements_uses_stale_cache_on_fetch_error() -> None:
+    stale = {**_EMPTY, 'min_ram_gb': 8}
+    with (
+        patch("lib.game_requirements._load_disk_cache", return_value=None),
+        patch("lib.game_requirements._load_stale_disk_cache", return_value=stale),
+        patch("lib.game_requirements.curl_json", side_effect=RuntimeError("429")),
+        patch.object(game_requirements.decky.logger, "warning"),
+    ):
+        result = game_requirements.get_game_requirements("789")
+
+    assert result is stale
+    assert result["min_ram_gb"] == 8
+
+
+def test_get_game_requirements_returns_error_when_no_cache_on_failure() -> None:
+    with (
+        patch("lib.game_requirements._load_disk_cache", return_value=None),
+        patch("lib.game_requirements._load_stale_disk_cache", return_value=None),
         patch("lib.game_requirements.curl_json", side_effect=RuntimeError("boom")),
         patch.object(game_requirements.decky.logger, "warning") as warning,
     ):
         result = game_requirements.get_game_requirements("789")
 
-    assert result == {"min_ram_gb": None, "min_cpu": None, "min_gpu": None, "raw_minimum": None, "fields": None}
+    assert result["error"] == "boom"
+    assert result["min_ram_gb"] is None
     warning.assert_called_once()
 
 
@@ -96,14 +217,13 @@ def test_get_game_requirements_extracts_cpu_and_gpu() -> None:
         "<strong>Memory:</strong> 8 GB RAM<br>"
         "<strong>Graphics:</strong> Nvidia GeForce GTX 780 (3 GB) or AMD Radeon R9 290 (4GB)<br>"
     )
-    payload = {
-        app_id: {
-            "success": True,
-            "data": {"pc_requirements": {"minimum": html}},
-        }
-    }
+    payload = {app_id: {"success": True, "data": {"pc_requirements": {"minimum": html}}}}
 
-    with patch("lib.game_requirements.curl_json", return_value=payload):
+    with (
+        patch("lib.game_requirements._load_disk_cache", return_value=None),
+        patch("lib.game_requirements._save_disk_cache"),
+        patch("lib.game_requirements.curl_json", return_value=payload),
+    ):
         result = game_requirements.get_game_requirements(app_id)
 
     assert result["min_ram_gb"] == 8

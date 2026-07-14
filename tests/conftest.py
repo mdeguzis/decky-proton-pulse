@@ -2,6 +2,7 @@
 """Shared test fixtures and sys.path bootstrap for the test suite."""
 import logging
 import sys
+import tempfile
 from pathlib import Path
 from typing import Generator
 from unittest.mock import MagicMock
@@ -18,6 +19,11 @@ if str(_PROJECT_ROOT) not in sys.path:
 # test environment.  We install a lightweight mock into sys.modules so that
 # ``import decky`` inside main.py / lib/ succeeds.
 
+# Honor the environment's TMPDIR so tests work on platforms (Termux, sandboxed
+# CI runners) where /tmp is not writable. gettempdir() falls back to /tmp on
+# systems that don't set TMPDIR, so this stays fine on standard Linux.
+_TMPROOT = Path(tempfile.gettempdir())
+
 _test_logger = logging.getLogger("decky-proton-pulse-test")
 _test_logger.addHandler(logging.NullHandler())
 
@@ -26,10 +32,10 @@ _decky_mock.DECKY_USER_HOME = "/home/testuser"
 _decky_mock.DECKY_HOME = "/home/testuser/homebrew"
 _decky_mock.DECKY_SETTINGS_DIR = "/home/testuser/homebrew/settings"
 _decky_mock.DECKY_RUNTIME_DIR = "/home/testuser/homebrew/runtime"
-_decky_mock.DECKY_PLUGIN_DIR = "/tmp/test_plugin"
-_decky_mock.DECKY_PLUGIN_RUNTIME_DIR = "/tmp/test_plugin_runtime"
-_decky_mock.DECKY_PLUGIN_LOG_DIR = "/tmp"
-_decky_mock.DECKY_PLUGIN_LOG = "/tmp/decky-proton-pulse-test.log"
+_decky_mock.DECKY_PLUGIN_DIR = str(_TMPROOT / "test_plugin")
+_decky_mock.DECKY_PLUGIN_RUNTIME_DIR = str(_TMPROOT / "test_plugin_runtime")
+_decky_mock.DECKY_PLUGIN_LOG_DIR = str(_TMPROOT)
+_decky_mock.DECKY_PLUGIN_LOG = str(_TMPROOT / "decky-proton-pulse-test.log")
 _decky_mock.DECKY_PLUGIN_VERSION = "0.0.0-test"
 _decky_mock.logger = _test_logger
 

@@ -25,6 +25,8 @@ import {
   MATCHING_GUIDE_LEGEND_RED,
 } from '../lib/matchingGuide';
 import { getSteamAppDetails, getLaunchOptionsFromDetails, isSteamShortcutApp } from '../lib/steamApps';
+import { getGameSource, sourceStoreLabel, type GameSourceInfo } from '../lib/gameSource';
+import { GameBanner } from './GameBanner';
 import { buildLaunchOptions, parseLaunchOptions } from '../lib/launchVars';
 import { checkProtonVersionAvailability } from '../lib/compatTools';
 import { logFrontendEvent, callWithTimeout } from '../lib/logger';
@@ -34,9 +36,6 @@ import { getReportSourceLabel } from '../lib/reportSource';
 import { registerScreenshotAutomationHandler } from '../lib/screenshotAutomation';
 
 const PpDialogButton = DialogButton as React.ComponentType<React.ComponentProps<typeof DialogButton> & { title?: string }>;
-
-const STEAM_HEADER_URL = (id: number) =>
-  `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
 
 const SCROLL_STEP = 50;
 
@@ -982,6 +981,16 @@ export function ReportDetailModal({
   const extras = strings.extras!;
   const sourceLabel = getReportSourceLabel(report, strings.detail);
   const isShortcut = isSteamShortcutApp(appId);
+  // Launcher name for non-Steam shortcuts (Heroic / GOG / Epic ...).
+  const [headerGameSource, setHeaderGameSource] = useState<GameSourceInfo | null>(null);
+  useEffect(() => {
+    if (!isShortcut) return;
+    let alive = true;
+    void getGameSource(appId, appName || '').then((info) => {
+      if (alive) setHeaderGameSource(info);
+    });
+    return () => { alive = false; };
+  }, [appId, appName, isShortcut]);
   const [applying, setApplying] = useState(false);
   const [voting, setVoting] = useState(false);
   const [localUpvotes, setLocalUpvotes] = useState(report.upvotes);
@@ -1338,10 +1347,9 @@ export function ReportDetailModal({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <img
-              src={STEAM_HEADER_URL(appId)}
+            <GameBanner
+              appId={appId}
               style={{ height: 36, borderRadius: 3, objectFit: 'cover' }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
@@ -1357,7 +1365,11 @@ export function ReportDetailModal({
                 {appName || `App ${appId}`}
               </div>
               <div style={{ fontSize: 10, color: '#7a9bb5' }}>
-                {isShortcut ? extras.nonSteamShortcut() : extras.appIdLabel(appId)}
+                {isShortcut
+                  ? ([headerGameSource?.source, sourceStoreLabel(headerGameSource)]
+                      .filter(Boolean)
+                      .join(' . ') || extras.nonSteamShortcut())
+                  : extras.appIdLabel(appId)}
               </div>
             </div>
 

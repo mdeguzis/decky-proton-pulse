@@ -18,7 +18,7 @@
 // Same gamepad mechanics: shoulder buttons page L/R via Carousel, B closes
 // via the root Focusable's onCancelButton.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Carousel, Focusable, DialogButton, Navigation, showModal, findSP,
 } from '@decky/ui';
@@ -267,6 +267,16 @@ interface Props {
   closeModal?: () => void;
 }
 
+function LoadingDots() {
+  const [dots, setDots] = useState(1);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    timer.current = setInterval(() => setDots((d) => (d % 3) + 1), 500);
+    return () => { if (timer.current) clearInterval(timer.current); };
+  }, []);
+  return <span>Loading{'.'.repeat(dots)}</span>;
+}
+
 function ReleaseNotesModal({ initial, channel = 'release', closeModal }: Props) {
   const [releases, setReleases] = useState<ReleaseRow[] | null>(initial ? [initial] : null);
   const SP = findSP();
@@ -316,7 +326,7 @@ function ReleaseNotesModal({ initial, channel = 'release', closeModal }: Props) 
           textAlign: 'center',
           color: '#9bb5cc',
         }}>
-          {releases === null ? '...' : t().extras!.releaseNotesEmpty!()}
+          {releases === null ? <LoadingDots /> : t().extras!.releaseNotesEmpty!()}
         </div>
       </Focusable>
     );

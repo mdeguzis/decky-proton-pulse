@@ -12,7 +12,7 @@ import type { ProtonDBSummary, CdnReport, ProtonRating } from "../types";
 import { logFrontendEvent } from "./logger";
 import { getCached, setCache } from "./cache";
 import { cachedFetchJson } from "./cdnCache";
-import { startDetailedSpan, countFetch } from "./metrics";
+import { startDetailedSpan, countFetch, countNoData } from "./metrics";
 import { getUserConfigs } from "./userConfigs";
 import { deriveRating } from "./scoring";
 
@@ -369,13 +369,13 @@ export async function getProtonDBReportsWithDiagnostics(
       },
     );
     if (indexResult.data === null) {
+      // CDN has no data for this game -- expected for most games, not a network error
+      countNoData();
+      fetchSpan.end(true, { noData: true, reason: 'cdn-index-miss' });
       await logFrontendEvent(
-        "WARNING",
-        "Proton Pulse report index not available",
-        {
-          appId,
-          indexUrl,
-        },
+        "DEBUG",
+        "Proton Pulse CDN has no data for game, falling back",
+        { appId, indexUrl },
       );
       return await fallbackToLiveSummary(appId, diagnostics, "cdn-index-miss");
     }
@@ -386,7 +386,9 @@ export async function getProtonDBReportsWithDiagnostics(
       years,
     });
     if (!years.length) {
-      await logFrontendEvent("WARNING", "Proton Pulse report index was empty", {
+      countNoData();
+      fetchSpan.end(true, { noData: true, reason: 'cdn-index-empty' });
+      await logFrontendEvent("DEBUG", "Proton Pulse report index was empty", {
         appId,
         indexUrl,
       });
