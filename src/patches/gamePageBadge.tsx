@@ -28,14 +28,15 @@ import { type GameSourceInfo, getGameSource, sourceStoreLabel } from '../lib/gam
 // users see elsewhere: Heroic uses its signature cyan-blue shield, Epic Games
 // leans on its charcoal storefront, GOG carries the classic purple.
 const SOURCE_COLORS: Record<string, { bg: string; color: string }> = {
-  Heroic:      { bg: '#33b1ff', color: '#0a1a2a' },
-  Epic:        { bg: '#2f2f2f', color: '#e0e0e0' },
-  'Epic Games':{ bg: '#2f2f2f', color: '#e0e0e0' },
-  GOG:         { bg: '#7b3fb5', color: '#f0e0ff' },
-  Lutris:      { bg: '#1a5c3a', color: '#c8ffe0' },
-  Bottles:     { bg: '#8c3a1a', color: '#ffe8d8' },
-  'itch.io':   { bg: '#7a1f3c', color: '#ffd0df' },
-  'Non-Steam': { bg: '#3a3a3a', color: '#cccccc' },
+  Heroic:       { bg: '#33b1ff', color: '#0a1a2a' },
+  'Junk Store': { bg: '#e07a1a', color: '#1a0f00' },
+  Epic:         { bg: '#2f2f2f', color: '#e0e0e0' },
+  'Epic Games': { bg: '#2f2f2f', color: '#e0e0e0' },
+  GOG:          { bg: '#7b3fb5', color: '#f0e0ff' },
+  Lutris:       { bg: '#1a5c3a', color: '#c8ffe0' },
+  Bottles:      { bg: '#8c3a1a', color: '#ffe8d8' },
+  'itch.io':    { bg: '#7a1f3c', color: '#ffd0df' },
+  'Non-Steam':  { bg: '#3a3a3a', color: '#cccccc' },
 };
 
 const TIER_TEXT_COLOR: Record<string, string> = {

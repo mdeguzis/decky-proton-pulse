@@ -177,6 +177,37 @@ def test_infer_source_gog_common_folder_variants() -> None:
     ]:
         assert game_source._infer_source_from_shortcut({"exe": path}) == "GOG", path
 
+def test_infer_source_junkstore_gog_shortcut() -> None:
+    # Real Junk Store shortcut: launch options point at Extensions/Gog/launcher.sh.
+    entry = {
+        "exe": '"/home/deck/Games/Gog/Planet of Lana/Planet of Lana.exe"',
+        "launchoptions": '/home/deck/.local/share/junkstore/scripts/Extensions/Gog/launcher.sh "1"',
+        "startdir": '"/home/deck/Games/Gog/Planet of Lana"',
+    }
+    assert game_source._infer_source_from_shortcut(entry) == "Junk Store"
+
+def test_find_junkstore_store_gog() -> None:
+    entry = {
+        "exe": "",
+        "launchoptions": "/home/deck/.local/share/junkstore/scripts/Extensions/Gog/launcher.sh 1",
+    }
+    gog_id, epic_id = game_source._find_junkstore_store(entry)
+    assert gog_id == "junkstore"
+    assert epic_id is None
+
+def test_find_junkstore_store_epic() -> None:
+    entry = {
+        "exe": "",
+        "launchoptions": "/home/deck/.local/share/junkstore/scripts/Extensions/Epic/launcher.sh abc123",
+    }
+    gog_id, epic_id = game_source._find_junkstore_store(entry)
+    assert gog_id is None
+    assert epic_id == "junkstore"
+
+def test_find_junkstore_store_no_match() -> None:
+    entry = {"exe": "/home/deck/Games/Gog/game.exe", "launchoptions": ""}
+    assert game_source._find_junkstore_store(entry) == (None, None)
+
 def test_infer_source_itchio() -> None:
     assert game_source._infer_source_from_shortcut({"exe": "/itch-setup"}) == "itch.io"
 
