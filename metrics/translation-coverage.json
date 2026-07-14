@@ -16,365 +16,281 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "it",
       "name": "Italiano",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "nl",
       "name": "Nederlands",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pl",
       "name": "Polski",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "uk",
       "name": "Українська",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "sv",
       "name": "Svenska",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "cs",
       "name": "Čeština",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "th",
       "name": "ภาษาไทย",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "vi",
       "name": "Tiếng Việt",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "zh-TW",
       "name": "繁體中文",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "bg",
       "name": "Български",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "da",
       "name": "Dansk",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "el",
       "name": "Ελληνικά",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "es-419",
       "name": "Español (Latinoamérica)",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "fi",
       "name": "Suomi",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "hu",
       "name": "Magyar",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "no",
       "name": "Norsk",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pt",
       "name": "Português (PT)",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ro",
       "name": "Română",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "sl",
       "name": "Slovenščina",
-      "translated": 704,
+      "translated": 706,
       "total": 706,
-      "coveragePercent": 99.7,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "extras.reportFormProtonValve",
-        "extras.reportFormProtonCachyOS"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     }
   ]

@@ -50,6 +50,10 @@ const SKIP_KEYS = new Set([
   'extras.analysisTrend_stable',
   // "Source" is the same word in French and English -- legitimate
   'extras.breakdownSourcePenalty',
+  // Product names -- kept in English across every locale so users can look
+  // them up in Proton docs. Function-typed, so SKIP_VALUES cannot catch them.
+  'extras.reportFormProtonValve',
+  'extras.reportFormProtonCachyOS',
 ]);
 
 const LANGUAGES = [

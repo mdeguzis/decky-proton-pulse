@@ -1,4 +1,22 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// protonTypes imports ./i18n for label lookup. i18n imports react
+// (useSyncExternalStore), which vitest cannot resolve in CI's node-only
+// environment for a lib-only test. Stub the surface protonTypes actually
+// touches so the test stays lib-only and doesn't depend on the React tree.
+vi.mock('./i18n', () => ({
+  t: () => ({
+    extras: {
+      reportFormProtonValve: () => 'Valve Proton',
+      reportFormProtonDefault: () => 'Default Proton (current)',
+      reportFormProtonGE: () => 'Proton-GE',
+      reportFormProtonCachyOS: () => 'Proton-CachyOS',
+      reportFormProtonNative: () => 'Native (no Proton)',
+      reportFormProtonNotListed: () => 'Not listed',
+    },
+  }),
+}));
+
 import { PROTON_KIND_DATA, normalizeProtonKind, protonKindLabel, protonKindOptions } from './protonTypes';
 
 describe('protonTypes', () => {
