@@ -24,10 +24,14 @@ import { RATING_COLORS } from '../lib/reportFormatters';
 import { t } from '../lib/i18n';
 import { type GameSourceInfo, getGameSource, sourceStoreLabel } from '../lib/gameSource';
 
+// Palette tuned to the launchers' own brand colors so the badges match what
+// users see elsewhere: Heroic uses its signature cyan-blue shield, Epic Games
+// leans on its charcoal storefront, GOG carries the classic purple.
 const SOURCE_COLORS: Record<string, { bg: string; color: string }> = {
-  Heroic:      { bg: '#7b3fb5', color: '#f0e0ff' },
-  Epic:        { bg: '#2d6da3', color: '#ddf0ff' },
-  GOG:         { bg: '#6b4f2a', color: '#ffe8c0' },
+  Heroic:      { bg: '#33b1ff', color: '#0a1a2a' },
+  Epic:        { bg: '#2f2f2f', color: '#e0e0e0' },
+  'Epic Games':{ bg: '#2f2f2f', color: '#e0e0e0' },
+  GOG:         { bg: '#7b3fb5', color: '#f0e0ff' },
   Lutris:      { bg: '#1a5c3a', color: '#c8ffe0' },
   Bottles:     { bg: '#8c3a1a', color: '#ffe8d8' },
   'itch.io':   { bg: '#7a1f3c', color: '#ffd0df' },
@@ -214,7 +218,7 @@ function BadgeIcon({ appId }: { appId: number }) {
   // carries the underlying store id. Heroic launching a Legendary game means
   // it is an Epic Games title, and that matters for report context.
   const storeLabel = sourceStoreLabel(sourceInfo);
-  const storeColors = storeLabel === 'Epic Games' ? SOURCE_COLORS.Epic
+  const storeColors = storeLabel === 'Epic Games' ? SOURCE_COLORS['Epic Games']
     : storeLabel === 'GOG' ? SOURCE_COLORS.GOG
     : null;
   const showStoreBadge = isNonSteam && !!storeLabel && !!storeColors && storeLabel !== sourceLabel;
