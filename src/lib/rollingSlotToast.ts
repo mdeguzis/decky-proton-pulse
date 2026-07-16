@@ -29,15 +29,12 @@ export function maybeToastRollingSlotChange(result: InstallResultWithSlot): bool
   if (!result.success) return false;
   const slot = result.rolling_slot;
   if (!slot?.ok || !slot.changed) return false;
-  // Extract "Proton-GE-Latest" or "Proton-CachyOS-Latest" from the slot
-  // path (last path segment) so the toast names the specific slot the
-  // user should look for in Steam's compat picker.
-  const slotName = (slot.slot || '').split('/').pop() || 'the rolling slot';
+  // Keep the toast short so Steam's toast bar doesn't truncate the
+  // second sentence. Users reported the previous copy getting cut off.
+  // Full detail lives in the plugin log for anyone debugging.
   toaster.toast({
     title: 'Proton Pulse',
-    body:
-      `${slotName} was updated. Restart the Steam client so the new ` +
-      `version shows up in Compatibility Properties.`,
+    body: 'Please restart Steam for changes to take effect.',
   });
   return true;
 }

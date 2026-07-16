@@ -40,7 +40,7 @@ describe('maybeToastRollingSlotChange', () => {
     expect(toaster.toast).not.toHaveBeenCalled();
   });
 
-  it('toasts with slot name when the symlink was updated', () => {
+  it('toasts a short restart message when the symlink was updated', () => {
     const shown = maybeToastRollingSlotChange({
       success: true, message: 'ok',
       rolling_slot: {
@@ -53,17 +53,8 @@ describe('maybeToastRollingSlotChange', () => {
     expect(toaster.toast).toHaveBeenCalledTimes(1);
     const call = (toaster.toast as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(call.title).toBe('Proton Pulse');
-    expect(call.body).toContain('Proton-GE-Latest');
-    expect(call.body).toContain('Restart the Steam client');
-  });
-
-  it('falls back to a generic slot name when path is empty', () => {
-    const shown = maybeToastRollingSlotChange({
-      success: true, message: 'ok',
-      rolling_slot: { ok: true, changed: true },
-    });
-    expect(shown).toBe(true);
-    const call = (toaster.toast as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(call.body).toContain('rolling slot');
+    // Kept intentionally short so the toast bar does not truncate.
+    expect(call.body).toBe('Please restart Steam for changes to take effect.');
+    expect(call.body.length).toBeLessThan(80);
   });
 });
