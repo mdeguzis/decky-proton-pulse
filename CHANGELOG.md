@@ -165,7 +165,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Arch guard on Proton-GE install + pulse vote auto-refresh
+- Non-Steam boxart + self-report vote guard + drop 'default' proton sentinel
 
 ## v1.7.2 pre-release
 

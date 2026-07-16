@@ -12,7 +12,7 @@ from typing import Any
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
-from .steam_paths import compat_tools_dirs, find_steam_root, read_vdf_value
+from .steam_paths import compat_tools_dir, compat_tools_dirs, find_steam_root, read_vdf_value
 
 PROTON_GE_LATEST_SLOT_NAME = "Proton-GE-Latest"
 PROTON_CACHY_LATEST_SLOT_NAME = "Proton-CachyOS-Latest"
@@ -366,3 +366,135 @@ def list_installed_compatibility_tools(  # pylint: disable=too-many-locals,too-m
             )
 
     return tools
+
+
+# ---------------------------------------------------------------------------
+# Rolling latest-slot management (#116)
+# ---------------------------------------------------------------------------
+#
+# The idea: mirror Steam's "Proton - Experimental" pattern where a stable
+# label always points at the current build. For our tools that means a
+# `Proton-GE-Latest/` directory (or symlink) inside compatibilitytools.d that
+# Steam's compat picker sees as a first-class option regardless of which
+# specific GE-Proton or CachyOS release is actually installed underneath.
+#
+# We prefer a symlink because it's zero-copy: pointing the label at the
+# newest installed versioned tool means every install picks up automatically
+# for free, no disk duplication. Steam follows symlinks in
+# compatibilitytools.d so this works.
+
+
+def _slot_is_current(slot_path: Path, target_path: Path) -> bool:
+    """Does the slot already resolve to the same underlying tool as target?"""
+    try:
+        if not slot_path.exists():
+            return False
+        return slot_path.resolve() == target_path.resolve()
+    except OSError:
+        return False
+
+
+def _versioned_tools_for(tool_id: str) -> list[dict[str, Any]]:
+    """Installed custom tools that belong to a specific slot family (proton-ge / cachyos)
+    and are NOT themselves the rolling slot. Sorted newest-first by version tag.
+    """
+    all_tools = list_installed_compatibility_tools()
+    slot_names = {cfg["latest_slot_name"] for cfg in COMPAT_TOOL_CONFIGS.values()}
+    matching = []
+    for tool in all_tools:
+        if tool.get("tool_id") != tool_id:
+            continue
+        if tool.get("directory_name") in slot_names:
+            continue
+        matching.append(tool)
+
+    def _rank(tool: dict[str, Any]) -> tuple[int, int, str]:
+        parts = extract_version_parts(str(tool.get("directory_name") or ""))
+        if parts:
+            return (parts[0], parts[1], "")
+        # Fall back to display name so at least alphabetical tie-breaks work.
+        return (-1, -1, str(tool.get("display_name") or "").lower())
+
+    matching.sort(key=_rank, reverse=True)
+    return matching
+
+
+def ensure_rolling_slot(tool_id: str) -> dict[str, Any]:
+    """Point the tool's latest-slot symlink at the newest installed versioned build.
+
+    Behavior:
+      - If no versioned build is installed: no-op, returns {ok: False, reason: "no-source"}.
+      - If the slot already resolves to the newest build: no-op, returns {ok: True, changed: False, target: ...}.
+      - Otherwise: create/replace the slot as a symlink and return {ok: True, changed: True, target: ...}.
+
+    Refuses to touch the slot when it already exists AS a real directory (not a
+    symlink) -- the caller installed straight into the slot instead of using this
+    rolling mechanism, and clobbering it would delete their tool.
+
+    Returns a dict so callers can log the outcome per tool.
+    """
+    config = COMPAT_TOOL_CONFIGS.get(tool_id)
+    if not config:
+        return {"ok": False, "reason": "unknown-tool"}
+    slot_name = config["latest_slot_name"]
+    candidates = _versioned_tools_for(tool_id)
+    if not candidates:
+        return {"ok": False, "reason": "no-source"}
+    target_path = Path(str(candidates[0]["path"]))
+    slot_path = compat_tools_dir() / slot_name
+
+    # If the slot exists as a REAL directory (not a symlink) refuse to touch it.
+    # That means an earlier install used destination_name=Proton-GE-Latest and
+    # wrote the archive contents in-place. Nuking it would delete the user's
+    # working Proton without a way to recover.
+    if slot_path.exists() and not slot_path.is_symlink():
+        return {
+            "ok": False,
+            "reason": "slot-is-real-dir",
+            "slot": str(slot_path),
+        }
+
+    if _slot_is_current(slot_path, target_path):
+        return {"ok": True, "changed": False, "target": str(target_path), "slot": str(slot_path)}
+
+    # Replace an old symlink or create a new one. Steam re-scans
+    # compatibilitytools.d on restart or when the compat properties menu
+    # opens, so the new pointer surfaces without a full Steam restart.
+    try:
+        if slot_path.is_symlink() or slot_path.exists():
+            slot_path.unlink()
+        slot_path.symlink_to(target_path, target_is_directory=True)
+    except OSError as err:
+        return {"ok": False, "reason": "symlink-failed", "error": str(err)}
+
+    # Verify Steam-visible structure exists on the target. If not, unwind
+    # the symlink -- an incomplete tool would make Steam refuse to launch.
+    manifest = target_path / "compatibilitytool.vdf"
+    tool_manifest = target_path / "toolmanifest.vdf"
+    if not manifest.exists() and not tool_manifest.exists():
+        try:
+            slot_path.unlink()
+        except OSError:
+            pass
+        return {
+            "ok": False,
+            "reason": "target-missing-manifest",
+            "target": str(target_path),
+        }
+
+    return {"ok": True, "changed": True, "target": str(target_path), "slot": str(slot_path)}
+
+
+def ensure_all_rolling_slots() -> dict[str, dict[str, Any]]:
+    """Refresh every configured rolling slot. Returns the per-tool outcome dict.
+
+    Safe to call on every plugin startup: no-op when nothing changed, no
+    network work, cheap disk stat only.
+    """
+    out: dict[str, dict[str, Any]] = {}
+    for tool_id in COMPAT_TOOL_CONFIGS.keys():
+        try:
+            out[tool_id] = ensure_rolling_slot(tool_id)
+        except Exception as err:  # pylint: disable=broad-except
+            out[tool_id] = {"ok": False, "reason": "exception", "error": str(err)}
+    return out

@@ -474,6 +474,29 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
             )
             if result.get("success") and install_as_latest:
                 write_latest_metadata(normalized, latest_slot_name)
+            # #116: refresh the rolling latest-slot symlink after every
+            # successful install so Proton-GE-Latest / Proton-CachyOS-Latest
+            # always points at the newest versioned build even when the
+            # caller passed install_as_latest=False. Same behavior Steam's
+            # Proton Experimental gives. Import lazily to avoid a circular
+            # dependency at module load time.
+            if result.get("success"):
+                try:
+                    from .compat_tools import ensure_rolling_slot  # pylint: disable=import-outside-toplevel
+                    slot_result = ensure_rolling_slot(tool_config["id"])
+                    if not slot_result.get("ok") and slot_result.get("reason") not in {"no-source", "slot-is-real-dir"}:
+                        # Structural failure -- the tool we just installed can't
+                        # be reached via the Latest slot. User asked for this to
+                        # fail loudly rather than silently succeeding.
+                        result["success"] = False
+                        result["message"] = (
+                            f"Installed {normalized} but the Proton-Latest slot "
+                            f"could not be created: {slot_result.get('reason')}"
+                        )
+                except Exception as _slot_err:  # pylint: disable=broad-except
+                    decky.logger.warning(
+                        f"Rolling slot refresh after install failed: {_slot_err}"
+                    )
             result["release"] = release
             return result
         except (

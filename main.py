@@ -38,6 +38,8 @@ import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
 from lib.compat_tools import (
     COMPAT_TOOL_CONFIGS,
+    ensure_all_rolling_slots,
+    ensure_rolling_slot,
     find_closest_installed_tool,
     installed_tool_matches_version,
     list_installed_compatibility_tools,
@@ -135,6 +137,23 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         self._lsfg_vk_install_thread = None
         self._lsfg_vk_install_process_ref = [None]
         self._lsfg_vk_install_status = _lsfg_vk_mod.make_initial_status()
+        # #116: refresh rolling latest-slot symlinks on every startup so
+        # Proton-GE-Latest and Proton-CachyOS-Latest always exist and always
+        # point at the newest installed versioned build. Same behavior Steam
+        # gives "Proton - Experimental" -- the slot is a stable label, the
+        # underlying tool rolls forward automatically.
+        try:
+            slot_outcomes = ensure_all_rolling_slots()
+            decky.logger.info(
+                "Proton Pulse: rolling slots refreshed: "
+                + ", ".join(f"{k}={v.get('reason') or ('changed' if v.get('changed') else 'ok')}"
+                            for k, v in slot_outcomes.items())
+            )
+        except Exception as _slot_err:  # pylint: disable=broad-except
+            decky.logger.warning(
+                f"Proton Pulse: rolling slot refresh failed: {_slot_err}"
+            )
+
         decky.logger.info("Proton Pulse backend ready")
 
         # Kick off CDN prefetch in the background.  daemon=True so it
@@ -649,6 +668,15 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             "tool_id": tool_id,
             "tool_label": config["label"],
         }
+
+    async def refresh_rolling_slots(self) -> dict[str, Any]:
+        """Force a re-symlink of every rolling latest-slot (#116).
+
+        Frontend can call this after a manual uninstall/install so the
+        Steam Compat picker reflects the change without a plugin restart.
+        Returns the per-tool outcome dict.
+        """
+        return {"slots": ensure_all_rolling_slots()}
 
     async def install_compat_tool(
         self,
