@@ -150,6 +150,28 @@ def _detect_tool_id_from_names(
     return None
 
 
+# Asset names we should NEVER pick on an x86_64 host, regardless of
+# ordering in the assets array. GE-Proton started publishing aarch64
+# builds; without this guard they'd shadow the x86_64 asset when they
+# happen to be listed first (#117). Case-insensitive substring match.
+_WRONG_ARCH_KEYWORDS_ON_X86 = ("aarch64", "arm64")
+
+
+def _host_is_x86_64() -> bool:
+    """Cached lookup so the check is not billed per-release-per-run.
+
+    Steam Deck is always x86_64 so this returns True in practice; falls back
+    to True on any exception so we never accidentally allow an aarch64 pick
+    on a machine we could not identify.
+    """
+    try:
+        import platform as _platform
+        machine = _platform.machine().lower()
+        return machine in {"x86_64", "amd64"}
+    except Exception:  # pragma: no cover - defensive
+        return True
+
+
 def simplify_release(
     release: dict[str, Any],
     asset_prefix: str = "GE-Proton",
@@ -159,9 +181,14 @@ def simplify_release(
 
     Skips drafts and prereleases. asset_arch filters by architecture suffix
     (e.g. "x86_64" matches "-x86_64.tar." but not "-x86_64_v3.tar.").
+
+    On x86_64 hosts, aarch64 / arm64 assets are excluded from consideration
+    even when asset_arch is unset -- see #117 for the Proton-GE bug where
+    an aarch64 release asset was picked on a Steam Deck.
     """
     if release.get("draft") or release.get("prerelease"):
         return None
+    host_is_x86 = _host_is_x86_64()
     asset = next(
         (
             c
@@ -170,6 +197,7 @@ def simplify_release(
             and c["name"].lower().startswith(asset_prefix.lower())
             and (c["name"].endswith(".tar.gz") or c["name"].endswith(".tar.xz"))
             and (not asset_arch or f"-{asset_arch}.tar." in c["name"])
+            and not (host_is_x86 and any(k in c["name"].lower() for k in _WRONG_ARCH_KEYWORDS_ON_X86))
         ),
         None,
     )

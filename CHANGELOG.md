@@ -165,7 +165,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Vulnerability disclosure policy + security README section (closes #110)
+- Report-related UX bugs
 
 ## v1.7.2 pre-release
 

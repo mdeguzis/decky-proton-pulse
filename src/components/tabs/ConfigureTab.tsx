@@ -760,14 +760,22 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     editLabel: entry.label,
   }));
 
-  const pulseDisplayReports: DisplayReportCard[] = pulseReports.map(row => ({
-    ...computeConfidence(pulseRowToCdnReport(row), scoreContext),
-    upvotes:    0,
-    downvotes:  0,
-    displayKey: `pulse:${row.id}`,
-    isPulse:    true,
-    pulseTitle: row.title,
-  }));
+  // Pulse reports previously hardcoded upvotes/downvotes to 0 (#113), so
+  // votes cast on them were saved backend-side but never reflected in the
+  // card. Read from the same votes state CDN reports use so the counts
+  // update in place after handleUpvote / handleDownvote fires.
+  const pulseDisplayReports: DisplayReportCard[] = pulseReports.map(row => {
+    const cdn = pulseRowToCdnReport(row);
+    const key = reportKey(cdn);
+    return {
+      ...computeConfidence(cdn, scoreContext),
+      upvotes:    votes[key]?.upvotes ?? 0,
+      downvotes:  votes[key]?.downvotes ?? 0,
+      displayKey: `pulse:${row.id}`,
+      isPulse:    true,
+      pulseTitle: row.title,
+    };
+  });
 
   const scored: DisplayReportCard[] = mergeWithPulse(
     [...editedDisplayReports, ...baseDisplayReports],

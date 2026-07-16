@@ -1,13 +1,13 @@
 {
   "minimumCoveragePercent": 100,
-  "totalKeys": 706,
+  "totalKeys": 708,
   "languages": [
     {
       "code": "en",
       "name": "English",
       "canonical": true,
-      "translated": 706,
-      "total": 706,
+      "translated": 708,
+      "total": 708,
       "coveragePercent": 100,
       "missingKeys": [],
       "sameAsEnglishKeys": [],
@@ -17,280 +17,364 @@
       "code": "de",
       "name": "Deutsch",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "it",
       "name": "Italiano",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ko",
       "name": "한국어",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "nl",
       "name": "Nederlands",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pl",
       "name": "Polski",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pt-BR",
       "name": "Português (BR)",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "tr",
       "name": "Türkçe",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "uk",
       "name": "Українська",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "sv",
       "name": "Svenska",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "cs",
       "name": "Čeština",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "th",
       "name": "ภาษาไทย",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "vi",
       "name": "Tiếng Việt",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "zh-CN",
       "name": "简体中文",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "zh-TW",
       "name": "繁體中文",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "bg",
       "name": "Български",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "da",
       "name": "Dansk",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "el",
       "name": "Ελληνικά",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "es-419",
       "name": "Español (Latinoamérica)",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "fi",
       "name": "Suomi",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "hu",
       "name": "Magyar",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "no",
       "name": "Norsk",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "pt",
       "name": "Português (PT)",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "ro",
       "name": "Română",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     },
     {
       "code": "sl",
       "name": "Slovenščina",
       "translated": 706,
-      "total": 706,
-      "coveragePercent": 100,
+      "total": 708,
+      "coveragePercent": 99.7,
       "missingKeys": [],
-      "sameAsEnglishKeys": [],
+      "sameAsEnglishKeys": [
+        "detail.downvote",
+        "detail.ownReportNoVote"
+      ],
       "typeMismatches": []
     }
   ]

@@ -209,6 +209,49 @@ def test_simplify_cachyos_no_x86_64_returns_none() -> None:
     assert result is None
 
 
+def test_simplify_ge_release_skips_aarch64_asset_on_x86_host() -> None:
+    """#117: GE-Proton started publishing aarch64 assets; on a Steam Deck
+    (x86_64) the picker must not select the aarch64 variant even when it is
+    listed before the x86_64 build in the assets array.
+    """
+    from unittest.mock import patch
+    tag = "GE-Proton10-19"
+    release = _make_release(tag, [
+        _asset(f"{tag}-aarch64.tar.gz", 100),
+        _asset(f"{tag}.tar.gz", 500),
+    ])
+    with patch("lib.compat_tools._host_is_x86_64", return_value=True):
+        result = simplify_release(release, "GE-Proton")
+    assert result is not None
+    assert result["asset_name"] == f"{tag}.tar.gz"
+
+
+def test_simplify_ge_release_arm64_keyword_also_blocked() -> None:
+    from unittest.mock import patch
+    tag = "GE-Proton10-19"
+    release = _make_release(tag, [
+        _asset(f"{tag}-arm64.tar.gz", 100),
+        _asset(f"{tag}.tar.gz", 500),
+    ])
+    with patch("lib.compat_tools._host_is_x86_64", return_value=True):
+        result = simplify_release(release, "GE-Proton")
+    assert result is not None
+    assert result["asset_name"] == f"{tag}.tar.gz"
+
+
+def test_simplify_ge_release_aarch64_ok_on_aarch64_host() -> None:
+    """On a real aarch64 host the picker should NOT reject the aarch64
+    asset -- the x86 guard only fires when the host is x86_64.
+    """
+    from unittest.mock import patch
+    tag = "GE-Proton10-19"
+    release = _make_release(tag, [_asset(f"{tag}-aarch64.tar.gz", 100)])
+    with patch("lib.compat_tools._host_is_x86_64", return_value=False):
+        result = simplify_release(release, "GE-Proton")
+    assert result is not None
+    assert result["asset_name"] == f"{tag}-aarch64.tar.gz"
+
+
 def test_simplify_skips_drafts() -> None:
     release = _make_release("GE-Proton9-7", [_asset("GE-Proton9-7.tar.gz")])
     release["draft"] = True
