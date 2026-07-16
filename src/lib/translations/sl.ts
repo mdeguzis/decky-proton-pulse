@@ -84,6 +84,8 @@ export const sl: TranslationTree = {
     uploadToProtonPulse: 'Naloži v Proton Pulse',
     uploadRequiresEdit: 'Najprej pritisnite Uredi, da postane to porocilo vaše, nato ga naložite',
     upvote: 'Glasuj',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Pocisti',
     hardwareComparisonTitle: 'Primerjava strojne opreme',
     hardwareComparisonDescription: 'Na levi je porocilo ProtonDB. Na desni je naš trenutni sistem.',

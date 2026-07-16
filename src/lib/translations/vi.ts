@@ -84,6 +84,8 @@ export const vi: TranslationTree = {
     uploadToProtonPulse: 'Tải lên Proton Pulse',
     uploadRequiresEdit: 'Nhấn Chỉnh sửa trước để báo cáo này trở thành của bạn, rồi tải lên',
     upvote: 'Bỏ phiếu',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Xóa sạch',
     hardwareComparisonTitle: 'So sánh phần cứng',
     hardwareComparisonDescription: 'Bên trái là báo cáo ProtonDB. Bên phải là hệ thống hiện tại của chúng tôi.',

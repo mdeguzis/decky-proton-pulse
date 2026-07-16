@@ -17,6 +17,10 @@ interface Props {
   selected: boolean;
   focused?: boolean;
   systemGpuVendor?: string | null;
+  // True when this report was authored by the current user. Disables both
+  // vote buttons because voting on your own report is not allowed
+  // upstream and just returns an error toast otherwise.
+  isSelfReport?: boolean;
   onSelect: (report: DisplayReportCard) => void;
   onFocus?: (report: DisplayReportCard) => void;
   onUpvote?: (report: DisplayReportCard) => void;
@@ -27,7 +31,7 @@ interface Props {
   onAnalyze?: (report: DisplayReportCard) => void;
 }
 
-export function ReportCard({ report, selected, focused = false, systemGpuVendor, onSelect, onFocus, onUpvote, onAnalyze }: Props) {
+export function ReportCard({ report, selected, focused = false, systemGpuVendor, isSelfReport = false, onSelect, onFocus, onUpvote, onDownvote, onAnalyze }: Props) {
   const strings = t();
   // Badge shows the report's actual rating (derived from yes/no answers).
   // Earlier this used scoreToRating(report.score) which re-tier'd a borked
@@ -46,8 +50,8 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
       onClick={() => onSelect(report)}
       onOKButton={() => onSelect(report)}
       onGamepadFocus={() => onFocus?.(report)}
-      onSecondaryButton={onUpvote ? () => onUpvote(report) : undefined}
-      onSecondaryActionDescription={onUpvote ? strings.detail.upvote : undefined}
+      onSecondaryButton={onUpvote && !isSelfReport ? () => onUpvote(report) : undefined}
+      onSecondaryActionDescription={onUpvote && !isSelfReport ? strings.detail.upvote : undefined}
       onOptionsButton={onAnalyze ? () => onAnalyze(report) : undefined}
       onOptionsActionDescription={onAnalyze ? strings.extras!.perReportShowAnalysisHint!() : undefined}
       style={{ width: '100%' }}
@@ -160,33 +164,52 @@ export function ReportCard({ report, selected, focused = false, systemGpuVendor,
             {report.gpuTier.toUpperCase()}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+            {/* Upvote: disabled when the current user authored this
+                report (isSelfReport) or when no handler is wired. */}
             <span
               role="button"
               onClick={(e) => {
                 e.stopPropagation();
+                if (isSelfReport) return;
                 onUpvote?.(report);
               }}
               style={{
-                cursor: onUpvote ? 'pointer' : 'default',
+                cursor: (onUpvote && !isSelfReport) ? 'pointer' : 'default',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 3,
-                opacity: onUpvote ? 0.85 : 0.4,
+                opacity: (onUpvote && !isSelfReport) ? 0.85 : 0.4,
               }}
-              title={strings.detail.upvote}
+              title={isSelfReport ? strings.detail.ownReportNoVote : strings.detail.upvote}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
                 <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66a4.8 4.8 0 0 0-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-6.15z" />
               </svg>
               <span style={{ fontSize: 10, fontWeight: 600, color: '#d9e8f4' }}>{report.upvotes}</span>
             </span>
+            {/* Downvote: previously had no handler at all -- opacity 0.25
+                was hiding a completely dead button. Wired to onDownvote
+                and shares the self-report disable with the upvote. */}
             <span
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, opacity: 0.25 }}
+              role="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isSelfReport) return;
+                onDownvote?.(report);
+              }}
+              style={{
+                cursor: (onDownvote && !isSelfReport) ? 'pointer' : 'default',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                opacity: (onDownvote && !isSelfReport) ? 0.85 : 0.4,
+              }}
+              title={isSelfReport ? strings.detail.ownReportNoVote : strings.detail.downvote}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22 4h-2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2V4zM2.17 11.12c-.11.25-.17.52-.17.8V13c0 1.1.9 2 2 2h5.5l-.92 4.65c-.05.22-.02.46.08.66.23.45.52.86.88 1.22L10 22l6.41-6.41c.38-.38.59-.89.59-1.42V6.34C17 5.05 15.95 4 14.66 4h-8.1c-.71 0-1.36.37-1.72.97l-2.67 6.15z" />
               </svg>
-              <span style={{ fontSize: 10, fontWeight: 600, color: '#d9e8f4' }}>0</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: '#d9e8f4' }}>{report.downvotes ?? 0}</span>
             </span>
           </div>
         </div>

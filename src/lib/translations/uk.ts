@@ -84,6 +84,8 @@ export const uk: TranslationTree = {
     uploadToProtonPulse: 'Завантажити на Proton Pulse',
     uploadRequiresEdit: 'Спочатку натисніть Редагувати, щоб зробити цей звіт своїм, а потім завантажте його',
     upvote: 'Проголосувати',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Очистити',
     hardwareComparisonTitle: 'Порівняння апаратного забезпечення',
     hardwareComparisonDescription: 'Ліворуч - звіт ProtonDB. Праворуч - наша поточна система.',

@@ -135,6 +135,8 @@ export interface TranslationTree {
     uploadToProtonPulse: string;
     uploadRequiresEdit: string;
     upvote: string;
+    downvote: string;
+    ownReportNoVote: string;
     clear: string;
     hardwareComparisonTitle: string;
     hardwareComparisonDescription: string;
@@ -904,6 +906,8 @@ export const en: TranslationTree = {
     uploadToProtonPulse: 'Submit to Proton Pulse',
     uploadRequiresEdit: 'Tap Edit first to make this your own report, then submit',
     upvote: 'Upvote',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Clear',
     hardwareComparisonTitle: 'Hardware Comparison',
     hardwareComparisonDescription: 'Left side is the ProtonDB report. Right side is our current system.',

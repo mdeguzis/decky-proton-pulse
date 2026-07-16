@@ -84,6 +84,8 @@ export const cs: TranslationTree = {
     uploadToProtonPulse: 'Nahrát do Proton Pulse',
     uploadRequiresEdit: 'Nejprve stiskněte Upravit, aby se tato zpráva stala vaší, pak ji nahrajte',
     upvote: 'Hlasovat',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Vymazat',
     hardwareComparisonTitle: 'Porovnání hardwaru',
     hardwareComparisonDescription: 'Vlevo je zpráva ProtonDB. Vpravo je náš aktuální systém.',

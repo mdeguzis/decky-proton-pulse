@@ -84,6 +84,8 @@ export const bg: TranslationTree = {
     uploadToProtonPulse: 'Качи в Proton Pulse',
     uploadRequiresEdit: 'Първо натиснете Редактирай, за да направите този доклад свой, след което го качете',
     upvote: 'Гласувай',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Изчисти',
     hardwareComparisonTitle: 'Сравнение на хардуера',
     hardwareComparisonDescription: 'Вляво е докладът от ProtonDB. Вдясно е нашата текуща система.',

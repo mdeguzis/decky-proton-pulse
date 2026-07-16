@@ -84,6 +84,8 @@ export const sv: TranslationTree = {
     uploadToProtonPulse: 'Ladda upp till Proton Pulse',
     uploadRequiresEdit: 'Tryck på Redigera först för att göra den här rapporten till din, ladda sedan upp den',
     upvote: 'Rösta',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Rensa',
     hardwareComparisonTitle: 'Hårdvarujämförelse',
     hardwareComparisonDescription: 'Till vänster visas ProtonDB-rapporten. Till höger visas vårt nuvarande system.',

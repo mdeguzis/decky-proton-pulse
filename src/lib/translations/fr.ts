@@ -84,6 +84,8 @@ export const fr: TranslationTree = {
     uploadToProtonPulse: 'Envoyer vers Proton Pulse',
     uploadRequiresEdit: "Appuie sur Modifier d'abord pour t'approprier ce rapport, puis envoie-le",
     upvote: 'Voter pour',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Effacer',
     hardwareComparisonTitle: 'Comparaison du matériel',
     hardwareComparisonDescription: 'À gauche se trouve le rapport ProtonDB. À droite se trouve notre système actuel.',

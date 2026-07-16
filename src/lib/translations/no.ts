@@ -84,6 +84,8 @@ export const no: TranslationTree = {
     uploadToProtonPulse: 'Last opp til Proton Pulse',
     uploadRequiresEdit: 'Trykk Rediger først for å gjøre denne rapporten til din, og last den deretter opp',
     upvote: 'Stem',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Tøm',
     hardwareComparisonTitle: 'Maskinvaresammenligning',
     hardwareComparisonDescription: 'Til venstre er ProtonDB-rapporten. Til høyre er vart aktuelle system.',

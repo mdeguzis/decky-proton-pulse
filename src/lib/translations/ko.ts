@@ -84,6 +84,8 @@ export const ko: TranslationTree = {
     uploadToProtonPulse: 'Proton Pulse에 업로드',
     uploadRequiresEdit: '먼저 편집을 눌러 이 보고서를 본인의 것으로 만든 후 업로드하세요',
     upvote: '추천',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: '지우기',
     hardwareComparisonTitle: '하드웨어 비교',
     hardwareComparisonDescription: '왼쪽은 ProtonDB 보고서이고, 오른쪽은 현재 시스템입니다.',

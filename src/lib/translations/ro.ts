@@ -84,6 +84,8 @@ export const ro: TranslationTree = {
     uploadToProtonPulse: 'Incarca in Proton Pulse',
     uploadRequiresEdit: 'Apasa mai intai Editeaza pentru a face al tau acest raport, apoi incarca-l',
     upvote: 'Voteaza',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Sterge',
     hardwareComparisonTitle: 'Comparatie hardware',
     hardwareComparisonDescription: 'In stanga este raportul ProtonDB. In dreapta este sistemul nostru actual.',

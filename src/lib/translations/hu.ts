@@ -84,6 +84,8 @@ export const hu: TranslationTree = {
     uploadToProtonPulse: 'Feltöltés a Proton Pulse-ba',
     uploadRequiresEdit: 'Először nyomja meg a Szerkesztés gombot, hogy a jelentés az Öné legyen, majd töltse fel',
     upvote: 'Szavazás',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Törlés',
     hardwareComparisonTitle: 'Hardverösszehasonlítás',
     hardwareComparisonDescription: 'Bal oldalon a ProtonDB-jelentés látható. Jobb oldalon a jelenlegi rendszerünk.',

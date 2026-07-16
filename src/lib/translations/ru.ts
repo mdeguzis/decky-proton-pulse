@@ -114,6 +114,8 @@ export const ru: TranslationTree = {
     uploadToProtonPulse: 'Загрузить в Proton Pulse',
     uploadRequiresEdit: 'Сначала нажмите Изменить, чтобы сделать этот отчёт своим, затем загрузите',
     upvote: 'Поддержать',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Очистить',
     hardwareComparisonTitle: 'Сравнение оборудования',
     hardwareComparisonDescription: 'Слева показан отчёт ProtonDB. Справа показана наша текущая система.',

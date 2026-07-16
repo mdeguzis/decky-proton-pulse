@@ -84,6 +84,8 @@ export const nl: TranslationTree = {
     uploadToProtonPulse: 'Uploaden naar Proton Pulse',
     uploadRequiresEdit: 'Druk eerst op Bewerken om dit rapport van jou te maken, en upload het dan',
     upvote: 'Stemmen',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Wissen',
     hardwareComparisonTitle: 'Hardwarevergelijking',
     hardwareComparisonDescription: 'Links staat het ProtonDB-rapport. Rechts staat ons huidige systeem.',

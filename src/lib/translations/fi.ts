@@ -84,6 +84,8 @@ export const fi: TranslationTree = {
     uploadToProtonPulse: 'Lataa Proton Pulse -sovellukseen',
     uploadRequiresEdit: 'Paina ensin Muokkaa tehdäksesi tästä raportista omasi, sitten lataa se',
     upvote: 'Äänestä',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Tyhjennä',
     hardwareComparisonTitle: 'Laitteistoverttailu',
     hardwareComparisonDescription: 'Vasemmalla on ProtonDB-raportti. Oikealla on nykyinen järjestelmämme.',

@@ -84,6 +84,8 @@ export const zhTW: TranslationTree = {
     uploadToProtonPulse: '上傳至 Proton Pulse',
     uploadRequiresEdit: '請先點擊編輯以將此報告設為您的，然後再上傳',
     upvote: '投票',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: '清除',
     hardwareComparisonTitle: '硬體比較',
     hardwareComparisonDescription: '左側為 ProtonDB 報告，右側為我們目前的系統。',

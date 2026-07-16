@@ -84,6 +84,8 @@ export const ja: TranslationTree = {
     uploadToProtonPulse: 'Proton Pulse に送信',
     uploadRequiresEdit: 'まず編集をタップしてこのレポートを自分のものにしてから、アップロードしてください',
     upvote: '賛成票',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'クリア',
     hardwareComparisonTitle: 'ハードウェア比較',
     hardwareComparisonDescription: '左側は ProtonDB のレポート、右側は現在のシステムです。',

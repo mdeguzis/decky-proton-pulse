@@ -84,6 +84,8 @@ export const tr: TranslationTree = {
     uploadToProtonPulse: 'Proton Pulse’a yükle',
     uploadRequiresEdit: "Önce Düzenle'ye dokunup raporu kendine özel yap, sonra yükle",
     upvote: 'Oy ver',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Temizle',
     hardwareComparisonTitle: 'Donanım karşılaştırması',
     hardwareComparisonDescription: 'Solda ProtonDB raporu, sağda mevcut sistemimiz yer alır.',

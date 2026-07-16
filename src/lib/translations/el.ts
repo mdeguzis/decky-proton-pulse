@@ -84,6 +84,8 @@ export const el: TranslationTree = {
     uploadToProtonPulse: 'Μεταφόρτωση στο Proton Pulse',
     uploadRequiresEdit: 'Πατήστε πρώτα Επεξεργασία για να κάνετε αυτή την αναφορά δική σας, μετά μεταφορτώστε τη',
     upvote: 'Ψηφίστε',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Εκκαθάριση',
     hardwareComparisonTitle: 'Σύγκριση υλικού',
     hardwareComparisonDescription: 'Αριστερά είναι η αναφορά ProtonDB. Δεξιά είναι το τρέχον σύστημά μας.',
