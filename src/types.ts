@@ -55,6 +55,11 @@ export interface CdnReport {
   reportId?: number | null;
   source?: string | null; // e.g. "Steam", "Heroic", "Epic", "Non-Steam"
   formResponses?: import('./lib/scoring').ReportResponses | null;
+  // Client id / voter_id of the person who submitted the report. Only
+  // Pulse reports carry this (ProtonDB reports are anonymous upstream).
+  // Compared against getVoterId() on the frontend to disable vote
+  // buttons on the user's own reports (#114).
+  authorId?: string | null;
 }
 
 // --- Scoring ---

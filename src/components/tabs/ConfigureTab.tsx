@@ -7,7 +7,7 @@ import {
   getProtonDBReportsWithDiagnostics,
   type ReportFetchDiagnostics,
 } from '../../lib/protondb';
-import { getUserVote, getVoteTotals, submitVote, deleteVote } from '../../lib/voting';
+import { getUserVote, getVoteTotals, getVoterId, submitVote, deleteVote } from '../../lib/voting';
 import { getUserConfigs, type UserConfigRow } from '../../lib/userConfigs';
 import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
@@ -130,6 +130,9 @@ function pulseRowToCdnReport(row: UserConfigRow): CdnReport {
     title:        row.title,
     reportId:     row.id ?? null,
     formResponses: row.form_responses ?? null,
+    // #114: preserve the submitter's client id so the frontend can
+    // compare against getVoterId() and hide vote buttons on own reports.
+    authorId:     row.client_id ?? null,
   };
 }
 
@@ -726,6 +729,14 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const [editedReports, setEditedReports] = useState<EditedReportEntry[]>([]);
   const [pulseReports, setPulseReports] = useState<UserConfigRow[]>([]);
   const [votes, setVotes]       = useState<Record<string, VoteTotals>>({});
+  // #114: current user's voter id. Compared against report.authorId in
+  // the ReportCard's isSelfReport prop so vote buttons hide on your own
+  // reports. Loaded once on mount, no refresh needed (voter id is
+  // per-install and doesn't change).
+  const [voterId, setVoterId] = useState<string | null>(null);
+  useEffect(() => {
+    getVoterId().then(setVoterId).catch(() => setVoterId(null));
+  }, []);
   const [loading, setLoading]   = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [focusedCardKey, setFocusedCardKey] = useState<string | null>(null);
@@ -1574,6 +1585,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                     selected={selectedKey === r.displayKey}
                     focused={focusedCardKey === r.displayKey}
                     systemGpuVendor={filter === 'all' ? gpuVendor : filter}
+                    isSelfReport={!!voterId && !!r.authorId && r.authorId === voterId}
                     onFocus={(report) => {
                       setFocusedCardKey(report.displayKey);
                       setSelectedKey(report.displayKey);

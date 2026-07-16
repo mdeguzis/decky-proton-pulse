@@ -165,7 +165,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Report-related UX bugs
+- Arch guard on Proton-GE install + pulse vote auto-refresh
 
 ## v1.7.2 pre-release
 
