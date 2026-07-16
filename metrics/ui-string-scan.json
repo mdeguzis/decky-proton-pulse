@@ -258,14 +258,14 @@
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 982,
+      "line": 986,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 1029,
+      "line": 1033,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."

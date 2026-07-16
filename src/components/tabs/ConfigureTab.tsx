@@ -17,6 +17,7 @@ import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, i
 import { getGameSource, sourceStoreLabel, type GameSourceInfo } from '../../lib/gameSource';
 import { GameBanner } from '../GameBanner';
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
+import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
 import {
   registerScreenshotAutomationHandler,
   runRegisteredScreenshotAutomationHandler,
@@ -1154,6 +1155,9 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             } else if (availability.normalized_version) {
               launchProtonVersion = availability.normalized_version;
             }
+            // #116: separate toast if the rolling latest-slot symlink got
+            // re-pointed to the newly-installed version.
+            maybeToastRollingSlotChange(installResult);
           }
         } else if (choice === 'latest') {
           if (latestInstalledTool) {
@@ -1185,6 +1189,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             });
             launchProtonVersion = availability.normalized_version ?? targetReport.protonVersion;
           }
+          maybeToastRollingSlotChange(installResult);
         }
 
         void logFrontendEvent('INFO', 'Apply resolved missing Proton version choice', {

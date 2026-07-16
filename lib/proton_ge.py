@@ -484,6 +484,7 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
                 try:
                     from .compat_tools import ensure_rolling_slot  # pylint: disable=import-outside-toplevel
                     slot_result = ensure_rolling_slot(tool_config["id"])
+                    result["rolling_slot"] = slot_result
                     if not slot_result.get("ok") and slot_result.get("reason") not in {"no-source", "slot-is-real-dir"}:
                         # Structural failure -- the tool we just installed can't
                         # be reached via the Latest slot. User asked for this to

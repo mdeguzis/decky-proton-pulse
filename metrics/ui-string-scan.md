@@ -33,8 +33,8 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/CacheStatsModal.tsx` | 274 | string | Avg fetch |
 | `src/components/CacheStatsModal.tsx` | 277 | string | Fetch errors |
 | `src/components/CompatToolVersionPicker.tsx` | 37 | string | Valve Proton |
-| `src/components/ConfigEditorModal.tsx` | 982 | string | No game selected. Open a game config first. |
-| `src/components/ConfigEditorModal.tsx` | 1029 | string | No game selected. Open a game config first. |
+| `src/components/ConfigEditorModal.tsx` | 986 | string | No game selected. Open a game config first. |
+| `src/components/ConfigEditorModal.tsx` | 1033 | string | No game selected. Open a game config first. |
 | `src/components/NativePulseReportModal.tsx` | 724 | string | - Type below or pick installed - |
 | `src/components/NativePulseReportModal.tsx` | 925 | jsx | Save draft |
 | `src/components/PerReportAnalysisModal.tsx` | 190 | jsx | pts |

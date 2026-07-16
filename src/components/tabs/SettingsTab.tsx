@@ -7,6 +7,7 @@ import { toaster } from '../../lib/notify';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
 import { cancelCompatToolInstall, getCompatManagerState, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
+import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
 import type { CompatToolId, CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { COMPAT_TOOL_OPTIONS } from '../../types';
 import { t } from '../../lib/i18n';
@@ -848,8 +849,12 @@ export function SettingsTab() {
         const result = await installCompatTool(selectedTool, managerState.current_release!.tag_name, true);
         toaster.toast({
           title: 'Proton Pulse',
-          body: result.message,
+          body: result.success ? withRestartHint(result.message) : result.message,
         });
+        // #116: separate toast when the rolling latest-slot symlink got
+        // updated so users know Steam client needs a restart to see the
+        // new label in Compat Properties.
+        maybeToastRollingSlotChange(result);
         if (!result.success) {
           setInstallingTag(null);
           await refreshManager(true);
@@ -872,6 +877,7 @@ export function SettingsTab() {
       title: 'Proton Pulse',
       body: result.success ? withRestartHint(result.message) : `Install failed: ${result.message}`,
     });
+    maybeToastRollingSlotChange(result);
     if (!result.success) {
       setInstallingTag(null);
       await refreshManager(true);
@@ -928,6 +934,7 @@ export function SettingsTab() {
               title: 'Proton Pulse',
               body: result.success ? withRestartHint(result.message) : `Install failed: ${result.message}`,
             });
+            maybeToastRollingSlotChange(result);
             setInstallingTag(null);
             if (result.success) {
               await refreshManager(true);
