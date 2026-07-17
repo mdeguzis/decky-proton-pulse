@@ -5,6 +5,7 @@
 // don't wonder why "Proton-GE-Latest" isn't showing up in Compat
 // Properties for a game.
 
+import { createElement, type CSSProperties } from 'react';
 import { toaster } from './notify';
 
 export interface InstallResultWithSlot {
@@ -20,6 +21,25 @@ export interface InstallResultWithSlot {
   };
 }
 
+// Style overrides that break the Deck popup-toast body out of Valve's
+// ShortTemplate.Body class -- that CSS caps height + white-space: nowrap
+// + text-overflow: ellipsis, so a two-sentence body reads as one clipped
+// line. Since @decky/api's `body` is a ReactNode we can wrap the text in
+// a <div> with inline styles that override every constraint that would
+// cause the clip. Verified against SteamDeckHomebrew/decky-loader
+// frontend/src/components/Toast.tsx (GamepadUIPopupToast renders the
+// body through templateClasses.Body).
+const _bodyStyle: CSSProperties = {
+  whiteSpace: 'normal',
+  overflow: 'visible',
+  textOverflow: 'clip',
+  display: 'block',
+  height: 'auto',
+  maxHeight: 'none',
+  WebkitLineClamp: 'unset' as unknown as number,
+  lineHeight: 1.25,
+};
+
 /**
  * Fire the "Steam restart required" toast when the rolling-slot symlink
  * was actually re-pointed. Returns true if a toast was shown so callers
@@ -29,12 +49,17 @@ export function maybeToastRollingSlotChange(result: InstallResultWithSlot): bool
   if (!result.success) return false;
   const slot = result.rolling_slot;
   if (!slot?.ok || !slot.changed) return false;
-  // Keep the toast short so Steam's toast bar doesn't truncate the
-  // second sentence. Users reported the previous copy getting cut off.
-  // Full detail lives in the plugin log for anyone debugging.
+  // body is a React node (not a plain string) so the inline style can
+  // override Valve's ShortTemplate.Body single-line clip. duration is
+  // 6s so users have time to read the full sentence.
   toaster.toast({
     title: 'Proton Pulse',
-    body: 'Please restart Steam for changes to take effect.',
+    body: createElement(
+      'div',
+      { style: _bodyStyle },
+      'Please restart Steam for changes to take effect.'
+    ),
+    duration: 6000,
   });
   return true;
 }

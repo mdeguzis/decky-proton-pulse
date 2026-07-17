@@ -40,7 +40,7 @@ describe('maybeToastRollingSlotChange', () => {
     expect(toaster.toast).not.toHaveBeenCalled();
   });
 
-  it('toasts a short restart message when the symlink was updated', () => {
+  it('toasts a React-node restart message with style overrides + 6s duration', () => {
     const shown = maybeToastRollingSlotChange({
       success: true, message: 'ok',
       rolling_slot: {
@@ -53,8 +53,26 @@ describe('maybeToastRollingSlotChange', () => {
     expect(toaster.toast).toHaveBeenCalledTimes(1);
     const call = (toaster.toast as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(call.title).toBe('Proton Pulse');
-    // Kept intentionally short so the toast bar does not truncate.
-    expect(call.body).toBe('Please restart Steam for changes to take effect.');
-    expect(call.body.length).toBeLessThan(80);
+    // 6-second duration so users have time to read the full sentence
+    // before the popup auto-dismisses.
+    expect(call.duration).toBe(6000);
+    // Body is a React element (not a plain string) so the inline style
+    // can override Valve's ShortTemplate.Body single-line clip. The
+    // wrapping <div> carries whiteSpace:normal + overflow:visible +
+    // WebkitLineClamp:unset so the message wraps to as many lines as
+    // it needs instead of getting ellipsis-clipped mid-word.
+    expect(call.body).toEqual(expect.objectContaining({
+      type: 'div',
+      props: expect.objectContaining({
+        style: expect.objectContaining({
+          whiteSpace: 'normal',
+          overflow: 'visible',
+          textOverflow: 'clip',
+          height: 'auto',
+          maxHeight: 'none',
+        }),
+        children: 'Please restart Steam for changes to take effect.',
+      }),
+    }));
   });
 });
