@@ -17,6 +17,20 @@ from .steam_paths import compat_tools_dir, compat_tools_dirs, find_steam_root, r
 PROTON_GE_LATEST_SLOT_NAME = "Proton-GE-Latest"
 PROTON_CACHY_LATEST_SLOT_NAME = "Proton-CachyOS-Latest"
 
+# Internal_name field written into the slot's compatibilitytool.vdf. Steam
+# uses this as the tool's unique ID (the top-level key inside compat_tools).
+# It MUST differ from any versioned build's internal_name so Steam does not
+# conflate the two -- pick something no upstream tag would ever produce.
+PROTON_GE_LATEST_INTERNAL_NAME = "proton_ge_latest"
+PROTON_CACHY_LATEST_INTERNAL_NAME = "proton_cachyos_latest"
+
+# Marker file we drop inside a rolling-slot directory so we can distinguish
+# "a real user install that happens to be named Proton-GE-Latest" from "a
+# rolling slot we manage". Content is the absolute path of the current
+# target, so _slot_is_current is a one-line comparison rather than a
+# symlink resolve dance.
+_MANAGED_MARKER = ".proton-pulse-managed"
+
 COMPAT_TOOL_CONFIGS: dict[str, dict[str, str]] = {
     "proton-ge": {
         "id": "proton-ge",
@@ -28,6 +42,7 @@ COMPAT_TOOL_CONFIGS: dict[str, dict[str, str]] = {
         "asset_prefix": "GE-Proton",
         "asset_arch": "",
         "latest_slot_name": PROTON_GE_LATEST_SLOT_NAME,
+        "latest_slot_internal_name": PROTON_GE_LATEST_INTERNAL_NAME,
         "cache_file": "proton-ge-releases-cache.json",
         "metadata_file": "proton-ge-latest.json",
     },
@@ -41,6 +56,7 @@ COMPAT_TOOL_CONFIGS: dict[str, dict[str, str]] = {
         "asset_prefix": "proton-cachyos",
         "asset_arch": "x86_64",
         "latest_slot_name": PROTON_CACHY_LATEST_SLOT_NAME,
+        "latest_slot_internal_name": PROTON_CACHY_LATEST_INTERNAL_NAME,
         "cache_file": "proton-cachyos-releases-cache.json",
         "metadata_file": "proton-cachyos-latest.json",
     },
@@ -384,14 +400,121 @@ def list_installed_compatibility_tools(  # pylint: disable=too-many-locals,too-m
 # compatibilitytools.d so this works.
 
 
-def _slot_is_current(slot_path: Path, target_path: Path) -> bool:
-    """Does the slot already resolve to the same underlying tool as target?"""
+def _slot_marker_path(slot_path: Path) -> Path:
+    return slot_path / _MANAGED_MARKER
+
+
+def _slot_is_managed(slot_path: Path) -> bool:
+    """Was this slot directory created by ensure_rolling_slot?
+
+    Detected via the marker file we drop at write time. This is what lets us
+    safely replace the slot's contents without wondering whether the user
+    happened to name their own custom install "Proton-GE-Latest".
+    """
+    if not slot_path.is_dir() or slot_path.is_symlink():
+        return False
+    return _slot_marker_path(slot_path).is_file()
+
+
+def _slot_current_target(slot_path: Path) -> Path | None:
+    """Absolute target path the slot currently points at, or None if we cannot
+    tell. Reads it from the marker file we wrote at last refresh -- avoids
+    ambiguity from broken/dangling symlinks inside the slot.
+    """
+    marker = _slot_marker_path(slot_path)
+    if not marker.is_file():
+        return None
     try:
-        if not slot_path.exists():
-            return False
-        return slot_path.resolve() == target_path.resolve()
+        raw = marker.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    return Path(raw) if raw else None
+
+
+def _slot_is_current(slot_path: Path, target_path: Path) -> bool:
+    """Does the managed slot already have symlinks pointing at target?"""
+    if not _slot_is_managed(slot_path):
+        return False
+    current = _slot_current_target(slot_path)
+    if current is None:
+        return False
+    try:
+        return current.resolve() == target_path.resolve()
     except OSError:
         return False
+
+
+def _slot_vdf_content(display_name: str, internal_name: str) -> str:
+    """VDF template matches GloriousEggroll/proton-ge-custom's
+    compatibilitytool.vdf.template so Steam parses it the same way it parses
+    every other GE install. `install_path "."` means "look for the tool
+    binaries in this same directory" -- our per-file symlinks satisfy that.
+
+    Fields:
+      internal_name -- the top-level compat_tools key, Steam's tool id.
+                       Must differ from any versioned build's internal_name
+                       so Steam does not conflate the two.
+      display_name  -- the label Steam shows in the compat properties picker.
+    """
+    return (
+        '"compatibilitytools"\n'
+        '{\n'
+        '  "compat_tools"\n'
+        '  {\n'
+        f'    "{internal_name}"\n'
+        '    {\n'
+        '      "install_path" "."\n'
+        f'      "display_name" "{display_name}"\n'
+        '      "from_oslist"  "windows"\n'
+        '      "to_oslist"    "linux"\n'
+        '    }\n'
+        '  }\n'
+        '}\n'
+    )
+
+
+def _clear_slot_contents(slot_path: Path) -> None:
+    """Remove every entry in the slot dir except the marker. Called before
+    populating with a fresh set of symlinks so a target rename cannot leave
+    stale symlinks hanging around.
+    """
+    marker_name = _MANAGED_MARKER
+    for child in slot_path.iterdir():
+        if child.name == marker_name:
+            continue
+        try:
+            if child.is_symlink() or child.is_file():
+                child.unlink()
+            elif child.is_dir():
+                # Anything at slot-level that is a real dir is unexpected
+                # in a managed slot (we only ever create symlinks). Skip
+                # rather than recursively delete -- refuse to nuke unknown
+                # user data even if the marker file is present.
+                decky.logger.warning(
+                    f"_clear_slot_contents: unexpected real dir at {child},"
+                    " leaving untouched"
+                )
+        except OSError as err:
+            decky.logger.warning(f"_clear_slot_contents: could not remove {child}: {err}")
+
+
+def _populate_slot_symlinks(slot_path: Path, target_path: Path) -> None:
+    """Symlink every top-level entry of target_path into slot_path, except the
+    compatibilitytool.vdf (we own that file's contents).
+
+    Uses absolute-path symlinks so a later `mv` of the target directory does
+    not silently break the slot. Steam follows these symlinks transparently.
+    """
+    for child in target_path.iterdir():
+        if child.name == "compatibilitytool.vdf":
+            continue
+        link_path = slot_path / child.name
+        try:
+            link_path.symlink_to(child.resolve())
+        except OSError as err:
+            decky.logger.warning(
+                f"_populate_slot_symlinks: could not symlink {child.name}: {err}"
+            )
 
 
 def _versioned_tools_for(tool_id: str) -> list[dict[str, Any]]:
@@ -420,16 +543,35 @@ def _versioned_tools_for(tool_id: str) -> list[dict[str, Any]]:
 
 
 def ensure_rolling_slot(tool_id: str) -> dict[str, Any]:
-    """Point the tool's latest-slot symlink at the newest installed versioned build.
+    """Point the tool's latest-slot at the newest installed versioned build.
+
+    The slot is a REAL directory (not a whole-dir symlink) that contains:
+
+      - a hand-written compatibilitytool.vdf whose display_name matches the
+        slot name (e.g. "Proton-GE-Latest") and whose internal_name is a
+        unique key Steam does not confuse with any versioned build,
+      - a marker file recording the current target path (so is-current
+        checks are trivial and safe across restarts),
+      - one symlink per top-level entry of the target dir (proton, dist,
+        files, toolmanifest.vdf, ...), pointing at the absolute target path.
+
+    Why not just a whole-dir symlink to the versioned build? Steam reads the
+    versioned build's compatibilitytool.vdf through the symlink and sees
+    display_name="GE-Proton10-19", so the compat picker labels our slot
+    with the version tag instead of the friendly "Proton-GE-Latest". This
+    layout matches how Valve's Proton Experimental is structured: a real
+    dir with its own VDF whose display_name is the stable label.
 
     Behavior:
-      - If no versioned build is installed: no-op, returns {ok: False, reason: "no-source"}.
-      - If the slot already resolves to the newest build: no-op, returns {ok: True, changed: False, target: ...}.
-      - Otherwise: create/replace the slot as a symlink and return {ok: True, changed: True, target: ...}.
-
-    Refuses to touch the slot when it already exists AS a real directory (not a
-    symlink) -- the caller installed straight into the slot instead of using this
-    rolling mechanism, and clobbering it would delete their tool.
+      - No versioned build installed: no-op, returns {ok: False, reason: "no-source"}.
+      - Slot exists as a symlink (legacy layout): migrate to new layout.
+      - Slot exists as a real dir with the managed marker: refresh symlinks + marker.
+      - Slot exists as a real dir WITHOUT the managed marker: refuse -- an
+        earlier install_as_latest=True run wrote the archive contents in
+        place and clobbering it would delete a working Proton.
+      - Slot already points at target with the managed marker present:
+        {ok: True, changed: False}.
+      - Otherwise: rebuild slot contents, return {ok: True, changed: True}.
 
     Returns a dict so callers can log the outcome per tool.
     """
@@ -437,17 +579,40 @@ def ensure_rolling_slot(tool_id: str) -> dict[str, Any]:
     if not config:
         return {"ok": False, "reason": "unknown-tool"}
     slot_name = config["latest_slot_name"]
+    internal_name = config.get("latest_slot_internal_name", slot_name.lower().replace("-", "_"))
     candidates = _versioned_tools_for(tool_id)
     if not candidates:
         return {"ok": False, "reason": "no-source"}
-    target_path = Path(str(candidates[0]["path"]))
+    target_path = Path(str(candidates[0]["path"])).resolve()
     slot_path = compat_tools_dir() / slot_name
 
-    # If the slot exists as a REAL directory (not a symlink) refuse to touch it.
-    # That means an earlier install used destination_name=Proton-GE-Latest and
-    # wrote the archive contents in-place. Nuking it would delete the user's
-    # working Proton without a way to recover.
-    if slot_path.exists() and not slot_path.is_symlink():
+    # Verify the target tool actually has the files Steam needs, BEFORE we
+    # touch anything on disk. Steam looks for compatibilitytool.vdf (or the
+    # runtime-only toolmanifest.vdf) to boot the tool. A missing manifest
+    # means the download or install got interrupted -- do not build a
+    # rolling slot around a broken target.
+    manifest = target_path / "compatibilitytool.vdf"
+    tool_manifest = target_path / "toolmanifest.vdf"
+    if not manifest.exists() and not tool_manifest.exists():
+        return {
+            "ok": False,
+            "reason": "target-missing-manifest",
+            "target": str(target_path),
+        }
+
+    # Legacy migration: an older plugin version created the slot as a
+    # whole-dir symlink to the target. That produces the exact display-name
+    # problem this refactor is fixing. Remove the symlink so the code below
+    # can rebuild the slot as a proper managed directory.
+    if slot_path.is_symlink():
+        try:
+            slot_path.unlink()
+        except OSError as err:
+            return {"ok": False, "reason": "symlink-remove-failed", "error": str(err)}
+
+    # Real dir without our marker? The user (or an earlier install run with
+    # install_as_latest=True + destination_name=<slot>) owns it. Refuse.
+    if slot_path.exists() and not _slot_is_managed(slot_path):
         return {
             "ok": False,
             "reason": "slot-is-real-dir",
@@ -457,30 +622,22 @@ def ensure_rolling_slot(tool_id: str) -> dict[str, Any]:
     if _slot_is_current(slot_path, target_path):
         return {"ok": True, "changed": False, "target": str(target_path), "slot": str(slot_path)}
 
-    # Replace an old symlink or create a new one. Steam re-scans
-    # compatibilitytools.d on restart or when the compat properties menu
-    # opens, so the new pointer surfaces without a full Steam restart.
+    # Rebuild the slot contents to point at the new target.
     try:
-        if slot_path.is_symlink() or slot_path.exists():
-            slot_path.unlink()
-        slot_path.symlink_to(target_path, target_is_directory=True)
+        slot_path.mkdir(parents=True, exist_ok=True)
+        _clear_slot_contents(slot_path)
+        (slot_path / "compatibilitytool.vdf").write_text(
+            _slot_vdf_content(slot_name, internal_name),
+            encoding="utf-8",
+        )
+        _populate_slot_symlinks(slot_path, target_path)
+        # Marker is written LAST so a mid-update crash leaves the slot in a
+        # detectably-broken state (no marker => not-current on next run,
+        # which triggers a full rebuild) rather than a stale-marker state
+        # that would silently claim to be up to date.
+        _slot_marker_path(slot_path).write_text(str(target_path), encoding="utf-8")
     except OSError as err:
-        return {"ok": False, "reason": "symlink-failed", "error": str(err)}
-
-    # Verify Steam-visible structure exists on the target. If not, unwind
-    # the symlink -- an incomplete tool would make Steam refuse to launch.
-    manifest = target_path / "compatibilitytool.vdf"
-    tool_manifest = target_path / "toolmanifest.vdf"
-    if not manifest.exists() and not tool_manifest.exists():
-        try:
-            slot_path.unlink()
-        except OSError:
-            pass
-        return {
-            "ok": False,
-            "reason": "target-missing-manifest",
-            "target": str(target_path),
-        }
+        return {"ok": False, "reason": "rebuild-failed", "error": str(err)}
 
     return {"ok": True, "changed": True, "target": str(target_path), "slot": str(slot_path)}
 
