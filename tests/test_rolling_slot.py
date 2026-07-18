@@ -285,12 +285,37 @@ def test_migration_refuses_when_versioned_dir_already_exists(tmp_path):
     existing = _mk_tool(tmp_path, "GE-Proton10-19")
     existing_proton = (existing / "proton").read_text()
     with _patch_dirs(tmp_path):
-        ensure_rolling_slot("proton-ge")
+        result = ensure_rolling_slot("proton-ge")
     # Neither dir got clobbered; the pre-existing one is intact.
     assert existing.is_dir()
     assert (existing / "proton").read_text() == existing_proton
     # Slot is still the unmigrated real dir.
     assert slot_path.is_dir()
+    # And the outcome carries the actionable subreason + fix_hint so
+    # the frontend / support can surface exactly what needs to happen.
+    assert result["ok"] is False
+    assert result["reason"] == "slot-is-real-dir"
+    assert result["subreason"] == "duplicate-versioned-install"
+    assert "sudo rm -rf" in result["fix_hint"]
+    assert str(slot_path) in result["fix_hint"]
+
+
+def test_slot_is_real_dir_without_duplicate_leaves_subreason_none(tmp_path):
+    """A plain user-owned real dir slot (no VDF, no duplicate) still gets
+    the slot-is-real-dir refusal but WITHOUT the duplicate-versioned-install
+    subreason -- otherwise the frontend would mis-instruct the user to
+    delete their real install.
+    """
+    slot_path = tmp_path / "Proton-GE-Latest"
+    slot_path.mkdir()
+    (slot_path / "proton").write_text("#!/bin/sh\n", encoding="utf-8")
+    _mk_tool(tmp_path, "GE-Proton10-20")  # a real target so we get past no-source
+    with _patch_dirs(tmp_path):
+        result = ensure_rolling_slot("proton-ge")
+    assert result["ok"] is False
+    assert result["reason"] == "slot-is-real-dir"
+    assert result["subreason"] is None
+    assert result["fix_hint"] is None
 
 
 def test_refuses_when_target_missing_manifest(tmp_path):

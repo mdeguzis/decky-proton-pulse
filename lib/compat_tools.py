@@ -582,9 +582,27 @@ def _migrate_slot_dir_to_versioned_name(slot_path: Path, slot_name: str) -> Path
         return None
     versioned_dir = slot_path.parent / versioned_name
     if versioned_dir.exists():
+        # Two dirs on disk that both call themselves versioned_name. This
+        # happens when an older plugin ran the install twice: once with
+        # install_as_latest=True (dropped inside the slot dir) and once
+        # normally (dropped as its versioned dir). Now both are root-
+        # owned duplicates and the deck user cannot rm -rf either one to
+        # resolve. We log a highly actionable multi-line message rather
+        # than the terse "refusing" so a user (or support) grepping for
+        # trouble sees the exact commands to fix it.
         decky.logger.warning(
-            f"_migrate_slot_dir_to_versioned_name: {versioned_dir} already "
-            f"exists; refusing to rename {slot_path} on top of it"
+            "Rolling slot has a duplicate versioned install on disk.\n"
+            f"  Slot dir       : {slot_path}\n"
+            f"  Existing target: {versioned_dir}\n"
+            "  Both appear to hold the same versioned tool "
+            f"({versioned_name}). Cannot auto-migrate because the target "
+            "name is already taken and the slot dir is likely root-owned.\n"
+            "\n"
+            "  FIX: on the Deck, open Konsole (Desktop mode) and run --\n"
+            f"    sudo rm -rf {slot_path}\n"
+            "  Then in Decky's plugin manager, disable + re-enable Proton\n"
+            "  Pulse so the rolling slot rebuilds cleanly. Fully restart\n"
+            "  Steam afterwards so the compat picker rescans.\n"
         )
         return None
     try:
@@ -713,10 +731,35 @@ def ensure_rolling_slot(tool_id: str) -> dict[str, Any]:
     # Real dir without our marker? The user (or an earlier install run with
     # install_as_latest=True + destination_name=<slot>) owns it. Refuse.
     if slot_path.exists() and not _slot_is_managed(slot_path):
+        # Sniff for the specific "duplicate versioned install" state so the
+        # outcome carries an actionable subreason. If the slot dir has a
+        # VDF whose display_name is a versioned tag AND that same versioned
+        # dir also exists next to it, we know the user is stuck in the
+        # duplicate case _migrate_slot_dir_to_versioned_name refused to
+        # touch. The frontend can surface this specifically.
+        subreason = None
+        fix_hint = None
+        vdf_path = slot_path / "compatibilitytool.vdf"
+        if vdf_path.is_file():
+            try:
+                vdf_text = vdf_path.read_text(encoding="utf-8")
+                versioned_name = (read_vdf_value(vdf_text, "display_name") or "").strip()
+            except OSError:
+                versioned_name = ""
+            if (versioned_name
+                    and versioned_name != slot_name
+                    and (slot_path.parent / versioned_name).exists()):
+                subreason = "duplicate-versioned-install"
+                fix_hint = (
+                    f"Remove the duplicate slot dir manually: "
+                    f"sudo rm -rf {slot_path}"
+                )
         return {
             "ok": False,
             "reason": "slot-is-real-dir",
+            "subreason": subreason,
             "slot": str(slot_path),
+            "fix_hint": fix_hint,
         }
 
     if _slot_is_current(slot_path, target_path):
