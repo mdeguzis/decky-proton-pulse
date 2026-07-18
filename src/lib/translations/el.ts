@@ -216,6 +216,7 @@ export const el: TranslationTree = {
     archivePickerFailed: 'Αποτυχία ανοίγματος επιλογέα αρχείων. Μπορείτε να εισάγετε τη διαδρομή χειροκίνητα.',
     info: 'Πληροφορίες',
     toolSelector: 'Εργαλείο συμβατότητας',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Πρώτα κλείστε το παιχνίδι',

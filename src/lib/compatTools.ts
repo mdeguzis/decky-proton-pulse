@@ -70,3 +70,32 @@ export async function uninstallCompatibilityTool(directoryName: string): Promise
 export async function installCompatibilityToolArchive(archivePath: string): Promise<{ success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }> {
   return installCompatibilityToolArchiveCallable(archivePath);
 }
+
+// Details shown in the per-row Info modal on the Settings tab. Field
+// nullability mirrors main.py:get_compat_tool_details: the backend
+// always returns { ok: false, error } on a lookup failure, everything
+// else is populated only on ok:true.
+export interface CompatToolDetails {
+  ok: boolean;
+  error?: string;
+  directory_name?: string;
+  display_name?: string | null;
+  internal_name?: string | null;
+  tool_id?: string | null;
+  managed_slot?: string | null;
+  is_rolling_slot?: boolean;
+  current_target?: string | null;
+  path?: string;
+  installed_at_iso?: string | null;
+  size_bytes?: number;
+  source?: string | null;
+}
+
+const getCompatToolDetailsCallable = callable<
+  [directory_name: string],
+  CompatToolDetails
+>('get_compat_tool_details');
+
+export async function getCompatToolDetails(directoryName: string): Promise<CompatToolDetails> {
+  return getCompatToolDetailsCallable(directoryName);
+}

@@ -40,3 +40,5 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/PerReportAnalysisModal.tsx` | 190 | jsx | pts |
 | `src/components/ReleaseNotesModal.tsx` | 277 | jsx | Loading |
 | `src/components/ScoringGuideModal.tsx` | 116 | jsx | Report Score Tiers |
+| `src/components/tabs/SettingsTab.tsx` | 286 | jsx | Could not load details: |
+| `src/components/tabs/SettingsTab.tsx` | 288 | jsx | Loading... |

@@ -216,6 +216,7 @@ export const th: TranslationTree = {
     archivePickerFailed: 'ไม่สามารถเปิดตัวเลือกไฟล์ได้ คุณยังคงป้อนเส้นทางด้วยตนเองได้',
     info: 'ข้อมูล',
     toolSelector: 'เครื่องมือความเข้ากันได้',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'ออกจากเกมก่อน',

@@ -216,6 +216,7 @@ export const sl: TranslationTree = {
     archivePickerFailed: 'Izbirnika datotek ni bilo mogoce odpreti. Pot lahko še vedno vnesete rocno.',
     info: 'Info',
     toolSelector: 'Orodje za združljivost',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Najprej zaprite igro',

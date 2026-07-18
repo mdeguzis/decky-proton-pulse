@@ -216,6 +216,7 @@ export const es: TranslationTree = {
     archivePickerFailed: 'No se pudo abrir el selector de archivos. Aun así puedes escribir una ruta manualmente.',
     info: 'Info',
     toolSelector: 'Herramienta de compatibilidad',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Por favor, cierra el juego primero',

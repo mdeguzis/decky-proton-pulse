@@ -6,7 +6,8 @@ import { openFilePicker, FileSelectionType } from '@decky/api';
 import { toaster } from '../../lib/notify';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
-import { cancelCompatToolInstall, getCompatManagerState, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
+import { cancelCompatToolInstall, getCompatManagerState, getCompatToolDetails, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
+import type { CompatToolDetails } from '../../lib/compatTools';
 import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
 import type { CompatToolId, CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { COMPAT_TOOL_OPTIONS } from '../../types';
@@ -188,6 +189,118 @@ function ReleaseInfoModal({ release, onClose }: { release: CompatToolRelease; on
           }}
           style={{ flexShrink: 0, padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}
         >
+          <DialogButton onClick={onClose} style={{ width: '100%' }}>
+            {t().common.close}
+          </DialogButton>
+        </Focusable>
+      </div>
+    </ModalRoot>
+  );
+}
+
+function _formatSize(bytes: number | undefined): string {
+  if (bytes == null || !Number.isFinite(bytes)) return '-';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let n = bytes;
+  let u = 0;
+  while (n >= 1024 && u < units.length - 1) { n /= 1024; u += 1; }
+  return `${n.toFixed(u === 0 ? 0 : 1)} ${units[u]}`;
+}
+
+function _formatIso(iso: string | null | undefined): string {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function _toolKindLabel(details: CompatToolDetails): string {
+  if (details.is_rolling_slot) return 'Rolling latest slot';
+  if (details.managed_slot === 'versioned') return 'Versioned build';
+  return 'Custom';
+}
+
+// Per-tool "Info" modal on the Settings tab. Shows install location,
+// installed-on date, on-disk size, internal name (Steam picker key),
+// and for rolling slots the current target. Populated via
+// getCompatToolDetails(directory_name) so mtime + du run backend-side
+// only when the user opens the modal.
+function ToolDetailsModal({
+  directoryName,
+  title,
+  onClose,
+}: {
+  directoryName: string;
+  title: string;
+  onClose: () => void;
+}) {
+  const [details, setDetails] = useState<CompatToolDetails | null>(null);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    getCompatToolDetails(directoryName)
+      .then((res) => { if (alive) setDetails(res); })
+      .catch((err) => { if (alive) setErrorText(String((err as Error)?.message ?? err)); });
+    return () => { alive = false; };
+  }, [directoryName]);
+
+  const rows: [string, React.ReactNode][] = details && details.ok ? [
+    ['Type', _toolKindLabel(details)],
+    ['Location', <span style={{ fontFamily: 'monospace', fontSize: 11, wordBreak: 'break-all' }}>{details.path}</span>],
+    ['Installed', _formatIso(details.installed_at_iso)],
+    ['Size on disk', _formatSize(details.size_bytes)],
+    ['Internal name', <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{details.internal_name || '-'}</span>],
+  ] : [];
+  if (details?.ok && details.is_rolling_slot && details.current_target) {
+    rows.push(['Currently points at', <span style={{ fontFamily: 'monospace', fontSize: 11, wordBreak: 'break-all' }}>{details.current_target}</span>]);
+  }
+
+  return (
+    <ModalRoot
+      onCancel={onClose}
+      bAllowFullSize
+      className="pp-release-info-modal"
+      modalClassName="pp-release-info-modal"
+    >
+      <style>{`
+        .pp-release-info-modal,
+        .pp-release-info-modal > div,
+        .pp-release-info-modal .DialogContent_InnerWidth {
+          max-height: 80vh !important;
+          height: 80vh !important;
+          padding: 0 !important;
+        }
+        .pp-release-info-modal .ModalPosition { inset: 60px 0 70px 0 !important; }
+      `}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(80vh - 40px)', padding: '16px 20px 0' }}>
+        <div style={{ flexShrink: 0, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#eef7ff' }}>{title}</div>
+          <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 4 }}>
+            {directoryName}
+          </div>
+        </div>
+
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+          {errorText ? (
+            <div style={{ fontSize: 12, color: '#e08080' }}>Could not load details: {errorText}</div>
+          ) : details == null ? (
+            <div style={{ fontSize: 12, color: '#7a9bb5' }}>Loading...</div>
+          ) : !details.ok ? (
+            <div style={{ fontSize: 12, color: '#e08080' }}>{details.error || 'Unknown error'}</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', rowGap: 8, columnGap: 12, fontSize: 12, color: '#c8dcea', lineHeight: 1.5, paddingBottom: 12 }}>
+              {rows.map(([label, value]) => (
+                <>
+                  <div key={`${label}-l`} style={{ color: '#7a9bb5' }}>{label}</div>
+                  <div key={`${label}-v`}>{value}</div>
+                </>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Focusable style={{ flexShrink: 0, padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <DialogButton onClick={onClose} style={{ width: '100%' }}>
             {t().common.close}
           </DialogButton>
@@ -1168,6 +1281,19 @@ export function SettingsTab() {
                                       const m = showModal(<ReleaseInfoModal release={row.release!} onClose={() => m.Close()} />);
                                     }}>
                                       {t().compatTools.releaseNotes ?? "Release Notes"}
+                                    </MenuItem>
+                                  )}
+                                  {row.installed && row.tool?.directory_name && (
+                                    <MenuItem onClick={() => {
+                                      const m = showModal(
+                                        <ToolDetailsModal
+                                          directoryName={row.tool!.directory_name}
+                                          title={row.displayName}
+                                          onClose={() => m.Close()}
+                                        />
+                                      );
+                                    }}>
+                                      {t().compatTools.info}
                                     </MenuItem>
                                   )}
                                   {row.onReinstall && row.reinstallLabel ? (

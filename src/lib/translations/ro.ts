@@ -216,6 +216,7 @@ export const ro: TranslationTree = {
     archivePickerFailed: 'Nu s-a putut deschide selectorul de fisiere. Poti introduce totusi calea manual.',
     info: 'Info',
     toolSelector: 'Instrument de compatibilitate',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Inchide mai intai jocul',

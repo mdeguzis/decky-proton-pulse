@@ -124,6 +124,48 @@ describe('buildInstallProgressDetails', () => {
 // `!installStatus.install_as_latest` clause: the slot row is the one place
 // the user sees progress in that mode. Pin the guard here so a future
 // refactor cannot silently reintroduce the duplicate bars.
+// Source-scan tests for the new per-row Info modal. The menu now has two
+// items: "Release Notes" (opens the release-body modal) and "Info" (opens
+// the tool-details modal with install location, installed-on date, size,
+// internal name, and the rolling-slot target when applicable).
+describe('SettingsTab per-row Info menu wiring', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const SRC = fs.readFileSync(
+    path.join(__dirname, 'SettingsTab.tsx'),
+    'utf8',
+  );
+
+  it('renders a ToolDetailsModal component', () => {
+    // The component exists and drives getCompatToolDetails on mount so
+    // stat + du run backend-side only when the user opens the modal.
+    expect(SRC).toMatch(/function ToolDetailsModal\(\{/);
+    expect(SRC).toMatch(/getCompatToolDetails\(directoryName\)/);
+  });
+
+  it('shows the Info menu item only for installed tools with a directory_name', () => {
+    // Uninstalled release rows have no on-disk tool, so the Info modal
+    // would fail; guard behind row.installed && row.tool?.directory_name.
+    expect(SRC).toMatch(/row\.installed && row\.tool\?\.directory_name && \(/);
+    expect(SRC).toMatch(/<ToolDetailsModal[\s\S]{0,120}directoryName=\{row\.tool!\.directory_name\}/);
+  });
+
+  it('renames the current Info menu label to Release Notes', () => {
+    // Regression guard for the earlier commit: the release-notes menu
+    // item must use the renamed i18n key with an English fallback so
+    // untranslated builds stay readable.
+    expect(SRC).toContain('t().compatTools.releaseNotes ?? "Release Notes"');
+    // The new Info menu item uses the original info key.
+    expect(SRC).toMatch(/\{t\(\)\.compatTools\.info\}/);
+  });
+
+  it('gives the ToolDetailsModal the same top/bottom clearance as ReleaseInfoModal', () => {
+    // Both modals must clear Steam's top status bar and bottom BPM nav
+    // bar. Same CSS override, applied to the same className.
+    expect(SRC).toMatch(/inset: 60px 0 70px 0 !important/);
+  });
+});
+
 describe('SettingsTab release-row progress dedup guard', () => {
   const fs = require('fs');
   const path = require('path');

@@ -304,6 +304,20 @@
       "column": 108,
       "kind": "jsx",
       "text": "Report Score Tiers"
+    },
+    {
+      "file": "src/components/tabs/SettingsTab.tsx",
+      "line": 286,
+      "column": 61,
+      "kind": "jsx",
+      "text": "Could not load details:"
+    },
+    {
+      "file": "src/components/tabs/SettingsTab.tsx",
+      "line": 288,
+      "column": 61,
+      "kind": "jsx",
+      "text": "Loading..."
     }
   ]
 }

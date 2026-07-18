@@ -216,6 +216,7 @@ export const ja: TranslationTree = {
     archivePickerFailed: 'ファイルピッカーを開けませんでした。パスは手動で入力できます。',
     info: '情報',
     toolSelector: '互換性ツール',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: '先にゲームを終了してください',

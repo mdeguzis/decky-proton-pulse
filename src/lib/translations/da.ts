@@ -216,6 +216,7 @@ export const da: TranslationTree = {
     archivePickerFailed: 'Kunne ikke åbne filovervælger. Du kan stadig indtaste stien manuelt.',
     info: 'Info',
     toolSelector: 'Kompatibilitetsværktøj',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Afslut spillet først',

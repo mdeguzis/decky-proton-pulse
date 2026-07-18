@@ -216,6 +216,7 @@ export const vi: TranslationTree = {
     archivePickerFailed: 'Không thể mở bộ chọn tệp. Bạn vẫn có thể nhập đường dẫn thủ công.',
     info: 'Thông tin',
     toolSelector: 'Công cụ tương thích',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Thoát trò chơi trước',

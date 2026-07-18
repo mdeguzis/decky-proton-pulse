@@ -216,6 +216,7 @@ export const no: TranslationTree = {
     archivePickerFailed: 'Kunne ikke apne filvelgeren. Du kan fortsatt skrive inn stien manuelt.',
     info: 'Info',
     toolSelector: 'Kompatibilitetsverktøy',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Avslutt spillet først',

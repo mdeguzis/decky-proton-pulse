@@ -216,6 +216,7 @@ export const cs: TranslationTree = {
     archivePickerFailed: 'Nepodařilo se otevřít výběr souborů. Cestu můžete stále zadat ručně.',
     info: 'Info',
     toolSelector: 'Nástroj kompatibility',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Nejprve ukončete hru',

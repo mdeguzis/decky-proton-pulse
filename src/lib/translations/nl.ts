@@ -216,6 +216,7 @@ export const nl: TranslationTree = {
     archivePickerFailed: 'De bestandskiezer kon niet worden geopend. Je kunt het pad nog steeds handmatig invoeren.',
     info: 'Info',
     toolSelector: 'Compatibiliteitstool',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Sluit het spel eerst af',

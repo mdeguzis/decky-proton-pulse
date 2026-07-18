@@ -216,6 +216,7 @@ export const uk: TranslationTree = {
     archivePickerFailed: 'Не вдалося відкрити вибір файлів. Ви можете вручну ввести шлях.',
     info: 'Інфо',
     toolSelector: 'Інструмент сумісності',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Спочатку закрийте гру',

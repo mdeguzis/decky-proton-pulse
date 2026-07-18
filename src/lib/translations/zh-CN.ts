@@ -216,6 +216,7 @@ export const zhCN: TranslationTree = {
     archivePickerFailed: '无法打开文件选择器。你仍然可以手动输入路径。',
     info: '信息',
     toolSelector: '兼容性工具',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: '请先退出游戏',

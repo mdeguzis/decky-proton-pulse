@@ -216,6 +216,7 @@ export const zhTW: TranslationTree = {
     archivePickerFailed: '無法開啟檔案選擇器，您仍可手動輸入路徑。',
     info: '資訊',
     toolSelector: '相容性工具',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: '請先退出遊戲',

@@ -216,6 +216,7 @@ export const ko: TranslationTree = {
     archivePickerFailed: '파일 선택기를 열 수 없습니다. 경로는 직접 입력할 수 있습니다.',
     info: '정보',
     toolSelector: '호환성 도구',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: '먼저 게임을 종료해 주세요',

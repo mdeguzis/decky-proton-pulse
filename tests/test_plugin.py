@@ -1776,3 +1776,85 @@ def test_cancel_compat_tool_install_skips_dead_proc(plugin: Plugin) -> None:
 
     assert result == {"success": True, "message": "Install cancelled."}
     proc.terminate.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# get_compat_tool_details
+# ---------------------------------------------------------------------------
+
+def test_get_compat_tool_details_versioned_tool(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    tool_dir = tmp_path / "GE-Proton10-19"
+    tool_dir.mkdir()
+    (tool_dir / "compatibilitytool.vdf").write_text('"x" {}', encoding="utf-8")
+    (tool_dir / "proton").write_text("#!/bin/sh\n" * 10, encoding="utf-8")
+    dist = tool_dir / "dist"
+    dist.mkdir()
+    (dist / "wine").write_bytes(b"a" * 4096)
+
+    installed_tools = [{
+        "directory_name": "GE-Proton10-19",
+        "display_name": "GE-Proton10-19",
+        "internal_name": "GE-Proton10-19",
+        "path": str(tool_dir),
+        "source": "custom",
+        "tool_id": "proton-ge",
+        "managed_slot": "versioned",
+    }]
+    with patch("main.list_installed_compatibility_tools", return_value=installed_tools):
+        result = asyncio.run(plugin.get_compat_tool_details("GE-Proton10-19"))
+
+    assert result["ok"] is True
+    assert result["directory_name"] == "GE-Proton10-19"
+    assert result["display_name"] == "GE-Proton10-19"
+    assert result["tool_id"] == "proton-ge"
+    assert result["managed_slot"] == "versioned"
+    assert result["is_rolling_slot"] is False
+    assert result["current_target"] is None
+    assert result["path"] == str(tool_dir)
+    assert result["installed_at_iso"] is not None
+    # Only the two real files count (VDF + proton script + wine bytes); 4096
+    # from wine binary plus the tiny script + VDF (few dozen bytes each).
+    assert result["size_bytes"] >= 4096
+
+
+def test_get_compat_tool_details_rolling_slot(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    """The rolling slot's per-file symlinks must NOT be counted in size_bytes
+    (they resolve to the target). Only real files inside the slot count --
+    for a properly-built slot that means the compatibilitytool.vdf plus the
+    marker file.
+    """
+    target = tmp_path / "GE-Proton10-19"
+    target.mkdir()
+    (target / "proton").write_bytes(b"x" * 8192)
+    slot = tmp_path / "Proton-GE-Latest"
+    slot.mkdir()
+    (slot / "compatibilitytool.vdf").write_text('"x" {}', encoding="utf-8")
+    (slot / ".proton-pulse-managed").write_text(str(target.resolve()), encoding="utf-8")
+    # per-file symlink into the target
+    (slot / "proton").symlink_to(target / "proton")
+
+    installed_tools = [{
+        "directory_name": "Proton-GE-Latest",
+        "display_name": "Proton-GE-Latest",
+        "internal_name": "proton_ge_latest",
+        "path": str(slot),
+        "source": "custom",
+        "tool_id": "proton-ge",
+        "managed_slot": "latest",
+    }]
+    with patch("main.list_installed_compatibility_tools", return_value=installed_tools):
+        result = asyncio.run(plugin.get_compat_tool_details("Proton-GE-Latest"))
+
+    assert result["ok"] is True
+    assert result["is_rolling_slot"] is True
+    assert result["current_target"] == str(target.resolve())
+    # Size counts VDF + marker only (both small); symlinked 'proton'
+    # (8192 bytes) must NOT be counted.
+    assert result["size_bytes"] < 8192
+
+
+def test_get_compat_tool_details_unknown_tool(plugin: Plugin) -> None:
+    with patch("main.list_installed_compatibility_tools", return_value=[]):
+        result = asyncio.run(plugin.get_compat_tool_details("does-not-exist"))
+    assert result["ok"] is False
+    assert "tool not found" in result["error"]

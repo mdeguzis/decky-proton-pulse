@@ -216,6 +216,7 @@ export const bg: TranslationTree = {
     archivePickerFailed: 'Неуспешно отваряне на избирача на файлове. Все още можете да въведете пътя ръчно.',
     info: 'Инфо',
     toolSelector: 'Инструмент за съвместимост',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Първо излезте от играта',

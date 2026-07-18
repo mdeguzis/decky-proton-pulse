@@ -216,6 +216,7 @@ export const de: TranslationTree = {
     archivePickerFailed: 'Die Dateiauswahl konnte nicht geöffnet werden. Sie können den Pfad weiterhin manuell eingeben.',
     info: 'Info',
     toolSelector: 'Kompatibilitätstool',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Bitte beenden Sie zuerst das Spiel',

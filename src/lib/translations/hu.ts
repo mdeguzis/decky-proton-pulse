@@ -216,6 +216,7 @@ export const hu: TranslationTree = {
     archivePickerFailed: 'Nem sikerült megnyitni a fájlkiválasztót. Az elérési utat manuálisan is megadhatja.',
     info: 'Info',
     toolSelector: 'Kompatibilitási eszköz',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Először lépjen ki a játékból',

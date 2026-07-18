@@ -216,6 +216,7 @@ export const pl: TranslationTree = {
     archivePickerFailed: 'Nie można otworzyć selektora plików. Możesz nadal ręcznie wpisać ścieżkę.',
     info: 'Info',
     toolSelector: 'Narzędzie zgodności',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Najpierw zakończ grę',

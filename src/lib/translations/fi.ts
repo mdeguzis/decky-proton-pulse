@@ -216,6 +216,7 @@ export const fi: TranslationTree = {
     archivePickerFailed: 'Tiedostojen valitsija ei avautunut. Voit syöttää polun manuaalisesti.',
     info: 'Tiedot',
     toolSelector: 'Yhteensopivuustyökalu',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Sulje peli ensin',

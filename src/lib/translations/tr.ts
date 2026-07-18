@@ -216,6 +216,7 @@ export const tr: TranslationTree = {
     archivePickerFailed: 'Dosya seçici açılamadı. Yolu yine de elle girebilirsiniz.',
     info: 'Bilgi',
     toolSelector: 'Uyumluluk aracı',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Lütfen önce oyundan çıkın',

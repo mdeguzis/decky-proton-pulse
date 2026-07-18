@@ -216,6 +216,7 @@ export const sv: TranslationTree = {
     archivePickerFailed: 'Kunde inte öppna filväljaren. Du kan fortfarande ange sökvägen manuellt.',
     info: 'Info',
     toolSelector: 'Kompatibilitetsverktyg',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Avsluta spelet först',

@@ -246,6 +246,7 @@ export const ru: TranslationTree = {
     archivePickerFailed: 'Не удалось открыть выбор файла. Путь всё равно можно ввести вручную.',
     info: 'Инфо',
     toolSelector: 'Инструмент совместимости',
+    releaseNotes: 'Release Notes',
   },
   configure: {
     quitGameFirst: 'Сначала выйдите из игры',
