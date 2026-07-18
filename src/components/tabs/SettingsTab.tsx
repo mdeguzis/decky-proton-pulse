@@ -628,7 +628,16 @@ export function SettingsTab() {
       const installed = !!matchedTool;
       const isInstalling = installingTag === release.tag_name;
       const installStatus = managerState.install_status;
-      const progress = isInstalling && installStatus.tag_name === release.tag_name
+      // When the user clicked Install on the -Latest slot row, install_status
+      // has install_as_latest=true. The versioned tool is being downloaded as
+      // a side effect (the -Latest slot needs a versioned target), but the
+      // slot row is the one place the user expects to see progress. Suppress
+      // the release row's progress bar to avoid two identical bars for one
+      // download -- the slot row (installedOnlyRows) still shows it.
+      const showProgressHere = isInstalling
+        && installStatus.tag_name === release.tag_name
+        && !installStatus.install_as_latest;
+      const progress = showProgressHere
         ? buildInstallProgressDetails(installStatus, release.asset_size, getInstallProgressLabels())
         : null;
 

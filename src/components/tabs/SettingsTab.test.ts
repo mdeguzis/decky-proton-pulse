@@ -112,3 +112,41 @@ describe('buildInstallProgressDetails', () => {
     expect(progress.etaLabel).toBe('Finalizing...');
   });
 });
+
+// Source-scan regression guard for the "two progress bars for one install" bug.
+// The Settings tab renders both a versioned "release row" and a slot "installed-
+// only row" for the currently-installing target. Both read from the same
+// managerState.install_status, so both used to render identical progress bars
+// side-by-side when the user hit Install on the -Latest row (the ambient
+// install_status.install_as_latest is true then).
+//
+// The fix guards the release-row's progress computation with a
+// `!installStatus.install_as_latest` clause: the slot row is the one place
+// the user sees progress in that mode. Pin the guard here so a future
+// refactor cannot silently reintroduce the duplicate bars.
+describe('SettingsTab release-row progress dedup guard', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const SRC = fs.readFileSync(
+    path.join(__dirname, 'SettingsTab.tsx'),
+    'utf8',
+  );
+
+  it('release-row progress computation excludes install_as_latest installs', () => {
+    // The relevant block sits right above the releaseRows.map call and reads
+    // isInstalling + install_status.tag_name + !install_status.install_as_latest.
+    expect(SRC).toMatch(
+      /const\s+showProgressHere\s*=\s*isInstalling[\s\S]{0,200}!installStatus\.install_as_latest/,
+    );
+    expect(SRC).toMatch(/const\s+progress\s*=\s*showProgressHere\s*\?\s*buildInstallProgressDetails/);
+  });
+
+  it('does NOT keep the old unguarded progress ternary that fired for install_as_latest too', () => {
+    // Regression guard: catches a copy/paste that reintroduces the pre-fix
+    // condition (progress ternary with no install_as_latest clause on the
+    // release-row builder).
+    expect(SRC).not.toMatch(
+      /const\s+progress\s*=\s*isInstalling\s*&&\s*installStatus\.tag_name\s*===\s*release\.tag_name\s*\n\s*\?\s*buildInstallProgressDetails/,
+    );
+  });
+});
