@@ -517,6 +517,72 @@ def _populate_slot_symlinks(slot_path: Path, target_path: Path) -> None:
             )
 
 
+def _migrate_slot_dir_to_versioned_name(slot_path: Path, slot_name: str) -> Path | None:
+    """If slot_path is an unmanaged real directory that contains a full versioned
+    Proton install (a compatibilitytool.vdf with display_name != slot_name),
+    rename the slot directory to that versioned display_name so a proper
+    managed slot can be built on top.
+
+    Why this exists: older plugin versions (and a few manual installs) ran the
+    Proton tarball extract with `install_as_latest=True` + `destination_name=
+    <slot>`, which dropped the whole versioned tool INSIDE the slot directory
+    itself. Steam then read the versioned compatibilitytool.vdf and labelled
+    the slot with the version tag (e.g. "proton-cachyos-11.0-20260702-slr-x86_64")
+    instead of the friendly "Proton-CachyOS-Latest". _versioned_tools_for
+    filters out directories that share a slot name, so the tool ended up
+    invisible to ensure_rolling_slot -> "no-source" -> no slot ever got built.
+
+    Renaming the directory to its VDF's display_name unhides it (now a normal
+    versioned tool the plugin can see) and frees the slot name for the
+    managed-slot rebuild below to claim.
+
+    Returns the new (versioned) path on successful migration, or None if
+    migration did not apply (caller should proceed with the normal
+    refuse-if-unmanaged path).
+    """
+    vdf_path = slot_path / "compatibilitytool.vdf"
+    if not vdf_path.is_file():
+        return None
+    try:
+        vdf_text = vdf_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    versioned_name = (read_vdf_value(vdf_text, "display_name") or "").strip()
+    # No display_name, or it already matches the slot: refuse migration
+    # (the second case would be a previously-managed slot whose marker got
+    # deleted -- normal ensure code handles that).
+    if not versioned_name or versioned_name == slot_name:
+        return None
+    # Sanitize: refuse anything that could escape compatibilitytools.d.
+    if ("/" in versioned_name or "\\" in versioned_name
+            or ".." in versioned_name or versioned_name.startswith(".")):
+        decky.logger.warning(
+            f"_migrate_slot_dir_to_versioned_name: unsafe VDF display_name "
+            f"{versioned_name!r} in {slot_path}; refusing to rename"
+        )
+        return None
+    versioned_dir = slot_path.parent / versioned_name
+    if versioned_dir.exists():
+        decky.logger.warning(
+            f"_migrate_slot_dir_to_versioned_name: {versioned_dir} already "
+            f"exists; refusing to rename {slot_path} on top of it"
+        )
+        return None
+    try:
+        slot_path.rename(versioned_dir)
+    except OSError as err:
+        decky.logger.warning(
+            f"_migrate_slot_dir_to_versioned_name: rename {slot_path} -> "
+            f"{versioned_dir} failed: {err}"
+        )
+        return None
+    decky.logger.info(
+        f"Rolling slot migration: renamed unmanaged {slot_path.name} -> "
+        f"{versioned_name}; rolling slot will now be rebuilt on top"
+    )
+    return versioned_dir
+
+
 def _versioned_tools_for(tool_id: str) -> list[dict[str, Any]]:
     """Installed custom tools that belong to a specific slot family (proton-ge / cachyos)
     and are NOT themselves the rolling slot. Sorted newest-first by version tag.
@@ -566,9 +632,13 @@ def ensure_rolling_slot(tool_id: str) -> dict[str, Any]:
       - No versioned build installed: no-op, returns {ok: False, reason: "no-source"}.
       - Slot exists as a symlink (legacy layout): migrate to new layout.
       - Slot exists as a real dir with the managed marker: refresh symlinks + marker.
-      - Slot exists as a real dir WITHOUT the managed marker: refuse -- an
-        earlier install_as_latest=True run wrote the archive contents in
-        place and clobbering it would delete a working Proton.
+      - Slot exists as a real dir WITHOUT the managed marker AND contains a
+        full versioned Proton install (older install_as_latest=True pattern):
+        auto-rename the slot dir to its VDF display_name so the tool becomes
+        visible as a normal versioned candidate, then rebuild a managed slot
+        on top.
+      - Slot exists as a real dir WITHOUT the managed marker AND does NOT
+        look like a full Proton install: refuse -- it belongs to the user.
       - Slot already points at target with the managed marker present:
         {ok: True, changed: False}.
       - Otherwise: rebuild slot contents, return {ok: True, changed: True}.
@@ -580,11 +650,22 @@ def ensure_rolling_slot(tool_id: str) -> dict[str, Any]:
         return {"ok": False, "reason": "unknown-tool"}
     slot_name = config["latest_slot_name"]
     internal_name = config.get("latest_slot_internal_name", slot_name.lower().replace("-", "_"))
+    slot_path = compat_tools_dir() / slot_name
+
+    # Auto-migration for a slot that holds a versioned Proton install directly
+    # (older install_as_latest=True + destination_name=<slot> pattern).
+    # Renaming it to its VDF display_name unhides the tool for
+    # _versioned_tools_for below and lets ensure_rolling_slot rebuild a
+    # proper managed slot on top. Migration is a no-op when the slot is a
+    # symlink, managed, or absent -- normal control flow handles those.
+    if (slot_path.is_dir() and not slot_path.is_symlink()
+            and not _slot_is_managed(slot_path)):
+        _migrate_slot_dir_to_versioned_name(slot_path, slot_name)
+
     candidates = _versioned_tools_for(tool_id)
     if not candidates:
         return {"ok": False, "reason": "no-source"}
     target_path = Path(str(candidates[0]["path"])).resolve()
-    slot_path = compat_tools_dir() / slot_name
 
     # Verify the target tool actually has the files Steam needs, BEFORE we
     # touch anything on disk. Steam looks for compatibilitytool.vdf (or the

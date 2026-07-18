@@ -183,9 +183,10 @@ def test_migrates_legacy_symlink_slot(tmp_path):
 
 
 def test_refuses_unmanaged_real_directory_slot(tmp_path):
-    """If Proton-GE-Latest is a real dir without our marker file, refuse --
-    it belongs to the user (e.g. install_as_latest=True landed here) and
-    clobbering it would delete their install.
+    """If Proton-GE-Latest is a real dir with a valid VDF but no marker,
+    the migration branch would normally rename it. But here the VDF is
+    missing (just a bare proton script), so migration cannot apply and
+    the slot must be refused as user-owned.
     """
     (tmp_path / "Proton-GE-Latest").mkdir()
     (tmp_path / "Proton-GE-Latest" / "proton").write_text("#!/bin/sh\n", encoding="utf-8")
@@ -198,6 +199,98 @@ def test_refuses_unmanaged_real_directory_slot(tmp_path):
     slot = tmp_path / "Proton-GE-Latest"
     assert slot.is_dir()
     assert (slot / "proton").is_file()
+
+
+def test_auto_migrates_versioned_install_inside_slot_dir(tmp_path):
+    """The Deck-in-the-wild bug: an older plugin extracted the tarball
+    contents directly INTO the slot dir with install_as_latest=True. The
+    slot is a real dir owned by the user (no managed marker), containing
+    a full versioned Proton install whose VDF says display_name="GE-Proton10-19".
+
+    ensure_rolling_slot must:
+      1. Detect the versioned VDF display_name inside the slot dir.
+      2. Rename the slot dir to that display_name (freeing the slot name).
+      3. Rebuild a proper managed slot symlinking to the renamed dir.
+
+    Without this migration users are stuck: _versioned_tools_for hides
+    tools whose directory_name matches a slot name, so the tool never
+    becomes a candidate and the plugin returns no-source forever.
+    """
+    slot_path = tmp_path / "Proton-GE-Latest"
+    slot_path.mkdir()
+    # Full versioned Proton install layout, including a versioned VDF.
+    (slot_path / "compatibilitytool.vdf").write_text(
+        '"compatibilitytools" { "compat_tools" { "GE-Proton10-19" { "display_name" "GE-Proton10-19" } } }',
+        encoding="utf-8",
+    )
+    (slot_path / "toolmanifest.vdf").write_text('"manifest" {}', encoding="utf-8")
+    (slot_path / "proton").write_text("#!/bin/sh\n", encoding="utf-8")
+    (slot_path / "dist").mkdir()
+    (slot_path / "dist" / "version").write_text("GE-Proton10-19", encoding="utf-8")
+
+    with _patch_dirs(tmp_path):
+        result = ensure_rolling_slot("proton-ge")
+
+    # Migration happened: renamed dir exists, versioned tool is now visible.
+    versioned_dir = tmp_path / "GE-Proton10-19"
+    assert versioned_dir.is_dir()
+    assert (versioned_dir / "proton").is_file()
+    # Managed slot got built on top pointing at the renamed dir.
+    assert result["ok"] is True
+    assert result["changed"] is True
+    assert slot_path.is_dir()
+    assert not slot_path.is_symlink()
+    assert (slot_path / ".proton-pulse-managed").is_file()
+    vdf_text = (slot_path / "compatibilitytool.vdf").read_text()
+    assert '"display_name" "Proton-GE-Latest"' in vdf_text
+    assert (slot_path / "proton").is_symlink()
+    assert (slot_path / "proton").resolve() == (versioned_dir / "proton").resolve()
+
+
+def test_migration_refuses_unsafe_vdf_display_name(tmp_path):
+    """A hostile VDF whose display_name contains a slash / .. / leading dot
+    must not be used as a target directory name. Migration bails without
+    renaming, and the outer flow refuses the slot as usual.
+    """
+    slot_path = tmp_path / "Proton-GE-Latest"
+    slot_path.mkdir()
+    (slot_path / "compatibilitytool.vdf").write_text(
+        '"compatibilitytools" { "compat_tools" { "x" { "display_name" "../etc/passwd" } } }',
+        encoding="utf-8",
+    )
+    (slot_path / "proton").write_text("#!/bin/sh\n", encoding="utf-8")
+    _mk_tool(tmp_path, "GE-Proton10-20")
+    with _patch_dirs(tmp_path):
+        result = ensure_rolling_slot("proton-ge")
+    # Unsafe VDF => migration is a no-op; the outer refuse-if-unmanaged
+    # branch fires as normal.
+    assert result["ok"] is False
+    assert result["reason"] == "slot-is-real-dir"
+    assert slot_path.is_dir()
+    assert not (tmp_path.parent / "etc").exists()  # nothing escaped
+
+
+def test_migration_refuses_when_versioned_dir_already_exists(tmp_path):
+    """If the target versioned dir name is already taken (e.g. a duplicate
+    install), migration must NOT clobber it -- refuse instead.
+    """
+    slot_path = tmp_path / "Proton-GE-Latest"
+    slot_path.mkdir()
+    (slot_path / "compatibilitytool.vdf").write_text(
+        '"compatibilitytools" { "compat_tools" { "x" { "display_name" "GE-Proton10-19" } } }',
+        encoding="utf-8",
+    )
+    (slot_path / "proton").write_text("#!/bin/sh\n", encoding="utf-8")
+    # A separate versioned install already occupies the target name.
+    existing = _mk_tool(tmp_path, "GE-Proton10-19")
+    existing_proton = (existing / "proton").read_text()
+    with _patch_dirs(tmp_path):
+        ensure_rolling_slot("proton-ge")
+    # Neither dir got clobbered; the pre-existing one is intact.
+    assert existing.is_dir()
+    assert (existing / "proton").read_text() == existing_proton
+    # Slot is still the unmigrated real dir.
+    assert slot_path.is_dir()
 
 
 def test_refuses_when_target_missing_manifest(tmp_path):
