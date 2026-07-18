@@ -128,6 +128,36 @@ describe('buildInstallProgressDetails', () => {
 // items: "Release Notes" (opens the release-body modal) and "Info" (opens
 // the tool-details modal with install location, installed-on date, size,
 // internal name, and the rolling-slot target when applicable).
+// Source-scan test for the slot-row header/subtitle swap: friendly slot
+// name in the header ("Proton-GE-Latest") and the active version in the
+// subtitle ("GE-Proton11-1") -- matches Steam's Proton Experimental UX
+// where the tool name is stable and the build is the subtitle.
+describe('SettingsTab rolling-slot row header/subtitle shape', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const SRC = fs.readFileSync(
+    path.join(__dirname, 'SettingsTab.tsx'),
+    'utf8',
+  );
+
+  it('slot row subtitle prefers current_target_name over old best-effort fields', () => {
+    // The block that picks the subtitle:
+    //   isSlotRow && tool.current_target_name
+    //     ? formatReleaseVersion(tool.current_target_name)
+    //     : <fallback>
+    expect(SRC).toMatch(
+      /isSlotRow && tool\.current_target_name[\s\S]{0,120}formatReleaseVersion\(tool\.current_target_name\)/,
+    );
+  });
+
+  it('slot row header stays the friendly display_name from the custom VDF', () => {
+    // No explicit displayName remap for slot rows -- the managed slot's
+    // display_name ('Proton-GE-Latest' via our custom compatibilitytool.vdf)
+    // is already the friendly label.
+    expect(SRC).toMatch(/displayName: tool\.display_name/);
+  });
+});
+
 describe('SettingsTab per-row Info menu wiring', () => {
   const fs = require('fs');
   const path = require('path');

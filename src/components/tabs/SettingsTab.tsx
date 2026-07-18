@@ -804,6 +804,20 @@ export function SettingsTab() {
           ? buildInstallProgressDetails(managerState.install_status, managerState.current_release?.asset_size, getInstallProgressLabels())
           : null;
         const isManagedTool = isManagedToolForId(tool, selectedTool);
+        // Rolling slot rows read best when the friendly slot name from the
+        // custom VDF ("Proton-GE-Latest") is the header and the version
+        // the slot currently points at ("GE-Proton11-1") is the subtitle.
+        // tool.display_name is ALREADY the friendly slot name via our
+        // managed-slot VDF, so no header remap is needed. The subtitle
+        // prefers current_target_name (fresh from the backend marker
+        // read) and falls back to the old best-effort formatting for
+        // versioned / custom tools.
+        const isSlotRow = tool.managed_slot === 'latest';
+        const versionLabelValue = isSlotRow && tool.current_target_name
+          ? formatReleaseVersion(tool.current_target_name)
+          : isManagedTool
+            ? formatReleaseVersion(tool.internal_name || tool.display_name || tool.directory_name)
+            : extras.compatCustom();
         return ({
           key: `installed:${tool.directory_name}`,
           kind: 'installed-only' as const,
@@ -813,9 +827,7 @@ export function SettingsTab() {
           installing: isLatestSlotInstall,
           removing: removingTool === tool.directory_name,
           displayName: tool.display_name,
-          versionLabel: isManagedTool
-            ? formatReleaseVersion(tool.internal_name || tool.display_name || tool.directory_name)
-            : extras.compatCustom(),
+          versionLabel: versionLabelValue,
           versionMeta: progress?.progressMeta,
           progressRatio: progress?.progressRatio,
           progressLabel: progress?.progressLabel,

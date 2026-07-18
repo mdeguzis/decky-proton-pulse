@@ -321,3 +321,63 @@ def test_list_installed_backward_compat_single_meta(mock_compat_dirs: Path) -> N
     ge_tool = next((t for t in tools if t["directory_name"] == "GE-Proton9-7"), None)
     assert ge_tool is not None
     assert ge_tool["tool_id"] == "proton-ge"
+
+
+def test_list_installed_populates_current_target_name_for_rolling_slot(
+    tmp_path: Path,
+) -> None:
+    """A managed rolling-slot tool should expose the versioned build's
+    basename as current_target_name so the Settings tab can render it as
+    the row subtitle (header = friendly slot name, subtitle = active
+    version). Reads the target path out of the .proton-pulse-managed
+    marker file the slot builder writes.
+    """
+    versioned = tmp_path / "GE-Proton11-1"
+    versioned.mkdir()
+    slot = tmp_path / PROTON_GE_LATEST_SLOT_NAME
+    slot.mkdir()
+    (slot / ".proton-pulse-managed").write_text(str(versioned.resolve()), encoding="utf-8")
+
+    with patch("lib.compat_tools.compat_tools_dirs", return_value=[tmp_path]), \
+         patch("lib.compat_tools.find_steam_root", return_value=None), \
+         patch("lib.compat_tools.decky") as mock_decky:
+        mock_decky.DECKY_USER_HOME = str(tmp_path)
+        mock_decky.logger = MagicMock()
+        tools = list_installed_compatibility_tools()
+
+    slot_tool = next((t for t in tools if t["directory_name"] == PROTON_GE_LATEST_SLOT_NAME), None)
+    assert slot_tool is not None
+    assert slot_tool["managed_slot"] == "latest"
+    # Backend read the marker + reduced to basename so the frontend does
+    # not have to know how to format an absolute path.
+    assert slot_tool["current_target_name"] == "GE-Proton11-1"
+    # Versioned build's row does not carry the field (only rolling slots).
+    versioned_tool = next((t for t in tools if t["directory_name"] == "GE-Proton11-1"), None)
+    assert versioned_tool is not None
+    assert versioned_tool.get("current_target_name") is None
+
+
+def test_list_installed_current_target_name_is_none_when_marker_missing(
+    tmp_path: Path,
+) -> None:
+    """An unmanaged real-dir slot (or one whose marker hasn't been written
+    yet) must return current_target_name=None so the frontend can fall
+    back to its previous best-effort subtitle formatting without exploding.
+    """
+    slot = tmp_path / PROTON_GE_LATEST_SLOT_NAME
+    slot.mkdir()
+    # No marker file, no VDF -- just a bare dir named like a slot.
+
+    with patch("lib.compat_tools.compat_tools_dirs", return_value=[tmp_path]), \
+         patch("lib.compat_tools.find_steam_root", return_value=None), \
+         patch("lib.compat_tools.decky") as mock_decky:
+        mock_decky.DECKY_USER_HOME = str(tmp_path)
+        mock_decky.logger = MagicMock()
+        tools = list_installed_compatibility_tools()
+
+    slot_tool = next((t for t in tools if t["directory_name"] == PROTON_GE_LATEST_SLOT_NAME), None)
+    if slot_tool is not None:
+        # Whether or not the entry passes _looks_like_proton_tool depends
+        # on the slot name; if it did pass, current_target_name must be
+        # None because no marker was written.
+        assert slot_tool.get("current_target_name") is None

@@ -324,6 +324,24 @@ def list_installed_compatibility_tools(  # pylint: disable=too-many-locals,too-m
                     latest_tag = meta.get("tag_name") or None
                     break
 
+            # For rolling slots (managed_slot='latest'), read the
+            # .proton-pulse-managed marker to expose the underlying
+            # versioned build as `current_target_name`. Frontend uses this
+            # as the row subtitle so the user sees "Proton-GE-Latest"
+            # (header) with "GE-Proton11-1" (currently active version)
+            # underneath -- same shape Steam's own Proton Experimental UI
+            # has when it shows the tool name plus a build subtitle.
+            current_target_name: str | None = None
+            if managed_slot == "latest":
+                marker = entry / ".proton-pulse-managed"
+                if marker.is_file():
+                    try:
+                        raw = marker.read_text(encoding="utf-8").strip()
+                        if raw:
+                            current_target_name = Path(raw).name
+                    except OSError:
+                        current_target_name = None
+
             tools.append(
                 {
                     "directory_name": entry.name,
@@ -334,6 +352,7 @@ def list_installed_compatibility_tools(  # pylint: disable=too-many-locals,too-m
                     "tool_id": detected_tool_id,
                     "managed_slot": managed_slot,
                     "latest_tag": latest_tag,
+                    "current_target_name": current_target_name,
                 }
             )
 
