@@ -266,6 +266,7 @@ export interface TranslationTree {
     timeLeft: (time: string) => string;
     archivePickerFailed: string;
     info: string;
+    releaseNotes?: string;
     toolSelector: string;
   };
   configure: {
@@ -1037,6 +1038,7 @@ export const en: TranslationTree = {
     timeLeft: (time) => `${time} left`,
     archivePickerFailed: 'Could not open the file picker. You can still enter a path manually.',
     info: 'Info',
+    releaseNotes: 'Release Notes',
     toolSelector: 'Compatibility Tool',
   },
   configure: {
