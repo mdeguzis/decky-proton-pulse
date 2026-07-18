@@ -132,6 +132,44 @@ describe('buildInstallProgressDetails', () => {
 // name in the header ("Proton-GE-Latest") and the active version in the
 // subtitle ("GE-Proton11-1") -- matches Steam's Proton Experimental UX
 // where the tool name is stable and the build is the subtitle.
+// Match Valve's Proton Experimental UX: a single row in Steam's UI even
+// though on-disk there is an unversioned tool + an underlying versioned
+// binary. Once a rolling slot claims a versioned build as its target,
+// the versioned build's row must disappear from the Settings list so
+// the slot row is the one entry the user manages.
+describe('SettingsTab hides versioned rows covered by a rolling slot', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const SRC = fs.readFileSync(
+    path.join(__dirname, 'SettingsTab.tsx'),
+    'utf8',
+  );
+
+  it('collects the set of directory_names claimed by installed rolling slots', () => {
+    // The set is built from managerState.installed_tools where
+    // managed_slot === 'latest' and current_target_name is populated.
+    expect(SRC).toMatch(/const targetsHiddenByRollingSlot = new Set<string>\(/);
+    expect(SRC).toMatch(
+      /\.filter\(\(t\) => t\.managed_slot === 'latest' && t\.current_target_name\)/,
+    );
+    expect(SRC).toMatch(/\.map\(\(t\) => t\.current_target_name as string\)/);
+  });
+
+  it('filters out release rows whose matched tool is covered by a rolling slot', () => {
+    expect(SRC).toMatch(
+      /\.filter\(\(release\)[\s\S]{0,600}targetsHiddenByRollingSlot\.has\(matched\.directory_name\)/,
+    );
+  });
+
+  it('filters covered tools out of installed-only rows too (belt + braces)', () => {
+    // Extra guard for versioned builds that do not correspond to any
+    // known release -- they must still be hidden when a slot claims them.
+    expect(SRC).toMatch(
+      /\.filter\(\(tool\) => !targetsHiddenByRollingSlot\.has\(tool\.directory_name\)\)/,
+    );
+  });
+});
+
 describe('SettingsTab rolling-slot row header/subtitle shape', () => {
   const fs = require('fs');
   const path = require('path');

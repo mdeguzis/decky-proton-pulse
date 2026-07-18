@@ -738,8 +738,37 @@ export function SettingsTab() {
     const toolLabel = toolOption?.label ?? selectedTool;
     const latestSlotLabel = `${toolLabel}-Latest`;
 
+    // Valve's Proton Experimental shows exactly one row in Steam's UI even
+    // though on-disk there is an unversioned tool dir + an underlying
+    // versioned binary. Match that shape: when a rolling slot points at
+    // a versioned build, hide the versioned build's row from the Settings
+    // list. The slot row is the single entry the user needs to manage.
+    // On uninstall the slot row removes just the slot dir today -- the
+    // underlying versioned tool re-surfaces on the next refresh so the
+    // user can still garbage-collect it directly if they want.
+    const targetsHiddenByRollingSlot = new Set<string>(
+      managerState.installed_tools
+        .filter((t) => t.managed_slot === 'latest' && t.current_target_name)
+        .map((t) => t.current_target_name as string),
+    );
+
     const matchedDirectories = new Set<string>();
-    const releaseRows = managerState.releases.map((release) => {
+    const releaseRows = managerState.releases
+      .filter((release) => {
+        const matched = managerState.installed_tools.find((tool) => matchesRelease(tool, release));
+        // Uninstalled releases stay visible so users can install them.
+        // Installed releases whose tool is covered by a rolling slot are
+        // hidden -- the slot row already represents them.
+        if (!matched) return true;
+        if (targetsHiddenByRollingSlot.has(matched.directory_name)) {
+          // Mark this tool as "already accounted for" so the installed-only
+          // pass below does not turn around and render it as its own row.
+          matchedDirectories.add(matched.directory_name);
+          return false;
+        }
+        return true;
+      })
+      .map((release) => {
       const matchedTool = managerState.installed_tools.find((tool) => matchesRelease(tool, release));
       if (matchedTool) matchedDirectories.add(matchedTool.directory_name);
       const installed = !!matchedTool;
@@ -795,6 +824,11 @@ export function SettingsTab() {
     const installedOnlyRows = managerState.installed_tools
       .filter((tool) => isManagedToolForId(tool, selectedTool))
       .filter((tool) => !matchedDirectories.has(tool.directory_name))
+      // Belt + braces for the Valve-shape single-entry UX: even if a
+      // hidden versioned build was not caught by matchedDirectories
+      // (e.g. it does not correspond to any known release), refuse to
+      // render it once a rolling slot has claimed it as its target.
+      .filter((tool) => !targetsHiddenByRollingSlot.has(tool.directory_name))
       .filter((tool) => tool.source !== 'valve')
       .map((tool) => {
         const isLatestSlotInstall = tool.managed_slot === 'latest'
