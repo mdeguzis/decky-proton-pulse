@@ -376,6 +376,7 @@ export const zhTW: TranslationTree = {
     notSynced: '未同步',
     published: '已發布',
     draft: '草稿',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: '雲端狀態',
     uploadToCloud: '上傳至雲端',
     uploadingToCloud: '上傳中...',

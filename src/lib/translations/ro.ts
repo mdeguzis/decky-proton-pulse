@@ -376,6 +376,7 @@ export const ro: TranslationTree = {
     notSynced: 'Nesincronizat',
     published: 'Publicat',
     draft: 'Ciorna',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Stare cloud',
     uploadToCloud: 'Incarca in cloud',
     uploadingToCloud: 'Se incarca...',

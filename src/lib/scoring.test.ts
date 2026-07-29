@@ -1155,13 +1155,15 @@ describe('scoring: rating case normalization (#427)', () => {
 
   it('mixed case within an aggregate produces the same per-game tier as pure lowercase', () => {
     // Feed aggregatePerGame the same fixture twice, once mixed-case, once
-    // all-lower. Rating output must match.
+    // all-lower. Rating output must match. Cast through unknown so we can
+    // exercise the case-normalization path with only the fields the function
+    // actually reads (rating, recencyDays, timestamp, confidence).
     const mkPerGame = (rating: string) => ({
-      rating: rating as any,
+      rating,
       confidence: 60,
       recencyDays: 30,
       timestamp: now,
-    });
+    } as unknown as import('./scoring').ScoredReport);
     const lower = aggregatePerGame([mkPerGame('borked'), mkPerGame('borked'), mkPerGame('gold')]);
     const mixed = aggregatePerGame([mkPerGame('Borked'), mkPerGame('BORKED'), mkPerGame('Gold')]);
     expect(mixed.rating).toBe(lower.rating);

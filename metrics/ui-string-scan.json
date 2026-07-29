@@ -272,14 +272,21 @@
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 724,
+      "line": 725,
       "column": 42,
       "kind": "string",
       "text": "- Type below or pick installed -"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 925,
+      "line": 908,
+      "column": 85,
+      "kind": "jsx",
+      "text": "(auto-detected from your Steam playtime)"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 941,
       "column": 13,
       "kind": "jsx",
       "text": "Save draft"

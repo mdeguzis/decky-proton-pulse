@@ -376,6 +376,7 @@ export const hu: TranslationTree = {
     notSynced: 'Nincs szinkronizálva',
     published: 'Közzétéve',
     draft: 'Vázlat',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Felhő állapota',
     uploadToCloud: 'Feltöltés a felhőbe',
     uploadingToCloud: 'Feltöltés...',

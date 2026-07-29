@@ -429,6 +429,7 @@ export interface TranslationTree {
     notSynced: string;
     published: string;
     draft: string;
+    pendingApproval: string;
     cloudStatusLabel: string;
     uploadToCloud: string;
     uploadingToCloud: string;
@@ -1201,6 +1202,7 @@ export const en: TranslationTree = {
     notSynced: 'Not synced',
     published: 'Published',
     draft: 'Draft',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Cloud',
     uploadToCloud: 'Upload to Cloud',
     uploadingToCloud: 'Uploading...',

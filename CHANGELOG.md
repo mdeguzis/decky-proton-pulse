@@ -165,7 +165,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Toast Steam-restart hint when the rolling slot updates (#116)
+- Normalize rating case at every lookup site (#427 parity)
 
 ## v1.7.2 pre-release
 

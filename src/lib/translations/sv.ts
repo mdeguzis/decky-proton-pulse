@@ -376,6 +376,7 @@ export const sv: TranslationTree = {
     notSynced: 'Inte synkroniserad',
     published: 'Publicerat',
     draft: 'Utkast',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Molnstatus',
     uploadToCloud: 'Ladda upp till molnet',
     uploadingToCloud: 'Laddar upp...',

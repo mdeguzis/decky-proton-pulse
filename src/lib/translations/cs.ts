@@ -376,6 +376,7 @@ export const cs: TranslationTree = {
     notSynced: 'Nesynchronizováno',
     published: 'Publikováno',
     draft: 'Koncept',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Stav cloudu',
     uploadToCloud: 'Nahrát do cloudu',
     uploadingToCloud: 'Nahrávám...',

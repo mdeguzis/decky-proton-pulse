@@ -376,6 +376,7 @@ export const vi: TranslationTree = {
     notSynced: 'Chưa đồng bộ',
     published: 'Đã xuất bản',
     draft: 'Bản nháp',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Trạng thái đám mây',
     uploadToCloud: 'Tải lên đám mây',
     uploadingToCloud: 'Đang tải lên...',

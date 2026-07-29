@@ -376,6 +376,7 @@ export const bg: TranslationTree = {
     notSynced: 'Не е синхронизирано',
     published: 'Публикувано',
     draft: 'Чернова',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Статус на облака',
     uploadToCloud: 'Качи в облака',
     uploadingToCloud: 'Качване...',

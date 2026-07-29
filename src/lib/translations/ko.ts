@@ -378,6 +378,7 @@ export const ko: TranslationTree = {
     notSynced: '동기화 안 됨',
     published: '게시됨',
     draft: '초안',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: '클라우드',
     uploadToCloud: '클라우드에 업로드',
     uploadingToCloud: '업로드 중...',

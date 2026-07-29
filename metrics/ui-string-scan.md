@@ -35,8 +35,9 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/CompatToolVersionPicker.tsx` | 37 | string | Valve Proton |
 | `src/components/ConfigEditorModal.tsx` | 986 | string | No game selected. Open a game config first. |
 | `src/components/ConfigEditorModal.tsx` | 1033 | string | No game selected. Open a game config first. |
-| `src/components/NativePulseReportModal.tsx` | 724 | string | - Type below or pick installed - |
-| `src/components/NativePulseReportModal.tsx` | 925 | jsx | Save draft |
+| `src/components/NativePulseReportModal.tsx` | 725 | string | - Type below or pick installed - |
+| `src/components/NativePulseReportModal.tsx` | 908 | jsx | (auto-detected from your Steam playtime) |
+| `src/components/NativePulseReportModal.tsx` | 941 | jsx | Save draft |
 | `src/components/PerReportAnalysisModal.tsx` | 190 | jsx | pts |
 | `src/components/ReleaseNotesModal.tsx` | 277 | jsx | Loading |
 | `src/components/ScoringGuideModal.tsx` | 116 | jsx | Report Score Tiers |

@@ -378,6 +378,7 @@ export const ja: TranslationTree = {
     notSynced: '未同期',
     published: '公開',
     draft: '下書き',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'クラウド',
     uploadToCloud: 'クラウドにアップロード',
     uploadingToCloud: 'アップロード中...',

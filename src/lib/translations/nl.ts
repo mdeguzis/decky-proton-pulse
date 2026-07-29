@@ -376,6 +376,7 @@ export const nl: TranslationTree = {
     notSynced: 'Niet gesynchroniseerd',
     published: 'Gepubliceerd',
     draft: 'Concept',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Cloudstatus',
     uploadToCloud: 'Uploaden naar cloud',
     uploadingToCloud: 'Uploaden...',

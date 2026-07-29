@@ -376,6 +376,7 @@ export const fi: TranslationTree = {
     notSynced: 'Ei synkronoitu',
     published: 'Julkaistu',
     draft: 'Luonnos',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Pilven tila',
     uploadToCloud: 'Lataa pilveen',
     uploadingToCloud: 'Ladataan...',

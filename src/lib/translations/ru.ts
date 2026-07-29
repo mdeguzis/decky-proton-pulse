@@ -408,6 +408,7 @@ export const ru: TranslationTree = {
     notSynced: 'Не синхронизировано',
     published: 'Опубликовано',
     draft: 'Черновик',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Облако',
     uploadToCloud: 'Загрузить в облако',
     uploadingToCloud: 'Загрузка...',

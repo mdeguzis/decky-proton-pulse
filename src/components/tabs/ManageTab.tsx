@@ -664,6 +664,23 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           const syncStatus: SyncStatus = (cloudLoading || cloudOffline) ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
           const cloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
           const isPublished = cloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
+          // #11: three-state label. "Draft" = never submitted (no cloud row + no
+          // report row); "Pending Approval" = user submitted but auto-moderator
+          // has not marked is_published yet; "Published" = live on the site.
+          // Previously the Draft label covered both the never-submitted case and
+          // the submitted-but-awaiting-approval case, which read as "I did not
+          // submit that" to users who had just hit Submit.
+          const hasSubmitted = !!cloudRow || publishedAppIds.has(String(config.appId));
+          const statusLabel = isPublished
+            ? t().configManager.published
+            : hasSubmitted
+              ? t().configManager.pendingApproval
+              : t().configManager.draft;
+          const statusColors = isPublished
+            ? { bg: 'rgba(76,175,80,0.18)', fg: '#4caf50' }
+            : hasSubmitted
+              ? { bg: 'rgba(245,158,11,0.18)', fg: '#f59e0b' }  // amber -- matches the notSynced badge shade
+              : { bg: 'rgba(120,120,120,0.18)', fg: '#888' };
           const appIdLabel = isShortcut
             ? `${extras.nonSteamShortcut()}${config.resolvedSteamAppId ? ` (Steam app id: ${config.resolvedSteamAppId})` : ''}`
             : extras.appIdLabel(config.appId);
@@ -724,13 +741,13 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
                         borderRadius: 999,
                         marginLeft: 4,
                         verticalAlign: 'middle',
-                        background: isPublished ? 'rgba(76,175,80,0.18)' : 'rgba(120,120,120,0.18)',
-                        color: isPublished ? '#4caf50' : '#888',
+                        background: statusColors.bg,
+                        color: statusColors.fg,
                         textTransform: 'uppercase',
                         letterSpacing: 0.3,
                       }}
                     >
-                      {isPublished ? t().configManager.published : t().configManager.draft}
+                      {statusLabel}
                     </span>
                   )}
                 </div>

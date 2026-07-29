@@ -376,6 +376,7 @@ export const uk: TranslationTree = {
     notSynced: 'Не синхронізовано',
     published: 'Опубліковано',
     draft: 'Чернетка',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Стан хмари',
     uploadToCloud: 'Завантажити в хмару',
     uploadingToCloud: 'Завантаження...',

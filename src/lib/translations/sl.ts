@@ -376,6 +376,7 @@ export const sl: TranslationTree = {
     notSynced: 'Ni sinhronizirano',
     published: 'Objavljeno',
     draft: 'Osnutek',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Stanje oblaka',
     uploadToCloud: 'Naloži v oblak',
     uploadingToCloud: 'Nalagam...',

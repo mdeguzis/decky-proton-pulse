@@ -376,6 +376,7 @@ export const el: TranslationTree = {
     notSynced: 'Μη συγχρονισμένο',
     published: 'Δημοσιευμένο',
     draft: 'Προσχέδιο',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Κατάσταση cloud',
     uploadToCloud: 'Μεταφόρτωση στο cloud',
     uploadingToCloud: 'Μεταφόρτωση...',

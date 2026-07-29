@@ -378,6 +378,7 @@ export const tr: TranslationTree = {
     notSynced: 'Senkronize değil',
     published: 'Yayınlandı',
     draft: 'Taslak',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Bulut',
     uploadToCloud: 'Buluta yükle',
     uploadingToCloud: 'Yükleniyor...',

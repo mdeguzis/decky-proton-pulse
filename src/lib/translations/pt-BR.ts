@@ -378,6 +378,7 @@ export const ptBR: TranslationTree = {
     notSynced: 'Não sincronizado',
     published: 'Publicado',
     draft: 'Rascunho',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Nuvem',
     uploadToCloud: 'Enviar para a nuvem',
     uploadingToCloud: 'Enviando...',

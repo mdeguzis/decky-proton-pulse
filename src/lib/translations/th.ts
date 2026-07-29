@@ -376,6 +376,7 @@ export const th: TranslationTree = {
     notSynced: 'ยังไม่ซิงค์',
     published: 'เผยแพร่แล้ว',
     draft: 'ร่าง',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'สถานะคลาวด์',
     uploadToCloud: 'อัปโหลดไปยังคลาวด์',
     uploadingToCloud: 'กำลังอัปโหลด...',

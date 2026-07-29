@@ -378,6 +378,7 @@ export const zhCN: TranslationTree = {
     notSynced: '未同步',
     published: '已发布',
     draft: '草稿',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: '云端',
     uploadToCloud: '上传到云端',
     uploadingToCloud: '上传中...',
