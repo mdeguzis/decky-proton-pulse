@@ -1132,3 +1132,38 @@ describe('ramFieldMatch shortfall > 8 below game minimum', () => {
     expect(bd.ram.percent).toBe(25);
   });
 });
+
+// #427 parity: plugin scoring must lowercase ratings the same way the web does
+// so a ProtonDB CDN report ("Borked", "Gold") does not silently fall through
+// the RATING_SCORES lookup and end up as a 0-baseline "unrecognized" report.
+describe('scoring: rating case normalization (#427)', () => {
+  it('capitalized "Platinum" scores the same as lowercase', () => {
+    const lowerRep = makeCdnReport({ rating: 'platinum' });
+    const upperRep = makeCdnReport({ rating: 'Platinum' as any });
+    expect(computeConfidence(upperRep, nvidiaSystem).confidence)
+      .toBe(computeConfidence(lowerRep, nvidiaSystem).confidence);
+  });
+
+  it('capitalized "Borked" triggers the borked-staleness path just like lowercase', () => {
+    // Old borked report should get the staleness penalty regardless of case.
+    const oldTs = now - 800 * 86400;
+    const lowerOld = makeCdnReport({ rating: 'borked', timestamp: oldTs });
+    const upperOld = makeCdnReport({ rating: 'Borked' as any, timestamp: oldTs });
+    expect(computeConfidence(upperOld, nvidiaSystem).confidence)
+      .toBe(computeConfidence(lowerOld, nvidiaSystem).confidence);
+  });
+
+  it('mixed case within an aggregate produces the same per-game tier as pure lowercase', () => {
+    // Feed aggregatePerGame the same fixture twice, once mixed-case, once
+    // all-lower. Rating output must match.
+    const mkPerGame = (rating: string) => ({
+      rating: rating as any,
+      confidence: 60,
+      recencyDays: 30,
+      timestamp: now,
+    });
+    const lower = aggregatePerGame([mkPerGame('borked'), mkPerGame('borked'), mkPerGame('gold')]);
+    const mixed = aggregatePerGame([mkPerGame('Borked'), mkPerGame('BORKED'), mkPerGame('Gold')]);
+    expect(mixed.rating).toBe(lower.rating);
+  });
+});

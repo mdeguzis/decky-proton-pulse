@@ -72,6 +72,16 @@ const RATING_SCORES: Record<string, number> = {
   borked: 0.0,
 };
 
+// #427 parity with the web: ProtonDB CDN emits Capitalized ratings ("Borked",
+// "Gold"); Supabase / plugin-native reports use lowercase. Every lookup here
+// keys against RATING_SCORES (lowercase) or compares directly to 'borked' /
+// 'platinum' string literals, so an uppercase rating slipping in (partner
+// import, ProtonDB live fetch, malformed backup) would silently fall through
+// to 0. Normalize at every rating touch-point via this helper.
+function normRating(r: string | null | undefined): string {
+  return typeof r === 'string' ? r.trim().toLowerCase() : '';
+}
+
 // --- Rating derivation (mirrors ProtonDB's inferLiveRating exactly) ---
 //
 // This is the canonical algorithm for deriving a ProtonRating from form
@@ -995,7 +1005,8 @@ export function computeConfidence(report: CdnReport, sysInfo: SystemInfo): Score
   // Rating contributes a baseline to confidence (platinum reports start higher
   // than borked reports because they reflect more positive testing depth).
   // Rating itself stays untouched - we never substitute a different tier here.
-  const ratingScore = (RATING_SCORES[report.rating] ?? 0) * WEIGHTS.BASE_MAX;
+  const rating = normRating(report.rating);
+  const ratingScore = (RATING_SCORES[rating] ?? 0) * WEIGHTS.BASE_MAX;
   const recencyBonus =
     recencyDays < 90  ? WEIGHTS.RECENCY_RECENT :
     recencyDays < 365 ? WEIGHTS.RECENCY_MID :
@@ -1008,7 +1019,7 @@ export function computeConfidence(report: CdnReport, sysInfo: SystemInfo): Score
   // but the rating stays borked - the UI uses the confidence drop to surface
   // a "worth re-testing" caveat instead of silently rewriting the rating.
   const borkedStalenessPenalty =
-    report.rating === 'borked' && recencyDays > WEIGHTS.BORKED_DECAY_DAYS
+    rating === 'borked' && recencyDays > WEIGHTS.BORKED_DECAY_DAYS
       ? WEIGHTS.BORKED_STALENESS_PENALTY
       : 0;
 
@@ -1085,7 +1096,8 @@ export function computeConfidenceBreakdown(
   const kernelMult = kernelVersionMultiplier(report, sysInfo);
   const recencyDays = Math.round((Date.now() / 1000 - report.timestamp) / 86400);
 
-  const ratingScore = (RATING_SCORES[report.rating] ?? 0) * WEIGHTS.BASE_MAX;
+  const rating = normRating(report.rating);
+  const ratingScore = (RATING_SCORES[rating] ?? 0) * WEIGHTS.BASE_MAX;
 
   const recencyBonus =
     recencyDays < 90  ? WEIGHTS.RECENCY_RECENT :
@@ -1101,7 +1113,7 @@ export function computeConfidenceBreakdown(
   const notesModifier = parseNotesSentiment(report.notes);
 
   const isBorkedStale =
-    report.rating === 'borked' && recencyDays > WEIGHTS.BORKED_DECAY_DAYS;
+    rating === 'borked' && recencyDays > WEIGHTS.BORKED_DECAY_DAYS;
   const borkedStalenessPenalty = isBorkedStale ? WEIGHTS.BORKED_STALENESS_PENALTY : 0;
 
   const reportProtonMajor = parseProtonMajorVersion(report.protonVersion);
@@ -1131,7 +1143,7 @@ export function computeConfidenceBreakdown(
     {
       kind: 'additive',
       label: 'breakdownRating',
-      detail: `${report.rating} -> ${ratingScore} pts`,
+      detail: `${rating} -> ${ratingScore} pts`,
       value: ratingScore,
       active: true,
     },
@@ -1292,7 +1304,7 @@ export function aggregatePerGame(reports: ScoredReport[]): AggregatedGame {
   let newestTs = 0;
   for (const r of reports) {
     const w = recencyBucketWeight(r.recencyDays);
-    const ratingScore = RATING_SCORES[r.rating] ?? 0;
+    const ratingScore = RATING_SCORES[normRating(r.rating)] ?? 0;
     ratingNum += ratingScore * w;
     weightSum += w;
     if (r.timestamp > newestTs) newestTs = r.timestamp;
