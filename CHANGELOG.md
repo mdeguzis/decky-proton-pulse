@@ -165,7 +165,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Normalize rating case at every lookup site (#427 parity)
+- Three-state pill Draft / Pending Approval / Published (#11)
 
 ## v1.7.2 pre-release
 

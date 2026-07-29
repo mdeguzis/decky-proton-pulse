@@ -247,6 +247,37 @@ function BadgeIcon({ appId }: { appId: number }) {
         void logFrontendEvent('DEBUG', 'gamePageBadge: focused via gamepad');
         setTimeout(() => { const p = measurePos(); if (p) setPos(p); }, 120);
       }}
+      onGamepadDirection={(evt: any) => {
+        // #119: arrow-right from the badge should reach Steam's top-right
+        // status cluster (wifi/downloads/battery). The badge is position:
+        // absolute at ~top:8/left:8 so the navmesh may dead-end horizontally.
+        // Log every direction press with pre/post focus so we can see whether
+        // (a) the event never fires (Focusable not receiving it), (b) fires
+        // but returns nothing (nav mesh dead-end), or (c) picks the wrong
+        // sibling. Direction constants aren't exported from @decky/ui in this
+        // build -- log the raw code so we can decode from admin > Logging.
+        try {
+          const before = document.activeElement;
+          setTimeout(() => {
+            const after = document.activeElement;
+            const rect = (after as HTMLElement | null)?.getBoundingClientRect?.();
+            void logFrontendEvent('DEBUG', 'gamePageBadge: onGamepadDirection', {
+              dir: evt?.detail?.button ?? evt?.detail?.direction ?? evt?.direction ?? String(evt),
+              beforeTag: before?.tagName ?? null,
+              beforeClass: (before as HTMLElement | null)?.className ?? null,
+              afterTag: after?.tagName ?? null,
+              afterClass: (after as HTMLElement | null)?.className ?? null,
+              afterId: (after as HTMLElement | null)?.id ?? null,
+              afterRect: rect ? { top: Math.round(rect.top), left: Math.round(rect.left), width: Math.round(rect.width), height: Math.round(rect.height) } : null,
+              stayed: before === after,
+            });
+          }, 30);
+        } catch (e) {
+          void logFrontendEvent('WARNING', 'gamePageBadge: onGamepadDirection log threw', { error: e instanceof Error ? e.message : String(e) });
+        }
+        // Return false so the event bubbles to Steam's global navmesh.
+        return false;
+      }}
       style={{
         position: 'absolute',
         top: pos?.top ?? 8,
