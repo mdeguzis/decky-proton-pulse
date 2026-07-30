@@ -165,7 +165,7 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Three-state pill Draft / Pending Approval / Published (#11)
+- Diag(badge): log every gamepad direction press with before/after focus (#119)
 
 ## v1.7.2 pre-release
 

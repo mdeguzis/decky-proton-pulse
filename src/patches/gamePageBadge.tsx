@@ -12,6 +12,7 @@ import {
   createReactTreePatcher,
   Navigation,
   Focusable,
+  GamepadButton,
 } from '@decky/ui';
 import { useRef, useEffect, useLayoutEffect, useState } from 'react';
 import type { ReactElement } from 'react';
@@ -248,34 +249,62 @@ function BadgeIcon({ appId }: { appId: number }) {
         setTimeout(() => { const p = measurePos(); if (p) setPos(p); }, 120);
       }}
       onGamepadDirection={(evt: any) => {
-        // #119: arrow-right from the badge should reach Steam's top-right
-        // status cluster (wifi/downloads/battery). The badge is position:
-        // absolute at ~top:8/left:8 so the navmesh may dead-end horizontally.
-        // Log every direction press with pre/post focus so we can see whether
-        // (a) the event never fires (Focusable not receiving it), (b) fires
-        // but returns nothing (nav mesh dead-end), or (c) picks the wrong
-        // sibling. Direction constants aren't exported from @decky/ui in this
-        // build -- log the raw code so we can decode from admin > Logging.
-        try {
-          const before = document.activeElement;
-          setTimeout(() => {
-            const after = document.activeElement;
-            const rect = (after as HTMLElement | null)?.getBoundingClientRect?.();
-            void logFrontendEvent('DEBUG', 'gamePageBadge: onGamepadDirection', {
-              dir: evt?.detail?.button ?? evt?.detail?.direction ?? evt?.direction ?? String(evt),
-              beforeTag: before?.tagName ?? null,
-              beforeClass: (before as HTMLElement | null)?.className ?? null,
-              afterTag: after?.tagName ?? null,
-              afterClass: (after as HTMLElement | null)?.className ?? null,
-              afterId: (after as HTMLElement | null)?.id ?? null,
-              afterRect: rect ? { top: Math.round(rect.top), left: Math.round(rect.left), width: Math.round(rect.width), height: Math.round(rect.height) } : null,
-              stayed: before === after,
+        // #119: nav mesh dead-ends going RIGHT from the badge -- badge is at
+        // position:absolute top:8/left:8 with no widget in the same y-band to
+        // its right, so DIR_RIGHT stays put. User's manual workaround: press
+        // UP once to reach the search bar (which has real right-neighbours in
+        // Steam's chrome), then RIGHT works.
+        //
+        // Automate the workaround: on DIR_RIGHT, synthesize an ArrowUp key
+        // event so Steam's navmesh treats it as UP + normal-nav flow. The
+        // synth targets the same element the badge Focusable renders, so
+        // Steam's event chain sees a real keydown from a real focused node.
+        const btn = evt?.detail?.button;
+        if (btn === GamepadButton.DIR_RIGHT) {
+          try {
+            const el = (evt?.currentTarget as HTMLElement | null)
+              || (evt?.target as HTMLElement | null)
+              || document.activeElement as HTMLElement | null;
+            if (el && typeof el.dispatchEvent === 'function') {
+              el.dispatchEvent(new KeyboardEvent('keydown', {
+                key: 'ArrowUp',
+                code: 'ArrowUp',
+                bubbles: true,
+                cancelable: true,
+              }));
+              void logFrontendEvent('DEBUG', 'gamePageBadge: DIR_RIGHT -> synthesized ArrowUp', {
+                targetTag: el.tagName,
+                targetId: el.id || null,
+              });
+              // Consume the RIGHT so Steam doesn't also try (and fail) to
+              // route it after our UP dispatch.
+              return true;
+            }
+          } catch (e) {
+            void logFrontendEvent('WARNING', 'gamePageBadge: DIR_RIGHT escape threw', {
+              error: e instanceof Error ? e.message : String(e),
             });
-          }, 30);
+          }
+        }
+        // Keep the diagnostic on every direction so we can verify the fix
+        // took (badge no longer sees repeated DIR_RIGHT with stayed: true)
+        // and catch any future regression.
+        try {
+          void logFrontendEvent('DEBUG', 'gamePageBadge: onGamepadDirection', {
+            button: btn,
+            buttonName: (
+              btn === GamepadButton.DIR_UP    ? 'DIR_UP' :
+              btn === GamepadButton.DIR_DOWN  ? 'DIR_DOWN' :
+              btn === GamepadButton.DIR_LEFT  ? 'DIR_LEFT' :
+              btn === GamepadButton.DIR_RIGHT ? 'DIR_RIGHT' :
+              String(btn)
+            ),
+          });
         } catch (e) {
           void logFrontendEvent('WARNING', 'gamePageBadge: onGamepadDirection log threw', { error: e instanceof Error ? e.message : String(e) });
         }
-        // Return false so the event bubbles to Steam's global navmesh.
+        // Return false so the event bubbles to Steam's global navmesh for
+        // every direction we did NOT explicitly consume above.
         return false;
       }}
       style={{
