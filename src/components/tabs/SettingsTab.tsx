@@ -6,7 +6,9 @@ import { openFilePicker, FileSelectionType } from '@decky/api';
 import { toaster } from '../../lib/notify';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
-import { cancelCompatToolInstall, getCompatManagerState, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
+import { cancelCompatToolInstall, getCompatManagerState, getCompatToolDetails, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
+import type { CompatToolDetails } from '../../lib/compatTools';
+import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
 import type { CompatToolId, CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { COMPAT_TOOL_OPTIONS } from '../../types';
 import { t } from '../../lib/i18n';
@@ -152,7 +154,11 @@ function ReleaseInfoModal({ release, onClose }: { release: CompatToolRelease; on
           height: 80vh !important;
           padding: 0 !important;
         }
-        .pp-release-info-modal .ModalPosition { inset: 0 !important; }
+        /* Leave clearance for Steam's top status bar (~50px: clock + battery)
+           and the bottom BPM navigation bar (~70px: STEAM MENU + A/B hints).
+           Without this the modal's top border sits under the status bar and
+           reads as visually clipped. */
+        .pp-release-info-modal .ModalPosition { inset: 60px 0 70px 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(80vh - 40px)', padding: '16px 20px 0' }}>
         <div style={{ flexShrink: 0, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
@@ -183,6 +189,118 @@ function ReleaseInfoModal({ release, onClose }: { release: CompatToolRelease; on
           }}
           style={{ flexShrink: 0, padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}
         >
+          <DialogButton onClick={onClose} style={{ width: '100%' }}>
+            {t().common.close}
+          </DialogButton>
+        </Focusable>
+      </div>
+    </ModalRoot>
+  );
+}
+
+function _formatSize(bytes: number | undefined): string {
+  if (bytes == null || !Number.isFinite(bytes)) return '-';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let n = bytes;
+  let u = 0;
+  while (n >= 1024 && u < units.length - 1) { n /= 1024; u += 1; }
+  return `${n.toFixed(u === 0 ? 0 : 1)} ${units[u]}`;
+}
+
+function _formatIso(iso: string | null | undefined): string {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function _toolKindLabel(details: CompatToolDetails): string {
+  if (details.is_rolling_slot) return 'Rolling latest slot';
+  if (details.managed_slot === 'versioned') return 'Versioned build';
+  return 'Custom';
+}
+
+// Per-tool "Info" modal on the Settings tab. Shows install location,
+// installed-on date, on-disk size, internal name (Steam picker key),
+// and for rolling slots the current target. Populated via
+// getCompatToolDetails(directory_name) so mtime + du run backend-side
+// only when the user opens the modal.
+function ToolDetailsModal({
+  directoryName,
+  title,
+  onClose,
+}: {
+  directoryName: string;
+  title: string;
+  onClose: () => void;
+}) {
+  const [details, setDetails] = useState<CompatToolDetails | null>(null);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    getCompatToolDetails(directoryName)
+      .then((res) => { if (alive) setDetails(res); })
+      .catch((err) => { if (alive) setErrorText(String((err as Error)?.message ?? err)); });
+    return () => { alive = false; };
+  }, [directoryName]);
+
+  const rows: [string, React.ReactNode][] = details && details.ok ? [
+    ['Type', _toolKindLabel(details)],
+    ['Location', <span style={{ fontFamily: 'monospace', fontSize: 11, wordBreak: 'break-all' }}>{details.path}</span>],
+    ['Installed', _formatIso(details.installed_at_iso)],
+    ['Size on disk', _formatSize(details.size_bytes)],
+    ['Internal name', <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{details.internal_name || '-'}</span>],
+  ] : [];
+  if (details?.ok && details.is_rolling_slot && details.current_target) {
+    rows.push(['Currently points at', <span style={{ fontFamily: 'monospace', fontSize: 11, wordBreak: 'break-all' }}>{details.current_target}</span>]);
+  }
+
+  return (
+    <ModalRoot
+      onCancel={onClose}
+      bAllowFullSize
+      className="pp-release-info-modal"
+      modalClassName="pp-release-info-modal"
+    >
+      <style>{`
+        .pp-release-info-modal,
+        .pp-release-info-modal > div,
+        .pp-release-info-modal .DialogContent_InnerWidth {
+          max-height: 80vh !important;
+          height: 80vh !important;
+          padding: 0 !important;
+        }
+        .pp-release-info-modal .ModalPosition { inset: 60px 0 70px 0 !important; }
+      `}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(80vh - 40px)', padding: '16px 20px 0' }}>
+        <div style={{ flexShrink: 0, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#eef7ff' }}>{title}</div>
+          <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 4 }}>
+            {directoryName}
+          </div>
+        </div>
+
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+          {errorText ? (
+            <div style={{ fontSize: 12, color: '#e08080' }}>Could not load details: {errorText}</div>
+          ) : details == null ? (
+            <div style={{ fontSize: 12, color: '#7a9bb5' }}>Loading...</div>
+          ) : !details.ok ? (
+            <div style={{ fontSize: 12, color: '#e08080' }}>{details.error || 'Unknown error'}</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', rowGap: 8, columnGap: 12, fontSize: 12, color: '#c8dcea', lineHeight: 1.5, paddingBottom: 12 }}>
+              {rows.map(([label, value]) => (
+                <>
+                  <div key={`${label}-l`} style={{ color: '#7a9bb5' }}>{label}</div>
+                  <div key={`${label}-v`}>{value}</div>
+                </>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Focusable style={{ flexShrink: 0, padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <DialogButton onClick={onClose} style={{ width: '100%' }}>
             {t().common.close}
           </DialogButton>
@@ -620,14 +738,52 @@ export function SettingsTab() {
     const toolLabel = toolOption?.label ?? selectedTool;
     const latestSlotLabel = `${toolLabel}-Latest`;
 
+    // Valve's Proton Experimental shows exactly one row in Steam's UI even
+    // though on-disk there is an unversioned tool dir + an underlying
+    // versioned binary. Match that shape: when a rolling slot points at
+    // a versioned build, hide the versioned build's row from the Settings
+    // list. The slot row is the single entry the user needs to manage.
+    // On uninstall the slot row removes just the slot dir today -- the
+    // underlying versioned tool re-surfaces on the next refresh so the
+    // user can still garbage-collect it directly if they want.
+    const targetsHiddenByRollingSlot = new Set<string>(
+      managerState.installed_tools
+        .filter((t) => t.managed_slot === 'latest' && t.current_target_name)
+        .map((t) => t.current_target_name as string),
+    );
+
     const matchedDirectories = new Set<string>();
-    const releaseRows = managerState.releases.map((release) => {
+    const releaseRows = managerState.releases
+      .filter((release) => {
+        const matched = managerState.installed_tools.find((tool) => matchesRelease(tool, release));
+        // Uninstalled releases stay visible so users can install them.
+        // Installed releases whose tool is covered by a rolling slot are
+        // hidden -- the slot row already represents them.
+        if (!matched) return true;
+        if (targetsHiddenByRollingSlot.has(matched.directory_name)) {
+          // Mark this tool as "already accounted for" so the installed-only
+          // pass below does not turn around and render it as its own row.
+          matchedDirectories.add(matched.directory_name);
+          return false;
+        }
+        return true;
+      })
+      .map((release) => {
       const matchedTool = managerState.installed_tools.find((tool) => matchesRelease(tool, release));
       if (matchedTool) matchedDirectories.add(matchedTool.directory_name);
       const installed = !!matchedTool;
       const isInstalling = installingTag === release.tag_name;
       const installStatus = managerState.install_status;
-      const progress = isInstalling && installStatus.tag_name === release.tag_name
+      // When the user clicked Install on the -Latest slot row, install_status
+      // has install_as_latest=true. The versioned tool is being downloaded as
+      // a side effect (the -Latest slot needs a versioned target), but the
+      // slot row is the one place the user expects to see progress. Suppress
+      // the release row's progress bar to avoid two identical bars for one
+      // download -- the slot row (installedOnlyRows) still shows it.
+      const showProgressHere = isInstalling
+        && installStatus.tag_name === release.tag_name
+        && !installStatus.install_as_latest;
+      const progress = showProgressHere
         ? buildInstallProgressDetails(installStatus, release.asset_size, getInstallProgressLabels())
         : null;
 
@@ -668,6 +824,11 @@ export function SettingsTab() {
     const installedOnlyRows = managerState.installed_tools
       .filter((tool) => isManagedToolForId(tool, selectedTool))
       .filter((tool) => !matchedDirectories.has(tool.directory_name))
+      // Belt + braces for the Valve-shape single-entry UX: even if a
+      // hidden versioned build was not caught by matchedDirectories
+      // (e.g. it does not correspond to any known release), refuse to
+      // render it once a rolling slot has claimed it as its target.
+      .filter((tool) => !targetsHiddenByRollingSlot.has(tool.directory_name))
       .filter((tool) => tool.source !== 'valve')
       .map((tool) => {
         const isLatestSlotInstall = tool.managed_slot === 'latest'
@@ -677,6 +838,20 @@ export function SettingsTab() {
           ? buildInstallProgressDetails(managerState.install_status, managerState.current_release?.asset_size, getInstallProgressLabels())
           : null;
         const isManagedTool = isManagedToolForId(tool, selectedTool);
+        // Rolling slot rows read best when the friendly slot name from the
+        // custom VDF ("Proton-GE-Latest") is the header and the version
+        // the slot currently points at ("GE-Proton11-1") is the subtitle.
+        // tool.display_name is ALREADY the friendly slot name via our
+        // managed-slot VDF, so no header remap is needed. The subtitle
+        // prefers current_target_name (fresh from the backend marker
+        // read) and falls back to the old best-effort formatting for
+        // versioned / custom tools.
+        const isSlotRow = tool.managed_slot === 'latest';
+        const versionLabelValue = isSlotRow && tool.current_target_name
+          ? formatReleaseVersion(tool.current_target_name)
+          : isManagedTool
+            ? formatReleaseVersion(tool.internal_name || tool.display_name || tool.directory_name)
+            : extras.compatCustom();
         return ({
           key: `installed:${tool.directory_name}`,
           kind: 'installed-only' as const,
@@ -686,9 +861,7 @@ export function SettingsTab() {
           installing: isLatestSlotInstall,
           removing: removingTool === tool.directory_name,
           displayName: tool.display_name,
-          versionLabel: isManagedTool
-            ? formatReleaseVersion(tool.internal_name || tool.display_name || tool.directory_name)
-            : extras.compatCustom(),
+          versionLabel: versionLabelValue,
           versionMeta: progress?.progressMeta,
           progressRatio: progress?.progressRatio,
           progressLabel: progress?.progressLabel,
@@ -848,8 +1021,12 @@ export function SettingsTab() {
         const result = await installCompatTool(selectedTool, managerState.current_release!.tag_name, true);
         toaster.toast({
           title: 'Proton Pulse',
-          body: result.message,
+          body: result.success ? withRestartHint(result.message) : result.message,
         });
+        // #116: separate toast when the rolling latest-slot symlink got
+        // updated so users know Steam client needs a restart to see the
+        // new label in Compat Properties.
+        maybeToastRollingSlotChange(result);
         if (!result.success) {
           setInstallingTag(null);
           await refreshManager(true);
@@ -872,6 +1049,7 @@ export function SettingsTab() {
       title: 'Proton Pulse',
       body: result.success ? withRestartHint(result.message) : `Install failed: ${result.message}`,
     });
+    maybeToastRollingSlotChange(result);
     if (!result.success) {
       setInstallingTag(null);
       await refreshManager(true);
@@ -928,6 +1106,7 @@ export function SettingsTab() {
               title: 'Proton Pulse',
               body: result.success ? withRestartHint(result.message) : `Install failed: ${result.message}`,
             });
+            maybeToastRollingSlotChange(result);
             setInstallingTag(null);
             if (result.success) {
               await refreshManager(true);
@@ -1147,6 +1326,19 @@ export function SettingsTab() {
                                     <MenuItem onClick={() => {
                                       const m = showModal(<ReleaseInfoModal release={row.release!} onClose={() => m.Close()} />);
                                     }}>
+                                      {t().compatTools.releaseNotes ?? "Release Notes"}
+                                    </MenuItem>
+                                  )}
+                                  {row.installed && row.tool?.directory_name && (
+                                    <MenuItem onClick={() => {
+                                      const m = showModal(
+                                        <ToolDetailsModal
+                                          directoryName={row.tool!.directory_name}
+                                          title={row.displayName}
+                                          onClose={() => m.Close()}
+                                        />
+                                      );
+                                    }}>
                                       {t().compatTools.info}
                                     </MenuItem>
                                   )}
@@ -1255,7 +1447,7 @@ export function SettingsTab() {
                                     <MenuItem onClick={() => {
                                       const m = showModal(<ReleaseInfoModal release={row.release!} onClose={() => m.Close()} />);
                                     }}>
-                                      {t().compatTools.info}
+                                      {t().compatTools.releaseNotes ?? "Release Notes"}
                                     </MenuItem>
                                   )}
                                   {row.onAction && row.actionLabel ? (

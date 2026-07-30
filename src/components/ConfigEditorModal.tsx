@@ -17,6 +17,7 @@ import { LAUNCH_VAR_CATALOG, buildLaunchOptions, parseLaunchOptions, type Launch
 import { addTrackedConfig, type TrackedConfig } from '../lib/trackedConfigs';
 import { pushConfig } from '../lib/cloudSync';
 import { getProtonGeManagerState, installProtonGe } from '../lib/compatTools';
+import { maybeToastRollingSlotChange } from '../lib/rollingSlotToast';
 import {
   getScopedCustomToggles,
   inferCustomToggleValueType,
@@ -805,6 +806,9 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               ? t().toast.alreadyInstalled(nextVersion)
               : t().toast.installed(nextVersion),
           });
+          // #116: separate toast if the rolling latest-slot symlink got
+          // re-pointed.
+          maybeToastRollingSlotChange(result);
           // refetch so the version list reflects the new install state
           return getProtonGeManagerState(true).then(setManagerState);
         }

@@ -530,4 +530,52 @@ describe('playtime', () => {
       expect(bucketPlaytimeMinutes(600)).toBe('overTenHours');
     });
   });
+
+  // #12: prefer actual tracked minutes over the bucket enum when both are
+  // available. formatPlaytimeMinutes handles the concrete display case.
+  describe('formatPlaytimeMinutes', () => {
+    it('returns "< 1 min" for zero/null/undefined/NaN', async () => {
+      const { formatPlaytimeMinutes } = await import('./playtime');
+      expect(formatPlaytimeMinutes(0)).toBe('< 1 min');
+      expect(formatPlaytimeMinutes(null)).toBe('< 1 min');
+      expect(formatPlaytimeMinutes(undefined)).toBe('< 1 min');
+      expect(formatPlaytimeMinutes(Number.NaN)).toBe('< 1 min');
+    });
+
+    it('sub-hour times render in minutes', async () => {
+      const { formatPlaytimeMinutes } = await import('./playtime');
+      expect(formatPlaytimeMinutes(5)).toBe('5 min');
+      expect(formatPlaytimeMinutes(59.4)).toBe('59 min');
+    });
+
+    it('under 10 hours renders with one decimal', async () => {
+      const { formatPlaytimeMinutes } = await import('./playtime');
+      expect(formatPlaytimeMinutes(60)).toBe('1.0 hr');
+      expect(formatPlaytimeMinutes(138)).toBe('2.3 hr');
+      expect(formatPlaytimeMinutes(599)).toBe('10.0 hr'); // rounded up
+    });
+
+    it('10+ hours rounds to whole hours', async () => {
+      const { formatPlaytimeMinutes } = await import('./playtime');
+      expect(formatPlaytimeMinutes(600)).toBe('10 hr');
+      expect(formatPlaytimeMinutes(1234)).toBe('21 hr');
+    });
+  });
+
+  describe('formatDurationBucket (short form for bucket-only reports)', () => {
+    it('short-form labels match web fmtDuration', async () => {
+      const { formatDurationBucket } = await import('./playtime');
+      expect(formatDurationBucket('underOneHour')).toBe('< 1hr');
+      expect(formatDurationBucket('oneToFourHours')).toBe('1-4 hrs');
+      expect(formatDurationBucket('fourToTenHours')).toBe('4-10 hrs');
+      expect(formatDurationBucket('overTenHours')).toBe('10+ hrs');
+    });
+
+    it('unknown enum passes through, falsy returns null', async () => {
+      const { formatDurationBucket } = await import('./playtime');
+      expect(formatDurationBucket('unreported')).toBe('unreported');
+      expect(formatDurationBucket(null)).toBeNull();
+      expect(formatDurationBucket('')).toBeNull();
+    });
+  });
 });

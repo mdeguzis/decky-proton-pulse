@@ -7,7 +7,7 @@ import {
   getProtonDBReportsWithDiagnostics,
   type ReportFetchDiagnostics,
 } from '../../lib/protondb';
-import { getUserVote, getVoteTotals, submitVote, deleteVote } from '../../lib/voting';
+import { getUserVote, getVoteTotals, getVoterId, submitVote, deleteVote } from '../../lib/voting';
 import { getUserConfigs, type UserConfigRow } from '../../lib/userConfigs';
 import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
@@ -17,6 +17,7 @@ import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, i
 import { getGameSource, sourceStoreLabel, type GameSourceInfo } from '../../lib/gameSource';
 import { GameBanner } from '../GameBanner';
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
+import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
 import {
   registerScreenshotAutomationHandler,
   runRegisteredScreenshotAutomationHandler,
@@ -130,6 +131,9 @@ function pulseRowToCdnReport(row: UserConfigRow): CdnReport {
     title:        row.title,
     reportId:     row.id ?? null,
     formResponses: row.form_responses ?? null,
+    // #114: preserve the submitter's client id so the frontend can
+    // compare against getVoterId() and hide vote buttons on own reports.
+    authorId:     row.client_id ?? null,
   };
 }
 
@@ -726,6 +730,14 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
   const [editedReports, setEditedReports] = useState<EditedReportEntry[]>([]);
   const [pulseReports, setPulseReports] = useState<UserConfigRow[]>([]);
   const [votes, setVotes]       = useState<Record<string, VoteTotals>>({});
+  // #114: current user's voter id. Compared against report.authorId in
+  // the ReportCard's isSelfReport prop so vote buttons hide on your own
+  // reports. Loaded once on mount, no refresh needed (voter id is
+  // per-install and doesn't change).
+  const [voterId, setVoterId] = useState<string | null>(null);
+  useEffect(() => {
+    getVoterId().then(setVoterId).catch(() => setVoterId(null));
+  }, []);
   const [loading, setLoading]   = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [focusedCardKey, setFocusedCardKey] = useState<string | null>(null);
@@ -760,14 +772,22 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     editLabel: entry.label,
   }));
 
-  const pulseDisplayReports: DisplayReportCard[] = pulseReports.map(row => ({
-    ...computeConfidence(pulseRowToCdnReport(row), scoreContext),
-    upvotes:    0,
-    downvotes:  0,
-    displayKey: `pulse:${row.id}`,
-    isPulse:    true,
-    pulseTitle: row.title,
-  }));
+  // Pulse reports previously hardcoded upvotes/downvotes to 0 (#113), so
+  // votes cast on them were saved backend-side but never reflected in the
+  // card. Read from the same votes state CDN reports use so the counts
+  // update in place after handleUpvote / handleDownvote fires.
+  const pulseDisplayReports: DisplayReportCard[] = pulseReports.map(row => {
+    const cdn = pulseRowToCdnReport(row);
+    const key = reportKey(cdn);
+    return {
+      ...computeConfidence(cdn, scoreContext),
+      upvotes:    votes[key]?.upvotes ?? 0,
+      downvotes:  votes[key]?.downvotes ?? 0,
+      displayKey: `pulse:${row.id}`,
+      isPulse:    true,
+      pulseTitle: row.title,
+    };
+  });
 
   const scored: DisplayReportCard[] = mergeWithPulse(
     [...editedDisplayReports, ...baseDisplayReports],
@@ -1135,6 +1155,9 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             } else if (availability.normalized_version) {
               launchProtonVersion = availability.normalized_version;
             }
+            // #116: separate toast if the rolling latest-slot symlink got
+            // re-pointed to the newly-installed version.
+            maybeToastRollingSlotChange(installResult);
           }
         } else if (choice === 'latest') {
           if (latestInstalledTool) {
@@ -1166,6 +1189,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             });
             launchProtonVersion = availability.normalized_version ?? targetReport.protonVersion;
           }
+          maybeToastRollingSlotChange(installResult);
         }
 
         void logFrontendEvent('INFO', 'Apply resolved missing Proton version choice', {
@@ -1566,6 +1590,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                     selected={selectedKey === r.displayKey}
                     focused={focusedCardKey === r.displayKey}
                     systemGpuVendor={filter === 'all' ? gpuVendor : filter}
+                    isSelfReport={!!voterId && !!r.authorId && r.authorId === voterId}
                     onFocus={(report) => {
                       setFocusedCardKey(report.displayKey);
                       setSelectedKey(report.displayKey);

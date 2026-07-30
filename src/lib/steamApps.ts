@@ -137,10 +137,25 @@ export function getLaunchOptionsFromDetails(details: any): string {
   return typeof details.strLaunchOptions === 'string' ? details.strLaunchOptions : '';
 }
 
+// Values Steam returns for "no explicit tool set" -- i.e. the game runs
+// under Steam's global default compat tool. Not usable as a report value,
+// so we filter them out here (#115) and let callers resolve to a real
+// version through another path.
+const _STEAM_DEFAULT_TOKENS = new Set(['default', 'proton_default', 'steam_default', '']);
+
+function _isRealCompatTool(v: unknown): v is string {
+  if (typeof v !== 'string') return false;
+  const t = v.trim();
+  return t.length > 0 && !_STEAM_DEFAULT_TOKENS.has(t.toLowerCase());
+}
+
 // Returns the display name of the Proton/compat tool forced for this game via
 // Steam game properties (Properties > Compatibility > Force a specific tool).
 // Checks the app overview first (fast, synchronous), then falls back to
-// RegisterForAppDetails (async). Returns empty string if nothing is set.
+// RegisterForAppDetails (async). Returns empty string if nothing is set OR
+// if Steam returned the sentinel "default" (which is not a valid version --
+// #115). Callers should treat empty return as "let Steam pick" and can
+// prompt the user to select a real version.
 export async function getCompatToolForApp(appId: number): Promise<string> {
   // Fast path: app overview often has compat_tool_name or compat_tool_display_name
   const overview = getSteamAppOverview(appId)
@@ -154,9 +169,12 @@ export async function getCompatToolForApp(appId: number): Promise<string> {
       overview.strCompatToolName,
     ];
     for (const c of candidates) {
-      if (c && typeof c === 'string' && c.trim()) {
+      if (_isRealCompatTool(c)) {
         void logFrontendEvent('DEBUG', 'getCompatToolForApp: found via overview', { appId, value: c });
         return c.trim();
+      }
+      if (typeof c === 'string' && c.trim()) {
+        void logFrontendEvent('DEBUG', 'getCompatToolForApp: overview returned sentinel, ignoring', { appId, value: c });
       }
     }
   }
@@ -171,9 +189,12 @@ export async function getCompatToolForApp(appId: number): Promise<string> {
       details.compat_tool_name,
     ];
     for (const c of candidates) {
-      if (c && typeof c === 'string' && c.trim()) {
+      if (_isRealCompatTool(c)) {
         void logFrontendEvent('DEBUG', 'getCompatToolForApp: found via details', { appId, value: c });
         return c.trim();
+      }
+      if (typeof c === 'string' && c.trim()) {
+        void logFrontendEvent('DEBUG', 'getCompatToolForApp: details returned sentinel, ignoring', { appId, value: c });
       }
     }
   }

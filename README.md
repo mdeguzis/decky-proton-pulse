@@ -199,34 +199,34 @@ Proton Pulse supports 29 languages. Translation coverage is measured during buil
 | Language | Code | Coverage | Status |
 |---|---|---|---|
 | English | en | 100.0% (canonical) | canonical |
-| Deutsch | de | 100.0% | pass |
-| Español | es | 100.0% | pass |
-| Français | fr | 100.0% | pass |
-| Italiano | it | 100.0% | pass |
-| 日本語 | ja | 100.0% | pass |
-| 한국어 | ko | 100.0% | pass |
-| Nederlands | nl | 100.0% | pass |
-| Polski | pl | 100.0% | pass |
-| Português (BR) | pt-BR | 100.0% | pass |
-| Русский | ru | 100.0% | pass |
-| Türkçe | tr | 100.0% | pass |
-| Українська | uk | 100.0% | pass |
-| Svenska | sv | 100.0% | pass |
-| Čeština | cs | 100.0% | pass |
-| ภาษาไทย | th | 100.0% | pass |
-| Tiếng Việt | vi | 100.0% | pass |
-| 简体中文 | zh-CN | 100.0% | pass |
-| 繁體中文 | zh-TW | 100.0% | pass |
-| Български | bg | 100.0% | pass |
-| Dansk | da | 100.0% | pass |
-| Ελληνικά | el | 100.0% | pass |
-| Español (Latinoamérica) | es-419 | 100.0% | pass |
-| Suomi | fi | 100.0% | pass |
-| Magyar | hu | 100.0% | pass |
-| Norsk | no | 100.0% | pass |
-| Português (PT) | pt | 100.0% | pass |
-| Română | ro | 100.0% | pass |
-| Slovenščina | sl | 100.0% | pass |
+| Deutsch | de | 99.4% | fail |
+| Español | es | 99.4% | fail |
+| Français | fr | 99.4% | fail |
+| Italiano | it | 99.4% | fail |
+| 日本語 | ja | 99.4% | fail |
+| 한국어 | ko | 99.4% | fail |
+| Nederlands | nl | 99.4% | fail |
+| Polski | pl | 99.4% | fail |
+| Português (BR) | pt-BR | 99.4% | fail |
+| Русский | ru | 99.4% | fail |
+| Türkçe | tr | 99.4% | fail |
+| Українська | uk | 99.4% | fail |
+| Svenska | sv | 99.4% | fail |
+| Čeština | cs | 99.4% | fail |
+| ภาษาไทย | th | 99.4% | fail |
+| Tiếng Việt | vi | 99.4% | fail |
+| 简体中文 | zh-CN | 99.4% | fail |
+| 繁體中文 | zh-TW | 99.4% | fail |
+| Български | bg | 99.4% | fail |
+| Dansk | da | 99.4% | fail |
+| Ελληνικά | el | 99.4% | fail |
+| Español (Latinoamérica) | es-419 | 99.4% | fail |
+| Suomi | fi | 99.4% | fail |
+| Magyar | hu | 99.4% | fail |
+| Norsk | no | 99.4% | fail |
+| Português (PT) | pt | 99.4% | fail |
+| Română | ro | 99.4% | fail |
+| Slovenščina | sl | 99.4% | fail |
 <!-- translation-coverage:end -->
 
 Want to help translate? See `src/lib/translations/` for the translation files.
@@ -262,6 +262,12 @@ Tips:
 * Keep `make get-logs` handy in another terminal so you can compare frontend console behavior with the plugin log.
 * If you are debugging a game page patch, open the game page first, then refresh the target list so the correct CEF view is visible.
 * Use the inspector console to confirm route changes, DOM anchor selection, and injected button state when UI patches do not show up where expected.
+
+## Security
+
+Found a security issue? See [`SECURITY.md`](https://github.com/mdeguzis/decky-proton-pulse/blob/main/SECURITY.md) for the vulnerability disclosure policy. Preferred report channel is a [private GitHub security advisory](https://github.com/mdeguzis/decky-proton-pulse/security/advisories/new); email fallback is <mdeguzis@gmail.com>. Response SLA: 72 hours to acknowledge, one week for initial assessment. Safe-harbor language for good-faith research is included in the policy.
+
+The plugin's cloud sync and submit paths share the [Proton Pulse web app](https://github.com/mdeguzis/proton-pulse-web) Supabase backend, so it inherits the automated gates documented on the [Security Guardrails wiki](https://github.com/mdeguzis/proton-pulse-web/wiki/Security-Guardrails) (CodeQL, Dependabot, npm audit, VirusTotal, Row-Level Security, per-IP rate limits, content moderation). Plugin-specific hardening (launch-option validation, self-updater signature checks, plugin-link pairing) is documented on the plugin wiki [Security page](https://github.com/mdeguzis/decky-proton-pulse/wiki/Security).
 
 ## License
 

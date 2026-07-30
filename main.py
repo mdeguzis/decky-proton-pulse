@@ -38,6 +38,8 @@ import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
 from lib.compat_tools import (
     COMPAT_TOOL_CONFIGS,
+    ensure_all_rolling_slots,
+    ensure_rolling_slot,
     find_closest_installed_tool,
     installed_tool_matches_version,
     list_installed_compatibility_tools,
@@ -135,6 +137,23 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         self._lsfg_vk_install_thread = None
         self._lsfg_vk_install_process_ref = [None]
         self._lsfg_vk_install_status = _lsfg_vk_mod.make_initial_status()
+        # #116: refresh rolling latest-slot symlinks on every startup so
+        # Proton-GE-Latest and Proton-CachyOS-Latest always exist and always
+        # point at the newest installed versioned build. Same behavior Steam
+        # gives "Proton - Experimental" -- the slot is a stable label, the
+        # underlying tool rolls forward automatically.
+        try:
+            slot_outcomes = ensure_all_rolling_slots()
+            decky.logger.info(
+                "Proton Pulse: rolling slots refreshed: "
+                + ", ".join(f"{k}={v.get('reason') or ('changed' if v.get('changed') else 'ok')}"
+                            for k, v in slot_outcomes.items())
+            )
+        except Exception as _slot_err:  # pylint: disable=broad-except
+            decky.logger.warning(
+                f"Proton Pulse: rolling slot refresh failed: {_slot_err}"
+            )
+
         decky.logger.info("Proton Pulse backend ready")
 
         # Kick off CDN prefetch in the background.  daemon=True so it
@@ -648,6 +667,94 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             ),
             "tool_id": tool_id,
             "tool_label": config["label"],
+        }
+
+    async def refresh_rolling_slots(self) -> dict[str, Any]:
+        """Force a re-symlink of every rolling latest-slot (#116).
+
+        Frontend can call this after a manual uninstall/install so the
+        Steam Compat picker reflects the change without a plugin restart.
+        Returns the per-tool outcome dict.
+        """
+        return {"slots": ensure_all_rolling_slots()}
+
+    async def get_compat_tool_details(self, directory_name: str) -> dict[str, Any]:
+        """Return the Info-modal details for one installed compat tool.
+
+        Powers the Settings tab's per-row "Info" menu item. Frontend passes
+        the tool's directory_name (unique per install); we locate the tool
+        via list_installed_compatibility_tools, then stat + du the on-disk
+        directory and read the rolling-slot marker if present.
+
+        Returns { ok, path, installed_at_iso, size_bytes, internal_name,
+        display_name, tool_id, managed_slot, is_rolling_slot,
+        current_target?, error? }. size_bytes skips symlinks so a rolling
+        slot's per-file symlink farm is not double-counted with its target.
+        """
+        # pylint: disable=import-outside-toplevel
+        import datetime
+        from pathlib import Path
+
+        try:
+            tools = list_installed_compatibility_tools()
+        except Exception as err:  # pylint: disable=broad-except
+            return {"ok": False, "error": f"list_installed failed: {err}"}
+        match = next(
+            (t for t in tools if t.get("directory_name") == directory_name),
+            None,
+        )
+        if match is None:
+            return {"ok": False, "error": f"tool not found: {directory_name}"}
+        path = Path(str(match.get("path") or ""))
+        if not path.exists():
+            return {"ok": False, "error": f"path does not exist: {path}"}
+
+        # mtime of the tool dir tracks the last install / extraction.
+        try:
+            installed_at = datetime.datetime.fromtimestamp(
+                path.stat().st_mtime, tz=datetime.timezone.utc
+            ).isoformat()
+        except OSError:
+            installed_at = None
+
+        # Size on disk: sum every regular file, skip symlinks so a rolling
+        # slot's per-file symlink farm does not double-count its target.
+        size_bytes = 0
+        try:
+            for child in path.rglob("*"):
+                try:
+                    if child.is_symlink() or not child.is_file():
+                        continue
+                    size_bytes += child.stat().st_size
+                except OSError:
+                    continue
+        except OSError:
+            pass
+
+        managed_slot = match.get("managed_slot")
+        is_rolling_slot = managed_slot == "latest"
+        current_target: str | None = None
+        if is_rolling_slot:
+            marker = path / ".proton-pulse-managed"
+            if marker.is_file():
+                try:
+                    current_target = marker.read_text(encoding="utf-8").strip() or None
+                except OSError:
+                    current_target = None
+
+        return {
+            "ok": True,
+            "directory_name": directory_name,
+            "display_name": match.get("display_name"),
+            "internal_name": match.get("internal_name"),
+            "tool_id": match.get("tool_id"),
+            "managed_slot": managed_slot,
+            "is_rolling_slot": is_rolling_slot,
+            "current_target": current_target,
+            "path": str(path),
+            "installed_at_iso": installed_at,
+            "size_bytes": size_bytes,
+            "source": match.get("source"),
         }
 
     async def install_compat_tool(

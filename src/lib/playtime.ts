@@ -414,3 +414,26 @@ export function bucketPlaytimeMinutes(minutes: number): string {
   if (minutes < 10 * 60)  return 'fourToTenHours';
   return 'overTenHours';
 }
+
+// Human-readable playtime label for display. Mirrors js/app/utils.js::fmtMinutes
+// on the web so plugin + web read the same way. When the caller has actual
+// tracked minutes we prefer this over the bucket enum -- users would rather see
+// "2.3 hr" than "1-4 hrs" (task #12).
+export function formatPlaytimeMinutes(m: number | null | undefined): string {
+  if (m == null || !Number.isFinite(m) || m < 1) return '< 1 min';
+  if (m < 60) return `${Math.round(m)} min`;
+  const h = m / 60;
+  return h < 10 ? `${h.toFixed(1)} hr` : `${Math.round(h)} hr`;
+}
+
+// Short bucket-enum label for display when we ONLY have a bucket (no minutes).
+// Matches js/app/utils.js::fmtDuration (short form). Returns null on unknown.
+export function formatDurationBucket(bucket: string | null | undefined): string | null {
+  switch (bucket) {
+    case 'underOneHour':   return '< 1hr';
+    case 'oneToFourHours': return '1-4 hrs';
+    case 'fourToTenHours': return '4-10 hrs';
+    case 'overTenHours':   return '10+ hrs';
+    default:               return bucket || null;
+  }
+}

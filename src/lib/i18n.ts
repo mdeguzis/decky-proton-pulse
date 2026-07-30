@@ -135,6 +135,8 @@ export interface TranslationTree {
     uploadToProtonPulse: string;
     uploadRequiresEdit: string;
     upvote: string;
+    downvote: string;
+    ownReportNoVote: string;
     clear: string;
     hardwareComparisonTitle: string;
     hardwareComparisonDescription: string;
@@ -264,6 +266,7 @@ export interface TranslationTree {
     timeLeft: (time: string) => string;
     archivePickerFailed: string;
     info: string;
+    releaseNotes?: string;
     toolSelector: string;
   };
   configure: {
@@ -426,6 +429,7 @@ export interface TranslationTree {
     notSynced: string;
     published: string;
     draft: string;
+    pendingApproval: string;
     cloudStatusLabel: string;
     uploadToCloud: string;
     uploadingToCloud: string;
@@ -904,6 +908,8 @@ export const en: TranslationTree = {
     uploadToProtonPulse: 'Submit to Proton Pulse',
     uploadRequiresEdit: 'Tap Edit first to make this your own report, then submit',
     upvote: 'Upvote',
+    downvote: 'Downvote',
+    ownReportNoVote: 'You cannot vote on your own report',
     clear: 'Clear',
     hardwareComparisonTitle: 'Hardware Comparison',
     hardwareComparisonDescription: 'Left side is the ProtonDB report. Right side is our current system.',
@@ -1033,6 +1039,7 @@ export const en: TranslationTree = {
     timeLeft: (time) => `${time} left`,
     archivePickerFailed: 'Could not open the file picker. You can still enter a path manually.',
     info: 'Info',
+    releaseNotes: 'Release Notes',
     toolSelector: 'Compatibility Tool',
   },
   configure: {
@@ -1195,6 +1202,7 @@ export const en: TranslationTree = {
     notSynced: 'Not synced',
     published: 'Published',
     draft: 'Draft',
+    pendingApproval: 'Pending Approval',
     cloudStatusLabel: 'Cloud',
     uploadToCloud: 'Upload to Cloud',
     uploadingToCloud: 'Uploading...',

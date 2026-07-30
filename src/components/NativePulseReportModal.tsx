@@ -13,6 +13,7 @@ import { logFrontendEvent } from '../lib/logger';
 import { isSteamShortcutApp, resolveAppName } from '../lib/steamApps';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { deriveRating, FAULT_KEYS, type FaultKey, type YesNo } from '../lib/scoring';
+import { formatPlaytimeMinutes } from '../lib/playtime';
 import { type GameSourceInfo, appTypeFromSource, nativeAppIdFromSource } from '../lib/gameSource';
 import { saveReportDraft, loadReportDraft, clearReportDraft } from '../lib/reportDraft';
 import {
@@ -891,6 +892,21 @@ export function NativePulseReportModal({
                     onChange={(opt) => { setDuration(opt.data as string); setFieldErrors(p => ({ ...p, duration: false })); }}
                     label={t().nativeReport.duration}
                   />
+                </div>
+              )}
+              {/* Auto-detected playtime readout (#12): when we have a concrete
+                  minute count from the tracker, surface it instead of hiding
+                  the field entirely. Bucket enums are for form input only --
+                  the display should read as the real tracked time. */}
+              {autoDurationActive && autoDurationMinutes != null && (
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#e8f4ff', marginBottom: 4 }}>
+                    {t().nativeReport.duration}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#e8f4ff', padding: '6px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4 }}>
+                    {formatPlaytimeMinutes(autoDurationMinutes)}
+                    <span style={{ fontSize: 10, color: '#7a9bb5', marginLeft: 6 }}>(auto-detected from your Steam playtime)</span>
+                  </div>
                 </div>
               )}
             </>

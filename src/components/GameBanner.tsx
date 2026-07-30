@@ -5,11 +5,20 @@
 // shared component falls back to the local Steam grid artwork and then to null,
 // so shortcut games render either the user-set artwork or no image at all.
 
-import { useState, useRef } from 'react';
-import { getGridArtworkDataUrl } from '../lib/steamApps';
+import { useState, useRef, useEffect } from 'react';
+import { getGridArtworkDataUrl, NON_STEAM_ID_THRESHOLD } from '../lib/steamApps';
 
 const STEAM_HEADER_URL = (id: number) =>
   `https://cdn.akamai.steamstatic.com/steam/apps/${id}/header.jpg`;
+
+// Non-Steam shortcuts have appid > NON_STEAM_ID_THRESHOLD. The Steam CDN
+// returns a purple placeholder image (not a 404) for those ids so the
+// <img>'s onError never fires and the placeholder sits there forever
+// (#112). Skip Steam CDN entirely for shortcuts and read from the local
+// Steam grid artwork on disk instead.
+function isNonSteamShortcut(id: number): boolean {
+  return id >= NON_STEAM_ID_THRESHOLD;
+}
 
 interface GameBannerProps {
   appId: number;
@@ -17,8 +26,19 @@ interface GameBannerProps {
 }
 
 export function GameBanner({ appId, style }: GameBannerProps) {
-  const [src, setSrc] = useState(STEAM_HEADER_URL(appId));
+  const shortcut = isNonSteamShortcut(appId);
+  const [src, setSrc] = useState(shortcut ? '' : STEAM_HEADER_URL(appId));
   const triedGrid = useRef(false);
+
+  // For shortcuts, kick off the grid-artwork lookup on mount instead of
+  // waiting for the Steam CDN to fail (which never happens for them).
+  useEffect(() => {
+    if (!shortcut || triedGrid.current) return;
+    triedGrid.current = true;
+    void getGridArtworkDataUrl(appId).then((dataUrl) => {
+      setSrc(dataUrl || '');
+    });
+  }, [shortcut, appId]);
 
   const handleError = () => {
     if (triedGrid.current) {

@@ -140,6 +140,23 @@ const TITLES: Record<IssueTemplate, string> = {
   other: '[General Feedback] ',
 };
 
+// CEF / Steam Web Helper refuses to open URLs past ~8 KB with a "URL too
+// long" bounce. Keep well below that: the browser adds its own headers,
+// and github.com may redirect once, both of which eat headroom. Bytes,
+// not characters -- the URL is what's counted.
+const URL_MAX_BYTES = 6000;
+
+// Rebuild the URL after dropping logs, then (last resort) truncating the
+// body. Preserves title + labels so the issue still lands in the right
+// bucket even when we had to trim the description.
+function buildUrl(title: string, body: string, labels: string): string {
+  const params = new URLSearchParams({ title, body, labels });
+  return `https://github.com/${REPO}/issues/new?${params.toString()}`;
+}
+
+const LOGS_OMITTED_NOTE =
+  '_Plugin logs omitted because the pre-filled URL was too long. Paste them from Decky > Developer > Log Viewer._';
+
 export async function openIssue(template: IssueTemplate): Promise<void> {
   const [sysInfo, logs, version] = await Promise.all([
     getSystemInfo().catch(() => ({
@@ -151,14 +168,25 @@ export async function openIssue(template: IssueTemplate): Promise<void> {
   ]);
 
   const systemInfo = formatSystemInfo(sysInfo, version);
-  const body = buildBody(template, systemInfo, logs);
+  const title = TITLES[template];
+  const label = LABELS[template];
 
-  const params = new URLSearchParams({
-    title: TITLES[template],
-    body,
-    labels: LABELS[template],
-  });
-
-  const url = `https://github.com/${REPO}/issues/new?${params.toString()}`;
+  // Try full body first. If it pushes the URL past CEF's limit, drop the
+  // logs (they're the biggest variable-size chunk) and leave a note. If
+  // still too long, hard-trim the whole body.
+  let body = buildBody(template, systemInfo, logs);
+  let url = buildUrl(title, body, label);
+  if (url.length > URL_MAX_BYTES) {
+    body = buildBody(template, systemInfo, '') + '\n\n' + LOGS_OMITTED_NOTE;
+    url = buildUrl(title, body, label);
+  }
+  if (url.length > URL_MAX_BYTES) {
+    // Last resort: chop the body until it fits. Leave the trailing note
+    // so the reader knows something was cut.
+    const trimNote = '\n\n_... body truncated to fit URL length limit ..._';
+    const overshoot = url.length - URL_MAX_BYTES + trimNote.length + 32;
+    body = body.slice(0, Math.max(0, body.length - overshoot)) + trimNote;
+    url = buildUrl(title, body, label);
+  }
   Navigation.NavigateToExternalWeb(url);
 }

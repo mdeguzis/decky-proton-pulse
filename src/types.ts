@@ -55,6 +55,11 @@ export interface CdnReport {
   reportId?: number | null;
   source?: string | null; // e.g. "Steam", "Heroic", "Epic", "Non-Steam"
   formResponses?: import('./lib/scoring').ReportResponses | null;
+  // Client id / voter_id of the person who submitted the report. Only
+  // Pulse reports carry this (ProtonDB reports are anonymous upstream).
+  // Compared against getVoterId() on the frontend to disable vote
+  // buttons on the user's own reports (#114).
+  authorId?: string | null;
 }
 
 // --- Scoring ---
@@ -109,6 +114,12 @@ export interface InstalledCompatTool {
   tool_id?: CompatToolId | null;
   managed_slot?: 'latest' | 'versioned' | null;
   latest_tag?: string | null;
+  // For rolling-slot tools only: the basename of the versioned build the
+  // slot's symlinks currently point at (e.g. "GE-Proton11-1"). Populated
+  // by the backend from the slot's .proton-pulse-managed marker file.
+  // Frontend uses this as the row subtitle so users see the slot's
+  // friendly name in the header and the active version underneath.
+  current_target_name?: string | null;
 }
 
 export interface ProtonGeManagerState {

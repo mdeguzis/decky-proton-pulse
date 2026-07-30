@@ -258,28 +258,35 @@
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 982,
+      "line": 986,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 1029,
+      "line": 1033,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 724,
+      "line": 725,
       "column": 42,
       "kind": "string",
       "text": "- Type below or pick installed -"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 925,
+      "line": 908,
+      "column": 85,
+      "kind": "jsx",
+      "text": "(auto-detected from your Steam playtime)"
+    },
+    {
+      "file": "src/components/NativePulseReportModal.tsx",
+      "line": 941,
       "column": 13,
       "kind": "jsx",
       "text": "Save draft"
@@ -304,6 +311,20 @@
       "column": 108,
       "kind": "jsx",
       "text": "Report Score Tiers"
+    },
+    {
+      "file": "src/components/tabs/SettingsTab.tsx",
+      "line": 286,
+      "column": 61,
+      "kind": "jsx",
+      "text": "Could not load details:"
+    },
+    {
+      "file": "src/components/tabs/SettingsTab.tsx",
+      "line": 288,
+      "column": 61,
+      "kind": "jsx",
+      "text": "Loading..."
     }
   ]
 }

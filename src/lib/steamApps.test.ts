@@ -16,7 +16,6 @@ vi.mock('@decky/api', () => ({
 }));
 
 import {
-  getGridArtworkDataUrl,
   getLaunchOptionsFromDetails,
   getSteamAppDetails,
   getSteamAppOverview,

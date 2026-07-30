@@ -9,7 +9,7 @@ const getCompatManagerStateCallable = callable<
 >('get_compat_manager_state');
 const installCompatToolCallable = callable<
   [tool_id: CompatToolId, version?: string | null, install_as_latest?: boolean, force_reinstall?: boolean],
-  { success: boolean; message: string; already_installed?: boolean }
+  { success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }
 >('install_compat_tool');
 const cancelCompatToolInstallCallable = callable<
   [tool_id?: CompatToolId],
@@ -20,11 +20,11 @@ const getProtonGeManagerStateCallable = callable<[force_refresh?: boolean], Prot
 const checkProtonVersionAvailabilityCallable = callable<[version: string], ProtonVersionAvailability>('check_proton_version_availability');
 const installProtonGeCallable = callable<
   [version?: string | null, installAsLatest?: boolean, forceReinstall?: boolean],
-  { success: boolean; message: string; already_installed?: boolean }
+  { success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }
 >('install_proton_ge');
 const cancelProtonGeInstallCallable = callable<[], { success: boolean; message: string }>('cancel_proton_ge_install');
 const uninstallCompatibilityToolCallable = callable<[directoryName: string], { success: boolean; message: string }>('uninstall_compatibility_tool');
-const installCompatibilityToolArchiveCallable = callable<[archivePath: string], { success: boolean; message: string; already_installed?: boolean }>('install_compatibility_tool_archive');
+const installCompatibilityToolArchiveCallable = callable<[archivePath: string], { success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }>('install_compatibility_tool_archive');
 
 export async function getCompatManagerState(toolId: CompatToolId, forceRefresh = false): Promise<ProtonGeManagerState> {
   return getCompatManagerStateCallable(toolId, forceRefresh);
@@ -35,7 +35,7 @@ export async function installCompatTool(
   version?: string | null,
   installAsLatest = false,
   forceReinstall = false,
-): Promise<{ success: boolean; message: string; already_installed?: boolean }> {
+): Promise<{ success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }> {
   return installCompatToolCallable(toolId, version ?? null, installAsLatest, forceReinstall);
 }
 
@@ -55,7 +55,7 @@ export async function installProtonGe(
   version?: string | null,
   installAsLatest = false,
   forceReinstall = false,
-): Promise<{ success: boolean; message: string; already_installed?: boolean }> {
+): Promise<{ success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }> {
   return installProtonGeCallable(version ?? null, installAsLatest, forceReinstall);
 }
 
@@ -67,6 +67,35 @@ export async function uninstallCompatibilityTool(directoryName: string): Promise
   return uninstallCompatibilityToolCallable(directoryName);
 }
 
-export async function installCompatibilityToolArchive(archivePath: string): Promise<{ success: boolean; message: string; already_installed?: boolean }> {
+export async function installCompatibilityToolArchive(archivePath: string): Promise<{ success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }> {
   return installCompatibilityToolArchiveCallable(archivePath);
+}
+
+// Details shown in the per-row Info modal on the Settings tab. Field
+// nullability mirrors main.py:get_compat_tool_details: the backend
+// always returns { ok: false, error } on a lookup failure, everything
+// else is populated only on ok:true.
+export interface CompatToolDetails {
+  ok: boolean;
+  error?: string;
+  directory_name?: string;
+  display_name?: string | null;
+  internal_name?: string | null;
+  tool_id?: string | null;
+  managed_slot?: string | null;
+  is_rolling_slot?: boolean;
+  current_target?: string | null;
+  path?: string;
+  installed_at_iso?: string | null;
+  size_bytes?: number;
+  source?: string | null;
+}
+
+const getCompatToolDetailsCallable = callable<
+  [directory_name: string],
+  CompatToolDetails
+>('get_compat_tool_details');
+
+export async function getCompatToolDetails(directoryName: string): Promise<CompatToolDetails> {
+  return getCompatToolDetailsCallable(directoryName);
 }
