@@ -2,10 +2,12 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## Unreleased
+
 ## v1.13.1
 
-- Manage tab no longer shows "Pending Approval" for configs that were only saved / synced; report status now derives from user_configs + report_approvals instead of the config-sync table
-- Translations at 100% across all 28 non-English locales (added pendingApproval, downvote, ownReportNoVote, compatTools.releaseNotes)
+- Release: v1.13.1
+- Post-release cleanup for 1.13.0 (drop dupe Unreleased entry, sync uv.lock)
 
 ## v1.13.0
 
