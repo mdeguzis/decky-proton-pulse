@@ -6,6 +6,8 @@ All notable changes to Proton Pulse should be recorded here.
 
 - Manage tab no longer shows "Pending Approval" for configs that were only saved / synced; report status now derives from user_configs + report_approvals instead of the config-sync table
 - Translations at 100% across all 28 non-English locales (added pendingApproval, downvote, ownReportNoVote, compatTools.releaseNotes)
+- Fix Italian perReportWhatsThis parse error that had silently orphaned 269 keys
+- Backfill script hardened so the same escape bug can't recur
 
 ## v1.13.0
 
