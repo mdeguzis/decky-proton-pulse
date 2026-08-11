@@ -358,26 +358,32 @@ describe('deleteMyReport', () => {
 describe('getMySubmittedAppIds', () => {
   it('returns app IDs from both client_id and proton_pulse_user_id queries', async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(JSON.stringify([{ app_id: '100' }, { app_id: '200' }]), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify([{ app_id: '200' }, { app_id: '300' }]), { status: 200 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 1, app_id: '100' }, { id: 2, app_id: '200' }]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 3, app_id: '200' }, { id: 4, app_id: '300' }]), { status: 200 }))
+      // Third call: report_approvals lookup for the owned ids -- empty here.
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
 
     const { getMySubmittedAppIds } = await import('./userConfigs');
     const result = await getMySubmittedAppIds();
 
     expect(result).toEqual(new Set(['100', '200', '300']));
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // 2 user_configs + 1 report_approvals
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('returns only client_id results when no proton_pulse_user_id is linked', async () => {
     const { getLinkedProtonPulseUserId } = await import('./protonPulseAccount');
     vi.mocked(getLinkedProtonPulseUserId).mockReturnValueOnce(null);
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([{ app_id: '42' }]), { status: 200 }));
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 7, app_id: '42' }]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
 
     const { getMySubmittedAppIds } = await import('./userConfigs');
     const result = await getMySubmittedAppIds();
 
     expect(result).toEqual(new Set(['42']));
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // 1 user_configs + 1 report_approvals
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('returns empty set when fetch throws', async () => {
@@ -387,5 +393,46 @@ describe('getMySubmittedAppIds', () => {
     const result = await getMySubmittedAppIds();
 
     expect(result).toEqual(new Set());
+  });
+});
+
+describe('getMyReportStatuses', () => {
+  it('separates submitted from approved app IDs based on report_approvals rows', async () => {
+    fetchMock
+      // user_configs for client_id: ids 10, 20
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 10, app_id: '100' }, { id: 20, app_id: '200' }]), { status: 200 }))
+      // user_configs for proton_pulse_user_id: id 30
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: 30, app_id: '300' }]), { status: 200 }))
+      // report_approvals: only id=10 and id=30 are approved -> 100 and 300.
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ report_id: 10 }, { report_id: 30 }]), { status: 200 }));
+
+    const { getMyReportStatuses } = await import('./userConfigs');
+    const { submitted, approved } = await getMyReportStatuses();
+
+    expect(submitted).toEqual(new Set(['100', '200', '300']));
+    expect(approved).toEqual(new Set(['100', '300']));
+  });
+
+  it('skips the report_approvals fetch when nothing was submitted', async () => {
+    const { getLinkedProtonPulseUserId } = await import('./protonPulseAccount');
+    vi.mocked(getLinkedProtonPulseUserId).mockReturnValueOnce(null);
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }));
+
+    const { getMyReportStatuses } = await import('./userConfigs');
+    const { submitted, approved } = await getMyReportStatuses();
+
+    expect(submitted).toEqual(new Set());
+    expect(approved).toEqual(new Set());
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns empty sets when the underlying fetch throws', async () => {
+    fetchMock.mockRejectedValue(new Error('network error'));
+
+    const { getMyReportStatuses } = await import('./userConfigs');
+    const { submitted, approved } = await getMyReportStatuses();
+
+    expect(submitted).toEqual(new Set());
+    expect(approved).toEqual(new Set());
   });
 });
