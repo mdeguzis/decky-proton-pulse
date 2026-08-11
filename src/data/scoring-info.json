@@ -23,6 +23,7 @@
     "PROTON_MATCH": 8,
     "PROTON_CLOSE": 4,
     "SOURCE_PULSE_PENALTY": -5,
+    "TINKER_PENALTY": -5,
     "PLAYTIME_UNDER_ONE_HOUR": 3,
     "PLAYTIME_ONE_TO_FOUR_HOURS": 6,
     "PLAYTIME_FOUR_TO_TEN_HOURS": 9,
@@ -53,8 +54,9 @@
     "perfect", "flawless", "works great", "no issues", "out of the box",
     "excellent", "runs perfectly", "zero issues", "works flawlessly"
   ],
-  "formula": "(rating + recency + customProton + protonMatch + playtimeConfidence) * gpuMult * osMult * kernelMult + notesSentiment + sourcePenalty",
+  "formula": "(rating + recency + customProton + protonMatch + playtimeConfidence) * gpuMult * osMult * kernelMult + notesSentiment + sourcePenalty + tinkerPenalty",
   "sourcePenaltyNote": "Native Pulse reports (source='user') receive SOURCE_PULSE_PENALTY=-5 until the Pulse report base grows enough to match ProtonDB's confidence. ProtonDB CDN and live reports receive no penalty. See Architecture.md for details.",
+  "tinkerPenaltyNote": "Reports that required tinker steps (custom launch options, isTinker=true, or explicit tinkeringMethods) receive TINKER_PENALTY=-5 confidence. Rationale (#433, from Rhedox on Discord): tinker steps invite cargo-culting -- users copy launch options they don't understand from strangers, so a stack of tinker reports is less trustworthy per-report than a stack of clean out-of-the-box reports. The rating itself is unchanged (tinker gold is still gold); only per-report confidence drops. At the per-game level a companion tinkerFactor multiplies overall confidence by (1 - tinkerShare * 0.15) so a game with mostly tinker reports lands somewhere between 85-100% of its raw confidence.",
   "playtimeConfidenceNote": "Reports that declare actual playtime earn a confidence bonus applied inside the GPU/OS/kernel multiplier bracket. Meaningful confidence starts at 2h (oneToFourHours=+6). Buckets: underOneHour=+3, oneToFourHours=+6, fourToTenHours=+9, overTenHours=+12. Reports with no playtime (unreported/empty) receive no bonus.",
   "tiers": [
     { "name": "platinum", "rule": "Can install, start, and play. No faults. Works out of the box without any tinkering." },
@@ -155,6 +157,13 @@
         "label": "Source",
         "description": "ProtonDB CDN reports currently carry slightly more confidence than native Pulse reports until the Pulse corpus grows. This penalty is temporary.",
         "weightKeys": ["SOURCE_PULSE_PENALTY"],
+        "appliesToAnonymous": true
+      },
+      {
+        "id": "tinker",
+        "label": "Tinker steps",
+        "description": "Reports needing tinker steps (custom launch options, non-default Proton flags, workarounds) drop per-report confidence by TINKER_PENALTY. At the per-game level a tinkerShare factor also multiplies overall confidence by (1 - tinkerShare * 0.15) to reflect cargo-cult risk (#433).",
+        "weightKeys": ["TINKER_PENALTY"],
         "appliesToAnonymous": true
       },
       {

@@ -290,27 +290,63 @@ export async function getMyConfig(appId: string): Promise<UserConfigRow | null> 
 }
 
 export async function getMySubmittedAppIds(): Promise<Set<string>> {
+  const { submitted } = await getMyReportStatuses();
+  return submitted;
+}
+
+// Return the app_ids the current user has actually submitted as reports
+// (rows in user_configs) AND the subset that have been approved by the
+// pipeline (rows in report_approvals). Both sets drive the badges on the
+// plugin's Manage Configurations screen: `submitted` -> Pending Approval,
+// `approved` -> Published, neither -> Draft.
+//
+// Crucially, "submitted" here is REPORTS (user_configs), not synced configs
+// (user_proton_configs). Merely syncing a config to the cloud must NOT
+// count as a submission -- that was the #<TBD> "why does saving show
+// Pending Approval when I never submitted" bug.
+export async function getMyReportStatuses(): Promise<{ submitted: Set<string>; approved: Set<string> }> {
   try {
     const clientId = await getVoterId();
     const protonPulseUserId = getLinkedProtonPulseUserId();
 
-    const requests: Promise<{ data: { app_id: string }[] | null; error: string | null; status: number }>[] = [
-      restRequest<{ app_id: string }[]>('user_configs', { method: 'GET' }, { select: 'app_id', client_id: `eq.${clientId}` }),
+    const reportRequests: Promise<{ data: { id: number; app_id: string }[] | null; error: string | null; status: number }>[] = [
+      restRequest<{ id: number; app_id: string }[]>('user_configs', { method: 'GET' }, { select: 'id,app_id', client_id: `eq.${clientId}` }),
     ];
     if (protonPulseUserId) {
-      requests.push(
-        restRequest<{ app_id: string }[]>('user_configs', { method: 'GET' }, { select: 'app_id', proton_pulse_user_id: `eq.${protonPulseUserId}` }),
+      reportRequests.push(
+        restRequest<{ id: number; app_id: string }[]>('user_configs', { method: 'GET' }, { select: 'id,app_id', proton_pulse_user_id: `eq.${protonPulseUserId}` }),
       );
     }
 
-    const results = await Promise.all(requests);
-    const appIds = new Set<string>();
+    const results = await Promise.all(reportRequests);
+    const submitted = new Set<string>();
+    const idToAppId = new Map<number, string>();
     for (const { data } of results) {
-      if (data) for (const r of data) appIds.add(r.app_id);
+      if (data) for (const r of data) {
+        submitted.add(String(r.app_id));
+        idToAppId.set(r.id, String(r.app_id));
+      }
     }
-    return appIds;
+
+    // Fetch approvals only for the ids we actually own -- keeps the query
+    // short and avoids scanning the whole report_approvals table.
+    if (idToAppId.size === 0) return { submitted, approved: new Set() };
+    const idList = [...idToAppId.keys()].join(',');
+    const approvals = await restRequest<{ report_id: number }[]>(
+      'report_approvals',
+      { method: 'GET' },
+      { select: 'report_id', report_id: `in.(${idList})` },
+    );
+    const approved = new Set<string>();
+    if (approvals.data) {
+      for (const a of approvals.data) {
+        const appId = idToAppId.get(a.report_id);
+        if (appId) approved.add(appId);
+      }
+    }
+    return { submitted, approved };
   } catch {
-    return new Set();
+    return { submitted: new Set(), approved: new Set() };
   }
 }
 

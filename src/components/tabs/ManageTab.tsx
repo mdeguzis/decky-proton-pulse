@@ -23,7 +23,7 @@ import {
   type SyncStatus,
   getSyncPollIntervalMinutes,
 } from '../../lib/cloudSync';
-import { deleteMyReport, getMyConfig, getMySubmittedAppIds } from '../../lib/userConfigs';
+import { deleteMyReport, getMyConfig, getMyReportStatuses } from '../../lib/userConfigs';
 import { getVoterId } from '../../lib/voting';
 import { getLinkedProtonPulseUserId } from '../../lib/protonPulseAccount';
 import { getSetting } from '../../lib/settings';
@@ -67,7 +67,8 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   const [syncing, setSyncing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [filterText, setFilterText] = useState('');
-  const [publishedAppIds, setPublishedAppIds] = useState<Set<string>>(new Set());
+  const [submittedAppIds, setSubmittedAppIds] = useState<Set<string>>(new Set());
+  const [approvedAppIds, setApprovedAppIds] = useState<Set<string>>(new Set());
   const [clientId, setClientId] = useState<string | null>(null);
   const linkedUserId = getLinkedProtonPulseUserId();
 
@@ -131,7 +132,10 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   }, []);
 
   useEffect(() => {
-    void getMySubmittedAppIds().then(setPublishedAppIds);
+    void getMyReportStatuses().then(({ submitted, approved }) => {
+      setSubmittedAppIds(submitted);
+      setApprovedAppIds(approved);
+    });
     void getVoterId().then(setClientId);
   }, []);
 
@@ -516,7 +520,11 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         ? 'Local only (offline)'
         : (menuSyncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced);
     const menuCloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
-    const menuIsPublished = menuCloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
+    // Published = the user's submitted report has a matching approval row.
+    // Config sync existence (menuCloudRow) is a DIFFERENT signal; conflating
+    // it with report state made the "Save" flow show "Pending Approval"
+    // when the user had never submitted anything.
+    const menuIsPublished = approvedAppIds.has(String(config.appId));
 
     const infoRows: { label: string; value: string }[] = [
       { label: t().configManager.infoApplied, value: formatDate(config.appliedAt) },
@@ -662,15 +670,16 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           const name = displayName(config);
           const isShortcut = isSteamShortcutApp(config.appId);
           const syncStatus: SyncStatus = (cloudLoading || cloudOffline) ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
-          const cloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
-          const isPublished = cloudRow?.is_published === true || publishedAppIds.has(String(config.appId));
-          // #11: three-state label. "Draft" = never submitted (no cloud row + no
-          // report row); "Pending Approval" = user submitted but auto-moderator
-          // has not marked is_published yet; "Published" = live on the site.
-          // Previously the Draft label covered both the never-submitted case and
-          // the submitted-but-awaiting-approval case, which read as "I did not
-          // submit that" to users who had just hit Submit.
-          const hasSubmitted = !!cloudRow || publishedAppIds.has(String(config.appId));
+          // Three-state report status label:
+          //   Draft            = no report submitted (regardless of cloud sync)
+          //   Pending Approval = report submitted, no approval row yet
+          //   Published        = report submitted AND approval row exists
+          // Config sync (user_proton_configs) is a SEPARATE concept -- it
+          // drives the SYNCED badge, not the report status. The earlier
+          // hasSubmitted = !!cloudRow branch conflated the two and made every
+          // saved config show "Pending Approval" even without a submission.
+          const isPublished = approvedAppIds.has(String(config.appId));
+          const hasSubmitted = submittedAppIds.has(String(config.appId));
           const statusLabel = isPublished
             ? t().configManager.published
             : hasSubmitted

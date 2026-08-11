@@ -16,421 +16,281 @@
     {
       "code": "de",
       "name": "Deutsch",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "es",
       "name": "Español",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "fr",
       "name": "Français",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "it",
       "name": "Italiano",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ja",
       "name": "日本語",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ko",
       "name": "한국어",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "nl",
       "name": "Nederlands",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pl",
       "name": "Polski",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pt-BR",
       "name": "Português (BR)",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ru",
       "name": "Русский",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "tr",
       "name": "Türkçe",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "uk",
       "name": "Українська",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "sv",
       "name": "Svenska",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "cs",
       "name": "Čeština",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "th",
       "name": "ภาษาไทย",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "vi",
       "name": "Tiếng Việt",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "zh-CN",
       "name": "简体中文",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "zh-TW",
       "name": "繁體中文",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "bg",
       "name": "Български",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "da",
       "name": "Dansk",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "el",
       "name": "Ελληνικά",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "es-419",
       "name": "Español (Latinoamérica)",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "fi",
       "name": "Suomi",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "hu",
       "name": "Magyar",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "no",
       "name": "Norsk",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "pt",
       "name": "Português (PT)",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "ro",
       "name": "Română",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     },
     {
       "code": "sl",
       "name": "Slovenščina",
-      "translated": 706,
+      "translated": 710,
       "total": 710,
-      "coveragePercent": 99.4,
+      "coveragePercent": 100,
       "missingKeys": [],
-      "sameAsEnglishKeys": [
-        "detail.downvote",
-        "detail.ownReportNoVote",
-        "compatTools.releaseNotes",
-        "configManager.pendingApproval"
-      ],
+      "sameAsEnglishKeys": [],
       "typeMismatches": []
     }
   ]

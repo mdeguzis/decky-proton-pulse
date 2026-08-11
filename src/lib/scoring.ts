@@ -55,6 +55,13 @@ export const WEIGHTS = {
   PROTON_MATCH: 8,         // bonus for same Proton major version as user's build
   PROTON_CLOSE: 4,         // bonus for adjacent Proton major version
   SOURCE_PULSE_PENALTY: -5, // native Pulse reports are weighted below ProtonDB CDN/live reports
+  // Tinker penalty (#433, Rhedox in ProtonDB Discord). Reports that required
+  // tinker steps carry less individual confidence than clean out-of-box reports
+  // at the same tier, because cargo-cult copy-pasting of random env vars
+  // inflates false "works fine" reports. Applied per-report inside the
+  // GPU/OS/kernel multiplier so it scales with system match. Small so the
+  // report still counts -- we're nudging, not silencing.
+  TINKER_PENALTY: -5,
   // Playtime confidence: reports with real play hours are more credible.
   // Bonus applies inside the GPU/OS/kernel multiplier so it scales with system match.
   // underOneHour gets a small bump; meaningful confidence starts at 2h (oneToFourHours).
@@ -158,6 +165,27 @@ function playtimeConfidenceBonus(duration: string | undefined | null): number {
     case 'underOneHour':      return WEIGHTS.PLAYTIME_UNDER_ONE_HOUR;
     default:                  return 0;
   }
+}
+
+// #433: report required tinker steps (launch options, custom Proton tweaks,
+// env vars). Signals in priority order: explicit form isTinker flag,
+// tinkeringMethods array with any entry, then a non-empty launchOptions
+// beyond a bare %command% wrapper. Cargo-cult risk documented in the wiki.
+export function hasTinkerSteps(r: {
+  formResponses?: { isTinker?: boolean; tinkeringMethods?: string[] } | null;
+  launchOptions?: string | null;
+  launch_options?: string | null;
+} | null | undefined): boolean {
+  if (!r) return false;
+  const fr = r.formResponses;
+  if (fr && typeof fr === 'object') {
+    if (fr.isTinker === true) return true;
+    if (Array.isArray(fr.tinkeringMethods) && fr.tinkeringMethods.length > 0) return true;
+  }
+  const lo = String(r.launchOptions || r.launch_options || '').trim();
+  if (!lo) return false;
+  const stripped = lo.replace(/%command%/g, '').trim();
+  return stripped.length > 0;
 }
 
 const CUSTOM_PROTON_MARKERS = ['ge', 'cachyos', 'tkg', 'protonplus', 'experimental'];
@@ -1041,10 +1069,14 @@ export function computeConfidence(report: CdnReport, sysInfo: SystemInfo): Score
   // is temporary -- see scoring-info.json SOURCE_PULSE_PENALTY note.
   const sourcePenalty = report.source === 'user' ? WEIGHTS.SOURCE_PULSE_PENALTY : 0;
   const playtimeBonus = playtimeConfidenceBonus(report.duration);
+  // #433: reports that required tinker steps carry less confidence per Rhedox
+  // in the ProtonDB Discord -- cargo-cult copy-pasting of env vars inflates
+  // false "works fine" reports.
+  const tinkerPenalty = hasTinkerSteps(report) ? WEIGHTS.TINKER_PENALTY : 0;
   const raw =
     (ratingScore + recencyBonus + customBonus + protonBonus + playtimeBonus)
     * gpuMult * distroMult * kernelMult
-    + notesModifier + sourcePenalty + borkedStalenessPenalty;
+    + notesModifier + sourcePenalty + borkedStalenessPenalty + tinkerPenalty;
 
   return {
     ...report,
@@ -1128,11 +1160,13 @@ export function computeConfidenceBreakdown(
 
   const sourcePenalty = report.source === 'user' ? WEIGHTS.SOURCE_PULSE_PENALTY : 0;
   const playtimeBonus = playtimeConfidenceBonus(report.duration);
+  // #433 tinker penalty (see computeConfidence above for rationale).
+  const tinkerPenalty = hasTinkerSteps(report) ? WEIGHTS.TINKER_PENALTY : 0;
 
   const additiveSubtotal =
     ratingScore + recencyBonus + customBonus + protonBonus + playtimeBonus;
   const afterMultipliers = additiveSubtotal * gpuMult * distroMult * kernelMult;
-  const raw = afterMultipliers + notesModifier + sourcePenalty + borkedStalenessPenalty;
+  const raw = afterMultipliers + notesModifier + sourcePenalty + borkedStalenessPenalty + tinkerPenalty;
   const total = Math.max(0, Math.round(raw));
 
   const sysGpu = (sysInfo.gpu_vendor ?? '').toLowerCase();
