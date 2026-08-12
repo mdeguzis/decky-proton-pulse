@@ -5,7 +5,7 @@
 // and votes are tied to the same identity.
 
 import { getVoterId, restRequest } from './voting';
-import { getTrackedConfig, getTrackedConfigs } from './trackedConfigs';
+import { getActiveConfigForApp, getTrackedConfigs } from './trackedConfigs';
 import type { TrackedConfig } from './trackedConfigs';
 import { logFrontendEvent } from './logger';
 import { getSteamPlaytimeForeverMinutes } from './steamApps';
@@ -208,16 +208,19 @@ function pollRunningApps(): void {
     return;
   }
 
-  // no active session, check if any running game has a tracked config
+  // no active session, check if any running game has a tracked config.
+  // With multi-config-per-app, attribute the session to the ACTIVE config
+  // (the one most recently applied via Save / setActiveConfig) so playtime
+  // credits the profile the user actually has installed on Steam right now.
   for (const appId of running) {
-    const cfg = getTrackedConfig(appId);
+    const cfg = getActiveConfigForApp(appId);
     if (cfg) {
       void onGameStarted(appId, cfg);
       break;  // only track one game at a time
     }
   }
   if (running.length > 0) {
-    const trackedIds = running.filter((id) => !!getTrackedConfig(id));
+    const trackedIds = running.filter((id) => !!getActiveConfigForApp(id));
     if (trackedIds.length === 0) {
       void logFrontendEvent('DEBUG', 'pollRunningApps: running games have no tracked config', { running });
     }
@@ -237,7 +240,10 @@ export function startSessionTracking(): void {
         void logFrontendEvent('DEBUG', 'AppLifetimeNotification', { appId, bRunning: data.bRunning });
         if (data.bRunning) {
           if (activeSession) return; // already tracking another game
-          const cfg = getTrackedConfig(appId);
+          // Multi-config: attribute the session to whichever profile is
+          // currently applied (max appliedAt for this appId), not just
+          // "any tracked config".
+          const cfg = getActiveConfigForApp(appId);
           if (cfg) void onGameStarted(appId, cfg);
         } else {
           if (activeSession?.appId === appId) {

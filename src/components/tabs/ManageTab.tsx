@@ -314,11 +314,14 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           // this is safe even for configs that never hit Proton Pulse
           void logFrontendEvent('INFO', 'Deleting tracked config', { appId: config.appId, appName: config.appName });
           SteamClient.Apps.SetAppLaunchOptions(config.appId, '');
-          removeTrackedConfig(config.appId);
+          // Multi-config-per-app: scope removal to this specific profile so
+          // deleting one card doesn't wipe every profile the user has for
+          // this game. Cloud delete matches on (voter_id, app_id, profile_name).
+          removeTrackedConfig(config.appId, config.profileName);
           refresh();
           void Promise.all([
             deleteMyReport(String(config.appId)),
-            deleteCloudConfig(config.appId),
+            deleteCloudConfig(config.appId, config.profileName),
           ])
             .then(([reportResult, cloudResult]) => {
               if (!reportResult.ok) {
@@ -519,13 +522,19 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
     const isShortcut = isSteamShortcutApp(config.appId);
     const menuSyncStatus: SyncStatus = (cloudLoading || cloudOffline)
       ? 'not-synced'
-      : getCloudSyncStatus(config.appId, cloudConfigs);
+      : getCloudSyncStatus(config.appId, cloudConfigs, config.profileName);
     const syncLabel = cloudLoading
       ? t().configManager.syncingCloud
       : cloudOffline
         ? 'Local only (offline)'
         : (menuSyncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced);
-    const menuCloudRow = cloudConfigs.find((r) => String(r.app_id) === String(config.appId));
+    // Multi-config-per-app: match this specific profile row, otherwise the
+    // menu would show sibling profile metadata (upload time, published_at)
+    // that belongs to a different config for the same game.
+    const menuCloudRow = cloudConfigs.find(
+      (r) => String(r.app_id) === String(config.appId)
+        && (r.profile_name || 'Default') === (config.profileName || 'Default'),
+    );
     // Published = the user's submitted report has a matching approval row.
     // Config sync existence (menuCloudRow) is a DIFFERENT signal; conflating
     // it with report state made the "Save" flow show "Pending Approval"
@@ -675,7 +684,12 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           const isCurrent = appId === config.appId;
           const name = displayName(config);
           const isShortcut = isSteamShortcutApp(config.appId);
-          const syncStatus: SyncStatus = (cloudLoading || cloudOffline) ? 'not-synced' : getCloudSyncStatus(config.appId, cloudConfigs);
+          // Multi-config-per-app: scope the sync check to this specific
+          // profile so two profiles for the same game can render distinct
+          // SYNCED / NOT SYNCED badges (one may have been pushed, the other not).
+          const syncStatus: SyncStatus = (cloudLoading || cloudOffline)
+            ? 'not-synced'
+            : getCloudSyncStatus(config.appId, cloudConfigs, config.profileName);
           // Three-state report status label:
           //   Draft            = no report submitted (regardless of cloud sync)
           //   Pending Approval = report submitted, no approval row yet
