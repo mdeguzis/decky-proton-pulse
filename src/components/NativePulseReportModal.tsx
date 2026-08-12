@@ -36,6 +36,10 @@ interface Props {
   configKey?: string;
   gameSource?: GameSourceInfo | null;
   closeModal?: () => void;
+  // Fires after a successful submit so parents (Manage tab) can re-fetch
+  // report status and flip the badge from Draft to Pending Approval without
+  // waiting for a remount.
+  onSubmitted?: () => void;
 }
 
 // --- OS mapping ---
@@ -247,6 +251,7 @@ export function NativePulseReportModal({
   configKey,
   gameSource,
   closeModal,
+  onSubmitted,
 }: Props) {
   const isShortcut = isSteamShortcutApp(appId);
   const submitAppId = gameSource && !gameSource.is_steam
@@ -562,6 +567,9 @@ export function NativePulseReportModal({
       void logFrontendEvent('INFO', 'Native Pulse report submitted', { appId, derivedRating });
       toaster.toast({ title: 'Proton Pulse', body: t().nativeReport.submitted });
       clearReportDraft(appId, configKey ?? null);
+      // Let the parent refresh report status so the Manage tab badge flips
+      // from Draft to Pending Approval without waiting for a remount.
+      onSubmitted?.();
       closeModal?.();
     } else {
       void logFrontendEvent('ERROR', 'Native Pulse report failed', { appId, error: result.error });

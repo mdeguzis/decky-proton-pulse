@@ -131,11 +131,14 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
     return () => clearInterval(interval);
   }, []);
 
+  const refreshReportStatuses = async () => {
+    const { submitted, approved } = await getMyReportStatuses();
+    setSubmittedAppIds(submitted);
+    setApprovedAppIds(approved);
+  };
+
   useEffect(() => {
-    void getMyReportStatuses().then(({ submitted, approved }) => {
-      setSubmittedAppIds(submitted);
-      setApprovedAppIds(approved);
-    });
+    void refreshReportStatuses();
     void getVoterId().then(setClientId);
   }, []);
 
@@ -193,6 +196,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         appId={targetAppId}
         appName={action.appName || appName}
         sysInfo={sysInfo}
+        onSubmitted={() => { void refreshReportStatuses(); }}
       />,
     );
   }), [appId, appName, sysInfo]);
@@ -260,6 +264,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         protonVersion={action.protonVersion ?? 'GE-Proton10-1'}
         autoDuration="oneToFourHours"
         launchOptions={'MANGOHUD=1 PROTON_VERSION="GE-Proton10-1" %command%'}
+        onSubmitted={() => { void refreshReportStatuses(); }}
       />,
     );
   }), [appId, appName, sysInfo]);
@@ -391,6 +396,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           protonVersion={resolvedProtonVersion}
           autoDuration={autoDuration}
           launchOptions={config.launchOptions}
+          onSubmitted={() => { void refreshReportStatuses(); }}
         />,
       );
     };
@@ -740,7 +746,12 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
                       {cloudOffline ? 'Local only' : (syncStatus === 'synced' ? t().configManager.synced : t().configManager.notSynced)}
                     </span>
                   )}
-                  {!isShortcut && (
+                  {!isShortcut && hasSubmitted && (
+                    // Only render the report-status pill (Pending Approval /
+                    // Published) when a report actually exists. A "Draft"
+                    // pill on a save-only config was misleading -- saving a
+                    // config isn't a submission, and the SYNCED badge next
+                    // to it already communicates the cloud state.
                     <span
                       style={{
                         display: 'inline-block',
