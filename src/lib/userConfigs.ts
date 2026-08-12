@@ -227,6 +227,12 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
         display_resolution: input.displayResolution ?? null,
         steam_deck_model: input.steamDeckModel ?? null,
         form_responses: input.formResponses ?? null,
+        // Plugin-submitted reports come from a running Deck/Steam library
+        // where the user has the game installed and playing. Set true so the
+        // admin panel and stats don't misclassify plugin submissions as
+        // "does not own" (the old default was null, which the admin renders
+        // as "false" -- the Game Owned: false bug in the report detail view).
+        game_owned: true,
       }),
     }, { on_conflict: 'client_id,app_id' });
 
