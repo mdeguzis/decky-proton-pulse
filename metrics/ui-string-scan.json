@@ -258,35 +258,42 @@
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 986,
+      "line": 1001,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 1033,
+      "line": 1048,
+      "column": 52,
+      "kind": "string",
+      "text": "No game selected. Open a game config first."
+    },
+    {
+      "file": "src/components/ConfigEditorModal.tsx",
+      "line": 1073,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 725,
+      "line": 733,
       "column": 42,
       "kind": "string",
       "text": "- Type below or pick installed -"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 908,
+      "line": 916,
       "column": 85,
       "kind": "jsx",
       "text": "(auto-detected from your Steam playtime)"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 941,
+      "line": 949,
       "column": 13,
       "kind": "jsx",
       "text": "Save draft"
@@ -311,6 +318,20 @@
       "column": 108,
       "kind": "jsx",
       "text": "Report Score Tiers"
+    },
+    {
+      "file": "src/components/tabs/ManageTab.tsx",
+      "line": 811,
+      "column": 29,
+      "kind": "string",
+      "text": "This profile is currently applied to Steam launch options"
+    },
+    {
+      "file": "src/components/tabs/ManageTab.tsx",
+      "line": 813,
+      "column": 23,
+      "kind": "jsx",
+      "text": "Active"
     },
     {
       "file": "src/components/tabs/SettingsTab.tsx",

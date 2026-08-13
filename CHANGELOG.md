@@ -14,6 +14,11 @@ All notable changes to Proton Pulse should be recorded here.
 - 'Applied X ago' meta line now ticks live: ManageTab subscribes to onConfigSaved (immediate refresh after Apply / Reapply) plus a 60s tick so the relative label doesn't go stale.
 - Draft pill hidden when there is no submitted report for a profile. SYNCED green badge already covers the cloud state; the extra 'Draft' gray pill next to it read as noise.
 
+## v1.14.0
+
+- Sync ui-string-scan for v1.14.0 build
+- Release: v1.14.0
+
 ## v1.13.1
 
 - Manage tab no longer shows "Pending Approval" for configs that were only saved / synced; report status now derives from user_configs + report_approvals instead of the config-sync table

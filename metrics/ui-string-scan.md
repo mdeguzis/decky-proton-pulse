@@ -33,13 +33,16 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/CacheStatsModal.tsx` | 274 | string | Avg fetch |
 | `src/components/CacheStatsModal.tsx` | 277 | string | Fetch errors |
 | `src/components/CompatToolVersionPicker.tsx` | 37 | string | Valve Proton |
-| `src/components/ConfigEditorModal.tsx` | 986 | string | No game selected. Open a game config first. |
-| `src/components/ConfigEditorModal.tsx` | 1033 | string | No game selected. Open a game config first. |
-| `src/components/NativePulseReportModal.tsx` | 725 | string | - Type below or pick installed - |
-| `src/components/NativePulseReportModal.tsx` | 908 | jsx | (auto-detected from your Steam playtime) |
-| `src/components/NativePulseReportModal.tsx` | 941 | jsx | Save draft |
+| `src/components/ConfigEditorModal.tsx` | 1001 | string | No game selected. Open a game config first. |
+| `src/components/ConfigEditorModal.tsx` | 1048 | string | No game selected. Open a game config first. |
+| `src/components/ConfigEditorModal.tsx` | 1073 | string | No game selected. Open a game config first. |
+| `src/components/NativePulseReportModal.tsx` | 733 | string | - Type below or pick installed - |
+| `src/components/NativePulseReportModal.tsx` | 916 | jsx | (auto-detected from your Steam playtime) |
+| `src/components/NativePulseReportModal.tsx` | 949 | jsx | Save draft |
 | `src/components/PerReportAnalysisModal.tsx` | 190 | jsx | pts |
 | `src/components/ReleaseNotesModal.tsx` | 277 | jsx | Loading |
 | `src/components/ScoringGuideModal.tsx` | 116 | jsx | Report Score Tiers |
+| `src/components/tabs/ManageTab.tsx` | 811 | string | This profile is currently applied to Steam launch options |
+| `src/components/tabs/ManageTab.tsx` | 813 | jsx | Active |
 | `src/components/tabs/SettingsTab.tsx` | 286 | jsx | Could not load details: |
 | `src/components/tabs/SettingsTab.tsx` | 288 | jsx | Loading... |
