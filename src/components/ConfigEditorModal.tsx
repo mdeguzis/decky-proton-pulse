@@ -920,12 +920,21 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   // handlePublish so the two intents stay independent.
   const doApply = async (
     resolvedLaunchOptions: string,
-    opts: { pushCloud?: boolean; openReport?: boolean } = {},
+    opts: { pushCloud?: boolean; openReport?: boolean; writeToSteam?: boolean; markActive?: boolean } = {},
   ) => {
     if (!appId) return;
-    const { pushCloud = false, openReport = false } = opts;
+    // Save vs Apply split: writeToSteam controls the Steam launch-options
+    // write (Apply=true, Save=false). markActive controls whether the row's
+    // appliedAt gets bumped to now -- with multi-config-per-app, that is
+    // what wins the getActiveConfigForApp lookup and drives the ACTIVE
+    // badge + playtime attribution. Save leaves appliedAt where it was so
+    // saving a fresh profile does NOT steal the active title from another
+    // profile the user is currently playing.
+    const { pushCloud = false, openReport = false, writeToSteam = true, markActive = true } = opts;
     try {
-      await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
+      if (writeToSteam) {
+        await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
+      }
       const config: TrackedConfig = {
         appId,
         appName,
@@ -933,7 +942,13 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
         protonVersion: protonVersion || '',
         launchOptions: resolvedLaunchOptions,
         enabledVars: allVars,
-        appliedAt: Date.now(),
+        // When Save runs (markActive=false), keep the existing row's
+        // appliedAt so the ACTIVE badge doesn't move to a profile the user
+        // just persisted but never applied. A brand-new profile with no
+        // prior appliedAt starts at 0 which ranks below any real applied
+        // profile in getActiveConfigForApp -- correct behavior for "Saved
+        // but not Applied yet".
+        appliedAt: markActive ? Date.now() : (existingConfig?.appliedAt ?? 0),
         isEdited: !!existingConfig,
         source: existingConfig?.source,
         cpu: systemInfo?.cpu ?? null,
@@ -1022,12 +1037,12 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     );
   };
 
-  // Save: apply launch options + push to cloud, no report modal. Skips the
-  // UploadPreviewModal middleman and the Append/Replace prompt (see
-  // LaunchOptionConflictModal -- resolveLaunchOptionsWithPrompt now always
-  // replaces). Report submission is a separate "Submit Report" action so
-  // Save can be a quick "persist my config" action without nagging the user
-  // to fill in playtime / hardware / notes.
+  // Save: persist edits (local + cloud) WITHOUT writing to Steam launch
+  // options and WITHOUT marking this profile active. A user can save a
+  // draft profile they intend to apply later without stealing the active
+  // slot from a profile they are currently playing. Multi-config-per-app:
+  // ACTIVE / playtime attribution is driven by appliedAt which Save
+  // deliberately does not bump.
   const handleSave = async () => {
     if (!appId) {
       toaster.toast({ title: 'Proton Pulse', body: 'No game selected. Open a game config first.' });
@@ -1040,9 +1055,34 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     }
     try {
       syncScopedCustomToggles(appId, customToggles);
-      await doApply(preview, { pushCloud: true, openReport: false });
+      await doApply(preview, { pushCloud: true, openReport: false, writeToSteam: false, markActive: false });
     } catch (e) {
       void logFrontendEvent('ERROR', 'Config editor save failed', {
+        appId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      toaster.toast({ title: 'Proton Pulse', body: t().configure.applyFailed(e instanceof Error ? e.message : String(e)) });
+    }
+  };
+
+  // Apply: write to Steam launch options + persist + mark active. This is
+  // what promotes the profile to be the currently-applied one so playtime
+  // attributes to it going forward.
+  const handleApply = async () => {
+    if (!appId) {
+      toaster.toast({ title: 'Proton Pulse', body: 'No game selected. Open a game config first.' });
+      return;
+    }
+    if (!profileName.trim()) {
+      setProfileNameTouched(true);
+      toaster.toast({ title: 'Proton Pulse', body: t().configManager.profileNameRequired });
+      return;
+    }
+    try {
+      syncScopedCustomToggles(appId, customToggles);
+      await doApply(preview, { pushCloud: true, openReport: false, writeToSteam: true, markActive: true });
+    } catch (e) {
+      void logFrontendEvent('ERROR', 'Config editor apply failed', {
         appId,
         error: e instanceof Error ? e.message : String(e),
       });
@@ -1182,6 +1222,12 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               style={{ minWidth: 80, padding: '6px 16px', fontSize: 12 }}
             >
               {t().common.save}
+            </DialogButton>
+            <DialogButton
+              onClick={() => { void handleApply(); }}
+              style={{ minWidth: 80, padding: '6px 16px', fontSize: 12 }}
+            >
+              {t().common.apply}
             </DialogButton>
             <DialogButton
               onClick={() => { void handlePublish(); }}

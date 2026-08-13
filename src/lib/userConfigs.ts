@@ -227,6 +227,12 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
         display_resolution: input.displayResolution ?? null,
         steam_deck_model: input.steamDeckModel ?? null,
         form_responses: input.formResponses ?? null,
+        // Plugin-submitted reports come from a running Deck/Steam library
+        // where the user has the game installed and playing. Set true so the
+        // admin panel and stats don't misclassify plugin submissions as
+        // "does not own" (the old default was null, which the admin renders
+        // as "false" -- the Game Owned: false bug in the report detail view).
+        game_owned: true,
       }),
     }, { on_conflict: 'client_id,app_id' });
 
@@ -304,49 +310,81 @@ export async function getMySubmittedAppIds(): Promise<Set<string>> {
 // (user_proton_configs). Merely syncing a config to the cloud must NOT
 // count as a submission -- that was the #<TBD> "why does saving show
 // Pending Approval when I never submitted" bug.
-export async function getMyReportStatuses(): Promise<{ submitted: Set<string>; approved: Set<string> }> {
+// Composite key for per-config lookup: `${appId}::${configKey}`. When
+// config_key is null (legacy submissions from before multi-config), the
+// composite falls back to a per-app match so at least one profile per game
+// still lights up as submitted / approved. Keep the composite string form
+// centralised so ManageTab and any other caller build the same key.
+export function makeReportStatusKey(appId: string | number, configKey?: string | null): string {
+  const c = (configKey || '').trim();
+  return `${String(appId)}::${c}`;
+}
+
+export interface MyReportStatuses {
+  // Per-app coarse sets (backward-compat for callers that only care about
+  // "does this game have any submitted report").
+  submitted: Set<string>;
+  approved: Set<string>;
+  // Per-config composite-key sets. Preferred for the Manage tab so two
+  // profiles on the same game don't both read as pending/published just
+  // because one of them was submitted.
+  submittedKeys: Set<string>;
+  approvedKeys: Set<string>;
+}
+
+export async function getMyReportStatuses(): Promise<MyReportStatuses> {
   try {
     const clientId = await getVoterId();
     const protonPulseUserId = getLinkedProtonPulseUserId();
 
-    const reportRequests: Promise<{ data: { id: number; app_id: string }[] | null; error: string | null; status: number }>[] = [
-      restRequest<{ id: number; app_id: string }[]>('user_configs', { method: 'GET' }, { select: 'id,app_id', client_id: `eq.${clientId}` }),
+    const reportRequests: Promise<{ data: { id: number; app_id: string; config_key: string | null }[] | null; error: string | null; status: number }>[] = [
+      restRequest<{ id: number; app_id: string; config_key: string | null }[]>('user_configs', { method: 'GET' }, { select: 'id,app_id,config_key', client_id: `eq.${clientId}` }),
     ];
     if (protonPulseUserId) {
       reportRequests.push(
-        restRequest<{ id: number; app_id: string }[]>('user_configs', { method: 'GET' }, { select: 'id,app_id', proton_pulse_user_id: `eq.${protonPulseUserId}` }),
+        restRequest<{ id: number; app_id: string; config_key: string | null }[]>('user_configs', { method: 'GET' }, { select: 'id,app_id,config_key', proton_pulse_user_id: `eq.${protonPulseUserId}` }),
       );
     }
 
     const results = await Promise.all(reportRequests);
     const submitted = new Set<string>();
-    const idToAppId = new Map<number, string>();
+    const submittedKeys = new Set<string>();
+    // Map id -> {app_id, config_key} so the report_approvals lookup can
+    // reconstruct the same composite keys for the approved set.
+    const idToRow = new Map<number, { app_id: string; config_key: string | null }>();
     for (const { data } of results) {
       if (data) for (const r of data) {
         submitted.add(String(r.app_id));
-        idToAppId.set(r.id, String(r.app_id));
+        submittedKeys.add(makeReportStatusKey(r.app_id, r.config_key));
+        idToRow.set(r.id, { app_id: String(r.app_id), config_key: r.config_key });
       }
     }
 
     // Fetch approvals only for the ids we actually own -- keeps the query
     // short and avoids scanning the whole report_approvals table.
-    if (idToAppId.size === 0) return { submitted, approved: new Set() };
-    const idList = [...idToAppId.keys()].join(',');
+    if (idToRow.size === 0) {
+      return { submitted, approved: new Set(), submittedKeys, approvedKeys: new Set() };
+    }
+    const idList = [...idToRow.keys()].join(',');
     const approvals = await restRequest<{ report_id: number }[]>(
       'report_approvals',
       { method: 'GET' },
       { select: 'report_id', report_id: `in.(${idList})` },
     );
     const approved = new Set<string>();
+    const approvedKeys = new Set<string>();
     if (approvals.data) {
       for (const a of approvals.data) {
-        const appId = idToAppId.get(a.report_id);
-        if (appId) approved.add(appId);
+        const row = idToRow.get(a.report_id);
+        if (row) {
+          approved.add(row.app_id);
+          approvedKeys.add(makeReportStatusKey(row.app_id, row.config_key));
+        }
       }
     }
-    return { submitted, approved };
+    return { submitted, approved, submittedKeys, approvedKeys };
   } catch {
-    return { submitted: new Set(), approved: new Set() };
+    return { submitted: new Set(), approved: new Set(), submittedKeys: new Set(), approvedKeys: new Set() };
   }
 }
 

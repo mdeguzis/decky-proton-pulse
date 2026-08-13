@@ -2,7 +2,7 @@
 import { logFrontendEvent } from './logger';
 import { getVoterId, restRequest } from './voting';
 import { getSetting, setSetting, onSettingsChanged } from './settings';
-import { getTrackedConfigs, addTrackedConfig, onConfigSaved, type TrackedConfig } from './trackedConfigs';
+import { getTrackedConfigs, addTrackedConfig, onConfigSaved, DEFAULT_PROFILE_NAME, type TrackedConfig } from './trackedConfigs';
 import { getInstallationId, getLinkedProtonPulseUserId } from './protonPulseAccount';
 import {
   applyPluginSettingsBackupPayload,
@@ -84,6 +84,12 @@ export async function pushConfig(
       source,
     });
 
+    // Multi-config-per-app: the row is now keyed by (voter_id, app_id,
+    // profile_name). Fall back to DEFAULT_PROFILE_NAME for pre-refactor
+    // configs whose profileName was empty; getTrackedConfigs normalises on
+    // read but a stray caller could still pass an unnormalised object.
+    const profileName = (config.profileName || '').trim() || DEFAULT_PROFILE_NAME;
+
     const { error } = await restRequest<null>('user_proton_configs', {
       method: 'POST',
       headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
@@ -94,11 +100,12 @@ export async function pushConfig(
         is_published: false,
         app_id: config.appId,
         app_name: config.appName,
+        profile_name: profileName,
         config,
         updated_at: new Date().toISOString(),
       }),
     }, {
-      on_conflict: 'voter_id,app_id',
+      on_conflict: 'voter_id,app_id,profile_name',
     });
 
     if (error) {
@@ -137,6 +144,9 @@ export interface CloudConfigRow {
   // it to a local numeric appId without normalizing both sides via String().
   app_id: number | string;
   app_name: string;
+  // Multi-config-per-app split: rows are keyed by (voter_id, app_id,
+  // profile_name). Old rows land here with 'Default' via the migration.
+  profile_name: string;
   config: TrackedConfig;
   updated_at: string;
   is_published?: boolean;
@@ -161,7 +171,7 @@ export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
   // configs that were never linked. Without the OR, configs pushed from a
   // different installation show up on the web profile but not here.
   const query: Record<string, string> = {
-    select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,config,updated_at,is_published',
+    select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,profile_name,config,updated_at,is_published',
   };
   if (linkedUserId) {
     query['or'] = `(voter_id.eq.${voterId},proton_pulse_user_id.eq.${linkedUserId})`;
@@ -176,18 +186,19 @@ export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
     throw new Error(typeof error === 'string' ? error : 'fetch failed');
   }
 
-  // Deduplicate by app_id, keeping the most recently updated row. Key on the
-  // string form since app_id may be a number or a string depending on the column
-  // type; mixing the two would defeat the dedup.
-  const byApp = new Map<string, CloudConfigRow>();
+  // Deduplicate by (app_id, profile_name), keeping the most recently updated
+  // row per profile. Multi-config-per-app: two rows with the same app_id but
+  // different profile_name are distinct and both must survive dedup.
+  const byKey = new Map<string, CloudConfigRow>();
   for (const row of data) {
-    const key = String(row.app_id);
-    const existing = byApp.get(key);
+    const profile = (row.profile_name || '').trim() || DEFAULT_PROFILE_NAME;
+    const key = `${String(row.app_id)}::${profile}`;
+    const existing = byKey.get(key);
     if (!existing || (row.updated_at ?? '') > (existing.updated_at ?? '')) {
-      byApp.set(key, row);
+      byKey.set(key, row);
     }
   }
-  const deduped = [...byApp.values()];
+  const deduped = [...byKey.values()];
 
   void logFrontendEvent('DEBUG', 'Cloud sync: fetched configs', {
     raw: data.length, deduped: deduped.length, source: linkedUserId ? 'user_id+voter_id' : 'voter_id',
@@ -195,16 +206,22 @@ export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
   return deduped;
 }
 
-export async function deleteCloudConfig(appId: number): Promise<boolean> {
+// Delete a single cloud config row. Passing profileName scopes the delete
+// to that specific profile; omitting it removes every profile for the app
+// (legacy call pattern -- matches removeTrackedConfig's overload).
+export async function deleteCloudConfig(appId: number, profileName?: string): Promise<boolean> {
   try {
     const voterId = await getVoterId();
+    const query: Record<string, string> = {
+      voter_id: `eq.${voterId}`,
+      app_id: `eq.${appId}`,
+    };
+    const scoped = (profileName || '').trim();
+    if (scoped) query['profile_name'] = `eq.${scoped}`;
     const { error } = await restRequest<null>('user_proton_configs', {
       method: 'DELETE',
       headers: { 'x-client-id': voterId },
-    }, {
-      voter_id: `eq.${voterId}`,
-      app_id: `eq.${appId}`,
-    });
+    }, query);
 
     if (error) {
       void logFrontendEvent('ERROR', 'Cloud sync: delete failed', { appId, error });
@@ -318,12 +335,22 @@ export async function checkHasCloudPluginSettingsBackup(): Promise<boolean> {
 export function getCloudSyncStatus(
   appId: number,
   cloudConfigs: CloudConfigRow[],
+  profileName?: string,
 ): SyncStatus {
   // Normalize both sides: app_id may be a number (bigint column) or a string
   // (text column) depending on the Supabase schema, while appId is always a
   // local number. A raw === would silently fail across the type boundary.
   const target = String(appId);
-  const cloudRow = cloudConfigs.find((r) => String(r.app_id) === target);
+  // Multi-config-per-app: when profileName is passed, require the exact
+  // (app_id, profile_name) row. Without it, treat 'any row for this app'
+  // as synced (backward-compat for pre-refactor per-app callers).
+  const scoped = (profileName || '').trim();
+  const cloudRow = cloudConfigs.find((r) => {
+    if (String(r.app_id) !== target) return false;
+    if (!scoped) return true;
+    const rowProfile = (r.profile_name || '').trim() || DEFAULT_PROFILE_NAME;
+    return rowProfile === scoped;
+  });
   if (!cloudRow) return 'not-synced';
   return 'synced';
 }
@@ -350,7 +377,15 @@ export async function restoreCloudConfigs(): Promise<RestoreResult> {
 
   for (const row of cloudRows) {
     try {
-      addTrackedConfig(row.config);
+      // Multi-config-per-app: the config blob may or may not carry a
+      // profileName (legacy pushes didn't). The DB row's profile_name
+      // column is authoritative -- overlay it onto the blob before saving
+      // so local storage keys correctly by (appId, profileName).
+      const merged: TrackedConfig = {
+        ...row.config,
+        profileName: (row.profile_name || row.config.profileName || '').trim() || DEFAULT_PROFILE_NAME,
+      };
+      addTrackedConfig(merged);
       restored++;
     } catch (err) {
       failed++;

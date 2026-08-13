@@ -10,7 +10,11 @@ vi.mock('./voting', () => ({
 }));
 
 vi.mock('./trackedConfigs', () => ({
-  getTrackedConfig: vi.fn(),
+  // playtime.ts imports getActiveConfigForApp (multi-config-per-app split):
+  // the active config for a game is the one whose appliedAt is newest, i.e.
+  // the profile currently applied to Steam's launch options.
+  getActiveConfigForApp: vi.fn(),
+  getTrackedConfigs: vi.fn(() => []),
 }));
 
 vi.mock('./steamApps', () => ({
@@ -18,12 +22,12 @@ vi.mock('./steamApps', () => ({
 }));
 
 import { getVoterId, restRequest } from './voting';
-import { getTrackedConfig } from './trackedConfigs';
+import { getActiveConfigForApp } from './trackedConfigs';
 import { getSteamPlaytimeForeverMinutes } from './steamApps';
 
 const mockGetVoterId = vi.mocked(getVoterId);
 const mockRestRequest = vi.mocked(restRequest);
-const mockGetTrackedConfig = vi.mocked(getTrackedConfig);
+const mockGetActiveConfigForApp = vi.mocked(getActiveConfigForApp);
 const mockGetSteamPlaytimeForeverMinutes = vi.mocked(getSteamPlaytimeForeverMinutes);
 
 const realDateNow = Date.now;
@@ -54,7 +58,7 @@ describe('playtime', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-11T12:00:00Z'));
     mockGetVoterId.mockResolvedValue('abc123voterId');
-    mockGetTrackedConfig.mockReturnValue(null);
+    mockGetActiveConfigForApp.mockReturnValue(null);
     mockRestRequest.mockReset();
     mockGetSteamPlaytimeForeverMinutes.mockReset();
     mockGetSteamPlaytimeForeverMinutes.mockResolvedValue(0);
@@ -86,7 +90,7 @@ describe('playtime', () => {
         GetRunningApps: runningApps,
       },
     };
-    mockGetTrackedConfig.mockReturnValue(makeConfig());
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig());
     mockRestRequest
       .mockResolvedValueOnce({ data: [{ id: 77 }], error: null, status: 201 })
       .mockResolvedValueOnce({ data: null, error: null, status: 204 });
@@ -131,7 +135,7 @@ describe('playtime', () => {
         GetRunningApps: runningApps,
       },
     };
-    mockGetTrackedConfig.mockReturnValue(makeConfig({
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig({
       appId: 456,
       appName: 'Fallback Game',
       profileName: 'Custom Profile',
@@ -170,7 +174,7 @@ describe('playtime', () => {
         GetRunningApps: runningApps,
       },
     };
-    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 321 }));
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 321 }));
     mockRestRequest.mockResolvedValueOnce({ data: [{ id: 11 }], error: null, status: 201 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
@@ -247,7 +251,7 @@ describe('playtime', () => {
     (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
       GameSessions: { GetRunningApps: runningApps },
     };
-    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 789 }));
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 789 }));
     // initial insert fails, then fallback insert also fails
     mockRestRequest
       .mockResolvedValueOnce({ data: null, error: 'insert failed', status: 500 })
@@ -271,7 +275,7 @@ describe('playtime', () => {
     (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
       GameSessions: { GetRunningApps: runningApps },
     };
-    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 555 }));
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 555 }));
     // initial insert succeeds, but PATCH fails
     mockRestRequest
       .mockResolvedValueOnce({ data: [{ id: 42 }], error: null, status: 201 })
@@ -297,7 +301,7 @@ describe('playtime', () => {
     (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
       GameSessions: { GetRunningApps: runningApps },
     };
-    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 333 }));
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 333 }));
     mockRestRequest
       .mockResolvedValueOnce({ data: [{ id: 99 }], error: null, status: 201 })
       .mockResolvedValueOnce({ data: null, error: null, status: 204 });
@@ -357,7 +361,7 @@ describe('playtime', () => {
       GameSessions: { GetRunningApps: runningApps },
     };
     // source=undefined: hits ?? 'protondb' on both initial insert (line 74) and fallback insert (line 129)
-    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 999, source: undefined }));
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 999, source: undefined }));
     mockRestRequest
       .mockResolvedValueOnce({ data: null, error: 'insert failed', status: 500 }) // initial fails -> rowId=null
       .mockResolvedValueOnce({ data: null, error: null, status: 201 }); // fallback insert succeeds
@@ -385,7 +389,7 @@ describe('playtime', () => {
       GameSessions: { GetRunningApps: runningApps },
     };
     // profileName='' falls back to appName in the || expression (line 30)
-    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 888, source: 'user' as const, profileName: '' }));
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 888, source: 'user' as const, profileName: '' }));
     mockRestRequest.mockResolvedValueOnce({ data: [{ id: 1 }], error: null, status: 201 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
@@ -407,7 +411,7 @@ describe('playtime', () => {
     (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
       GameSessions: { GetRunningApps: runningApps },
     };
-    mockGetTrackedConfig.mockReturnValue(makeConfig({ appId: 777 }));
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 777 }));
     mockRestRequest.mockResolvedValueOnce({ data: [{ id: 2 }], error: null, status: 201 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');

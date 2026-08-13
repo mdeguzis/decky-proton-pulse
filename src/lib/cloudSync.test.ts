@@ -104,7 +104,10 @@ describe('pushConfig', () => {
     }
     expect(path).toBe('user_proton_configs');
     expect(init.method).toBe('POST');
-    expect(query).toMatchObject({ on_conflict: 'voter_id,app_id' });
+    // Multi-config-per-app: PK is (voter_id, app_id, profile_name) so the
+    // upsert target must include profile_name; without it two profiles for
+    // the same game would collide on the old (voter_id, app_id) constraint.
+    expect(query).toMatchObject({ on_conflict: 'voter_id,app_id,profile_name' });
 
     const body = JSON.parse(init.body as string);
     expect(body.voter_id).toBe('abc123voterId');
@@ -113,6 +116,8 @@ describe('pushConfig', () => {
     expect(body.is_published).toBe(false);
     expect(body.app_id).toBe(12345);
     expect(body.app_name).toBe('Test Game');
+    // profile_name is a top-level column now (was only inside the config blob).
+    expect(body.profile_name).toBeTruthy();
     expect(body.config).toMatchObject({ appId: 12345, protonVersion: 'GE-Proton9-27' });
   });
 
@@ -350,6 +355,7 @@ describe('fetchCloudConfigs', () => {
           installation_id: 'install-123',
           app_id: 12345,
           app_name: 'Test Game',
+          profile_name: 'Default',
           config: cfg,
           updated_at: '2026-04-11T00:00:00Z',
         },
@@ -363,6 +369,7 @@ describe('fetchCloudConfigs', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].app_id).toBe(12345);
+    expect(result[0].profile_name).toBe('Default');
     expect(result[0].proton_pulse_user_id).toBe('pp-user-123');
     expect(result[0].config.appId).toBe(12345);
   });
@@ -460,7 +467,7 @@ describe('restoreCloudConfigs', () => {
     mockGetTrackedConfigs.mockReturnValue([localCfg]);
     mockRestRequest.mockResolvedValueOnce({
       data: [
-        { voter_id: 'abc123voterId', app_id: 500, app_name: 'Cloud Game', config: cloudCfg, updated_at: '2026-04-11T00:00:00Z' },
+        { voter_id: 'abc123voterId', app_id: 500, app_name: 'Cloud Game', profile_name: 'Default', config: cloudCfg, updated_at: '2026-04-11T00:00:00Z' },
       ],
       error: null,
       status: 200,
@@ -470,7 +477,9 @@ describe('restoreCloudConfigs', () => {
     const result = await restoreCloudConfigs();
 
     expect(result).toEqual({ restored: 1, skipped: 0, failed: 0 });
-    expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudCfg);
+    // Multi-config-per-app: restore overlays the row's profile_name onto
+    // the blob before saving so local storage keys correctly.
+    expect(mockAddTrackedConfig).toHaveBeenCalledWith({ ...cloudCfg, profileName: 'Default' });
   });
 
   it('restores cloud configs that have no matching local entry', async () => {
@@ -482,8 +491,8 @@ describe('restoreCloudConfigs', () => {
     const cloudB = makeConfig({ appId: 200, appName: 'Cloud Only B' });
     mockRestRequest.mockResolvedValueOnce({
       data: [
-        { voter_id: 'abc123voterId', app_id: 100, app_name: 'Cloud Only A', config: cloudA, updated_at: '2026-04-11T00:00:00Z' },
-        { voter_id: 'abc123voterId', app_id: 200, app_name: 'Cloud Only B', config: cloudB, updated_at: '2026-04-11T00:00:00Z' },
+        { voter_id: 'abc123voterId', app_id: 100, app_name: 'Cloud Only A', profile_name: 'Default', config: cloudA, updated_at: '2026-04-11T00:00:00Z' },
+        { voter_id: 'abc123voterId', app_id: 200, app_name: 'Cloud Only B', profile_name: 'Default', config: cloudB, updated_at: '2026-04-11T00:00:00Z' },
       ],
       error: null,
       status: 200,
@@ -493,8 +502,8 @@ describe('restoreCloudConfigs', () => {
     const result = await restoreCloudConfigs();
 
     expect(result).toEqual({ restored: 2, skipped: 0, failed: 0 });
-    expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudA);
-    expect(mockAddTrackedConfig).toHaveBeenCalledWith(cloudB);
+    expect(mockAddTrackedConfig).toHaveBeenCalledWith({ ...cloudA, profileName: 'Default' });
+    expect(mockAddTrackedConfig).toHaveBeenCalledWith({ ...cloudB, profileName: 'Default' });
   });
 
   it('throws when cloud fetch fails', async () => {
@@ -512,7 +521,7 @@ describe('restoreCloudConfigs', () => {
     });
     mockRestRequest.mockResolvedValueOnce({
       data: [
-        { voter_id: 'abc123voterId', app_id: 600, app_name: 'Cloud Game', config: makeConfig({ appId: 600 }), updated_at: '2026-04-11T00:00:00Z' },
+        { voter_id: 'abc123voterId', app_id: 600, app_name: 'Cloud Game', profile_name: 'Default', config: makeConfig({ appId: 600 }), updated_at: '2026-04-11T00:00:00Z' },
       ],
       error: null,
       status: 200,
