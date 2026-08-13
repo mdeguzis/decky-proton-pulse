@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, TextField } from '@decky/ui';
 import { toaster } from '../../lib/notify';
-import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, getActiveConfigForApp, type TrackedConfig } from '../../lib/trackedConfigs';
+import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, getActiveConfigForApp, onConfigSaved, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } from '../../lib/screenshotAutomation';
@@ -155,6 +155,20 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   useEffect(() => onCloudConfigPushed((result) => {
     if (result.ok) void refreshCloud();
   }), []);
+
+  // Refresh local rows whenever ANY tracked config is written (via
+  // addTrackedConfig / setActiveConfig anywhere in the app). Without this,
+  // the "Applied X ago" meta line + ACTIVE badge stay stale after Apply /
+  // Reapply until the tab remounts.
+  useEffect(() => onConfigSaved(() => { refresh(); }), []);
+
+  // Bump a state tick every 60s so the relative "Applied Xm ago" label
+  // ticks over without needing a config write to force it.
+  const [, setNowTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((n) => n + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => registerScreenshotAutomationHandler('manage-configurations/config-editor', async (action: ScreenshotAutomationAction) => {
     showModal(
@@ -715,10 +729,17 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           // profile show the same Pending Approval pill.
           const configKey = buildConfigKey(config);
           const statusKey = makeReportStatusKey(config.appId, configKey);
-          const isPublished = approvedKeys.has(statusKey);
-          const hasSubmitted = submittedKeys.has(statusKey);
+          // Legacy fallback: submissions from before ManageTab passed
+          // configKey to the submit modal stored config_key=null in the
+          // DB. Those rows produce a "<appId>::" key in submittedKeys.
+          // Fall back to that on a miss so a pre-fix submission still lights
+          // up ALL profiles for that game (matches old per-app behaviour)
+          // instead of silently hiding the badge on every row.
+          const legacyKey = makeReportStatusKey(config.appId, '');
+          const isPublished = approvedKeys.has(statusKey) || approvedKeys.has(legacyKey);
+          const hasSubmitted = submittedKeys.has(statusKey) || submittedKeys.has(legacyKey);
           // Referenced for structural continuity with the old per-app sets;
-          // the badge decision uses the composite key above.
+          // the badge decision uses the composite keys above.
           void approvedAppIds; void submittedAppIds;
           // Multi-config-per-app: ACTIVE badge on the row whose profile
           // matches the game's currently-applied config (max appliedAt).
