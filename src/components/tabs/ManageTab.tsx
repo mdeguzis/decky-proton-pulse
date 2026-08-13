@@ -729,22 +729,26 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           // profile show the same Pending Approval pill.
           const configKey = buildConfigKey(config);
           const statusKey = makeReportStatusKey(config.appId, configKey);
-          // Legacy fallback: submissions from before ManageTab passed
-          // configKey to the submit modal stored config_key=null in the
-          // DB. Those rows produce a "<appId>::" key in submittedKeys.
-          // Fall back to that on a miss so a pre-fix submission still lights
-          // up ALL profiles for that game (matches old per-app behaviour)
-          // instead of silently hiding the badge on every row.
-          const legacyKey = makeReportStatusKey(config.appId, '');
-          const isPublished = approvedKeys.has(statusKey) || approvedKeys.has(legacyKey);
-          const hasSubmitted = submittedKeys.has(statusKey) || submittedKeys.has(legacyKey);
-          // Referenced for structural continuity with the old per-app sets;
-          // the badge decision uses the composite keys above.
-          void approvedAppIds; void submittedAppIds;
           // Multi-config-per-app: ACTIVE badge on the row whose profile
           // matches the game's currently-applied config (max appliedAt).
           const active = getActiveConfigForApp(config.appId);
           const isActive = !!active && active.profileName === config.profileName;
+          // Legacy fallback: submissions from before ManageTab passed
+          // configKey to the submit modal stored config_key=null in the
+          // DB. Those rows produce a "<appId>::" key. We can't tell WHICH
+          // profile the null-key row was actually for, so pin it to the
+          // ACTIVE profile only -- heuristic that the user was playing the
+          // applied profile when they submitted. Non-active sibling profiles
+          // stay Draft. A broader per-appId fallback was wrong: it lit up
+          // both Agent 64 profiles as PUBLISHED when only one was.
+          const legacyKey = makeReportStatusKey(config.appId, '');
+          const isPublished = approvedKeys.has(statusKey)
+            || (isActive && approvedKeys.has(legacyKey));
+          const hasSubmitted = submittedKeys.has(statusKey)
+            || (isActive && submittedKeys.has(legacyKey));
+          // Referenced for structural continuity with the old per-app sets;
+          // the badge decision uses the composite keys above.
+          void approvedAppIds; void submittedAppIds;
           const statusLabel = isPublished
             ? t().configManager.published
             : hasSubmitted
