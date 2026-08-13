@@ -2,17 +2,12 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## Unreleased
+
 ## v1.14.0
 
-- Multi-config-per-app: a game can now hold any number of named launch-option profiles ('Default', '60fps low', 'framegen', etc.). Save creates a new profile when the name differs; matching names still upsert. Storage keyed by (appId, profileName); Supabase user_proton_configs schema migrated to a composite (voter_id, app_id, profile_name) primary key.
-- Save vs Apply split in the Config Editor: Save persists to storage + cloud without touching Steam launch options or bumping the active slot. Apply writes to Steam launch options + promotes the profile to ACTIVE. Save-only profiles no longer steal ACTIVE from a profile you are currently playing.
-- ACTIVE badge on the row whose profile is currently applied. Playtime attributes to that specific profile.
-- Per-config Pending Approval / Published pills. Two profiles on the same game no longer both light up when only one was submitted; each row reflects its own report state via config_key. Legacy null-key submissions from before this fix light up only the ACTIVE profile as a fallback.
-- Submit modal fires onSubmitted so the Manage tab refreshes the row status without waiting for a remount.
-- Submit modal is passed configKey so the DB row's config_key is populated. Report status becomes truly per-profile going forward.
-- Plugin submits now set game_owned=true. The admin report detail no longer shows 'Game Owned: false' for plugin-sourced reports.
-- 'Applied X ago' meta line now ticks live: ManageTab subscribes to onConfigSaved (immediate refresh after Apply / Reapply) plus a 60s tick so the relative label doesn't go stale.
-- Draft pill hidden when there is no submitted report for a profile. SYNCED green badge already covers the cloud state; the extra 'Draft' gray pill next to it read as noise.
+- Sync ui-string-scan for v1.14.0 build
+- Release: v1.14.0
 
 ## v1.13.1
 
