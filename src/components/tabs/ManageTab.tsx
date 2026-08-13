@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, TextField } from '@decky/ui';
 import { toaster } from '../../lib/notify';
-import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, type TrackedConfig } from '../../lib/trackedConfigs';
+import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, getActiveConfigForApp, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } from '../../lib/screenshotAutomation';
@@ -23,7 +23,7 @@ import {
   type SyncStatus,
   getSyncPollIntervalMinutes,
 } from '../../lib/cloudSync';
-import { deleteMyReport, getMyConfig, getMyReportStatuses } from '../../lib/userConfigs';
+import { deleteMyReport, getMyConfig, getMyReportStatuses, makeReportStatusKey } from '../../lib/userConfigs';
 import { getVoterId } from '../../lib/voting';
 import { getLinkedProtonPulseUserId } from '../../lib/protonPulseAccount';
 import { getSetting } from '../../lib/settings';
@@ -69,6 +69,11 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   const [filterText, setFilterText] = useState('');
   const [submittedAppIds, setSubmittedAppIds] = useState<Set<string>>(new Set());
   const [approvedAppIds, setApprovedAppIds] = useState<Set<string>>(new Set());
+  // Per-config composite keys ("<appId>::<configKey>") -- multi-config-per-app
+  // requires row-level status so two profiles for the same game don't both
+  // read as Pending Approval just because one of them was submitted.
+  const [submittedKeys, setSubmittedKeys] = useState<Set<string>>(new Set());
+  const [approvedKeys, setApprovedKeys] = useState<Set<string>>(new Set());
   const [clientId, setClientId] = useState<string | null>(null);
   const linkedUserId = getLinkedProtonPulseUserId();
 
@@ -132,9 +137,11 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   }, []);
 
   const refreshReportStatuses = async () => {
-    const { submitted, approved } = await getMyReportStatuses();
+    const { submitted, approved, submittedKeys: sk, approvedKeys: ak } = await getMyReportStatuses();
     setSubmittedAppIds(submitted);
     setApprovedAppIds(approved);
+    setSubmittedKeys(sk);
+    setApprovedKeys(ak);
   };
 
   useEffect(() => {
@@ -399,6 +406,11 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           protonVersion={resolvedProtonVersion}
           autoDuration={autoDuration}
           launchOptions={config.launchOptions}
+          // Multi-config-per-app: pass configKey so the submitted user_configs
+          // row is tied to THIS specific profile. Without it, the DB stores
+          // config_key=null and every profile for the game reads as
+          // "pending approval" once any one of them is submitted.
+          configKey={configKey}
           onSubmitted={() => { void refreshReportStatuses(); }}
         />,
       );
@@ -690,16 +702,28 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           const syncStatus: SyncStatus = (cloudLoading || cloudOffline)
             ? 'not-synced'
             : getCloudSyncStatus(config.appId, cloudConfigs, config.profileName);
-          // Three-state report status label:
-          //   Draft            = no report submitted (regardless of cloud sync)
-          //   Pending Approval = report submitted, no approval row yet
-          //   Published        = report submitted AND approval row exists
-          // Config sync (user_proton_configs) is a SEPARATE concept -- it
-          // drives the SYNCED badge, not the report status. The earlier
-          // hasSubmitted = !!cloudRow branch conflated the two and made every
-          // saved config show "Pending Approval" even without a submission.
-          const isPublished = approvedAppIds.has(String(config.appId));
-          const hasSubmitted = submittedAppIds.has(String(config.appId));
+          // Three-state report status label, keyed per config:
+          //   Draft            = this specific profile has no submitted report
+          //   Pending Approval = this profile's report is submitted, no approval yet
+          //   Published        = this profile's report is submitted AND approved
+          // Composite key: "<appId>::<configKey>". Falls back to per-app when
+          // the profile has no configKey yet (fresh row that never opened the
+          // submit modal). Config sync (user_proton_configs) is a SEPARATE
+          // concept -- SYNCED badge covers it.
+          //
+          // The old logic was per-app and made siblings of the submitted
+          // profile show the same Pending Approval pill.
+          const configKey = buildConfigKey(config);
+          const statusKey = makeReportStatusKey(config.appId, configKey);
+          const isPublished = approvedKeys.has(statusKey);
+          const hasSubmitted = submittedKeys.has(statusKey);
+          // Referenced for structural continuity with the old per-app sets;
+          // the badge decision uses the composite key above.
+          void approvedAppIds; void submittedAppIds;
+          // Multi-config-per-app: ACTIVE badge on the row whose profile
+          // matches the game's currently-applied config (max appliedAt).
+          const active = getActiveConfigForApp(config.appId);
+          const isActive = !!active && active.profileName === config.profileName;
           const statusLabel = isPublished
             ? t().configManager.published
             : hasSubmitted
@@ -720,7 +744,9 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           ].filter(Boolean).join(' . ');
           return (
             <div
-              key={config.appId}
+              // Multi-config-per-app: key must include profileName or React
+              // collides two profile rows for the same appId.
+              key={`${config.appId}::${config.profileName}`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -739,6 +765,29 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#e8f4ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {name}
+                  {isActive && (
+                    // ACTIVE: this row's profile is the currently-applied
+                    // one for the game (max appliedAt). Playtime accrues
+                    // to this config until another profile is applied.
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        fontSize: 9,
+                        fontWeight: 700,
+                        padding: '1px 6px',
+                        borderRadius: 999,
+                        marginLeft: 6,
+                        verticalAlign: 'middle',
+                        background: 'rgba(76,158,255,0.20)',
+                        color: '#4c9eff',
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.3,
+                      }}
+                      title="This profile is currently applied to Steam launch options"
+                    >
+                      Active
+                    </span>
+                  )}
                   {!cloudLoading && (
                     <span
                       style={{
