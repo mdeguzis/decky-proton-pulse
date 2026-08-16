@@ -345,6 +345,12 @@ export function NativePulseReportModal({
   const [onlineMultiplayer, setOnlineMultiplayer] = useState<YesNo | null>(null);
   const [localMultiplayer,  setLocalMultiplayer]  = useState<YesNo | null>(null);
 
+  // Per-fault free text (#246 follow-up). The web form reveals an optional
+  // notes box when a fault is answered yes; the plugin asked the same eight
+  // questions and offered nowhere to say WHAT broke, so a plugin report could
+  // only ever say "graphical faults: yes". Optional, exactly like the web.
+  const [faultNotes, setFaultNotes] = useState<Record<string, string>>({});
+
   // --- Verdict + Notes ---
   const [verdict,    setVerdict]    = useState<YesNo | null>(null);
   const [verdictOob, setVerdictOob] = useState<YesNo | null>(null);
@@ -412,6 +418,9 @@ export function NativePulseReportModal({
     if (d.verdictOob !== undefined) setVerdictOob(d.verdictOob);
     if (typeof d.summary === 'string') setSummary(d.summary);
     if (typeof d.notes === 'string') setNotes(d.notes);
+    if (d.faultNotes && typeof d.faultNotes === 'object') {
+      setFaultNotes(d.faultNotes as Record<string, string>);
+    }
     if (typeof d.duration === 'string') setDuration(d.duration);
     if (typeof d.os === 'string') setOs(d.os as ValidOS);
     const when = new Date(loaded.savedAt).toLocaleString();
@@ -428,6 +437,7 @@ export function NativePulseReportModal({
       onlineMultiplayer, localMultiplayer,
       verdict, verdictOob,
       summary, notes,
+      faultNotes,
       duration, os,
     });
     const when = new Date().toLocaleTimeString();
@@ -528,6 +538,10 @@ export function NativePulseReportModal({
       tinkeringMethods: [...tinkeringMethods],
       isTinker: !!isTinker,
       ...Object.fromEntries(FAULT_KEYS.map(k => [k, faults[k]])),
+      // Same key shape as the web form (`${faultKey}Notes`), so both clients
+      // land in one column and the game page renders them identically.
+      // Null rather than '' when empty, matching the web.
+      ...Object.fromEntries(FAULT_KEYS.map(k => [`${k}Notes`, (faultNotes[k] ?? '').trim() || null])),
       onlineMultiplayer,
       localMultiplayer,
       verdict: installFailed ? 'no' : verdict,
@@ -785,11 +799,29 @@ export function NativePulseReportModal({
                       setFault(key, v);
                       setFieldErrors(p => ({ ...p, [key]: false }));
                       setError(null);
+                      // Answering "no" clears any note already typed: a note
+                      // describing a fault the reporter then said they did not
+                      // hit would ship as a contradiction.
+                      if (v !== 'yes') setFaultNotes(prev => {
+                        if (!prev[key]) return prev;
+                        const next = { ...prev };
+                        delete next[key];
+                        return next;
+                      });
                       if (faultRefs.current[i + 1]) scrollToRef({ current: faultRefs.current[i + 1] }, `fault[${i + 1}]`);
                       else scrollToRef(refMultiplayer, 'multiplayer');
                     }}
                     hasError={!!fieldErrors[key]}
                   />
+                  {faults[key] === 'yes' && (
+                    <TextField
+                      label={t().extras!.reportFormFaultNotesLabel!()}
+                      description={t().extras!.reportFormFaultNotesDescription!()}
+                      value={faultNotes[key] ?? ''}
+                      onChange={(e) => setFaultNotes(prev => ({ ...prev, [key]: e.target.value.slice(0, 280) }))}
+                      bShowClearAction
+                    />
+                  )}
                 </div>
               ))}
 

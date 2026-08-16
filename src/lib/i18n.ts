@@ -705,6 +705,8 @@ export interface TranslationTree {
     reportFormBorkedNotice?: () => string;
     reportFormBorkedNotesLabel?: () => string;
     reportFormBorkedNotesDescription?: () => string;
+    reportFormFaultNotesLabel?: () => string;
+    reportFormFaultNotesDescription?: () => string;
     reportFormProtonTinkering?: () => string;
     reportFormProtonVersion?: () => string;
     reportFormTinkeringMethods?: () => string;
@@ -1495,6 +1497,8 @@ export const en: TranslationTree = {
     reportFormBorkedNotice: () => 'The game failed to install or start. Your report will be submitted as Borked.',
     reportFormBorkedNotesLabel: () => 'Notes (optional)',
     reportFormBorkedNotesDescription: () => 'Describe what went wrong during install or startup.',
+    reportFormFaultNotesLabel: () => 'What happened? (optional)',
+    reportFormFaultNotesDescription: () => 'Briefly describe the problem so others know what to expect.',
     reportFormProtonTinkering: () => 'Proton and Tinkering',
     reportFormProtonVersion: () => 'Which Proton version did you use?',
     reportFormTinkeringMethods: () => 'Are you using any of these common tinkering methods?',

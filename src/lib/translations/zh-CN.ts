@@ -776,6 +776,8 @@ export const zhCN: TranslationTree = {
     manageOnWebDesc: () => `在 proton-pulse.com 上打开游戏页面`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',
+    reportFormFaultNotesLabel: () => 'What happened? (optional)',
+    reportFormFaultNotesDescription: () => 'Briefly describe the problem so others know what to expect.',
   },
 };
 

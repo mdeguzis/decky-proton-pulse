@@ -774,5 +774,7 @@ export const pt: TranslationTree = {
     perReportWhatsThis: () => `O que é isto?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',
+    reportFormFaultNotesLabel: () => 'What happened? (optional)',
+    reportFormFaultNotesDescription: () => 'Briefly describe the problem so others know what to expect.',
   },
 };

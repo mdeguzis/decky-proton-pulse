@@ -776,6 +776,8 @@ export const ko: TranslationTree = {
     manageOnWebDesc: () => `proton-pulse.com에서 게임 페이지 열기`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',
+    reportFormFaultNotesLabel: () => 'What happened? (optional)',
+    reportFormFaultNotesDescription: () => 'Briefly describe the problem so others know what to expect.',
   },
 };
 

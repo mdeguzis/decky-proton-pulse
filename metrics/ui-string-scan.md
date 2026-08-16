@@ -36,9 +36,9 @@ Potential hardcoded UI strings found outside the translation tree.
 | `src/components/ConfigEditorModal.tsx` | 1001 | string | No game selected. Open a game config first. |
 | `src/components/ConfigEditorModal.tsx` | 1048 | string | No game selected. Open a game config first. |
 | `src/components/ConfigEditorModal.tsx` | 1073 | string | No game selected. Open a game config first. |
-| `src/components/NativePulseReportModal.tsx` | 733 | string | - Type below or pick installed - |
-| `src/components/NativePulseReportModal.tsx` | 916 | jsx | (auto-detected from your Steam playtime) |
-| `src/components/NativePulseReportModal.tsx` | 949 | jsx | Save draft |
+| `src/components/NativePulseReportModal.tsx` | 747 | string | - Type below or pick installed - |
+| `src/components/NativePulseReportModal.tsx` | 948 | jsx | (auto-detected from your Steam playtime) |
+| `src/components/NativePulseReportModal.tsx` | 981 | jsx | Save draft |
 | `src/components/PerReportAnalysisModal.tsx` | 190 | jsx | pts |
 | `src/components/ReleaseNotesModal.tsx` | 277 | jsx | Loading |
 | `src/components/ScoringGuideModal.tsx` | 116 | jsx | Report Score Tiers |

@@ -776,6 +776,8 @@ export const fr: TranslationTree = {
     manageOnWebDesc: () => `Ouvrir la page du jeu sur proton-pulse.com`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',
+    reportFormFaultNotesLabel: () => 'What happened? (optional)',
+    reportFormFaultNotesDescription: () => 'Briefly describe the problem so others know what to expect.',
   },
 };
 
