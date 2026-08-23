@@ -680,7 +680,13 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     : { protonVersion: null, vars: {} as Record<string, string>, rawArgs: [] as string[], postCommandArgs: [] as string[] };
   const initialParsedState = buildToggleStateFromParsedLaunchOptions(parsed, appId, catalogKeys, catalogRawKeys);
 
-  const [profileName, setProfileName] = useState(existingConfig?.profileName ?? '');
+  // New configs open with the game's title already in the name box (#121).
+  // The field is required, and a blank one on a Deck means driving an
+  // on-screen keyboard before you can save anything -- the game name is both
+  // the obvious first profile name and a working default to edit down.
+  const [profileName, setProfileName] = useState(
+    existingConfig?.profileName ?? (appName ?? '').trim(),
+  );
   const [profileNameTouched, setProfileNameTouched] = useState(false);
   const [protonVersion, setProtonVersion] = useState(initialParsedState.protonVersion);
   const [enabledVars, setEnabledVars] = useState<Record<string, string>>(initialParsedState.enabledVars);
