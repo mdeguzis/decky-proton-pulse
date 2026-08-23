@@ -271,6 +271,53 @@ describe('submitUserConfig optional field fallbacks', () => {
   });
 });
 
+describe('submitUserConfig play mode columns (#121)', () => {
+  it('sends explicit nulls for the VR columns on a flatscreen report', async () => {
+    // Nulls rather than omitted keys: an edit that switches VR back to
+    // Flatscreen has to CLEAR the old runtime, and a PATCH that omits a key
+    // leaves the column untouched.
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+    const { submitUserConfig } = await import('./userConfigs');
+    const result = await submitUserConfig({
+      ...validInput(),
+      playMode: 'flat',
+      vrRuntime: 'steamvr',
+      vrDevice: 'Valve Index',
+    });
+
+    expect(result.ok).toBe(true);
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(body).toMatchObject({ play_mode: 'flat', vr_runtime: null, vr_device: null });
+  });
+
+  it('carries the runtime and headset on a VR report', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+    const { submitUserConfig } = await import('./userConfigs');
+    const result = await submitUserConfig({
+      ...validInput(),
+      playMode: 'vr',
+      vrRuntime: 'wivrn',
+      vrDevice: 'Meta Quest 3',
+    });
+
+    expect(result.ok).toBe(true);
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(body).toMatchObject({ play_mode: 'vr', vr_runtime: 'wivrn', vr_device: 'Meta Quest 3' });
+  });
+
+  it('leaves play_mode null when the caller never asked', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+    const { submitUserConfig } = await import('./userConfigs');
+    await submitUserConfig(validInput());
+
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(body).toMatchObject({ play_mode: null, vr_runtime: null, vr_device: null });
+  });
+});
+
 describe('submitUserConfig cooldown', () => {
   it('blocks a second submit within the cooldown window', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));

@@ -6,13 +6,18 @@ export interface VersionOption {
   displayName: string;
   installed: boolean;
   managed: boolean;
+  // Rolling "latest" slots only: the versioned build the slot currently
+  // points at (e.g. 'GE-Proton11-1'). Null for every other option. Reports
+  // record `slot (target)` so a year-old report still says which build it
+  // actually ran on -- see formatReportVersion (#121).
+  resolvedTarget?: string | null;
 }
 
 // Structural subset of InstalledCompatTool that the builder actually reads, so
 // callers and tests can pass partial fixtures without every field.
 type InstalledToolLike =
   Pick<InstalledCompatTool, 'directory_name' | 'display_name' | 'internal_name'> &
-  Partial<Pick<InstalledCompatTool, 'managed_slot' | 'tool_id'>>;
+  Partial<Pick<InstalledCompatTool, 'managed_slot' | 'tool_id' | 'latest_tag' | 'current_target_name'>>;
 
 export function buildVersionOptions(
   releases: { tag_name: string }[],
@@ -40,11 +45,18 @@ export function buildVersionOptions(
     .filter((t) => t.managed_slot === 'latest' || t.directory_name === 'Proton-GE-Latest')
     .map((t) => {
       emittedDirs.add(t.directory_name);
+      const base = t.display_name || t.directory_name;
+      // current_target_name is the marker-file basename the slot symlinks
+      // point at; latest_tag is the release tag the manager last installed
+      // into it. Either identifies the real build, marker first because it
+      // reflects what is on disk right now rather than what we intended.
+      const resolvedTarget = (t.current_target_name || t.latest_tag || '').trim() || null;
       return {
         value: t.directory_name,
-        displayName: t.display_name || t.directory_name,
+        displayName: resolvedTarget ? `${base} (${resolvedTarget})` : base,
         installed: true,
         managed: true,
+        resolvedTarget,
       };
     });
 
@@ -103,4 +115,59 @@ export function versionOptionsForType(
     cachyState.releases,
     cachyState.installed_tools.filter((t) => t.tool_id === 'proton-cachyos'),
   );
+}
+
+// --- Report version strings (#121) -------------------------------------
+
+/**
+ * The version string a report should record for a picked option.
+ *
+ * Rolling slots are the whole reason this exists. 'Proton-GE-Latest' is a
+ * moving target: the slot that ran a report in March is a different build by
+ * June, so recording the slot name alone makes the report unreproducible.
+ * Recording `Proton-GE-Latest (GE-Proton11-1)` keeps both the thing the user
+ * selected and the build it resolved to at submit time.
+ *
+ * Non-slot options pass through untouched.
+ */
+export function formatReportVersion(option: VersionOption | null | undefined): string {
+  if (!option) return '';
+  const target = (option.resolvedTarget ?? '').trim();
+  if (!target) return option.value;
+  // Already parenthesized (a restored draft, or an option whose displayName
+  // was fed back in). Do not nest a second set of parens.
+  if (option.value.includes('(')) return option.value;
+  if (option.value.trim().toLowerCase() === target.toLowerCase()) return option.value;
+  return `${option.value} (${target})`;
+}
+
+/**
+ * Resolve a bare rolling-slot name to its `slot (target)` form.
+ *
+ * Used when the report modal is seeded from a game's existing launch options,
+ * which carry the raw slot directory name and nothing about what it points at.
+ * Returns `raw` unchanged when it is not a known slot.
+ */
+export function resolveReportVersion(raw: string, options: VersionOption[]): string {
+  const trimmed = (raw ?? '').trim();
+  if (!trimmed || trimmed.includes('(')) return trimmed;
+  const match = options.find((o) => o.value.toLowerCase() === trimmed.toLowerCase());
+  return match ? formatReportVersion(match) : trimmed;
+}
+
+/**
+ * Map a Submit Report "Proton type" answer onto the compat-tool filter the
+ * version picker uses.
+ *
+ * 'native' has no Proton version at all and 'notListed' is the escape hatch
+ * for builds we do not manage, so both return null: the caller shows free
+ * text only rather than a dropdown that could not contain the answer.
+ */
+export function compatToolTypeForProtonKind(kind: string | null | undefined): CompatToolType | null {
+  switch (kind) {
+    case 'valve':          return 'valve';
+    case 'proton-ge':      return 'proton-ge';
+    case 'proton-cachyos': return 'proton-cachyos';
+    default:               return null;
+  }
 }

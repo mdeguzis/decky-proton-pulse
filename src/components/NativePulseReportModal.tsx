@@ -2,7 +2,7 @@
 // Submit a native Proton Pulse compatibility report, auto-capturing hardware.
 // Form structure mirrors ProtonDB's submission flow so ratings are comparable.
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { ModalRoot, Focusable, DialogButton, DialogCheckbox, TextField, DropdownItem, showModal } from '@decky/ui';
 import { ScoringGuideModal } from './ScoringGuideModal';
 import { toaster } from '../lib/notify';
@@ -21,8 +21,23 @@ import {
   normalizeProtonKind,
   type ProtonKind,
 } from '../lib/protonTypes';
-import { getProtonGeManagerState } from '../lib/compatTools';
-import { buildVersionOptions } from '../lib/compatToolVersions';
+import { getCompatManagerState, getProtonGeManagerState } from '../lib/compatTools';
+import {
+  compatToolTypeForProtonKind,
+  formatReportVersion,
+  resolveReportVersion,
+  versionOptionsForType,
+  type VersionOption,
+} from '../lib/compatToolVersions';
+import {
+  VR_DEVICE_OTHER,
+  VR_HEADSETS,
+  VR_RUNTIMES,
+  normalizePlayMode,
+  type PlayMode,
+} from '../lib/vr';
+import { defaultPlayModeForCapability, getVrCapability } from '../lib/vrSupport';
+import { NOTE_PHRASES, appendNotePhrase, noteHasPhrase } from '../lib/notePhrases';
 import type { ProtonGeManagerState } from '../types';
 
 interface Props {
@@ -271,6 +286,8 @@ export function NativePulseReportModal({
   const refCanPlay          = useRef<HTMLDivElement | null>(null);
   const refProtonType       = useRef<HTMLDivElement | null>(null);
   const refProtonVersion    = useRef<HTMLDivElement | null>(null);
+  const refPlayMode            = useRef<HTMLDivElement | null>(null);
+  const refVrRuntime           = useRef<HTMLDivElement | null>(null);
   const refMultiplayer         = useRef<HTMLDivElement | null>(null);
   const refLocalMultiplayer    = useRef<HTMLDivElement | null>(null);
   const refVerdict             = useRef<HTMLDivElement | null>(null);
@@ -341,6 +358,21 @@ export function NativePulseReportModal({
   const setFault = (key: FaultKey, v: YesNo) =>
     setFaults(prev => ({ ...prev, [key]: v }));
 
+  // --- Play mode (#121) ---
+  // Flatscreen vs VR is a separate axis from the Proton flavour above, and it
+  // is the one that decides whether this report can be averaged with the
+  // others: "runs great" means something very different at 90Hz in stereo.
+  // Seeded from the game's own Steam VR categories so a VR-only title does not
+  // silently file as flatscreen. See src/lib/vrSupport.ts for the rule.
+  const [vrCapability] = useState(() => getVrCapability(appId));
+  const [playMode, setPlayMode] = useState<PlayMode>(() => defaultPlayModeForCapability(vrCapability));
+  // SteamVR is the default runtime for the same reason the web form defaults
+  // to it: it is the overwhelming majority of Linux VR setups, and the picker
+  // is right there when it is wrong.
+  const [vrRuntime, setVrRuntime] = useState<string>('steamvr');
+  const [vrDevice, setVrDevice] = useState<string>('');
+  const [vrDeviceOther, setVrDeviceOther] = useState<string>('');
+
   // --- Multiplayer (optional) ---
   const [onlineMultiplayer, setOnlineMultiplayer] = useState<YesNo | null>(null);
   const [localMultiplayer,  setLocalMultiplayer]  = useState<YesNo | null>(null);
@@ -372,28 +404,81 @@ export function NativePulseReportModal({
   // same call CompatToolVersionPicker uses. Lets the version field be a
   // dropdown of what the user actually has installed instead of a free-text
   // guess. Free text is still accepted for "not listed" cases.
-  const [installedVersions, setInstalledVersions] = useState<string[]>([]);
+  const [managerState, setManagerState] = useState<ProtonGeManagerState | null>(null);
+  const [cachyState, setCachyState] = useState<ProtonGeManagerState | null>(null);
   useEffect(() => {
     let alive = true;
     getProtonGeManagerState()
       .then((state: ProtonGeManagerState) => {
         if (!alive) return;
-        const opts = buildVersionOptions(state.releases, state.installed_tools)
-          .filter((o) => o.installed)
-          .map((o) => o.value);
-        setInstalledVersions(opts);
-        void logFrontendEvent('DEBUG', 'NativePulseReport: loaded installed versions', {
-          count: opts.length,
+        setManagerState(state);
+        void logFrontendEvent('DEBUG', 'NativePulseReport: loaded compat manager state', {
+          installedTools: state.installed_tools.length,
+          releases: state.releases.length,
           source: 'getProtonGeManagerState',
         });
       })
       .catch((err) => {
         void logFrontendEvent('WARNING', 'NativePulseReport: failed to load installed versions', {
+          source: 'getProtonGeManagerState',
           error: err instanceof Error ? err.message : String(err),
         });
       });
     return () => { alive = false; };
   }, []);
+
+  // CachyOS state is a separate backend call and most reports never need it,
+  // so it is fetched only once the user says that is what they used. Same
+  // lazy pattern as CompatToolVersionPicker.
+  useEffect(() => {
+    if (protonType !== 'proton-cachyos' || cachyState) return;
+    let alive = true;
+    getCompatManagerState('proton-cachyos', false)
+      .then((state) => {
+        if (!alive) return;
+        setCachyState(state);
+        void logFrontendEvent('DEBUG', 'NativePulseReport: loaded CachyOS state', {
+          toolId: 'proton-cachyos',
+          installedTools: state.installed_tools.length,
+          source: 'getCompatManagerState',
+        });
+      })
+      .catch((err) => {
+        void logFrontendEvent('WARNING', 'NativePulseReport: failed to load CachyOS state', {
+          toolId: 'proton-cachyos',
+          source: 'getCompatManagerState',
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+    return () => { alive = false; };
+  }, [protonType, cachyState]);
+
+  // The version list follows the Proton type answered above it (#121). Before
+  // this, every installed tool was offered no matter what the user picked, so
+  // "Valve Proton" happily offered GE builds and the two answers could
+  // contradict each other in the same report. 'native' and 'notListed' have no
+  // list at all -- the free-text field below is the only sane input there.
+  const versionOptions: VersionOption[] = useMemo(() => {
+    const filter = compatToolTypeForProtonKind(protonType);
+    if (!filter || !managerState) return [];
+    return versionOptionsForType(filter, managerState, cachyState).filter((o) => o.installed);
+  }, [protonType, managerState, cachyState]);
+
+  // Seeded-from-launch-options versions arrive as a bare slot directory name
+  // ('Proton-GE-Latest'), which says nothing about the build that actually
+  // ran. Upgrade it to 'Proton-GE-Latest (GE-Proton11-1)' as soon as the
+  // installed-tool list tells us what the slot points at.
+  useEffect(() => {
+    if (!proton.trim() || proton.includes('(') || !versionOptions.length) return;
+    const resolved = resolveReportVersion(proton, versionOptions);
+    if (resolved === proton) return;
+    setProton(resolved);
+    void logFrontendEvent('DEBUG', 'NativePulseReport: resolved rolling slot to its target build', {
+      from: proton,
+      to: resolved,
+      source: 'resolveReportVersion',
+    });
+  }, [versionOptions, proton]);
 
   // Draft persistence. Restore any saved answers on mount so a submission
   // that failed for a fixable reason (missing title, network flake) does
@@ -412,6 +497,13 @@ export function NativePulseReportModal({
     if (d.protonType !== undefined) setProtonType(normalizeProtonKind(d.protonType));
     if (Array.isArray(d.tinkeringMethods)) setTinkeringMethods(new Set(d.tinkeringMethods));
     if (d.faults && typeof d.faults === 'object') setFaults(d.faults);
+    // A saved play mode wins over the metadata-derived default: the user
+    // already answered, and the game's VR capability has not changed since.
+    const draftPlayMode = normalizePlayMode(d.playMode);
+    if (draftPlayMode) setPlayMode(draftPlayMode);
+    if (typeof d.vrRuntime === 'string' && d.vrRuntime) setVrRuntime(d.vrRuntime);
+    if (typeof d.vrDevice === 'string') setVrDevice(d.vrDevice);
+    if (typeof d.vrDeviceOther === 'string') setVrDeviceOther(d.vrDeviceOther);
     if (d.onlineMultiplayer !== undefined) setOnlineMultiplayer(d.onlineMultiplayer);
     if (d.localMultiplayer !== undefined) setLocalMultiplayer(d.localMultiplayer);
     if (d.verdict !== undefined) setVerdict(d.verdict);
@@ -434,6 +526,7 @@ export function NativePulseReportModal({
       proton, protonType,
       tinkeringMethods: [...tinkeringMethods],
       faults,
+      playMode, vrRuntime, vrDevice, vrDeviceOther,
       onlineMultiplayer, localMultiplayer,
       verdict, verdictOob,
       summary, notes,
@@ -526,7 +619,10 @@ export function NativePulseReportModal({
     setSubmitting(true);
     setError(null);
 
-    void logFrontendEvent('INFO', 'Native Pulse report submission started', { appId, appName, derivedRating });
+    void logFrontendEvent('INFO', 'Native Pulse report submission started', {
+      appId, appName, derivedRating, playMode,
+      vrCapability, protonVersion: proton.trim(),
+    });
 
     // Store all form answers in formResponses so we can apply the same
     // algorithm in the future and compare directly with ProtonDB responses
@@ -548,6 +644,10 @@ export function NativePulseReportModal({
       verdictOob: installFailed ? null : verdictOob,
       summary: summary.trim() || null,
     };
+
+    // Headset is either a listed model or whatever they typed under "Other".
+    // Both paths are trimmed and length-capped in vrFieldsForSubmission.
+    const resolvedVrDevice = vrDevice === VR_DEVICE_OTHER ? vrDeviceOther : vrDevice;
 
     const result = await submitUserConfig({
       appId:             String(submitAppId),
@@ -573,6 +673,9 @@ export function NativePulseReportModal({
       displayResolution: sysInfo.display_resolution ?? null,
       steamDeckModel:    sysInfo.steam_deck_model ?? null,
       formResponses,
+      playMode,
+      vrRuntime:         playMode === 'vr' ? vrRuntime : null,
+      vrDevice:          playMode === 'vr' ? resolvedVrDevice : null,
     });
 
     setSubmitting(false);
@@ -727,7 +830,35 @@ export function NativePulseReportModal({
                 <DropdownItem
                   rgOptions={protonKindOptions()}
                   selectedOption={protonType ?? null}
-                  onChange={(opt) => { setProtonType(opt.data as ProtonType); setFieldErrors(p => ({ ...p, protonType: false })); scrollToRef(refProtonVersion, 'protonVersion'); }}
+                  onChange={(opt) => {
+                    const next = opt.data as ProtonType;
+                    setProtonType(next);
+                    setFieldErrors(p => ({ ...p, protonType: false }));
+                    // A version carried over from the previous type would be a
+                    // straight contradiction (a GE build filed as Valve
+                    // Proton), so drop it. Only when the new type has a loaded,
+                    // non-empty list: CachyOS loads lazily and an empty list
+                    // there means "not fetched yet", not "nothing matches".
+                    const filter = compatToolTypeForProtonKind(next);
+                    const current = proton.trim();
+                    if (filter && managerState && current) {
+                      const allowed = versionOptionsForType(filter, managerState, cachyState)
+                        .filter((o) => o.installed);
+                      const stillValid = allowed.some(
+                        (o) => formatReportVersion(o) === current
+                          || o.value.toLowerCase() === current.toLowerCase(),
+                      );
+                      if (allowed.length && !stillValid) {
+                        setProton('');
+                        void logFrontendEvent('DEBUG', 'NativePulseReport: cleared version after type change', {
+                          protonType: next,
+                          clearedVersion: current,
+                          source: 'versionOptionsForType',
+                        });
+                      }
+                    }
+                    scrollToRef(refProtonVersion, 'protonVersion');
+                  }}
                   label={t().extras!.reportFormProtonVersion!()}
                 />
               </div>
@@ -740,20 +871,30 @@ export function NativePulseReportModal({
                 <div style={{ fontSize: 12, color: fieldErrors.proton ? '#ef4444' : '#c8d4e0', lineHeight: 1.4, marginBottom: 4 }}>
                   {t().nativeReport.protonVersion} <span style={{ color: '#ef4444' }}>*</span>
                 </div>
-                {installedVersions.length > 0 && (
+                {versionOptions.length > 0 && (
                   <DropdownItem
                     label={t().nativeReport.protonVersion}
                     rgOptions={[
-                      { data: '', label: '- Type below or pick installed -' },
-                      ...installedVersions.map((v) => ({ data: v, label: v })),
+                      { data: '', label: t().extras!.reportFormVersionPickerPlaceholder!() },
+                      ...versionOptions.map((o) => ({
+                        data: formatReportVersion(o),
+                        label: o.displayName,
+                      })),
                     ]}
-                    selectedOption={installedVersions.includes(proton) ? proton : ''}
+                    selectedOption={
+                      versionOptions.some((o) => formatReportVersion(o) === proton) ? proton : ''
+                    }
                     onChange={(opt) => {
                       const v = String(opt.data ?? '');
                       if (!v) return;
                       setProton(v);
                       setFieldErrors(p => ({ ...p, proton: false }));
                       setError(null);
+                      void logFrontendEvent('DEBUG', 'NativePulseReport: version picked', {
+                        protonType,
+                        version: v,
+                        source: 'versionOptionsForType',
+                      });
                     }}
                   />
                 )}
@@ -778,6 +919,75 @@ export function NativePulseReportModal({
                   />
                 ))}
               </div>
+
+              {/* ===== Play Mode (#121) ===== */}
+              <div ref={refPlayMode}>
+                <SectionHeader label={t().extras!.reportFormPlayModeSection!()} />
+                <DropdownItem
+                  label={t().extras!.reportFormPlayModeLabel!()}
+                  rgOptions={[
+                    { data: 'flat', label: t().extras!.reportFormPlayModeFlat!() },
+                    { data: 'vr',   label: t().extras!.reportFormPlayModeVr!() },
+                  ]}
+                  selectedOption={playMode}
+                  onChange={(opt) => {
+                    const next = normalizePlayMode(opt.data) ?? 'flat';
+                    setPlayMode(next);
+                    if (next === 'vr') scrollToRef(refVrRuntime, 'vrRuntime');
+                  }}
+                />
+                {vrCapability && (
+                  <div style={{ fontSize: 10, color: '#7a9bb5', marginTop: 4, lineHeight: 1.4 }}>
+                    {vrCapability === 'only'
+                      ? t().extras!.reportFormPlayModeAutoVrOnly!()
+                      : t().extras!.reportFormPlayModeAutoVrSupported!()}
+                  </div>
+                )}
+              </div>
+
+              {playMode === 'vr' && (
+                <>
+                  <div ref={refVrRuntime}>
+                    <DropdownItem
+                      label={t().extras!.reportFormVrRuntimeLabel!()}
+                      rgOptions={VR_RUNTIMES.map((r) => ({
+                        data: r.key,
+                        label: `${r.label} - ${r.subtitle}`,
+                      }))}
+                      selectedOption={vrRuntime}
+                      onChange={(opt) => setVrRuntime(String(opt.data))}
+                    />
+                  </div>
+                  <DropdownItem
+                    label={t().extras!.reportFormVrHeadsetLabel!()}
+                    rgOptions={[
+                      { data: '', label: t().extras!.reportFormVrHeadsetNotSpecified!() },
+                      ...VR_HEADSETS.map((h) => ({ data: h, label: h })),
+                      { data: VR_DEVICE_OTHER, label: t().extras!.reportFormVrHeadsetOther!() },
+                    ]}
+                    selectedOption={vrDevice}
+                    onChange={(opt) => {
+                      const v = String(opt.data ?? '');
+                      setVrDevice(v);
+                      // Switching away from Other drops whatever was typed, so
+                      // a headset name cannot survive as a ghost value on a
+                      // report that now names a listed headset.
+                      if (v !== VR_DEVICE_OTHER) setVrDeviceOther('');
+                    }}
+                  />
+                  {vrDevice === VR_DEVICE_OTHER && (
+                    <TextField
+                      label={t().extras!.reportFormVrHeadsetOtherLabel!()}
+                      value={vrDeviceOther}
+                      onChange={(e) => setVrDeviceOther(e.target.value.slice(0, 64))}
+                      bShowClearAction
+                    />
+                  )}
+                  <div style={{ fontSize: 11, color: '#7a9bb5', lineHeight: 1.5, padding: '6px 10px', background: 'rgba(122,155,181,0.10)', borderRadius: 4 }}>
+                    {t().extras!.reportFormVrHint!()}
+                  </div>
+                </>
+              )}
 
               {/* ===== Technical Details ===== */}
               <SectionHeader label={t().extras!.reportFormTechnicalDetails!()} />
@@ -894,8 +1104,48 @@ export function NativePulseReportModal({
                 </div>
               )}
 
-              {/* Concluding Notes */}
+              {/* Concluding Notes. The phrase chips above the box exist
+                  because typing here means driving an on-screen keyboard with
+                  a thumbstick, which is the single biggest reason a Deck
+                  report gets abandoned or filed with a useless one-word note
+                  (#121). Each tap appends one sentence. */}
               <div ref={refNotes} style={fieldErrors.notes ? { outline: '1px solid #ef4444', borderRadius: 4 } : {}}>
+                <div style={{ fontSize: 11, color: '#7a9bb5', marginBottom: 6, lineHeight: 1.4 }}>
+                  {t().extras!.reportFormNotePhrasesLabel!()}
+                </div>
+                <Focusable style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                  {NOTE_PHRASES.map((phrase) => {
+                    const active = noteHasPhrase(notes, phrase.text);
+                    return (
+                      <DialogButton
+                        key={phrase.id}
+                        onClick={() => {
+                          const next = appendNotePhrase(notes, phrase.text);
+                          if (next === notes) return;
+                          setNotes(next);
+                          setFieldErrors(p => ({ ...p, notes: false }));
+                          void logFrontendEvent('DEBUG', 'NativePulseReport: note phrase added', {
+                            phraseId: phrase.id,
+                            source: 'NOTE_PHRASES',
+                            noteLength: next.length,
+                          });
+                        }}
+                        style={{
+                          width: 'auto',
+                          minWidth: 0,
+                          padding: '4px 10px',
+                          fontSize: 11,
+                          borderRadius: 12,
+                          background: active ? '#1e4a7a' : 'rgba(255,255,255,0.06)',
+                          color: active ? '#7ec8f8' : '#c8d4e0',
+                          border: `1px solid ${active ? '#2a6aaa' : 'rgba(255,255,255,0.12)'}`,
+                        }}
+                      >
+                        {active ? `\u2713 ${phrase.text}` : `+ ${phrase.text}`}
+                      </DialogButton>
+                    );
+                  })}
+                </Focusable>
                 <TextField
                   label={`Concluding Notes * (min 10 chars)`}
                   description={t().nativeReport.notesHint}

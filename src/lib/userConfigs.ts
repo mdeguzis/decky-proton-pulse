@@ -5,6 +5,7 @@
 import { logFrontendEvent } from './logger';
 import { getVoterId } from './voting';
 import { getInstallationId, getLinkedProtonPulseUserId } from './protonPulseAccount';
+import { vrFieldsForSubmission, type PlayMode } from './vr';
 import type { ProtonRating } from '../types';
 
 // --- Constants ---
@@ -79,6 +80,13 @@ export interface UserConfigInput {
   displayResolution?: string | null;
   steamDeckModel?: string | null;
   formResponses?: Record<string, unknown>; // ProtonDB-format form answers for algorithm replay
+  // How the reporter actually played it, and the VR rig if they used one
+  // (#121). Same columns the web form writes -- see src/lib/vr.ts. Omitted
+  // means "not asked"; the payload below sends explicit nulls so a flatscreen
+  // report never carries a stale runtime from an earlier VR answer.
+  playMode?: PlayMode | null;
+  vrRuntime?: string | null;
+  vrDevice?: string | null;
 }
 
 export interface UserConfigRow {
@@ -227,6 +235,11 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
         display_resolution: input.displayResolution ?? null,
         steam_deck_model: input.steamDeckModel ?? null,
         form_responses: input.formResponses ?? null,
+        ...vrFieldsForSubmission(
+          input.playMode ?? null,
+          input.vrRuntime ?? null,
+          input.vrDevice ?? null,
+        ),
         // Plugin-submitted reports come from a running Deck/Steam library
         // where the user has the game installed and playing. Set true so the
         // admin panel and stats don't misclassify plugin submissions as
