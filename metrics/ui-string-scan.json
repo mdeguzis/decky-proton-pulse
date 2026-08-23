@@ -258,42 +258,35 @@
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 1001,
+      "line": 1007,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 1048,
+      "line": 1054,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/ConfigEditorModal.tsx",
-      "line": 1073,
+      "line": 1079,
       "column": 52,
       "kind": "string",
       "text": "No game selected. Open a game config first."
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 747,
-      "column": 42,
-      "kind": "string",
-      "text": "- Type below or pick installed -"
-    },
-    {
-      "file": "src/components/NativePulseReportModal.tsx",
-      "line": 948,
+      "line": 1198,
       "column": 85,
       "kind": "jsx",
       "text": "(auto-detected from your Steam playtime)"
     },
     {
       "file": "src/components/NativePulseReportModal.tsx",
-      "line": 981,
+      "line": 1231,
       "column": 13,
       "kind": "jsx",
       "text": "Save draft"
