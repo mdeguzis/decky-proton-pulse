@@ -22,6 +22,7 @@ export const ja: TranslationTree = {
     daysAgo: (d) => `${d}日前`,
     openInProtonPulse: 'Proton Pulseで開く',
     showProtonInfo: 'Proton情報を表示',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: '設定を管理',
@@ -186,6 +187,10 @@ export const ja: TranslationTree = {
     badgeStyleOff: 'オフ',
     doubleBToExit: 'Bボタン2回押しで終了',
     doubleBToExitDescription: 'Proton Pulseを終了するには、3秒以内にBボタンをもう一度押す必要があります。オフの場合、Bを押すとすぐに終了します。',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'インストール',

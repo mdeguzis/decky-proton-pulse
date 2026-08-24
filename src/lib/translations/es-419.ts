@@ -22,6 +22,7 @@ export const es419: TranslationTree = {
     daysAgo: (d) => `hace ${d}d`,
     openInProtonPulse: 'Abrir en Proton Pulse',
     showProtonInfo: 'Mostrar informacion de Proton',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Administrar configuraciones',
@@ -186,6 +187,10 @@ export const es419: TranslationTree = {
     badgeStyleOff: 'Apagado',
     doubleBToExit: 'Doble B para salir',
     doubleBToExitDescription: 'Requiere una segunda pulsacion de B dentro de 3 segundos para salir de Proton Pulse. Cuando esta deshabilitado, B sale inmediatamente.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'Instalar',

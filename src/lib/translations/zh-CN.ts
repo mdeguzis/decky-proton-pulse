@@ -22,6 +22,7 @@ export const zhCN: TranslationTree = {
     daysAgo: (d) => `${d} 天前`,
     openInProtonPulse: '在 Proton Pulse 中打开',
     showProtonInfo: '显示 Proton 信息',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: '管理配置',
@@ -186,6 +187,10 @@ export const zhCN: TranslationTree = {
     badgeStyleOff: '关闭',
     doubleBToExit: '双击 B 键退出',
     doubleBToExitDescription: '需要在 3 秒内再次按下 B 键以退出 Proton Pulse。关闭时，按 B 键立即退出。',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: '安装',

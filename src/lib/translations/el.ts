@@ -22,6 +22,7 @@ export const el: TranslationTree = {
     daysAgo: (d) => `πριν ${d}η`,
     openInProtonPulse: 'Άνοιγμα στο Proton Pulse',
     showProtonInfo: 'Εμφάνιση πληροφοριών Proton',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Διαχείριση ρυθμίσεων',
@@ -186,6 +187,10 @@ export const el: TranslationTree = {
     badgeStyleOff: 'Απενεργοποιημένο',
     doubleBToExit: 'Διπλό B για έξοδο',
     doubleBToExitDescription: 'Απαιτεί δεύτερο πάτημα B εντός 3 δευτερολέπτων για έξοδο από το Proton Pulse. Όταν είναι απενεργοποιημένο, το B κλείνει αμέσως.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'Εγκατάσταση',

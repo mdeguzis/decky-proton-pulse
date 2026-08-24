@@ -22,6 +22,7 @@ export const th: TranslationTree = {
     daysAgo: (d) => `${d} วันที่แล้ว`,
     openInProtonPulse: 'เปิดใน Proton Pulse',
     showProtonInfo: 'แสดงข้อมูล Proton',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'จัดการการตั้งค่า',
@@ -186,6 +187,10 @@ export const th: TranslationTree = {
     badgeStyleOff: 'ปิด',
     doubleBToExit: 'กด B สองครั้งเพื่อออก',
     doubleBToExitDescription: 'ต้องกด B ครั้งที่สองภายใน 3 วินาทีเพื่อออกจาก Proton Pulse เมื่อปิดใช้งาน B จะออกทันที',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'ติดตั้ง',

@@ -22,6 +22,7 @@ export const tr: TranslationTree = {
     daysAgo: (d) => `${d}g önce`,
     openInProtonPulse: "Proton Pulse'da aç",
     showProtonInfo: 'Proton bilgilerini göster',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Yapılandırmaları Yönet',
@@ -186,6 +187,10 @@ export const tr: TranslationTree = {
     badgeStyleOff: 'Kapalı',
     doubleBToExit: 'Cikmak icin B\'ye iki kez basin',
     doubleBToExitDescription: 'Proton Pulse\'dan cikmak icin 3 saniye icerisinde B\'ye ikinci kez basilmasi gerekir. Kapali oldugunda B hemen cikis yapar.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'Yükle',

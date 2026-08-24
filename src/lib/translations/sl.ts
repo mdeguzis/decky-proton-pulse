@@ -22,6 +22,7 @@ export const sl: TranslationTree = {
     daysAgo: (d) => `pred ${d}d`,
     openInProtonPulse: 'Odpri v Proton Pulse',
     showProtonInfo: 'Pokazi informacije o Protonu',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Upravljaj konfiguracije',
@@ -186,6 +187,10 @@ export const sl: TranslationTree = {
     badgeStyleOff: 'Izklopljeno',
     doubleBToExit: 'Dvojni B za izhod',
     doubleBToExitDescription: 'Zahteva drugi pritisk na B v 3 sekundah za izhod iz Proton Pulse. Ko je onemogoceno, B takoj zapre.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'Namesti',

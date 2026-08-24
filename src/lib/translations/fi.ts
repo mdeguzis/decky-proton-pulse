@@ -22,6 +22,7 @@ export const fi: TranslationTree = {
     daysAgo: (d) => `${d}p sitten`,
     openInProtonPulse: 'Avaa Proton Pulse -sovelluksessa',
     showProtonInfo: 'Näytä Proton-tiedot',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Hallitse asetuksia',
@@ -186,6 +187,10 @@ export const fi: TranslationTree = {
     badgeStyleOff: 'Pois',
     doubleBToExit: 'Kaksois-B sulkee',
     doubleBToExitDescription: 'Vaatii toisen B-painalluksen 3 sekunnin sisällä Proton Pulse -sovelluksen sulkemiseksi. Kun pois käytöstä, B sulkee välittömästi.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'Asenna',

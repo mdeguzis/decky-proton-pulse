@@ -22,6 +22,7 @@ export const vi: TranslationTree = {
     daysAgo: (d) => `${d} ngày trước`,
     openInProtonPulse: 'Mở trong Proton Pulse',
     showProtonInfo: 'Hiển thị thông tin Proton',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Quản lý cấu hình',
@@ -186,6 +187,10 @@ export const vi: TranslationTree = {
     badgeStyleOff: 'Tắt',
     doubleBToExit: 'Nhan B hai lan de thoat',
     doubleBToExitDescription: 'Yeu cau nhan B lan thu hai trong vong 3 giay de thoat Proton Pulse. Khi tat, B thoat ngay lap tuc.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'Cài đặt',

@@ -22,6 +22,7 @@ export const hu: TranslationTree = {
     daysAgo: (d) => `${d} napja`,
     openInProtonPulse: 'Megnyitás a Proton Pulse-ban',
     showProtonInfo: 'Proton-információk megjelenítése',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Konfigurációk kezelése',
@@ -186,6 +187,10 @@ export const hu: TranslationTree = {
     badgeStyleOff: 'Ki',
     doubleBToExit: 'Dupla B a kilépéshez',
     doubleBToExitDescription: 'Második B-gombnyomást igényel 3 másodpercen belül a Proton Pulse bezárásához. Ha ki van kapcsolva, a B azonnal bezár.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'Telepítés',

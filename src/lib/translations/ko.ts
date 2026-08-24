@@ -22,6 +22,7 @@ export const ko: TranslationTree = {
     daysAgo: (d) => `${d}일 전`,
     openInProtonPulse: 'Proton Pulse에서 열기',
     showProtonInfo: 'Proton 정보 보기',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: '설정 관리',
@@ -186,6 +187,10 @@ export const ko: TranslationTree = {
     badgeStyleOff: '끄기',
     doubleBToExit: 'B 두 번 눌러 종료',
     doubleBToExitDescription: 'Proton Pulse를 종료하려면 3초 이내에 B를 한 번 더 눌러야 합니다. 꺼져 있으면 B를 누르면 즉시 종료됩니다.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: '설치',

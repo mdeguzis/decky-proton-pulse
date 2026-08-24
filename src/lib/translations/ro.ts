@@ -22,6 +22,7 @@ export const ro: TranslationTree = {
     daysAgo: (d) => `acum ${d}z`,
     openInProtonPulse: 'Deschide in Proton Pulse',
     showProtonInfo: 'Arata informatii Proton',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Gestioneaza configuratii',
@@ -186,6 +187,10 @@ export const ro: TranslationTree = {
     badgeStyleOff: 'Oprit',
     doubleBToExit: 'Dublu B pentru iesire',
     doubleBToExitDescription: 'Necesita o a doua apasare a lui B in 3 secunde pentru a iesi din Proton Pulse. Cand este dezactivat, B iese imediat.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'Instaleaza',

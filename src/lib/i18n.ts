@@ -74,6 +74,7 @@ export interface TranslationTree {
     daysAgo: (days: number) => string;
     openInProtonPulse: string;
     showProtonInfo: string;
+    showProtonInfoShort: string;
   };
   sidebar: {
     manageConfigurations: string;
@@ -231,6 +232,10 @@ export interface TranslationTree {
     libraryBadgeStyleDescription: string;
     libraryBadgeShowNoData: string;
     libraryBadgeShowNoDataDescription: string;
+    storeTileBadges: string;
+    storeTileBadgesDescription: string;
+    storeBadgesAlwaysVisible: string;
+    storeBadgesAlwaysVisibleDescription: string;
     badgeStyleFull: string;
     badgeStyleCompact: string;
     badgeStyleMinimal: string;
@@ -863,6 +868,7 @@ export const en: TranslationTree = {
     daysAgo: (d) => `${d}d ago`,
     openInProtonPulse: 'Open in Proton Pulse',
     showProtonInfo: 'Show Proton Info',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Manage Configurations',
@@ -1020,6 +1026,10 @@ export const en: TranslationTree = {
     libraryBadgeStyleDescription: 'ProtonDB tier badge on each game tile in the library grid. Full shows the tier name, Compact abbreviates it, Minimal shows only the icon.',
     libraryBadgeShowNoData: 'Show "No Data" badge',
     libraryBadgeShowNoDataDescription: 'Show a purple NO DATA badge on tiles with no ProtonDB reports. Off by default.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
     badgeStyleFull: 'Full',
     badgeStyleCompact: 'Compact',
     badgeStyleMinimal: 'Minimal',

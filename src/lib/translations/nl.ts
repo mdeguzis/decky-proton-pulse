@@ -22,6 +22,7 @@ export const nl: TranslationTree = {
     daysAgo: (d) => `${d}d geleden`,
     openInProtonPulse: 'Openen in Proton Pulse',
     showProtonInfo: 'Proton-info weergeven',
+    showProtonInfoShort: 'Proton',
   },
   sidebar: {
     manageConfigurations: 'Configuraties beheren',
@@ -186,6 +187,10 @@ export const nl: TranslationTree = {
     badgeStyleOff: 'Uit',
     doubleBToExit: 'Dubbel B om te sluiten',
     doubleBToExitDescription: 'Vereist een tweede B-druk binnen 3 seconden om Proton Pulse te sluiten. Als uitgeschakeld, sluit B onmiddellijk.',
+    storeTileBadges: 'Steam store tier badges',
+    storeTileBadgesDescription: 'Show a small tier badge on game artwork while browsing the Steam store, the same badge the library grid uses.',
+    storeBadgesAlwaysVisible: 'Always show badges in store',
+    storeBadgesAlwaysVisibleDescription: 'Keep the tier badge visible on every rated game. Turn this off to show it only on the highlighted game, the way Steam treats its own Deck compatibility icon.',
   },
   compatTools: {
     install: 'Installeren',

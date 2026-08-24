@@ -29,6 +29,7 @@ import { type UpdateCheckResult, type UpdateStatusResult, triggerReload } from '
 import { showReleaseNotesModal } from '../ReleaseNotesModal';
 import { formatVersion, extractDevBuildSha } from '../../lib/formatVersion';
 import { refreshLibraryGridBadges } from '../../patches/libraryGridBadges';
+import { refreshStoreTileBadges } from '../../patches/storeTileBadges';
 
 const getPluginVersion = callable<[], string>('get_plugin_version');
 const getBuildCommit = callable<[], string>('get_build_commit');
@@ -507,6 +508,8 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
   const [gamePageBadgeStyle, setGamePageBadgeStyle] = useState<string>(() => getSetting('gamePageBadgeStyle', 'full'));
   const [libraryBadgeStyle, setLibraryBadgeStyle] = useState<string>(() => getSetting('libraryBadgeStyle', 'full'));
   const [libraryBadgeShowNoData, setLibraryBadgeShowNoData] = useState(() => getSetting('libraryBadgeShowNoData', false));
+  const [storeTileBadges, setStoreTileBadgesState] = useState(() => getSetting('storeTileBadges', true));
+  const [storeBadgesAlways, setStoreBadgesAlways] = useState(() => getSetting('storeBadgesAlwaysVisible', true));
   const [doubleBToExit, setDoubleBToExit] = useState(() => getSetting('doubleBToExit', false));
   const [cacheTtlHours, setCacheTtlLocal] = useState(() => Math.round(getCacheTtlMs() / 3600000));
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
@@ -1184,6 +1187,33 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
                setSetting('libraryBadgeShowNoData', enabled);
                refreshLibraryGridBadges();
                void logFrontendEvent('INFO', 'Library badge show no-data toggled', { enabled });
+             }}
+           />
+         </div>
+         <div style={focusClipRowStyle()}>
+           <ToggleField
+             label={t().settings.storeTileBadges}
+             description={t().settings.storeTileBadgesDescription}
+             checked={storeTileBadges}
+             onChange={(enabled) => {
+               setStoreTileBadgesState(enabled);
+               setSetting('storeTileBadges', enabled);
+               refreshStoreTileBadges();
+               void logFrontendEvent('INFO', 'Store tile badges toggled', { enabled });
+             }}
+           />
+         </div>
+         <div style={focusClipRowStyle()}>
+           <ToggleField
+             label={t().settings.storeBadgesAlwaysVisible}
+             description={t().settings.storeBadgesAlwaysVisibleDescription}
+             checked={storeBadgesAlways}
+             disabled={!storeTileBadges}
+             onChange={(enabled) => {
+               setStoreBadgesAlways(enabled);
+               setSetting('storeBadgesAlwaysVisible', enabled);
+               refreshStoreTileBadges();
+               void logFrontendEvent('INFO', 'Store badge always-visible toggled', { enabled });
              }}
            />
          </div>
