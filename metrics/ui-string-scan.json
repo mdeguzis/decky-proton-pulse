@@ -36,7 +36,8 @@
     "src/patches/gameContextMenu.tsx",
     "src/patches/gamePageBadge.tsx",
     "src/patches/libraryGridBadges.ts",
-    "src/patches/searchResultsHint.tsx"
+    "src/patches/searchResultsHint.tsx",
+    "src/patches/storeTileBadges.ts"
   ],
   "findings": [
     {

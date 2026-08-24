@@ -2,6 +2,8 @@
 
 All notable changes to Proton Pulse should be recorded here.
 
+## Unreleased
+
 ## v1.14.0
 
 - Multi-config-per-app: a game can now hold any number of named launch-option profiles ('Default', '60fps low', 'framegen', etc.). Save creates a new profile when the name differs; matching names still upsert. Storage keyed by (appId, profileName); Supabase user_proton_configs schema migrated to a composite (voter_id, app_id, profile_name) primary key.
