@@ -1,23 +1,47 @@
 // src/patches/searchResultsHint.tsx
-// Shows a "Y  Show Proton Info" hint at the bottom when a search result card is
-// focused via the gamepad. Hooks into Steam's FocusNavController (shared between
-// SharedJSContext and BPM) rather than DOM focus events, because search results
-// render in the BPM frame which has a separate document from the SJC plugin context.
+// Shows a "Y  Show Proton Info" hint at the bottom of the screen, on two
+// surfaces: a focused search result card, and a Steam store app page (#122).
 //
-// AppId extraction: Steam's search tiles have no data-appid attribute; the appId
-// is embedded in the store CDN image src (steam/apps/<id>/header.jpg).
+// Hooks into Steam's FocusNavController (shared between SharedJSContext and BPM)
+// rather than DOM focus events, because both surfaces render in the BPM frame,
+// which has a separate document from the SJC plugin context.
+//
+// AppId extraction differs per surface:
+//   search  Steam's tiles have no data-appid attribute; the appId is embedded
+//           in the store CDN image src (steam/apps/<id>/header.jpg).
+//   store   the store is its own browsing context, so its DOM is unreadable --
+//           but it is hosted by a <webview> element that lives in BPM's own
+//           document, and that element's src carries the app id. See
+//           src/lib/storeAppId.ts.
+//
+// A hint rather than a persistent badge is the whole point on the store: the
+// store page is dense and a permanent pill would sit on top of the price and
+// the buy button. This costs no screen space until the user asks for it, and
+// reuses the interaction they already know from search.
 //
 // Button detection: hooks m_ButtonDownCallbacks on all gamepad input sources.
 // Y button = EButton 4 in Steam's internal EButton enum (empirically confirmed --
 // NOT the standard Web Gamepad API index 3).
 //
+// One hint element and one Y hook serve both surfaces on purpose. Two
+// independent Y handlers would both fire on the same press.
+//
 // No settings toggle -- always active.
 import { Navigation } from '@decky/ui';
 import { dispatchNavigate, rememberReturnPath } from '../lib/pageState';
 import { logFrontendEvent } from '../lib/logger';
+import { isOnStoreRoute, storeAppIdFromDocument } from '../lib/storeAppId';
+import { GLYPH_VIEW, ensureFooterHint, removeFooterHint } from '../lib/steamFooterHint';
+import { getFocusedStoreAppId } from './storeTileBadges';
 import { t } from '../lib/i18n';
 
 const HINT_ID = 'pp-search-hint-root';
+const STORE_HINT_ID = 'pp-store-footer-hint';
+
+// GamepadButton values from @decky/ui's FooterLegend enum. Named because the
+// callbacks hand us raw numbers.
+const BTN_OPTIONS = 4;  // Y    -- search surface
+const BTN_SELECT = 13;  // View -- store surface
 
 let _hintEl: HTMLElement | null = null;
 let _bpmDocCache: Document | null = null;
@@ -25,6 +49,7 @@ let _focusedAppId: number | null = null;
 let _pollInterval: ReturnType<typeof setInterval> | null = null;
 let _buttonCbs: Array<{ source: any; cb: (btn: number) => void }> = [];
 let _yWasDown = false;
+let _selectWasDown = false;
 
 // SJC's document.body is a 1x1 hidden frame. We need to append the hint to
 // BPM's document body (the visible Steam UI). Get BPM's document via any
@@ -181,7 +206,79 @@ function triggerHintAction() {
 
 // --- poll + button hooks ---
 
+// Store surface. The store page is a separate CEF target we cannot render
+// into, but Big Picture's own hint bar paints over it, so the prompt goes there
+// as a native entry rather than as an overlay of ours.
+//
+// SELECT (View) rather than Y: on a store page Steam has already bound Y to
+// Full screen and X to Unmute for the trailer player, so either would collide
+// with a control shown in that same bar. View is unbound there -- confirmed
+// on-device by hooking the input sources and logging 23 presses, all of which
+// arrived as 13 with nothing else consuming them.
+//
+// Logged only when the app changes, never per tick -- this runs five times a
+// second.
+let _lastStoreAppId = 0;
+let _storeAppId = 0;
+
+function pollStore() {
+  const bpmDoc = getBpmDocument();
+  // Two ways to know which game the user means, in order of certainty:
+  //   1. the store is ON a game's page -- read from Big Picture's address text
+  //   2. the store is a browse page and a tile is highlighted -- read from the
+  //      store target's document.activeElement (see storeTileBadges)
+  // The page wins: if you are looking at Portal 2's page, that is the game,
+  // whatever happens to hold DOM focus inside it.
+  const fromUrl = Number(storeAppIdFromDocument(bpmDoc)) || 0;
+  const appId = fromUrl || getFocusedStoreAppId();
+
+  if (appId !== _lastStoreAppId) {
+    _lastStoreAppId = appId;
+    void logFrontendEvent('DEBUG', 'searchResultsHint: store app changed', {
+      appId: appId || null,
+      source: fromUrl ? 'storeAppIdFromDocument' : 'getFocusedStoreAppId',
+      field: fromUrl ? 'address text in BPM document' : 'store activeElement',
+      resolved: appId > 0,
+    });
+  }
+
+  _storeAppId = appId;
+  if (appId > 0) {
+    // Re-asserted every tick on purpose: Steam rebuilds the hint bar on
+    // navigation and drops our entry with it. ensureFooterHint no-ops when the
+    // entry is already in place.
+    ensureFooterHint(bpmDoc, {
+      id: STORE_HINT_ID,
+      label: t().common.showProtonInfoShort,
+      glyph: GLYPH_VIEW,
+    });
+  } else {
+    removeFooterHint(bpmDoc, STORE_HINT_ID);
+  }
+}
+
+function clearStoreSurface() {
+  if (!_lastStoreAppId && !_storeAppId) return;
+  removeFooterHint(_bpmDocCache ?? document, STORE_HINT_ID);
+  _lastStoreAppId = 0;
+  _storeAppId = 0;
+}
+
+function triggerStoreAction() {
+  if (!_storeAppId) return;
+  void logFrontendEvent('INFO', 'searchResultsHint: opening Proton Pulse from the store', {
+    appId: _storeAppId,
+  });
+  rememberReturnPath(globalThis.location?.pathname);
+  dispatchNavigate({ tab: 'manage-game', appId: _storeAppId, appName: '' });
+  try { Navigation.Navigate('/proton-pulse'); } catch { /* fallback */ }
+}
+
 function pollFocus() {
+  // Store first: on /steamweb there are no search tiles to inspect, and the
+  // nav-tree walk below would just churn.
+  if (isOnStoreRoute(globalThis.location?.pathname)) { pollStore(); return; }
+  clearStoreSurface();
   if (!isOnSearchRoute()) { hideHint(); return; }
   // Hide while the on-screen keyboard is active (text input focused in BPM doc)
   const bpmDoc = getBpmDocument();
@@ -197,15 +294,23 @@ function pollFocus() {
 }
 
 function onButtonDown(eButton: number) {
-  void logFrontendEvent('DEBUG', 'searchResultsHint: btnDown', { b: eButton, appId: _focusedAppId });
-  // Y button = EButton 4 in Steam's internal enum (B=1, X=3, Y=4 confirmed empirically)
-  if (eButton === 4 && _focusedAppId) {
-    if (!_yWasDown) { _yWasDown = true; triggerHintAction(); }
-  } else { _yWasDown = false; }
+  // Store surface first. It owns a different button from the search surface,
+  // so the two can never both fire on one press.
+  if (eButton === BTN_SELECT) {
+    if (_storeAppId && !_selectWasDown) { _selectWasDown = true; triggerStoreAction(); }
+    return;
+  }
+  if (eButton === BTN_OPTIONS) {
+    if (_focusedAppId && !_yWasDown) { _yWasDown = true; triggerHintAction(); }
+    return;
+  }
+  _yWasDown = false;
+  _selectWasDown = false;
 }
 
 function onButtonUp(eButton: number) {
-  if (eButton === 4) _yWasDown = false;
+  if (eButton === BTN_OPTIONS) _yWasDown = false;
+  if (eButton === BTN_SELECT) _selectWasDown = false;
 }
 
 export function setupSearchResultsHint() {
@@ -254,7 +359,11 @@ export function teardownSearchResultsHint() {
   _buttonCbs = [];
 
   if (_hintEl) { try { _hintEl.remove(); } catch { /* ignore */ } _hintEl = null; }
+  removeFooterHint(_bpmDocCache ?? document, STORE_HINT_ID);
   _bpmDocCache = null;
   _focusedAppId = null;
+  _lastStoreAppId = 0;
+  _storeAppId = 0;
   _yWasDown = false;
+  _selectWasDown = false;
 }
