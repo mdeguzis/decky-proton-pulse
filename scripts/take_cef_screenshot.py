@@ -27,6 +27,7 @@ REMOTE_PYTHON = r"""
 import asyncio
 import base64
 import json
+import os
 import sys
 import time
 from aiohttp import ClientSession
@@ -37,6 +38,7 @@ LANGUAGE = __LANGUAGE__
 DEBUG_ENABLED = __DEBUG_ENABLED__
 DPAD_SEQUENCE = __DPAD_SEQUENCE__
 STORE_URL = __STORE_URL__
+COMPOSITE = __COMPOSITE__
 PLUGIN_ROUTE = "/proton-pulse"
 
 # Maps friendly dpad names to (windowsVirtualKeyCode, key) tuples.
@@ -55,6 +57,38 @@ _DPAD_KEY_MAP = {
 def debug_log(message):
     if DEBUG_ENABLED:
         print(message, file=sys.stderr)
+
+
+def capture_composite(out_path):
+    # Grab the composited framebuffer via gamescopectl. Returns True on
+    # success. Never raises -- the caller falls back to a CEF target capture,
+    # which is still better than no screenshot.
+    # NOTE: no docstring here -- this function lives inside the remote
+    # template string, where triple quotes would terminate it early.
+    import shutil as _shutil
+    import subprocess as _subprocess
+
+    if not _shutil.which("gamescopectl"):
+        debug_log("gamescopectl not found on this host")
+        return False
+    try:
+        _subprocess.run(
+            ["gamescopectl", "screenshot", out_path],
+            check=True, capture_output=True, timeout=20,
+        )
+    except (OSError, _subprocess.SubprocessError) as exc:
+        debug_log(f"gamescopectl failed: {type(exc).__name__}: {exc}")
+        return False
+    # gamescopectl writes asynchronously; give the file a moment to land.
+    for _ in range(20):
+        try:
+            if os.path.getsize(out_path) > 0:
+                return True
+        except OSError:
+            pass
+        time.sleep(0.25)
+    debug_log("gamescopectl produced no file")
+    return False
 
 
 async def evaluate_page(ws, next_id_ref, expression):
@@ -463,6 +497,19 @@ async def main():
                     await asyncio.sleep(0.15)
                 await asyncio.sleep(0.4)
 
+            if COMPOSITE:
+                # Default path. gamescopectl grabs the real composited
+                # framebuffer -- exactly what is on the panel. The CEF fallback
+                # below renders ONE target in isolation, which is wrong for
+                # anything Steam paints as its own browser view: a target
+                # capture of Big Picture while the store is open shows Steam's
+                # chrome over an empty content area, because the store is a
+                # different target entirely.
+                if capture_composite(out):
+                    print(out)
+                    return
+                debug_log("gamescopectl capture failed -- falling back to CEF target capture")
+
             result = await capture_call(
                 "Page.captureScreenshot",
                 {"format": "png", "fromSurface": True},
@@ -558,6 +605,18 @@ def main() -> int:
         help="Local directory to store the pulled screenshot",
     )
     parser.add_argument(
+        "--cef-target",
+        action="store_true",
+        help=(
+            "Capture a single CEF target with Page.captureScreenshot instead of "
+            "the composited framebuffer. The default (gamescopectl) is what you "
+            "want almost always: it captures what is actually on the panel. A "
+            "target capture only sees one browser view, so anything Steam paints "
+            "as its own view -- the in-client store above all -- comes out as an "
+            "empty content area. Use this only to inspect one view in isolation."
+        ),
+    )
+    parser.add_argument(
         "--filename-base",
         default="",
         help="Optional local filename base, e.g. manage-this-game",
@@ -648,6 +707,9 @@ def main() -> int:
         ).replace(
             "__STORE_URL__",
             json.dumps(args.store_url),
+        ).replace(
+            "__COMPOSITE__",
+            "False" if args.cef_target else "True",
         )
         if capture_locally:
             remote = run(
