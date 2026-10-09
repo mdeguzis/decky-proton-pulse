@@ -4,10 +4,9 @@ All notable changes to Proton Pulse should be recorded here.
 
 ## Unreleased
 
-- Accept Armada, Pocknix, and Android as valid OS entries (refs mdeguzis/proton-pulse-web#544)
+## v1.15.0
 
-## v1.14.0
-
+- Accept Armada, Pocknix, and Android as valid OS entries, letting Retroid Pocket / AYN Odin / AyaNeo Pocket DS and DroidDeck users submit reports (refs mdeguzis/proton-pulse-web#544)
 - Multi-config-per-app: a game can now hold any number of named launch-option profiles ('Default', '60fps low', 'framegen', etc.). Save creates a new profile when the name differs; matching names still upsert. Storage keyed by (appId, profileName); Supabase user_proton_configs schema migrated to a composite (voter_id, app_id, profile_name) primary key.
 - Save vs Apply split in the Config Editor: Save persists to storage + cloud without touching Steam launch options or bumping the active slot. Apply writes to Steam launch options + promotes the profile to ACTIVE. Save-only profiles no longer steal ACTIVE from a profile you are currently playing.
 - ACTIVE badge on the row whose profile is currently applied. Playtime attributes to that specific profile.
