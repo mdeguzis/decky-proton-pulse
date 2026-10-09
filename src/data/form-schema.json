@@ -20,7 +20,8 @@
     "Garuda Linux",
     "NixOS",
     "Armada",
-    "Pocknix"
+    "Pocknix",
+    "Android"
   ],
   "validGpuVendors": ["nvidia", "amd", "intel", "other"],
   "validSources": ["user", "web", "protondb", "protondb-local"],

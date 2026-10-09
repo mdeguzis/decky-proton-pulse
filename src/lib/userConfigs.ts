@@ -43,6 +43,13 @@ const VALID_OS = [
   // distros under the hood -- Armada on Fedora bootc, Pocknix on Arch.
   'Armada',
   'Pocknix',
+  // Stock Android (#544): DroidDeck runs real ARM64 Proton directly as a
+  // regular Android app, no OS replacement. Decky Loader itself has no
+  // path to run on stock Android, so this entry is really for the web
+  // submit form's dropdown rather than native plugin auto-detection --
+  // included here anyway so this file stays the single source of truth
+  // form-schema.json claims it is.
+  'Android',
 ] as const;
 
 // Accepts numbered builds ("Proton 10.0-3", "Proton-10.0-3", "GE-Proton10-1")

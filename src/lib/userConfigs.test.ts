@@ -79,6 +79,12 @@ describe('validateUserConfig', () => {
     expect(validateUserConfig({ ...validInput(), os: os as any })).toBeNull();
   });
 
+  // #544: stock Android via DroidDeck (real ARM64 Proton, no OS replacement).
+  it('accepts Android as a valid OS', async () => {
+    const { validateUserConfig } = await import('./userConfigs');
+    expect(validateUserConfig({ ...validInput(), os: 'Android' as any })).toBeNull();
+  });
+
   it('rejects bad protonVersion format', async () => {
     const { validateUserConfig } = await import('./userConfigs');
     expect(validateUserConfig({ ...validInput(), protonVersion: 'wine-9.0' })).toMatch(/protonVersion/i);
