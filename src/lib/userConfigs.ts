@@ -36,6 +36,13 @@ const VALID_OS = [
   'Debian 12',
   'ChimeraOS',
   'Bazzite',
+  // Android-origin handheld distros (#544): SteamOS-style Linux replacing
+  // the stock Android install on devices like Retroid Pocket / AYN Odin /
+  // AyaNeo Pocket DS. Both already pass user_configs_os_must_be_linux as-is
+  // (it's a Linux blocklist, not an allowlist) since these are real Linux
+  // distros under the hood -- Armada on Fedora bootc, Pocknix on Arch.
+  'Armada',
+  'Pocknix',
 ] as const;
 
 // Accepts numbered builds ("Proton 10.0-3", "Proton-10.0-3", "GE-Proton10-1")

@@ -72,6 +72,13 @@ describe('validateUserConfig', () => {
     expect(validateUserConfig({ ...validInput(), os: 'Windows 11' as any })).toMatch(/OS/i);
   });
 
+  // #544: Android-origin handheld distros (Retroid Pocket, AYN Odin, AyaNeo
+  // Pocket DS running Armada or Pocknix instead of stock Android).
+  it.each(['Armada', 'Pocknix'])('accepts %s as a valid OS', async (os) => {
+    const { validateUserConfig } = await import('./userConfigs');
+    expect(validateUserConfig({ ...validInput(), os: os as any })).toBeNull();
+  });
+
   it('rejects bad protonVersion format', async () => {
     const { validateUserConfig } = await import('./userConfigs');
     expect(validateUserConfig({ ...validInput(), protonVersion: 'wine-9.0' })).toMatch(/protonVersion/i);

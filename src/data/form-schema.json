@@ -18,7 +18,9 @@
     "CachyOS",
     "EndeavourOS",
     "Garuda Linux",
-    "NixOS"
+    "NixOS",
+    "Armada",
+    "Pocknix"
   ],
   "validGpuVendors": ["nvidia", "amd", "intel", "other"],
   "validSources": ["user", "web", "protondb", "protondb-local"],
