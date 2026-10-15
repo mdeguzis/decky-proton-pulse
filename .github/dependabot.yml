@@ -1,0 +1,42 @@
+# Patch and minor bumps are grouped into one PR per ecosystem so they do not
+# pile up as separate PRs that conflict on the lockfile. Majors still get
+# their own PR since those are the ones that break things. Version PRs target
+# dev, the working branch; Dependabot security updates always target the
+# default branch regardless of this file.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "dev"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    cooldown:
+      default: 3
+    groups:
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    target-branch: "dev"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    cooldown:
+      default: 3
+    groups:
+      uv-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "dev"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    cooldown:
+      default: 3
+    groups:
+      github-actions-minor-patch:
+        update-types: ["minor", "patch"]
