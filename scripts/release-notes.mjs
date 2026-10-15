@@ -23,7 +23,7 @@ function buildNotesFromSection(title, sectionText) {
 
 function getFallbackCommitNotes() {
   try {
-    const latestTag = execSync('git describe --tags --abbrev=0', {
+    const latestTag = execSync("git describe --tags --abbrev=0 --match 'v[0-9]*'", {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],

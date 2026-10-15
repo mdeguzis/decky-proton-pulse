@@ -6,6 +6,7 @@ import {
   filterAlreadyReleasedBullets,
   formatReleaseHeading,
   isReleaseBookkeeping,
+  mergeReleaseBody,
   normalizeCommitSubject,
 } from './sync-changelog.mjs';
 
@@ -22,6 +23,24 @@ describe('sync-changelog script helpers', () => {
     expect(isReleaseBookkeeping('feat(configs): accept Android as a valid OS entry')).toBe(false);
     expect(isReleaseBookkeeping('chore(deps): bump vite')).toBe(false);
     expect(isReleaseBookkeeping('fix: release the gamepad focus on close')).toBe(false);
+  });
+
+  it('keeps existing release notes when new bullets arrive (#124)', () => {
+    const existing = '- Accept Android as a valid OS entry\n- Multi-config-per-app';
+    const merged = mergeReleaseBody(existing, '- Pin uv to Python 3.11 in container builds');
+    expect(merged).toBe(
+      '- Accept Android as a valid OS entry\n- Multi-config-per-app\n- Pin uv to Python 3.11 in container builds'
+    );
+  });
+
+  it('does not duplicate bullets already in the release section', () => {
+    const existing = '- Accept Android as a valid OS entry';
+    expect(mergeReleaseBody(existing, '- Accept Android as a valid OS entry')).toBe(existing);
+  });
+
+  it('uses the new bullets as-is when the release section does not exist yet', () => {
+    expect(mergeReleaseBody('', '- First\n- Second')).toBe('- First\n- Second');
+    expect(mergeReleaseBody('', '')).toBe('');
   });
 
   it('formats release headings with the v prefix', () => {

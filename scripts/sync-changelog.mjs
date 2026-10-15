@@ -121,6 +121,20 @@ export function appendUniqueBullet(body, bullet) {
   return [...lines, bullet].filter(Boolean).join('\n');
 }
 
+// Combine a version section that already exists (hand-written notes, or a
+// release run that was interrupted after writing them) with bullets that are
+// new since. Existing entries keep their order and come first; a release run
+// must never drop notes that are already there (#124).
+export function mergeReleaseBody(existingBody, newBody) {
+  let merged = existingBody.trim();
+  for (const line of newBody.trim().split('\n')) {
+    if (line.trim()) {
+      merged = appendUniqueBullet(merged, line.trim());
+    }
+  }
+  return merged;
+}
+
 function getCommitBulletsForRange(range) {
   if (!range) {
     return [];
@@ -135,7 +149,10 @@ function getCommitBulletsForRange(range) {
 }
 
 function getLatestTagRange() {
-  const latestTag = tryGit('git describe --tags --abbrev=0');
+  // Only real release tags (v1.15.0, v1.7.3-pre-release). The rolling
+  // dev-<version>-<sha> build tags are not releases; matching them made
+  // Unreleased count only commits since the last dev build (#124).
+  const latestTag = tryGit("git describe --tags --abbrev=0 --match 'v[0-9]*'");
   if (!latestTag) {
     return '';
   }
@@ -236,7 +253,7 @@ function prepareRelease(tagName, { prerelease = false, deckyLoaderRelease = fals
   const { preamble, sections } = splitChangelogSections(changelog);
   const unreleasedBody = getSectionBody(sections, '## Unreleased');
   const releaseHeading = formatReleaseHeading(tagName, { prerelease });
-  let releaseBody = unreleasedBody;
+  let releaseBody = mergeReleaseBody(getSectionBody(sections, releaseHeading), unreleasedBody);
 
   if (!releaseBody) {
     const fallbackBullets = getCommitBulletsForRange(getLatestTagRange());
