@@ -37,9 +37,18 @@ function writeIfChanged(nextContent, unchangedMessage, changedMessage) {
   return true;
 }
 
+// Release bookkeeping ("release: v1.15.0", "chore(release): sync uv.lock
+// version for v1.15.0") describes the release itself, not a change in it. If
+// a release commit lands but its tag does not, these would otherwise show up
+// under ## Unreleased on the next run.
+export function isReleaseBookkeeping(subject) {
+  return /^\s*(release|chore\(release\))!?:/i.test(subject);
+}
+
 function uniqueBulletsFromMessages(messages) {
   const seen = new Set();
   return messages
+    .filter((message) => !isReleaseBookkeeping(message))
     .map(normalizeCommitSubject)
     .filter(Boolean)
     .filter((line) => {

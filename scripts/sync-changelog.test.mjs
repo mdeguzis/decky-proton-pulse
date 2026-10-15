@@ -5,6 +5,7 @@ import {
   deckyLoaderReleaseBullet,
   filterAlreadyReleasedBullets,
   formatReleaseHeading,
+  isReleaseBookkeeping,
   normalizeCommitSubject,
 } from './sync-changelog.mjs';
 
@@ -13,6 +14,14 @@ describe('sync-changelog script helpers', () => {
     expect(normalizeCommitSubject('fix(settings): repair dpad nav')).toBe('Repair dpad nav');
     expect(normalizeCommitSubject('[skip ci] chore: update generated assets')).toBe('Update generated assets');
     expect(normalizeCommitSubject('  upload hardware through linked install function  ')).toBe('Upload hardware through linked install function');
+  });
+
+  it('treats release commits as bookkeeping, not changelog entries', () => {
+    expect(isReleaseBookkeeping('release: v1.15.0')).toBe(true);
+    expect(isReleaseBookkeeping('chore(release): sync uv.lock version for v1.15.0')).toBe(true);
+    expect(isReleaseBookkeeping('feat(configs): accept Android as a valid OS entry')).toBe(false);
+    expect(isReleaseBookkeeping('chore(deps): bump vite')).toBe(false);
+    expect(isReleaseBookkeeping('fix: release the gamepad focus on close')).toBe(false);
   });
 
   it('formats release headings with the v prefix', () => {
