@@ -67,7 +67,7 @@ describe('logger', () => {
     await vi.runAllTimersAsync();
 
     await assertion;
-    expect(getLogEntries().at(-1)?.message).toContain('BACKEND !! get_reports failed');
+    expect(getLogEntries().slice(-1)[0]?.message).toContain('BACKEND !! get_reports failed');
   });
 
   it('times out slow backend calls', async () => {
@@ -85,7 +85,7 @@ describe('logger', () => {
     await vi.advanceTimersByTimeAsync(30);
 
     await assertion;
-    expect(getLogEntries().at(-1)?.message).toContain('BACKEND TIMEOUT: slow_call');
+    expect(getLogEntries().slice(-1)[0]?.message).toContain('BACKEND TIMEOUT: slow_call');
   });
 
   it('swallows backend logging failures so the UI path stays alive', async () => {
@@ -113,7 +113,7 @@ describe('logger', () => {
     const entries = getLogEntries();
     expect(entries).toHaveLength(500);
     expect(entries[0]?.message).toBe('entry-5');
-    expect(entries.at(-1)?.message).toBe('entry-504');
+    expect(entries[entries.length - 1]?.message).toBe('entry-504');
     expect(getLogText()).toContain('INFO entry-504');
     expect(callback).toHaveBeenCalledTimes(1);
 

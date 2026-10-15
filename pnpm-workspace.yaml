@@ -14,3 +14,9 @@ peerDependencyRules:
   ignoreMissing:
     - react
     - react-dom
+
+# danger (Translation coverage CI check) pins undici 6.x below the fixes for
+# GHSA-35p6-xmwp-9g52, GHSA-r53p-7pc4-xj5r and related advisories. Same major,
+# so lifting it is safe. Drop this once danger ships a patched undici.
+overrides:
+  undici@6: ^6.28.1
