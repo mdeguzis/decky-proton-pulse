@@ -3,23 +3,25 @@
 // argument it was not given, otherwise only shows up as a blank or crashed
 // label on a Deck running that language.
 //
-// Locales are discovered with import.meta.glob rather than listed by hand: the
+// Locales are discovered from the directory listing rather than by hand: the
 // hand-maintained list in vDeveloperGuard.test.ts silently missed the ten
 // locales added after it (bg, da, el, es-419, fi, hu, no, pt, ro, sl).
 
+import { readdirSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 
 import type { TranslationTree } from '../i18n';
 
-const modules = import.meta.glob<Record<string, TranslationTree>>(
-  ['./*.ts', '!./index.ts', '!./*.test.ts'],
-  { eager: true },
-);
+const localeFiles = readdirSync(new URL('.', import.meta.url))
+  .filter((f) => f.endsWith('.ts') && f !== 'index.ts' && !f.endsWith('.test.ts'))
+  .sort();
 
-const locales = Object.entries(modules).map(([path, mod]) => {
-  const tree = Object.values(mod)[0];
-  return [path.replace(/^\.\/|\.ts$/g, ''), tree] as const;
-});
+const locales = await Promise.all(
+  localeFiles.map(async (file) => {
+    const mod = (await import(`./${file}`)) as Record<string, TranslationTree>;
+    return [file.replace(/\.ts$/, ''), Object.values(mod)[0]] as const;
+  }),
+);
 
 type Leaf = { key: string; fn: (...args: unknown[]) => unknown };
 
