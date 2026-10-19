@@ -38,6 +38,14 @@ on:
         required: false
         type: string
         default: ""
+      # Typecheck + translation coverage. Danger only runs on pull requests,
+      # so direct pushes to dev/main skipped both for weeks (v1.15.0 shipped
+      # 20 untranslated strings). One caller runs them so other OS builds
+      # don't repeat the same failure.
+      static_checks:
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -78,6 +86,14 @@ jobs:
 
       - name: Sync Python dependencies
         run: uv sync --group dev
+
+      - name: Typecheck (src + tests)
+        if: ${{ inputs.static_checks }}
+        run: pnpm run typecheck
+
+      - name: Translation coverage
+        if: ${{ inputs.static_checks }}
+        run: pnpm run check-translations
 
       - name: Build
         run: ${{ inputs.build_cmd }}

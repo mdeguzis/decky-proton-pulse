@@ -15,6 +15,7 @@
     "coverage:summary": "node scripts/print-coverage-summary.mjs",
     "sync-translations": "node scripts/sync-missing-translations.mjs",
     "check-translations": "node scripts/check-translations.mjs",
+    "typecheck": "tsc --noEmit -p .",
     "check-ui-strings": "node scripts/check-ui-strings.mjs",
     "coverage:badges": "node scripts/generate-coverage-badges.mjs",
     "danger": "danger ci"
