@@ -1163,7 +1163,7 @@ describe('scoring: rating case normalization (#427)', () => {
       confidence: 60,
       recencyDays: 30,
       timestamp: now,
-    } as unknown as import('./scoring').ScoredReport);
+    } as unknown as import('../types').ScoredReport);
     const lower = aggregatePerGame([mkPerGame('borked'), mkPerGame('borked'), mkPerGame('gold')]);
     const mixed = aggregatePerGame([mkPerGame('Borked'), mkPerGame('BORKED'), mkPerGame('Gold')]);
     expect(mixed.rating).toBe(lower.rating);

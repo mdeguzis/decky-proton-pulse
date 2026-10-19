@@ -5,7 +5,7 @@
 // refresh/delete icons on right. Filter at top, sorted by recently accessed.
 
 import { useState, useEffect, useMemo } from 'react';
-import { Focusable, DialogButton, ConfirmModal, TextField } from '@decky/ui';
+import { Focusable, DialogButton, ConfirmModal, TextField, showModal } from '@decky/ui';
 import { toaster } from '../lib/notify';
 import { logFrontendEvent } from '../lib/logger';
 import { invalidate, invalidateAll, getCacheStats, getCachedAppIds, getCached } from '../lib/cache';

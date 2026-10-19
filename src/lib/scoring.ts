@@ -131,6 +131,9 @@ export interface ReportResponses {
   verdict?: YesNo | null;
   verdictOob?: YesNo | null; // "did it run out of the box?" -> platinum if yes + 0 faults
   triedOob?: YesNo | null;   // ProtonDB alias for the same question on tinker reports
+  // Tinker signals read by hasTinkerSteps (#433)
+  isTinker?: boolean;
+  tinkeringMethods?: string[];
 }
 
 export function deriveRating(r: ReportResponses): ProtonRating | null {

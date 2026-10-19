@@ -439,7 +439,7 @@ describe('getCloudSyncStatus', () => {
   it('returns synced when app exists in cloud configs', async () => {
     const { getCloudSyncStatus } = await import('./cloudSync');
     const cloudConfigs = [
-      { voter_id: 'abc', app_id: 100, app_name: 'Game', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T01:00:00Z' },
+      { voter_id: 'abc', app_id: 100, app_name: 'Game', profile_name: 'Default', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T01:00:00Z' },
     ];
     expect(getCloudSyncStatus(100, cloudConfigs)).toBe('synced');
   });
@@ -454,7 +454,7 @@ describe('getCloudSyncStatus', () => {
     // The status lookup must normalize both sides instead of a raw === compare.
     const { getCloudSyncStatus } = await import('./cloudSync');
     const cloudConfigs = [
-      { voter_id: 'abc', app_id: '100', app_name: 'Game', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T01:00:00Z' },
+      { voter_id: 'abc', app_id: '100', app_name: 'Game', profile_name: 'Default', config: makeConfig({ appId: 100 }), updated_at: '2026-04-11T01:00:00Z' },
     ];
     expect(getCloudSyncStatus(100, cloudConfigs)).toBe('synced');
   });
