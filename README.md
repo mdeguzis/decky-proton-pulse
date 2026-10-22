@@ -114,7 +114,7 @@ Proton Pulse is built for [Decky Loader](https://github.com/SteamDeckHomebrew/de
 * **Compatibility tool management** - browse, install, refresh, and manage Proton and GE versions without leaving the plugin
 * **Detailed report browsing** - open full report cards with filters, diagnostics, vote counts, and score breakdowns
 * **ProtonDB contribution helpers** - vote on reports and prep system info for ProtonDB submissions from inside the plugin
-* **Game library badge** - floating tier badge (PLATINUM/GOLD/etc.) injected into the game page header; for non-Steam games with a resolved Steam store match, shows the tier badge alongside the launcher source label (Heroic, Epic, GOG, etc.)
+* **Game library badge** - floating tier badge (PLATINUM/GOLD/etc.) injected into the game page header; for non-Steam games with a resolved Steam store match, shows the tier badge alongside the launcher source label (Heroic, Epic, GOG, etc.). A separate anti-cheat badge sits next to the tier when the game's anti-cheat is blocked, denied, unofficial or only planned on Linux, using AreWeAntiCheatYet data. A Gold tier can still mean online play fails, so the two are kept apart.
 * **Store page badge** - Proton Pulse icon badge injected into the Steam store page header when browsing a game's store page in the embedded browser
 * **Search results hint** - Y-button gamepad hint appears at the bottom of the screen when a search result tile is focused, letting you jump straight to Proton Pulse for that game without opening the library first
 * **Non-Steam game support** - resolves non-Steam shortcuts (Heroic, Lutris, Bottles, itch.io, etc.) to their matching Steam store app ID for accurate ProtonDB data and report lookup
@@ -158,8 +158,8 @@ Several Decky plugins cover subsets of what Proton Pulse does. The table below c
 
 | Feature | [Proton Pulse](https://github.com/mdeguzis/decky-proton-pulse) | [ProtonDB Badges](https://github.com/bschelst/protondb-decky) | [Proton Launch](https://github.com/moi952/decky-proton-launch) |
 |---|---|---|---|
-| ProtonDB tier badge on game page | Yes -- Full/Compact/Minimal/Off styles, atom icon, Native Linux badge, non-Steam launcher badge | Yes -- multiple sizes and positions | No |
-| Tier badges on library grid tiles | Yes -- Full/Compact/Minimal/Off styles, persistent cache | Yes -- small atom icons (green/red/gray) | No |
+| ProtonDB tier badge on game page | Yes -- Full/Compact/Minimal/Off styles, atom icon, Native Linux badge, non-Steam launcher badge, anti-cheat badge | Yes -- multiple sizes and positions | No |
+| Tier badges on library grid tiles | Yes -- Full/Compact/Minimal/Off styles, persistent cache, AC marker when anti-cheat blocks Linux | Yes -- small atom icons (green/red/gray) | No |
 | Launch option apply (no copy/paste) | Yes -- ProtonDB-sourced, writes directly to Steam | Clipboard copy only | Yes -- preset-based (FSR, DLSS, DXVK, etc.), writes directly to Steam |
 | Hardware-aware report scoring | Yes -- GPU, driver, Proton version, age, tier | No | No |
 | Report submission from plugin | Yes -- full native Pulse report | Opens ProtonDB website (not native) | No |

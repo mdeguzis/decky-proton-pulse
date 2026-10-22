@@ -14,11 +14,16 @@ import { getSetting } from '../lib/settings';
 import { logFrontendEvent } from '../lib/logger';
 import { getCached, getCacheTtlMs } from '../lib/cache';
 import {
+  loadAntiCheatMap, antiCheatForAppSync, antiCheatBadgeKind, isAntiCheatWarning, ANTI_CHEAT_COLORS,
+} from '../lib/antiCheat';
+import { t } from '../lib/i18n';
+import {
   countBadgeTileSeen, countBadgeApplied, countBadgeNoData,
   countBadgeFetchError, countBadgeFetchMs,
 } from '../lib/metrics';
 
 const PP_BADGE_EL_ATTR = 'data-pp-lib-badge';
+const PP_AC_EL_ATTR = 'data-pp-lib-ac';
 const NO_DATA_COLOR = '#6b21a8'; // purple
 
 export type LibraryBadgeStyle = 'full' | 'compact' | 'minimal' | 'off';
@@ -488,6 +493,65 @@ function isOnGameDetailsPage(): boolean {
   }
 }
 
+// #129: small "AC" marker to the right of the tier badge for games whose
+// anti-cheat blocks Linux (Broken / Denied). Tiles are too small for the
+// softer Running / Planned note; that lives on the game page badge. Reads the
+// memoized anti-cheat map synchronously, so tiles scanned before it loads
+// pick the marker up on the next scan tick. Only childList mutations are
+// observed, so updating an existing marker's style does not retrigger a scan.
+export function antiCheatMarkerFor(appId: string): { label: string; title: string } | null {
+  const kind = antiCheatBadgeKind(antiCheatForAppSync(appId));
+  if (!isAntiCheatWarning(kind)) return null;
+  const ex = t().extras!;
+  return {
+    label: 'AC',
+    title: kind === 'denied' ? ex.antiCheatDeniedHint!() : ex.antiCheatBlockedHint!(),
+  };
+}
+
+function applyAntiCheatMarkerToCover(cover: HTMLElement, appId: string): void {
+  const existing = cover.querySelector(`[${PP_AC_EL_ATTR}]`) as HTMLElement | null;
+  const marker = antiCheatMarkerFor(appId);
+  if (!marker) {
+    existing?.remove();
+    return;
+  }
+  // Sit just right of the tier badge (bottom-left); flush left when there is none.
+  const tierBadge = cover.querySelector(`[${PP_BADGE_EL_ATTR}]`) as HTMLElement | null;
+  const left = `${4 + (tierBadge ? tierBadge.offsetWidth + 3 : 0)}px`;
+  if (existing) {
+    if (existing.style.left !== left) existing.style.left = left;
+    if (existing.title !== marker.title) existing.title = marker.title;
+    return;
+  }
+  const doc = cover.ownerDocument ?? getBpmDocument();
+  const el = doc.createElement('div');
+  el.setAttribute(PP_AC_EL_ATTR, '1');
+  el.textContent = marker.label;
+  el.title = marker.title;
+  const tone = ANTI_CHEAT_COLORS.warning;
+  el.style.cssText = [
+    'position:absolute',
+    'bottom:4px',
+    `left:${left}`,
+    'z-index:10',
+    'padding:2px 5px',
+    'border-radius:3px',
+    'font-size:9px',
+    'font-weight:700',
+    'letter-spacing:0.04em',
+    'pointer-events:none',
+    'white-space:nowrap',
+    'line-height:1',
+    `background:${tone.bg}`,
+    `color:${tone.color}`,
+    `border:1px solid ${tone.border}`,
+  ].join(';');
+  const cs = doc.defaultView?.getComputedStyle(cover);
+  if (cs?.position === 'static') cover.style.position = 'relative';
+  cover.appendChild(el);
+}
+
 function scanAndQueue(): void {
   const style = getLibraryBadgeStyle();
   if (style === 'off') return;
@@ -498,7 +562,7 @@ function scanAndQueue(): void {
   // selectors, causing lib badges to bleed into the game page hero area. Clear any
   // stale lib badges that may have been applied before navigation and bail out.
   if (isOnGameDetailsPage()) {
-    doc.querySelectorAll(`[${PP_BADGE_EL_ATTR}]`).forEach((el) => el.remove());
+    doc.querySelectorAll(`[${PP_BADGE_EL_ATTR}], [${PP_AC_EL_ATTR}]`).forEach((el) => el.remove());
     void logFrontendEvent('DEBUG', 'libraryGridBadges: skipping scan on game details page');
     return;
   }
@@ -532,6 +596,7 @@ function scanAndQueue(): void {
       _fetchQueue.add(appId);
       queued++;
     }
+    applyAntiCheatMarkerToCover(cover, appId);
   }
 
   void logFrontendEvent('DEBUG', 'libraryGridBadges: scan tick', {
@@ -547,7 +612,7 @@ function scanAndQueue(): void {
 
 function removeAllBadges(): void {
   const doc = getBpmDocument();
-  doc.querySelectorAll(`[${PP_BADGE_EL_ATTR}]`).forEach((el) => el.remove());
+  doc.querySelectorAll(`[${PP_BADGE_EL_ATTR}], [${PP_AC_EL_ATTR}]`).forEach((el) => el.remove());
 }
 
 // Call after changing the libraryBadgeStyle setting -- removes stale badges and re-applies.
@@ -561,6 +626,8 @@ export function refreshLibraryGridBadges(): void {
 export function setupLibraryGridBadges(): void {
   loadTierCache();
   void logFrontendEvent('INFO', 'libraryGridBadges: setup', { persistedTiers: _tierCache.size });
+  // #129: warm the anti-cheat map; the scan loop picks markers up once loaded.
+  void loadAntiCheatMap();
 
   window.setTimeout(() => {
     scanAndQueue();

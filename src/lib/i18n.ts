@@ -780,6 +780,15 @@ export interface TranslationTree {
     managePlaytimeThisConfig?: () => string;
     // Game page badge
     nativeLinuxBadge?: () => string;
+    // #129 anti-cheat badge next to the tier (AreWeAntiCheatYet data).
+    antiCheatBlocked?: () => string;
+    antiCheatDenied?: () => string;
+    antiCheatUnofficial?: () => string;
+    antiCheatPlanned?: () => string;
+    antiCheatBlockedHint?: () => string;
+    antiCheatDeniedHint?: () => string;
+    antiCheatUnofficialHint?: () => string;
+    antiCheatPlannedHint?: () => string;
     // About tab
     protonPulseWebsiteLabel?: () => string;
     // Per-report analysis modal (opened with Y on a focused report card)
@@ -1591,6 +1600,14 @@ export const en: TranslationTree = {
     managePlaytimeThisConfig: () => 'Playtime (this config)',
     // Game page badge
     nativeLinuxBadge: () => 'Native Linux build available',
+    antiCheatBlocked: () => 'Anti-cheat blocked',
+    antiCheatDenied: () => 'Anti-cheat denied',
+    antiCheatUnofficial: () => 'Anti-cheat unofficial',
+    antiCheatPlanned: () => 'Anti-cheat planned',
+    antiCheatBlockedHint: () => "The anti-cheat blocks Linux. Online play probably won't work, whatever the rating says.",
+    antiCheatDeniedHint: () => "The developer chose not to allow Linux. Online play won't work, whatever the rating says.",
+    antiCheatUnofficialHint: () => 'The anti-cheat works on Linux without official support. A game update can break online play.',
+    antiCheatPlannedHint: () => 'Linux support for the anti-cheat is planned. Until it ships, online play may not work.',
     // About tab
     protonPulseWebsiteLabel: () => 'Proton Pulse Website',
     // Per-report analysis modal

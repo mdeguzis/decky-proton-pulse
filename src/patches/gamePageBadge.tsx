@@ -24,6 +24,13 @@ import { getProtonDBSummary } from '../lib/protondb';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { t } from '../lib/i18n';
 import { type GameSourceInfo, getGameSource, sourceStoreLabel } from '../lib/gameSource';
+import {
+  type AntiCheatBadgeKind,
+  getAntiCheatForApp,
+  antiCheatBadgeKind,
+  isAntiCheatWarning,
+  ANTI_CHEAT_COLORS,
+} from '../lib/antiCheat';
 
 // Palette tuned to the launchers' own brand colors so the badges match what
 // users see elsewhere: Heroic uses its signature cyan-blue shield, Epic Games
@@ -63,6 +70,7 @@ function BadgeIcon({ appId }: { appId: number }) {
   const [tier, setTier] = useState<string | null>(null);
   const [sourceInfo, setSourceInfo] = useState<GameSourceInfo | null>(null);
   const [isNativeLinux, setIsNativeLinux] = useState(false);
+  const [acKind, setAcKind] = useState<AntiCheatBadgeKind | null>(null);
   const innerRef = useRef<HTMLDivElement>(null);
 
   // Dedup: multiple InnerContainer fiber instances each inject a BadgeIcon.
@@ -99,6 +107,24 @@ function BadgeIcon({ appId }: { appId: number }) {
     void getGameSource(appId, appName).then((info) => { if (info) setSourceInfo(info); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId]);
+
+  // #129: anti-cheat status from AreWeAntiCheatYet, keyed by the same Steam id
+  // the tier uses (the store match for a non-Steam shortcut). Separate from
+  // the tier on purpose: Gold single player can still mean no online play.
+  const acAppId = sourceInfo?.full_game_app_id ?? sourceInfo?.steam_app_id_match ?? String(appId);
+  useEffect(() => {
+    let cancelled = false;
+    void getAntiCheatForApp(acAppId).then((entry) => {
+      if (cancelled) return;
+      const kind = antiCheatBadgeKind(entry);
+      setAcKind(kind);
+      void logFrontendEvent('DEBUG', 'gamePageBadge: anti-cheat', {
+        appId, acAppId, status: entry?.status ?? null, vendors: entry?.vendors ?? null, kind, source: 'anti-cheat.json',
+      });
+    });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acAppId]);
 
   // For non-Steam shortcuts with a resolved Steam store match, re-fetch tier
   // using the matched app ID (the shortcut ID has no ProtonDB data).
@@ -367,6 +393,41 @@ function BadgeIcon({ appId }: { appId: number }) {
           )}
         </div>
       )}
+      {acKind && (() => {
+        const tone = ANTI_CHEAT_COLORS[isAntiCheatWarning(acKind) ? 'warning' : 'note'];
+        const ex = t().extras!;
+        const label = {
+          blocked: ex.antiCheatBlocked!, denied: ex.antiCheatDenied!,
+          unofficial: ex.antiCheatUnofficial!, planned: ex.antiCheatPlanned!,
+        }[acKind]();
+        const hint = {
+          blocked: ex.antiCheatBlockedHint!, denied: ex.antiCheatDeniedHint!,
+          unofficial: ex.antiCheatUnofficialHint!, planned: ex.antiCheatPlannedHint!,
+        }[acKind]();
+        const minimal = (getSetting('gamePageBadgeStyle', 'full') as string) === 'minimal';
+        return (
+          <div
+            title={hint}
+            aria-label={`${label}. ${hint}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '5px 8px',
+              borderRadius: 4,
+              background: tone.bg,
+              color: tone.color,
+              border: `1px solid ${tone.border}`,
+              fontWeight: 700,
+              fontSize: 11,
+              letterSpacing: '0.04em',
+              whiteSpace: 'nowrap',
+              textTransform: 'uppercase',
+            }}
+          >
+            {minimal ? 'AC' : label}
+          </div>
+        );
+      })()}
       {showSourceBadge && (
         <div
           ref={!showTierBadge ? innerRef : undefined}
