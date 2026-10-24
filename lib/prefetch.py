@@ -27,8 +27,10 @@ from .cdn_cache import (
 from .plugin_utils import system_command_env
 from .steam_paths import find_steam_root
 
-# GitHub Pages CDN that hosts the per-game ProtonDB report data
-CDN_BASE = "https://www.proton-pulse.com/data"
+# R2 bucket behind data.proton-pulse.com that hosts the per-game report data.
+# www.proton-pulse.com/data/... is the Pages SPA fallback (HTML), not the data
+# (#131). Keep src/lib/cdnUrls.ts CDN_DATA_BASE in step with this.
+CDN_BASE = "https://data.proton-pulse.com/data"
 MAX_RETRIES = 3
 INITIAL_BACKOFF = 2  # seconds, doubles on each retry
 
@@ -294,7 +296,14 @@ def _fetch_cdn_json(url: str, app_id: str, filename: str) -> Any | None:
             try:
                 data = json.loads(body)
             except (json.JSONDecodeError, ValueError) as exc:
-                decky.logger.debug(f"Prefetch: JSON parse error for {app_id}/{filename}: {exc}")
+                # A 200 that is not JSON means the host is wrong (the Pages SPA
+                # fallback answers any path with HTML), not that the game has no
+                # data. That hid a dead CDN URL for three months (#131), so say so.
+                looks_html = body.lstrip().startswith("<")
+                decky.logger.warning(
+                    f"Prefetch: 200 but not JSON for {app_id}/{filename}"
+                    f" (url={url}, looks_html={looks_html}): {exc}"
+                )
                 return None
             write_cached(app_id, filename, data)
             set_meta(

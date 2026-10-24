@@ -68,6 +68,18 @@ export async function cachedFetchJson<T>(
       });
       return { data: null, fromCache: false };
     }
+    // Cloudflare Pages answers a path it has no file for with 200 + the SPA
+    // HTML shell. That is a wrong URL, not "no data for this game" (#131).
+    const contentType = resp.headers?.get?.("content-type") ?? "";
+    if (contentType.includes("text/html")) {
+      await logFrontendEvent("ERROR", "CDN returned HTML instead of JSON, URL is wrong", {
+        appId,
+        filename,
+        url,
+        contentType,
+      });
+      return { data: null, fromCache: false };
+    }
     const data = (await resp.json()) as T;
 
     // Write back to cache (fire-and-forget -- don't block the UI on cache writes)

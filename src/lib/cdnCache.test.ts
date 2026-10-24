@@ -55,6 +55,45 @@ describe('cdnCache', () => {
     expect(putCachedCdnMock).toHaveBeenCalledWith('730', 'index.json', { reports: 7 });
   });
 
+  it('treats an HTML 200 as a wrong URL: no cache write, ERROR log (#131)', async () => {
+    getCachedCdnMock.mockResolvedValue({ fresh: false, data: null });
+    const json = vi.fn();
+    fetchNoCorsMock.mockResolvedValue({
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/html; charset=utf-8' }),
+      json,
+    });
+
+    const { cachedFetchJson } = await import('./cdnCache');
+    await expect(cachedFetchJson('https://x/index.json', '730', 'index.json')).resolves.toEqual({
+      data: null,
+      fromCache: false,
+    });
+    expect(json).not.toHaveBeenCalled();
+    expect(putCachedCdnMock).not.toHaveBeenCalled();
+    expect(logFrontendEventMock).toHaveBeenCalledWith(
+      'ERROR',
+      'CDN returned HTML instead of JSON, URL is wrong',
+      expect.objectContaining({ appId: '730', url: 'https://x/index.json', contentType: 'text/html; charset=utf-8' }),
+    );
+  });
+
+  it('accepts a JSON 200 that carries a content-type header', async () => {
+    getCachedCdnMock.mockResolvedValue({ fresh: false, data: null });
+    fetchNoCorsMock.mockResolvedValue({
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ['2025'],
+    });
+    putCachedCdnMock.mockResolvedValue(true);
+
+    const { cachedFetchJson } = await import('./cdnCache');
+    await expect(cachedFetchJson('https://x/index.json', '730', 'index.json')).resolves.toEqual({
+      data: ['2025'],
+      fromCache: false,
+    });
+  });
+
   it('falls back to the network when the backend cache lookup throws', async () => {
     getCachedCdnMock.mockRejectedValue(new Error('backend offline'));
     fetchNoCorsMock.mockResolvedValue({

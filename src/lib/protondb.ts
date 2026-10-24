@@ -15,15 +15,10 @@ import { cachedFetchJson } from "./cdnCache";
 import { startDetailedSpan, countFetch, countNoData } from "./metrics";
 import { getUserConfigs } from "./userConfigs";
 import { deriveRating } from "./scoring";
+import { APP_INDEX_URL, YEAR_URL } from "./cdnUrls";
 
-// TODO: replace GitHub Pages with a proper CDN (CloudFlare R2, Fastly, etc)
-// for better reliability, caching headers, and reduced latency
 const SUMMARY_URL =
   "https://www.protondb.com/api/v1/reports/summaries/{id}.json";
-const APP_INDEX_URL =
-  "https://www.proton-pulse.com/data/{id}/index.json";
-const YEAR_URL =
-  "https://www.proton-pulse.com/data/{id}/{year}.json";
 const LIVE_COUNTS_URL = "https://www.protondb.com/data/counts.json";
 const LIVE_REPORTS_URL =
   "https://www.protondb.com/data/reports/{device}/app/{hash}.json";

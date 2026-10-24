@@ -49,7 +49,7 @@ from lib.compat_tools import (
 )
 from lib.plugin_logging import get_log_contents, log_frontend_event, sync_set_log_level
 from lib.plugin_utils import extract_archive_safely
-from lib.prefetch import prefetch_installed_games, get_installed_game_stats
+from lib.prefetch import CDN_BASE, prefetch_installed_games, get_installed_game_stats
 from lib.proton_ge import (
     clear_latest_metadata,
     finalize_extracted_compat_tool,
@@ -547,7 +547,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
     async def get_cached_cdn(self, app_id: str, filename: str) -> dict[str, Any]:
         """Return cached CDN data if it's still fresh, otherwise ``{"data": null}``."""
         # Rebuild the full CDN URL so we can check the freshness metadata
-        url = f"https://www.proton-pulse.com/data/{app_id}/{filename}"
+        url = f"{CDN_BASE}/{app_id}/{filename}"
         if is_fresh(url):
             data = read_cached(app_id, filename)
             if data is not None:
@@ -561,7 +561,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         try:
             write_cached(app_id, filename, data)
             from lib.cdn_cache import set_meta  # pylint: disable=import-outside-toplevel
-            url = f"https://www.proton-pulse.com/data/{app_id}/{filename}"
+            url = f"{CDN_BASE}/{app_id}/{filename}"
             # Bump the metadata timestamp so is_fresh() treats this entry as valid
             set_meta(url)
             decky.logger.debug(f"put_cached_cdn: stored {app_id}/{filename}")

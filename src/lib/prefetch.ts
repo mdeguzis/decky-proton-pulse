@@ -22,6 +22,7 @@ import {
   countNoData,
 } from './metrics';
 import { isSteamShortcutApp } from './steamApps';
+import { APP_INDEX_URL, YEAR_URL } from './cdnUrls';
 import type { CdnReport, ProtonDBSummary, ProtonRating } from '../types';
 
 // --- config ---
@@ -35,10 +36,6 @@ const THROTTLE_MS = 200;
 // concurrency limit for parallel fetches
 const CONCURRENCY = 3;
 
-// same URLs as protondb.ts, kept in sync
-// TODO: move to a proper CDN, see protondb.ts
-const APP_INDEX_URL = 'https://www.proton-pulse.com/data/{id}/index.json';
-const YEAR_URL = 'https://www.proton-pulse.com/data/{id}/{year}.json';
 const SUMMARY_URL = 'https://www.protondb.com/api/v1/reports/summaries/{id}.json';
 const getInstalledGameStatsCallable = callable<[], {
   installed_steam_games: number;
