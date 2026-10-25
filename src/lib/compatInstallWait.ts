@@ -63,7 +63,12 @@ export async function installProtonGeAndWait(version: string, opts: InstallWaitO
         version, error: err instanceof Error ? err.message : String(err),
       });
     }
-    const thisRun = !!status && (status.started_at ?? 0) >= requestedAtSec;
+    // This run: started after the request, or (for a finished status from a
+    // backend that clears started_at on completion) finished after it.
+    const thisRun = !!status && (
+      (status.started_at ?? 0) >= requestedAtSec
+      || ((status.state === 'success' || status.state === 'error') && (status.finished_at ?? 0) >= requestedAtSec)
+    );
     if (status && thisRun) {
       opts.onProgress?.(status);
       if (status.state === 'success' || status.state === 'error') {

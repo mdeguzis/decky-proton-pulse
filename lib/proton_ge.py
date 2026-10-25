@@ -181,10 +181,11 @@ def set_install_status(  # pylint: disable=too-many-arguments,too-many-locals
                 progress_fraction if progress_fraction is not None
                 else (cur_frac if running else None)
             ),
-            "started_at": (
-                started_at if started_at is not None
-                else (cur_started if running else None)
-            ),
+            # Keep the run's start time through success/error too: callers
+            # waiting on an install tell "this run finished" from an older
+            # finished run by it (#92). Clearing it left the Configure
+            # dialog stuck on "Finalizing" after a completed install.
+            "started_at": started_at if started_at is not None else cur_started,
             "finished_at": finished_at,
             "install_as_latest": install_as_latest,
         })

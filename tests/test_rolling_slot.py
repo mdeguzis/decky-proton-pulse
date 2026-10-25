@@ -529,3 +529,20 @@ def test_trim_now_keeps_each_slot_target(tmp_path: Path) -> None:
     # CachyOS slot has no marker here: target unknown, newest build still kept by the selector.
     assert calls["proton-cachyos"] == {"target": None}
     assert set(outcomes) == {"proton-ge", "proton-cachyos"}
+
+
+def test_set_install_status_keeps_started_at_when_the_run_finishes() -> None:
+    # Regression (#92): success/error cleared started_at, so the Configure
+    # dialog could not tell this run had finished and sat on "Finalizing".
+    import threading  # pylint: disable=import-outside-toplevel
+    from lib import proton_ge  # pylint: disable=import-outside-toplevel
+
+    status: dict = {}
+    lock = threading.Lock()
+    proton_ge.set_install_status(status, lock, state="running", tag_name="GE-Proton11-5", message="Installing",
+                                 install_as_latest=False, stage="downloading", started_at=1_800_000_000)
+    proton_ge.set_install_status(status, lock, state="success", tag_name="GE-Proton11-5", message="Installed",
+                                 install_as_latest=False, finished_at=1_800_000_040)
+    assert status["started_at"] == 1_800_000_000
+    assert status["finished_at"] == 1_800_000_040
+    assert status["stage"] is None  # progress fields still reset on completion

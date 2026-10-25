@@ -48,6 +48,15 @@ describe('installProtonGeAndWait (#92)', () => {
     expect(stateMock).toHaveBeenCalledTimes(2);
   });
 
+  it('accepts a finished status with no started_at when it finished after the request', async () => {
+    // Regression: the backend cleared started_at on success, and the dialog
+    // sat on "Finalizing" after the install had completed.
+    stateMock
+      .mockResolvedValueOnce({ install_status: status({ stage: 'finalizing', progress_fraction: 1 }) })
+      .mockResolvedValueOnce({ install_status: status({ state: 'success', started_at: null, finished_at: NOW_MS / 1000 + 40, message: 'done' }) });
+    await expect(installProtonGeAndWait('GE-Proton11-5', opts())).resolves.toEqual({ success: true, message: 'done' });
+  });
+
   it('returns the failure when the install errors', async () => {
     stateMock.mockResolvedValueOnce({ install_status: status({ state: 'error', message: 'download failed' }) });
     await expect(installProtonGeAndWait('GE-Proton11-5', opts())).resolves.toEqual({ success: false, message: 'download failed' });
