@@ -142,21 +142,60 @@ function norm(s: string): string {
   return s.toLowerCase().replace(/[\s_-]+/g, '');
 }
 
+// Builds named for their CPU target ("GE-Proton11-11-x86_64") are the same
+// release as the tag reports use ("GE-Proton11-11").
+const ARCH_SUFFIX = /[-_](?:x86_64(?:[-_]v\d)?|aarch64|arm64)$/i;
+// Valve stable Proton as reports spell it: "Proton 11.0-2", "proton-11.0-2c",
+// or a bare "11.0-2" (ProtonDB's usual form for Valve stable).
+const VALVE_VERSION = /^(?:proton[\s_-]*)?(\d+)\.(\d+)(?:[-.\s][0-9a-z.-]*)?$/i;
+
+function stripArch(s: string): string {
+  return s.trim().replace(ARCH_SUFFIX, '');
+}
+
+/** Valve's short tool name for a stable version string, e.g. "Proton 11.0-2" -> "proton_11", "5.13-6" -> "proton_513". */
+export function valveToolNameForVersion(version: string): string | null {
+  const m = version.trim().match(VALVE_VERSION);
+  if (!m) return null;
+  const [, major, minor] = m;
+  return minor === '0' ? `proton_${major}` : `proton_${major}${minor}`;
+}
+
+export type CompatMatchRule = 'internal' | 'display' | 'normalized' | 'arch-suffix' | 'valve-family';
+
 /**
- * Pick the installed tool that is exactly the requested version. Exact
- * internal name first, then exact display name, then the two compared with
- * spaces, dashes and underscores ignored ("Proton 9.0-4" == "proton_9.0-4").
- * No prefix or fuzzy matching: picking a different Proton than the report
+ * Pick the installed tool that is the requested version, and say which rule
+ * matched. In order: exact internal name, exact display name, the two with
+ * spaces/dashes/underscores ignored, the same ignoring a CPU-target suffix
+ * (-x86_64), then a Valve stable version mapped to Valve's short name
+ * (Steam keeps one build per Valve major version, so "Proton 11.0-2" is
+ * proton_11). Nothing looser: picking a different Proton than the report
  * used would be worse than leaving Steam's choice alone.
  */
-export function matchCompatTool(version: string, tools: CompatToolOption[]): CompatToolOption | null {
+export function matchCompatToolWithRule(
+  version: string,
+  tools: CompatToolOption[],
+): { tool: CompatToolOption; rule: CompatMatchRule } | null {
   const v = version.trim();
   if (!v) return null;
   const lower = v.toLowerCase();
-  return tools.find((t) => t.strToolName.toLowerCase() === lower)
-    ?? tools.find((t) => t.strDisplayName.toLowerCase() === lower)
-    ?? tools.find((t) => norm(t.strToolName) === norm(v) || norm(t.strDisplayName) === norm(v))
-    ?? null;
+  const pick = (rule: CompatMatchRule, f: (t: CompatToolOption) => boolean) => {
+    const tool = tools.find(f);
+    return tool ? { tool, rule } : null;
+  };
+  return pick('internal', (t) => t.strToolName.toLowerCase() === lower)
+    ?? pick('display', (t) => t.strDisplayName.toLowerCase() === lower)
+    ?? pick('normalized', (t) => norm(t.strToolName) === norm(v) || norm(t.strDisplayName) === norm(v))
+    ?? pick('arch-suffix', (t) => norm(stripArch(t.strToolName)) === norm(stripArch(v))
+      || norm(stripArch(t.strDisplayName)) === norm(stripArch(v)))
+    ?? (() => {
+      const valve = valveToolNameForVersion(v);
+      return valve ? pick('valve-family', (t) => t.strToolName.toLowerCase() === valve) : null;
+    })();
+}
+
+export function matchCompatTool(version: string, tools: CompatToolOption[]): CompatToolOption | null {
+  return matchCompatToolWithRule(version, tools)?.tool ?? null;
 }
 
 async function listTools(appId: number): Promise<{ tools: CompatToolOption[]; source: string }> {
@@ -293,7 +332,8 @@ export async function applyCompatToolForVersion(appId: number, version: string |
     void logFrontendEvent('WARNING', 'compatTool: could not list compat tools', { appId, version, reason });
     return { status: 'unavailable', reason };
   }
-  const match = matchCompatTool(version, tools);
+  const matched = matchCompatToolWithRule(version, tools);
+  const match = matched?.tool ?? null;
   if (!match) {
     void logFrontendEvent('WARNING', 'compatTool: no installed tool matches the config version', {
       appId, version, listSource, available: tools.map((t) => t.strToolName),
@@ -314,7 +354,7 @@ export async function applyCompatToolForVersion(appId: number, version: string |
   }
   void logFrontendEvent('INFO', 'compatTool: set Steam compat tool for app', {
     appId, version, previous, toolName: match.strToolName, displayName: match.strDisplayName,
-    listSource, source: 'SteamClient.Apps.SpecifyCompatTool',
+    matchRule: matched?.rule, listSource, source: 'SteamClient.Apps.SpecifyCompatTool',
   });
   return { status: 'set', toolName: match.strToolName, displayName: match.strDisplayName };
 }

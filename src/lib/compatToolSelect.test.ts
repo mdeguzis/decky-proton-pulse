@@ -9,7 +9,7 @@ vi.mock('./i18n', () => ({ t: () => ({ extras: { compatToolNotSet: (v: string) =
 vi.mock('@decky/api', () => ({ callable: vi.fn(() => backendMock) }));
 
 import {
-  matchCompatTool, applyCompatToolForVersion, applyCompatToolAndNotify, readCompatToolName,
+  matchCompatTool, matchCompatToolWithRule, valveToolNameForVersion, applyCompatToolForVersion, applyCompatToolAndNotify, readCompatToolName,
   isSteamDefaultProton, loadSteamDefaultTool, steamDefaultToolSync, _resetSteamDefaultForTests,
 } from './compatToolSelect';
 
@@ -75,8 +75,49 @@ describe('matchCompatTool', () => {
 
   it('never prefix-matches a different version', () => {
     expect(matchCompatTool('GE-Proton10', TOOLS)).toBeNull();
-    expect(matchCompatTool('Proton 9.0', TOOLS)).toBeNull();
+    // Valve keeps one build per major version, so 'Proton 9.0' is proton_9.
+    expect(matchCompatTool('Proton 9.0', TOOLS)?.strToolName).toBe('proton_9');
     expect(matchCompatTool('  ', TOOLS)).toBeNull();
+  });
+});
+
+describe('matching report versions to installed tools as a Deck names them', () => {
+  // Names as get_compat_tool_choices returns them on a real Deck (Oct 2026).
+  const DECK = [
+    { strToolName: 'GE-Proton11-11-x86_64', strDisplayName: 'GE-Proton11-11-x86_64' },
+    { strToolName: 'proton-cachyos-11.0-20260702-slr-x86_64', strDisplayName: 'proton-cachyos-11.0-20260702-slr-x86_64' },
+    { strToolName: 'proton_ge_latest', strDisplayName: 'Proton-GE-Latest' },
+    { strToolName: 'proton_11', strDisplayName: 'Proton 11.0' },
+    { strToolName: 'proton_9', strDisplayName: 'Proton 9.0 (Beta)' },
+    { strToolName: 'proton_experimental', strDisplayName: 'Proton - Experimental' },
+  ];
+
+  it('matches a GE tag to the build named for its CPU target', () => {
+    // Regression: the report says GE-Proton11-11, Steam knows GE-Proton11-11-x86_64.
+    expect(matchCompatToolWithRule('GE-Proton11-11', DECK)).toEqual({ tool: DECK[0], rule: 'arch-suffix' });
+    expect(matchCompatToolWithRule('proton-cachyos-11.0-20260702-slr', DECK)?.tool).toBe(DECK[1]);
+  });
+
+  it('maps Valve stable versions in every spelling to Valve short names', () => {
+    for (const v of ['Proton 11.0-2', 'proton-11.0-2c', '11.0-2', 'Proton 11.0']) {
+      expect(matchCompatToolWithRule(v, DECK)?.tool.strToolName).toBe('proton_11');
+    }
+    expect(matchCompatToolWithRule('Proton 9.0-4', DECK)?.tool.strToolName).toBe('proton_9');
+    expect(matchCompatToolWithRule('Proton Experimental', DECK)).toEqual({ tool: DECK[5], rule: 'normalized' });
+  });
+
+  it('still refuses a different version', () => {
+    expect(matchCompatTool('GE-Proton11-10', DECK)).toBeNull();
+    expect(matchCompatTool('GE-Proton11', DECK)).toBeNull();
+    expect(matchCompatTool('Proton 8.0-5', DECK)).toBeNull();
+    expect(matchCompatTool('GE-Proton11-11-aarch64x', DECK)).toBeNull();
+  });
+
+  it('valveToolNameForVersion handles minor versions and rejects non-Valve names', () => {
+    expect(valveToolNameForVersion('5.13-6')).toBe('proton_513');
+    expect(valveToolNameForVersion('Proton 6.3-8')).toBe('proton_63');
+    expect(valveToolNameForVersion('GE-Proton11-11')).toBeNull();
+    expect(valveToolNameForVersion('Proton Experimental')).toBeNull();
   });
 });
 
