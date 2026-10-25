@@ -1186,7 +1186,6 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
           width: 100vw !important;
           max-height: 100vh !important;
         }
-        .proton-pulse-config-editor .ModalPosition { inset: 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
 

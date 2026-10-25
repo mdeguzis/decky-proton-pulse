@@ -189,7 +189,6 @@ function MatchingRulesModal({ closeModal }: { closeModal?: () => void }) {
           width: 100vw !important;
           max-height: 100vh !important;
         }
-        .proton-pulse-rules-modal .ModalPosition { inset: 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
         {/* header */}
@@ -469,7 +468,6 @@ function HardwareCompareModal({
           width: 100vw !important;
           max-height: 100vh !important;
         }
-        .proton-pulse-hw-compare-modal .ModalPosition { inset: 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
         {/* fixed header */}
@@ -827,7 +825,6 @@ export function SystemRequirementsCompareModal({
           max-width: 100vw !important; width: 100vw !important;
           max-height: 100vh !important;
         }
-        .proton-pulse-sysreq-modal .ModalPosition { inset: 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
         <div style={{ flexShrink: 0, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid #2a3a4a' }}>
@@ -1334,7 +1331,6 @@ export function ReportDetailModal({
           width: 100vw !important;
           max-height: 100vh !important;
         }
-        .proton-pulse-detail-modal .ModalPosition { inset: 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)' }}>
 

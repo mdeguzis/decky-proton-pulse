@@ -48,7 +48,6 @@ export function ScoringGuideModal({ closeModal }: { closeModal?: () => void }) {
           max-width: 100vw !important; width: 100vw !important;
           max-height: 100vh !important;
         }
-        .proton-pulse-scoring-guide-modal .ModalPosition { inset: 0 !important; }
       `}</style>
 
       {/* Focusable at root with explicit height -- matches LogViewerModal pattern exactly */}

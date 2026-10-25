@@ -718,7 +718,6 @@ export function NativePulseReportModal({
           padding: 0 !important; margin: 0 !important;
           max-width: 100vw !important; width: 100vw !important; max-height: 100vh !important;
         }
-        .proton-pulse-native-report-modal .ModalPosition { inset: 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', padding: '12px 16px 0' }}>
         {/* Header -- pinned, always visible as user scrolls questions */}

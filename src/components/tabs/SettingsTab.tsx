@@ -168,7 +168,6 @@ function ReleaseInfoModal({ release, onClose }: { release: CompatToolRelease; on
            and the bottom BPM navigation bar (~70px: STEAM MENU + A/B hints).
            Without this the modal's top border sits under the status bar and
            reads as visually clipped. */
-        .pp-release-info-modal .ModalPosition { inset: 60px 0 70px 0 !important; }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(80vh - 40px)', padding: '16px 20px 0' }}>
         <div style={{ flexShrink: 0, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>

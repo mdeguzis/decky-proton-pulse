@@ -227,10 +227,30 @@ describe('SettingsTab per-row Info menu wiring', () => {
     expect(SRC).toMatch(/\{t\(\)\.compatTools\.info\}/);
   });
 
-  it('gives the ToolDetailsModal the same top/bottom clearance as ReleaseInfoModal', () => {
-    // Both modals must clear Steam's top status bar and bottom BPM nav
-    // bar. Same CSS override, applied to the same className.
-    expect(SRC).toMatch(/inset: 60px 0 70px 0 !important/);
+  it("sizes the ToolDetailsModal by flexing inside Steam's own modal wrapper", () => {
+    // Steam's wrapper already sits between the top status bar and the bottom
+    // button bar (inset 40px 0 42px, measured over CEF). The box flexes to
+    // fill it with a small gap and auto side margins so it stays centred.
+    expect(SRC).toMatch(/\.pp-tool-info-modal\.DialogContent \{[^}]*flex: 1 1 auto !important;[^}]*margin: 6px auto !important;/s);
+  });
+
+  it('never targets .ModalPosition, which Steam does not render', () => {
+    // PREVIOUSLY BELIEVED: .ModalPosition { inset: ... } gave modals their
+    // bar clearance. No such element exists, so those rules did nothing.
+    const fsMod = require('fs');
+    const pathMod = require('path');
+    const root = pathMod.resolve(__dirname, '..', '..');
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of fsMod.readdirSync(dir, { withFileTypes: true })) {
+        const full = pathMod.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)
+          && fsMod.readFileSync(full, 'utf8').includes('.ModalPosition')) offenders.push(full);
+      }
+    };
+    walk(root);
+    expect(offenders).toEqual([]);
   });
 });
 

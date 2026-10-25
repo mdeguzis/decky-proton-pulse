@@ -84,7 +84,6 @@ export function MyHardwareModal({ closeModal }: Props) {
           width: 100vw !important;
           max-height: 100vh !important;
         }
-        .proton-pulse-log-modal .ModalPosition { inset: 0 !important; }
       `}</style>
       <Focusable
         onGamepadDirection={handleDirection}
