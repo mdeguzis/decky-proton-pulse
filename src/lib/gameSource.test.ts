@@ -19,6 +19,7 @@ import {
   getGameSource,
   getShortcutName,
   sourceStoreLabel,
+  sourceSubtitle,
   type GameSourceInfo,
 } from './gameSource';
 
@@ -116,5 +117,25 @@ describe('getShortcutName', () => {
   it('returns an empty string when the call throws', async () => {
     callableMocks.get('get_shortcut_name')!.mockRejectedValue(new Error('offline'));
     expect(await getShortcutName(99)).toBe('');
+  });
+});
+
+describe('sourceSubtitle', () => {
+  it('joins launcher and store for Heroic', () => {
+    expect(sourceSubtitle(info({ source: 'Heroic', epic_game_id: 'Salt' }))).toBe('Heroic . Epic Games');
+  });
+
+  it('does not repeat the store when the source already is the store (#90 Unifideck)', () => {
+    expect(sourceSubtitle(info({ source: 'Epic Games', epic_game_id: 'Salt' }))).toBe('Epic Games');
+    expect(sourceSubtitle(info({ source: 'GOG', gog_product_id: '1207658924' }))).toBe('GOG');
+  });
+
+  it('shows the source alone when no store id is known', () => {
+    expect(sourceSubtitle(info({ source: 'Amazon Games' }))).toBe('Amazon Games');
+  });
+
+  it('returns an empty string for missing info so callers can fall back', () => {
+    expect(sourceSubtitle(null)).toBe('');
+    expect(sourceSubtitle(undefined)).toBe('');
   });
 });

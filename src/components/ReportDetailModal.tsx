@@ -25,7 +25,7 @@ import {
   MATCHING_GUIDE_LEGEND_RED,
 } from '../lib/matchingGuide';
 import { getSteamAppDetails, getLaunchOptionsFromDetails, isSteamShortcutApp } from '../lib/steamApps';
-import { getGameSource, sourceStoreLabel, type GameSourceInfo } from '../lib/gameSource';
+import { getGameSource, sourceSubtitle, type GameSourceInfo } from '../lib/gameSource';
 import { GameBanner } from './GameBanner';
 import { buildLaunchOptions, parseLaunchOptions } from '../lib/launchVars';
 import { checkProtonVersionAvailability } from '../lib/compatTools';
@@ -1366,9 +1366,7 @@ export function ReportDetailModal({
               </div>
               <div style={{ fontSize: 10, color: '#7a9bb5' }}>
                 {isShortcut
-                  ? ([headerGameSource?.source, sourceStoreLabel(headerGameSource)]
-                      .filter(Boolean)
-                      .join(' . ') || extras.nonSteamShortcut())
+                  ? (sourceSubtitle(headerGameSource) || extras.nonSteamShortcut())
                   : extras.appIdLabel(appId)}
               </div>
             </div>

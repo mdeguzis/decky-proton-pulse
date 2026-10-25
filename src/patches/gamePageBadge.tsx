@@ -45,6 +45,12 @@ const SOURCE_COLORS: Record<string, { bg: string; color: string }> = {
   Lutris:       { bg: '#1a5c3a', color: '#c8ffe0' },
   Bottles:      { bg: '#8c3a1a', color: '#ffe8d8' },
   'itch.io':    { bg: '#7a1f3c', color: '#ffd0df' },
+  // Stores Unifideck can add as shortcuts ("<store>:<id>" launch options, #90).
+  'Amazon Games': { bg: '#ff9900', color: '#1a1000' },
+  'Battle.net': { bg: '#148eff', color: '#001a33' },
+  Microsoft:    { bg: '#107c10', color: '#e0ffe0' },
+  Ubisoft:      { bg: '#1f3a8a', color: '#dce6ff' },
+  GameVault:    { bg: '#2a6f6f', color: '#d8ffff' },
   'Non-Steam':  { bg: '#3a3a3a', color: '#cccccc' },
 };
 

@@ -33,7 +33,7 @@ import { applyCompatToolAndNotify } from '../lib/compatToolSelect';
 import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } from '../lib/playtime';
 import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
-import { getGameSource, sourceStoreLabel, type GameSourceInfo } from '../lib/gameSource';
+import { getGameSource, sourceSubtitle, type GameSourceInfo } from '../lib/gameSource';
 import { GameBanner } from './GameBanner';
 import type { GpuVendor, ProtonGeManagerState, SystemInfo } from '../types';
 import type { VersionOption } from '../lib/compatToolVersions';
@@ -1217,9 +1217,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
               {appId && (
                 <div style={{ fontSize: 9, color: '#7a9bb5' }}>
                   {isShortcut
-                    ? [headerGameSource?.source, sourceStoreLabel(headerGameSource)]
-                        .filter(Boolean)
-                        .join(' . ') || extras.nonSteamShortcut()
+                    ? sourceSubtitle(headerGameSource) || extras.nonSteamShortcut()
                     : extras.appIdLabel(appId)}
                 </div>
               )}

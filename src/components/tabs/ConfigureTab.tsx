@@ -14,7 +14,7 @@ import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, isSteamShortcutApp, NON_STEAM_ID_THRESHOLD } from '../../lib/steamApps';
-import { getGameSource, sourceStoreLabel, type GameSourceInfo } from '../../lib/gameSource';
+import { getGameSource, sourceSubtitle, type GameSourceInfo } from '../../lib/gameSource';
 import { GameBanner } from '../GameBanner';
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
 import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
@@ -452,9 +452,7 @@ function GameSummaryHeader({
   }, [appId, appName, isShortcut]);
   // Show launcher and store together (e.g. "Heroic . Epic Games") so the
   // reader knows both what launches the game and where it came from.
-  const shortcutSubtitle = gameSource?.source
-    ? [gameSource.source, sourceStoreLabel(gameSource)].filter(Boolean).join(' . ')
-    : extras.nonSteamShortcut();
+  const shortcutSubtitle = sourceSubtitle(gameSource) || extras.nonSteamShortcut();
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 4 }}>
       <GameBanner

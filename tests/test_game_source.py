@@ -208,6 +208,113 @@ def test_find_junkstore_store_no_match() -> None:
     entry = {"exe": "/home/deck/Games/Gog/game.exe", "launchoptions": ""}
     assert game_source._find_junkstore_store(entry) == (None, None)
 
+_UNIFIDECK_EXE = '"/home/deck/homebrew/plugins/Unifideck/bin/unifideck-launcher"'
+
+
+def test_infer_source_unifideck_store_tokens() -> None:
+    # #90: Unifideck writes "<store>:<id>" as LaunchOptions; the exe path has no
+    # store marker, so without the token these all fell through to Non-Steam.
+    cases = {
+        "epic:Salt": "Epic Games",
+        "gog:1207658924": "GOG",
+        "amazon:amzn1.adg.product.x": "Amazon Games",
+        "itch:12345": "itch.io",
+        "battlenet:wow": "Battle.net",
+        "microsoft:9NBLGGH4R315": "Microsoft",
+        "ubisoft:635": "Ubisoft",
+        "gamevault:42": "GameVault",
+    }
+    for opts, label in cases.items():
+        entry = {"exe": _UNIFIDECK_EXE, "launchoptions": opts}
+        assert game_source._infer_source_from_shortcut(entry) == label, opts
+
+
+def test_infer_source_store_token_is_case_insensitive() -> None:
+    for opts in ("EPIC:Salt", "Epic:Salt", "GoG:1207658924", "AMAZON:amzn1.x"):
+        entry = {"exe": _UNIFIDECK_EXE, "launchoptions": opts}
+        assert game_source._infer_source_from_shortcut(entry) != "Non-Steam", opts
+    assert game_source._infer_source_from_shortcut(
+        {"exe": _UNIFIDECK_EXE, "launchoptions": "Epic:Salt"}
+    ) == "Epic Games"
+
+
+def test_infer_source_store_token_with_user_options_appended() -> None:
+    entry = {"exe": _UNIFIDECK_EXE, "launchoptions": "epic:Salt LSFG=1 MANGOHUD=1"}
+    assert game_source._infer_source_from_shortcut(entry) == "Epic Games"
+
+
+def test_find_store_token_returns_store_and_id() -> None:
+    entry = {"launchoptions": "Epic:Salt LSFG=1"}
+    assert game_source._find_store_token(entry) == ("epic", "Salt")
+    assert game_source._find_store_token({"launchoptions": "gog:1207658924"}) == ("gog", "1207658924")
+
+
+def test_find_store_token_ignores_lookalikes() -> None:
+    # Store words that are not a "<store>:<id>" token must not match: a
+    # Heroic GOG URL, an Epic launcher URL, a bare word, and an empty id.
+    for opts in (
+        "heroic://launch/gog/1207658924",
+        "com.epicgames.launcher://apps/Salt?action=launch",
+        "PROTON_LOG=1 %command% --epic",
+        "epic:",
+        "",
+    ):
+        assert game_source._find_store_token({"launchoptions": opts}) is None, opts
+
+
+def test_infer_source_heroic_gog_url_still_heroic() -> None:
+    # Regression: the token check must not steal Heroic shortcuts.
+    entry = {"exe": "/usr/bin/flatpak", "launchoptions": "heroic://launch/gog/1207658924"}
+    assert game_source._infer_source_from_shortcut(entry) == "Heroic"
+
+
+def test_get_game_source_unifideck_epic_sets_epic_id(tmp_path: Path) -> None:
+    vdf = tmp_path / "shortcuts.vdf"
+    vdf.write_bytes(_make_shortcut_vdf("Salt and Sanctuary", _UNIFIDECK_EXE, "epic:Salt"))
+    with (
+        patch("lib.game_source.is_steam_app", return_value=False),
+        patch("lib.game_source._find_shortcuts_vdf", return_value=[vdf]),
+        patch("lib.game_source.find_steam_appid_by_title", return_value="283640"),
+        patch("lib.game_source._resolve_demo_full_game", return_value=None),
+    ):
+        result = game_source.get_game_source("3000000001", "Salt and Sanctuary")
+    assert result["source"] == "Epic Games"
+    assert result["epic_game_id"] == "Salt"
+    assert result["gog_product_id"] is None
+    assert result["steam_app_id_match"] == "283640"
+
+
+def test_get_game_source_unifideck_gog_sets_product_id(tmp_path: Path) -> None:
+    vdf = tmp_path / "shortcuts.vdf"
+    vdf.write_bytes(_make_shortcut_vdf("Planet of Lana", _UNIFIDECK_EXE, "GOG:1207658924 MANGOHUD=1"))
+    with (
+        patch("lib.game_source.is_steam_app", return_value=False),
+        patch("lib.game_source._find_shortcuts_vdf", return_value=[vdf]),
+        patch("lib.game_source.find_steam_appid_by_title", return_value=None),
+        patch("lib.game_source.find_steam_appid_from_store", return_value=None),
+    ):
+        result = game_source.get_game_source("3000000002", "Planet of Lana")
+    assert result["source"] == "GOG"
+    assert result["gog_product_id"] == "1207658924"
+    assert result["epic_game_id"] is None
+
+
+def test_get_game_source_unifideck_amazon_has_no_native_id(tmp_path: Path) -> None:
+    # Amazon has no native-id field yet; the label alone is the fix.
+    vdf = tmp_path / "shortcuts.vdf"
+    vdf.write_bytes(_make_shortcut_vdf("Some Prime Game", _UNIFIDECK_EXE, "amazon:amzn1.adg.product.x"))
+    with (
+        patch("lib.game_source.is_steam_app", return_value=False),
+        patch("lib.game_source._find_shortcuts_vdf", return_value=[vdf]),
+        patch("lib.game_source.find_steam_appid_by_title", return_value=None),
+        patch("lib.game_source.find_steam_appid_from_store", return_value=None),
+    ):
+        result = game_source.get_game_source("3000000003", "Some Prime Game")
+    assert result["source"] == "Amazon Games"
+    assert result["gog_product_id"] is None
+    assert result["epic_game_id"] is None
+
+
 def test_infer_source_itchio() -> None:
     assert game_source._infer_source_from_shortcut({"exe": "/itch-setup"}) == "itch.io"
 

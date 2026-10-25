@@ -248,8 +248,53 @@ def _find_shortcuts_vdf() -> list[Path]:
     return list(userdata.glob("*/config/shortcuts.vdf"))
 
 
+# Unifideck (github.com/mubaraknumann/unifideck) points every shortcut's exe at
+# its own bin/unifideck-launcher and writes "<store>:<store_game_id>" as the
+# first token of LaunchOptions (reconcile_phases._build_shortcut_entry), e.g.
+# "epic:Salt", "gog:1207658924", "amazon:amzn1.adg.product.x". Users can append
+# their own options after it ("epic:Salt LSFG=1 MANGOHUD=1"). Keys are the
+# Unifideck store names; values are the label shown on the source badge (#90).
+_UNIFIDECK_STORE_LABELS: dict[str, str] = {
+    "epic": "Epic Games",
+    "gog": "GOG",
+    "amazon": "Amazon Games",
+    "itch": "itch.io",
+    "battlenet": "Battle.net",
+    "microsoft": "Microsoft",
+    "ubisoft": "Ubisoft",
+    "gamevault": "GameVault",
+}
+_UNIFIDECK_TOKEN_RE = re.compile(
+    r'(?:^|\s)(' + '|'.join(_UNIFIDECK_STORE_LABELS) + r'):(\S+)',
+    re.IGNORECASE,
+)
+
+
+def _find_store_token(entry: dict[str, Any]) -> tuple[str, str] | None:
+    """Return (store, store_game_id) from a "<store>:<id>" launch option token.
+
+    Store is lowercased so callers can key into _UNIFIDECK_STORE_LABELS.
+    Returns None when the launch options carry no such token.
+    """
+    m = _UNIFIDECK_TOKEN_RE.search(str(entry.get("launchoptions", "")))
+    if not m:
+        return None
+    return m.group(1).lower(), m.group(2)
+
+
 def _infer_source_from_shortcut(entry: dict[str, Any]) -> str:
     """Infer the launcher source from all string fields in a shortcut entry."""
+    # A "<store>:<id>" token names the store outright, so it wins over the
+    # path heuristics below (Unifideck's exe path has no store marker at all).
+    token = _find_store_token(entry)
+    if token:
+        label = _UNIFIDECK_STORE_LABELS[token[0]]
+        decky.logger.debug(
+            "game_source: matched %s via launch option token store=%s id=%s",
+            label, token[0], token[1],
+        )
+        return label
+
     # Include exe, launchoptions, startdir, and icon -- Heroic Flatpak installs
     # often have /usr/bin/flatpak as exe but heroic paths in startdir or opts.
     parts = [
@@ -454,7 +499,20 @@ def get_game_source(app_id: str, title: str = "") -> dict[str, Any]:
         source = _infer_source_from_shortcut(matched_entry)
         if not title:
             title = str(matched_entry.get("appname", "")).strip()
-        if source == "Heroic":
+        token = _find_store_token(matched_entry)
+        if token and token[0] in ("epic", "gog"):
+            # Unifideck's Epic id is the legendary app_name and its GOG id is
+            # the numeric product id, the same ids Heroic uses, so reports
+            # key to the same epic:/gog: native ids either way.
+            if token[0] == "gog":
+                gog_product_id = token[1]
+            else:
+                epic_game_id = token[1]
+            decky.logger.debug(
+                "get_game_source: store token store=%s id=%s for %r",
+                token[0], token[1], title,
+            )
+        elif source == "Heroic":
             gog_product_id, epic_game_id = _find_heroic_native_id(matched_entry)
             if gog_product_id:
                 decky.logger.debug("get_game_source: Heroic GOG product_id=%s", gog_product_id)

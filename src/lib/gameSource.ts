@@ -41,6 +41,16 @@ export function sourceStoreLabel(info: GameSourceInfo | null | undefined): strin
   return null;
 }
 
+// "Launcher . Store" subtitle for a shortcut (e.g. "Heroic . Epic Games").
+// Drops the store half when it repeats the source, which happens when the
+// source already is the store (Unifideck "epic:<id>" shortcuts, #90). Returns
+// '' when there is nothing to show so callers can fall back with ||.
+export function sourceSubtitle(info: GameSourceInfo | null | undefined): string {
+  if (!info) return '';
+  const store = sourceStoreLabel(info);
+  return [info.source, store !== info.source ? store : null].filter(Boolean).join(' . ');
+}
+
 const _getGameSource = callable<[string, string], GameSourceInfo>('get_game_source');
 const _getShortcutName = callable<[string], string>('get_shortcut_name');
 
