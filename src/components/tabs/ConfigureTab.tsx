@@ -327,15 +327,21 @@ function MissingVersionModal({
   onResolve: (choice: MissingVersionChoice) => void;
   onCancel: () => void;
 }) {
+  // "Latest installed" only earns a button when it is a different build from
+  // the closest match; with a single GE build both pointed at the same tool.
+  const showLatest = !!latestInstalledLabel && latestInstalledLabel !== closestInstalledLabel;
   return (
+    // bAlertDialog: one button. ConfirmModal's OK used to be relabelled
+    // Cancel and wired to cancel, which showed two Cancel buttons.
     <ConfirmModal
       strTitle={t().configure.requiredProtonVersion}
       strDescription={t().configure.requiresVersion(requiredVersion)}
+      bAlertDialog
       strOKButtonText={t().common.cancel}
       onOK={onCancel}
       onCancel={onCancel}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 420, maxWidth: 520 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
         <div style={{ fontSize: 11, color: '#9eb7cc', lineHeight: 1.45 }}>
           {t().configure.chooseApplyMethod}
         </div>
@@ -346,9 +352,11 @@ function MissingVersionModal({
             ? t().configure.searchClosestWith(closestInstalledLabel)
             : t().configure.searchClosestVersion}
         </DialogButton>
-        <DialogButton onClick={() => onResolve('latest')} disabled={!latestInstalledLabel}>
-          {latestInstalledLabel ? t().configure.useLatestInstalledWith(latestInstalledLabel) : t().configure.useLatestInstalled}
-        </DialogButton>
+        {showLatest && (
+          <DialogButton onClick={() => onResolve('latest')}>
+            {t().configure.useLatestInstalledWith(latestInstalledLabel!)}
+          </DialogButton>
+        )}
       </div>
     </ConfirmModal>
   );
@@ -367,46 +375,41 @@ function InstalledVersionPickerModal({
     () => [...tools].sort((a, b) => a.display_name.localeCompare(b.display_name, undefined, { sensitivity: 'base' })),
     [tools],
   );
-  const [selectedValue, setSelectedValue] = useState<string>(
-    sortedTools[0] ? launchVersionValueForTool(sortedTools[0]) : '',
+  const options = useMemo(
+    () => sortedTools.map((tool) => ({ data: launchVersionValueForTool(tool), label: tool.display_name })),
+    [sortedTools],
   );
+  const [selectedValue, setSelectedValue] = useState<string>(options[0]?.data ?? '');
+  const selectedLabel = options.find((o) => o.data === selectedValue)?.label ?? '';
 
+  // Decky's Dropdown, not a native <select>: Big Picture cannot open the
+  // Chromium select popup with a gamepad, so the old picker could not be
+  // operated. The Dropdown opens Steam's own menu on A, and the wrapper takes
+  // focus when the dialog opens so the first press goes to it.
   return (
     <ConfirmModal
       strTitle={t().configure.pickInstalledVersion}
       strDescription={t().configure.chooseInstalledTool}
-      strOKButtonText={t().common.cancel}
-      onOK={onCancel}
+      strOKButtonText={t().configure.useSelectedVersion}
+      strCancelButtonText={t().common.cancel}
+      bOKDisabled={!selectedValue}
+      onOK={() => selectedValue && onPick(selectedValue)}
       onCancel={onCancel}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <select
-          value={selectedValue}
-          onChange={(e) => setSelectedValue(e.target.value)}
-          style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            background: '#162535',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 8,
-            color: '#e8f4ff',
-            fontSize: 12,
-            padding: '8px 10px',
+      <Focusable autoFocus style={{ width: '100%' }}>
+        <Dropdown
+          menuLabel={t().configure.pickInstalledVersion}
+          strDefaultLabel={selectedLabel}
+          rgOptions={options}
+          selectedOption={selectedValue}
+          onChange={(opt) => {
+            setSelectedValue(opt.data as string);
+            void logFrontendEvent('DEBUG', 'Installed version picker changed', {
+              version: opt.data, source: 'InstalledVersionPickerModal.Dropdown',
+            });
           }}
-        >
-          {sortedTools.map((tool) => {
-            const value = launchVersionValueForTool(tool);
-            return (
-              <option key={`${tool.directory_name}-${tool.internal_name}`} value={value}>
-                {tool.display_name}
-              </option>
-            );
-          })}
-        </select>
-        <DialogButton onClick={() => selectedValue && onPick(selectedValue)} disabled={!selectedValue}>
-          {t().configure.useSelectedVersion}
-        </DialogButton>
-      </div>
+        />
+      </Focusable>
     </ConfirmModal>
   );
 }
