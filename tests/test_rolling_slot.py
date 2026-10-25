@@ -396,3 +396,43 @@ def test_install_survives_slot_oserror(tmp_path: Path) -> None:
     assert result["success"] is True
     assert "rolling_slot" not in result
 
+
+def _run_install_with_prune(tmp_path: Path, install_as_latest: bool):
+    from lib import proton_ge  # pylint: disable=import-outside-toplevel
+
+    release = {"tag_name": "v1", "asset_name": "v1.tar.gz", "asset_size": 1}
+    slot_ok = {"ok": True, "changed": True, "target": str(tmp_path / "GE-Proton11-11-x86_64")}
+    with (
+        patch.object(proton_ge, "compat_tools_dir", return_value=tmp_path),
+        patch.object(proton_ge, "_download_release"),
+        patch.object(proton_ge, "extract_archive_safely"),
+        patch.object(proton_ge, "finalize_extracted_compat_tool",
+                     return_value={"success": True, "message": "Installed v1"}),
+        patch.object(proton_ge, "write_latest_metadata"),
+        patch("lib.compat_tools.ensure_rolling_slot", return_value=slot_ok),
+        patch("lib.compat_tools.versioned_tools_for", return_value=[]),
+        patch("lib.compat_usage.prune_unused_versions",
+              return_value={"ok": True, "removed": ["GE-Proton11-6-x86_64"], "failed": {}}) as prune_mock,
+        patch.object(proton_ge, "clear_latest_metadata") as clear_mock,
+    ):
+        result = proton_ge._do_download_and_install(  # pylint: disable=protected-access
+            "v1", release, "https://example.invalid/v1.tar.gz",
+            install_as_latest=install_as_latest, force_reinstall=False,
+            _set=lambda **_kw: None, _cancel=lambda: False, _set_process=lambda _p: None,
+            tool_id="proton-ge",
+        )
+    return result, prune_mock, clear_mock
+
+
+def test_latest_install_prunes_unused_versions_keeping_slot_target(tmp_path: Path) -> None:
+    result, prune_mock, clear_mock = _run_install_with_prune(tmp_path, install_as_latest=True)
+    prune_mock.assert_called_once_with("proton-ge", [], {"GE-Proton11-11-x86_64"})
+    clear_mock.assert_called_once_with("GE-Proton11-6-x86_64", "proton-ge")
+    assert result["pruned"]["removed"] == ["GE-Proton11-6-x86_64"]
+    assert "Removed unused older versions: GE-Proton11-6-x86_64." in result["message"]
+
+
+def test_versioned_install_does_not_prune(tmp_path: Path) -> None:
+    result, prune_mock, _ = _run_install_with_prune(tmp_path, install_as_latest=False)
+    prune_mock.assert_not_called()
+    assert "pruned" not in result

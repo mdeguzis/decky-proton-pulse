@@ -8,6 +8,7 @@ import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
 import { cancelCompatToolInstall, getCompatManagerState, getCompatToolDetails, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
 import type { CompatToolDetails } from '../../lib/compatTools';
+import { compatUsageGameNames, compatUsageLabel, sortRollingSlotsFirst } from '../../lib/compatUsage';
 import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
 import type { CompatToolId, CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { COMPAT_TOOL_OPTIONS } from '../../types';
@@ -254,6 +255,22 @@ function ToolDetailsModal({
   ] : [];
   if (details?.ok && details.is_rolling_slot && details.current_target) {
     rows.push(['Currently points at', <span style={{ fontFamily: 'monospace', fontSize: 11, wordBreak: 'break-all' }}>{details.current_target}</span>]);
+  }
+  // #133: games whose Steam compat mapping names this tool. Omitted when
+  // config.vdf could not be read (used_by_app_ids === null).
+  if (details?.ok && Array.isArray(details.used_by_app_ids)) {
+    const extras = t().extras!;
+    const names = compatUsageGameNames(details.used_by_app_ids);
+    rows.push([extras.compatUsedByLabel(), (
+      <div>
+        {details.is_steam_default && (
+          <div style={{ color: '#6faee8', marginBottom: names.length ? 4 : 0 }}>{extras.compatSteamDefault()}</div>
+        )}
+        {names.length === 0 && !details.is_steam_default
+          ? <span style={{ color: '#7a9bb5' }}>{extras.compatUsedByNone()}</span>
+          : names.map((name, i) => <div key={`${name}-${i}`}>{name}</div>)}
+      </div>
+    )]);
   }
 
   return (
@@ -897,8 +914,10 @@ export function SettingsTab() {
     });
   }, [installedReleaseTags, installingTag, managerState, removingTool, selectedTool]);
 
+  // Rolling slots (Proton-GE-Latest / Proton-CachyOS-Latest) always sort to
+  // the top; the rest keep their order (sort is stable).
   const installedCompatibilityRows = useMemo(
-    () => compatibilityRows.filter((row) => row.installed),
+    () => sortRollingSlotsFirst(compatibilityRows.filter((row) => row.installed)),
     [compatibilityRows],
   );
   const availableCompatibilityRows = useMemo(
@@ -1260,7 +1279,7 @@ export function SettingsTab() {
                         key={row.key}
                         style={{
                           display: 'grid',
-                          gridTemplateColumns: 'minmax(0, 1fr) auto',
+                          gridTemplateColumns: 'minmax(0, 1fr) 150px auto',
                           gap: 12,
                           alignItems: 'center',
                           padding: '12px 0',
@@ -1304,6 +1323,11 @@ export function SettingsTab() {
                               {row.versionLabel}
                             </div>
                           )}
+                        </div>
+                        {/* #133: games using this tool, left aligned in a fixed
+                            column so the labels line up across rows. */}
+                        <div style={{ minWidth: 0, textAlign: 'left', fontSize: 11, color: '#8fa9bf', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {compatUsageLabel(row.tool)}
                         </div>
                         <Focusable
                           style={{ marginLeft: 'auto', boxShadow: 'none', display: 'flex', justifyContent: 'right' }}

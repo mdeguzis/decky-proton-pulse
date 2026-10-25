@@ -36,6 +36,7 @@ if _PLUGIN_DIR not in sys.path:
 # pylint: disable=wrong-import-position
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
+from lib.compat_usage import annotate_tool_usage
 from lib.compat_tools import (
     COMPAT_TOOL_CONFIGS,
     ensure_all_rolling_slots,
@@ -628,6 +629,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         releases = get_releases_sync(force_refresh, tool_id)
         all_meta = {tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
         installed = list_installed_compatibility_tools(all_latest_metadata=all_meta)
+        # #133: used_by_app_ids per tool (None when config.vdf is unreadable).
+        usage_available = annotate_tool_usage(installed)
         current_release = releases[0] if releases else None
         config = COMPAT_TOOL_CONFIGS.get(tool_id, COMPAT_TOOL_CONFIGS["proton-ge"])
 
@@ -661,6 +664,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             "current_installed": current_installed,
             "current_latest_slot_installed": current_latest_slot_installed,
             "installed_tools": installed,
+            "usage_available": usage_available,
             "releases": releases,
             "install_status": get_install_status(
                 self._proton_ge_install_status, self._proton_ge_install_lock
@@ -731,6 +735,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         except OSError:
             pass
 
+        annotate_tool_usage([match])
+
         managed_slot = match.get("managed_slot")
         is_rolling_slot = managed_slot == "latest"
         current_target: str | None = None
@@ -755,6 +761,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             "installed_at_iso": installed_at,
             "size_bytes": size_bytes,
             "source": match.get("source"),
+            "used_by_app_ids": match.get("used_by_app_ids"),
+            "is_steam_default": match.get("is_steam_default", False),
         }
 
     async def install_compat_tool(
@@ -1379,6 +1387,10 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             shutil.rmtree(resolved)
             tool_id_for_uninstall = target.get("tool_id") or "proton-ge"
             clear_latest_metadata(target_name, tool_id_for_uninstall)
+            decky.logger.info(
+                f"uninstall_compatibility_tool: removed | directory={target_name}"
+                f" tool_id={target.get('tool_id')} path={resolved}"
+            )
             return {"success": True, "message": f"Removed {target_name}."}
         except OSError as err:
             decky.logger.error(

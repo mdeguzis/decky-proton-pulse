@@ -120,6 +120,11 @@ export interface InstalledCompatTool {
   // Frontend uses this as the row subtitle so users see the slot's
   // friendly name in the header and the active version underneath.
   current_target_name?: string | null;
+  // #133: app ids whose Steam compat tool mapping names this tool. null means
+  // config.vdf could not be read (unknown), [] means no game uses it.
+  used_by_app_ids?: string[] | null;
+  // True when this tool is Steam's default for every title (mapping "0").
+  is_steam_default?: boolean;
 }
 
 export interface ProtonGeManagerState {
@@ -127,6 +132,7 @@ export interface ProtonGeManagerState {
   current_installed: boolean;
   current_latest_slot_installed: boolean;
   installed_tools: InstalledCompatTool[];
+  usage_available?: boolean;
   releases: CompatToolRelease[];
   tool_id?: CompatToolId;
   tool_label?: string;
