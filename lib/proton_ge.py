@@ -406,6 +406,25 @@ def install_sync(  # pylint: disable=too-many-arguments,too-many-positional-argu
     )
 
 
+def _prune_after_latest_install(tool_id: str, slot_result: dict[str, Any]) -> dict[str, Any]:
+    """Remove old builds of tool_id no game uses, after a latest install (#133).
+
+    Games mapped to the rolling slot run on its target, so only the target
+    (newest build) has to stay; older builds survive only if a game maps to
+    them directly or Steam uses them as its default.
+    """
+    # pylint: disable=import-outside-toplevel
+    from .compat_tools import versioned_tools_for
+    from .compat_usage import prune_unused_versions
+
+    target = slot_result.get("target")
+    keep = {Path(str(target)).name} if target else set()
+    outcome = prune_unused_versions(tool_id, versioned_tools_for(tool_id), keep)
+    for directory in outcome.get("removed", []):
+        clear_latest_metadata(directory, tool_id)
+    return outcome
+
+
 def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     normalized: str,
     release: dict[str, Any],
@@ -491,6 +510,14 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
                         f" version={normalized} result={slot_result}"
                     )
                     result["rolling_slot"] = slot_result
+                    if install_as_latest and slot_result.get("ok"):
+                        pruned = _prune_after_latest_install(tool_id, slot_result)
+                        result["pruned"] = pruned
+                        if pruned.get("removed"):
+                            result["message"] = (
+                                f"{result.get('message', '')} Removed unused older"
+                                f" versions: {', '.join(pruned['removed'])}."
+                            ).strip()
                     if not slot_result.get("ok") and slot_result.get("reason") not in {"no-source", "slot-is-real-dir"}:
                         # Structural failure -- the tool we just installed can't
                         # be reached via the Latest slot. User asked for this to

@@ -652,6 +652,10 @@ export interface TranslationTree {
     compatLatest: () => string;
     compatAvailable: () => string;
     compatLatestSlot: () => string;
+    compatUsedByGames: (count: number) => string;
+    compatSteamDefault: () => string;
+    compatUsedByLabel: () => string;
+    compatUsedByNone: () => string;
     compatCustom: () => string;
     compatNotInstalled: () => string;
     compatLoadingReleaseFeed: () => string;
@@ -1472,6 +1476,10 @@ export const en: TranslationTree = {
     compatLatest: () => 'Latest',
     compatAvailable: () => 'Available',
     compatLatestSlot: () => 'Latest Slot',
+    compatUsedByGames: (count) => `used by ${count} ${count === 1 ? 'game' : 'games'}`,
+    compatSteamDefault: () => 'Steam default',
+    compatUsedByLabel: () => 'Used by',
+    compatUsedByNone: () => 'No games',
     compatCustom: () => 'Custom',
     compatNotInstalled: () => 'Not Installed',
     compatLoadingReleaseFeed: () => 'Loading release feed...',
