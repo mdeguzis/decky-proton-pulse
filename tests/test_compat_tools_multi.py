@@ -381,3 +381,21 @@ def test_list_installed_current_target_name_is_none_when_marker_missing(
         # on the slot name; if it did pass, current_target_name must be
         # None because no marker was written.
         assert slot_tool.get("current_target_name") is None
+
+
+# --- installed_tool_matches_version ignores the CPU-target suffix (#92) ---
+
+def test_installed_tool_matches_version_ignores_arch_suffix() -> None:
+    from lib.compat_tools import installed_tool_matches_version, strip_arch_suffix  # pylint: disable=import-outside-toplevel
+
+    tool = {"directory_name": "GE-Proton11-5-x86_64", "display_name": "GE-Proton11-5-x86_64",
+            "internal_name": "GE-Proton11-5-x86_64"}
+    # Regression: an installed GE-Proton11-5-x86_64 read as missing, so Apply
+    # downloaded it again and auto-update thought the release was absent.
+    assert installed_tool_matches_version(tool, "GE-Proton11-5") is True
+    assert installed_tool_matches_version(tool, "GE-Proton11-5-x86_64") is True
+    assert installed_tool_matches_version(tool, "GE-Proton11-6") is False
+    assert installed_tool_matches_version({"directory_name": "GE-Proton11-3"}, "GE-Proton11-3") is True
+    assert strip_arch_suffix("GE-Proton11-5-x86_64_v3") == "GE-Proton11-5"
+    assert strip_arch_suffix("proton-cachyos-11.0-20260702-slr-x86_64") == "proton-cachyos-11.0-20260702-slr"
+    assert strip_arch_suffix("GE-Proton11-5") == "GE-Proton11-5"

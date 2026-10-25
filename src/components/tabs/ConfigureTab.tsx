@@ -16,8 +16,9 @@ import { logFrontendEvent } from '../../lib/logger';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, isSteamShortcutApp, NON_STEAM_ID_THRESHOLD, setSteamLaunchOptions } from '../../lib/steamApps';
 import { getGameSource, sourceSubtitle, type GameSourceInfo } from '../../lib/gameSource';
 import { GameBanner } from '../GameBanner';
-import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
-import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
+import { cancelProtonGeInstall, checkProtonVersionAvailability, getProtonGeManagerState } from '../../lib/compatTools';
+import { installProtonGeAndWait, type InstallStatus } from '../../lib/compatInstallWait';
+import { buildInstallProgressDetails } from './settingsTabProgress';
 import {
   registerScreenshotAutomationHandler,
   runRegisteredScreenshotAutomationHandler,
@@ -316,20 +317,61 @@ function ReportFiltersModal({
 
 function MissingVersionModal({
   requiredVersion,
+  assetSize,
   latestInstalledLabel,
   closestInstalledLabel,
   onResolve,
   onCancel,
 }: {
   requiredVersion: string;
+  assetSize?: number | null;
   latestInstalledLabel: string | null;
   closestInstalledLabel: string | null;
   onResolve: (choice: MissingVersionChoice) => void;
   onCancel: () => void;
 }) {
+  const [installing, setInstalling] = useState(false);
+  const [installStatus, setInstallStatus] = useState<InstallStatus | null>(null);
+  const [installError, setInstallError] = useState<string | null>(null);
   // "Latest installed" only earns a button when it is a different build from
   // the closest match; with a single GE build both pointed at the same tool.
   const showLatest = !!latestInstalledLabel && latestInstalledLabel !== closestInstalledLabel;
+  const progress = installStatus
+    ? buildInstallProgressDetails(installStatus, assetSize, {
+      finalizing: t().extras!.compatFinalizing(),
+      extracting: t().extras!.compatExtracting(),
+      downloading: t().extras!.compatDownloading(),
+      estimating: t().compatTools.estimating,
+      timeLeft: t().compatTools.timeLeft,
+    })
+    : null;
+
+  // Install here, in the dialog, and only resolve once the build exists
+  // (#92). Resolving straight after queueing applied the config before the
+  // download finished, so the switch found nothing.
+  const startInstall = () => {
+    if (installing) return;
+    setInstalling(true);
+    setInstallError(null);
+    setInstallStatus(null);
+    void logFrontendEvent('INFO', 'Missing version dialog: installing in place', { version: requiredVersion });
+    void installProtonGeAndWait(requiredVersion, { onProgress: setInstallStatus }).then((result) => {
+      if (result.success) {
+        onResolve('install');
+        return;
+      }
+      setInstalling(false);
+      setInstallError(result.message);
+    });
+  };
+  const cancel = () => {
+    if (installing) {
+      void logFrontendEvent('INFO', 'Missing version dialog: cancelling in-progress install', { version: requiredVersion });
+      void cancelProtonGeInstall().catch(() => { /* status poll reports the outcome */ });
+    }
+    onCancel();
+  };
+
   return (
     // bAlertDialog: one button. ConfirmModal's OK used to be relabelled
     // Cancel and wired to cancel, which showed two Cancel buttons.
@@ -338,22 +380,44 @@ function MissingVersionModal({
       strDescription={t().configure.requiresVersion(requiredVersion)}
       bAlertDialog
       strOKButtonText={t().common.cancel}
-      onOK={onCancel}
-      onCancel={onCancel}
+      onOK={cancel}
+      onCancel={cancel}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
         <div style={{ fontSize: 11, color: '#9eb7cc', lineHeight: 1.45 }}>
           {t().configure.chooseApplyMethod}
         </div>
-        <DialogButton onClick={() => onResolve('install')}>{t().configure.installVersion(requiredVersion)}</DialogButton>
-        <DialogButton onClick={() => onResolve('pick')}>{t().configure.pickInstalledVersion}</DialogButton>
-        <DialogButton onClick={() => onResolve('closest')} disabled={!closestInstalledLabel && !latestInstalledLabel}>
+        <DialogButton onClick={startInstall} disabled={installing}>{t().configure.installVersion(requiredVersion)}</DialogButton>
+        {(installing || installError) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '2px 4px' }}>
+            {installing && (
+              <>
+                <div style={{ height: 8, borderRadius: 999, background: 'rgba(111,198,255,0.12)', overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${Math.max(4, Math.round(Math.min(1, progress?.progressRatio ?? 0.04) * 100))}%`,
+                    height: '100%', borderRadius: 999, transition: 'width 240ms ease',
+                    background: 'linear-gradient(90deg, rgba(82,173,235,0.9) 0%, rgba(122,213,255,0.98) 100%)',
+                  }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#cfe2f4', fontVariantNumeric: 'tabular-nums' }}>
+                  <span>{progress?.progressMeta ?? t().extras!.compatDownloading()} {progress?.progressLabel ?? ''}</span>
+                  <span style={{ color: '#6faee8' }}>{progress?.etaLabel ?? t().compatTools.estimating}</span>
+                </div>
+              </>
+            )}
+            {installError && (
+              <div style={{ fontSize: 11, color: '#e08080' }}>{installError}</div>
+            )}
+          </div>
+        )}
+        <DialogButton onClick={() => onResolve('pick')} disabled={installing}>{t().configure.pickInstalledVersion}</DialogButton>
+        <DialogButton onClick={() => onResolve('closest')} disabled={installing || (!closestInstalledLabel && !latestInstalledLabel)}>
           {closestInstalledLabel
             ? t().configure.searchClosestWith(closestInstalledLabel)
             : t().configure.searchClosestVersion}
         </DialogButton>
         {showLatest && (
-          <DialogButton onClick={() => onResolve('latest')}>
+          <DialogButton onClick={() => onResolve('latest')} disabled={installing}>
             {t().configure.useLatestInstalledWith(latestInstalledLabel!)}
           </DialogButton>
         )}
@@ -1089,6 +1153,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
           const modal = showModal(
             <MissingVersionModal
               requiredVersion={availability.normalized_version ?? targetReport.protonVersion}
+              assetSize={availability.release?.asset_size ?? null}
               latestInstalledLabel={latestInstalledTool?.display_name ?? null}
               closestInstalledLabel={closestInstalledTool?.display_name ?? null}
               onResolve={(nextChoice) => {
@@ -1147,19 +1212,18 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
               title: 'Proton Pulse',
               body: t().configure.noCloseMatch(latestInstalledTool.display_name),
             });
-          } else {
-            const installResult = await installProtonGe(availability.normalized_version);
+          } else if (availability.normalized_version) {
+            // Nothing installed at all: install and wait for it, so the
+            // switch below finds the build (#92).
+            const installResult = await installProtonGeAndWait(availability.normalized_version);
             if (!installResult.success) {
               toaster.toast({
                 title: 'Proton Pulse',
-                body: t().configure.installFailed(availability.normalized_version!),
+                body: t().configure.installFailed(availability.normalized_version),
               });
-            } else if (availability.normalized_version) {
+            } else {
               launchProtonVersion = availability.normalized_version;
             }
-            // #116: separate toast if the rolling latest-slot symlink got
-            // re-pointed to the newly-installed version.
-            maybeToastRollingSlotChange(installResult);
           }
         } else if (choice === 'latest') {
           if (latestInstalledTool) {
@@ -1168,30 +1232,12 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
             toaster.toast({ title: 'Proton Pulse', body: t().configure.noCompatTools });
           }
         } else {
-          const installResult = await installProtonGe(availability.normalized_version);
-          if (!installResult.success) {
-            if (latestInstalledTool) {
-              launchProtonVersion = launchVersionValueForTool(latestInstalledTool);
-              toaster.toast({
-                title: 'Proton Pulse',
-                body: t().configure.installFailedFallback(availability.normalized_version!, latestInstalledTool.display_name),
-              });
-            } else {
-              toaster.toast({
-                title: 'Proton Pulse',
-                body: t().configure.installFailedNoFallback(availability.normalized_version!),
-              });
-            }
-          } else {
-            toaster.toast({
-              title: 'Proton Pulse',
-              body: installResult.already_installed
-                ? t().toast.alreadyInstalled(availability.normalized_version!)
-                : `${t().toast.installed(availability.normalized_version!)} ${t().compatTools.restartHint}`,
-            });
-            launchProtonVersion = availability.normalized_version ?? targetReport.protonVersion;
-          }
-          maybeToastRollingSlotChange(installResult);
+          // 'install': the dialog already installed it and waited for the
+          // build to finish (MissingVersionModal). A tool installed this
+          // session can be applied without a Steam restart (verified on a
+          // Deck); the verified switch below reports if Steam disagrees.
+          launchProtonVersion = availability.normalized_version ?? targetReport.protonVersion;
+          toaster.toast({ title: 'Proton Pulse', body: t().toast.installed(launchProtonVersion) });
         }
 
         void logFrontendEvent('INFO', 'Apply resolved missing Proton version choice', {

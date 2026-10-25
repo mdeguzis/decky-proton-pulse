@@ -116,8 +116,20 @@ def installed_tool_matches_version(tool: dict[str, Any], version: str) -> bool:
         tool.get("display_name") or "",
         tool.get("internal_name") or "",
     ]
-    lowered = normalized.lower()
-    return any(field.lower() == lowered for field in fields)
+    # GE releases from 10-x on unpack as "GE-Proton11-5-x86_64": the same
+    # release as the "GE-Proton11-5" tag. Comparing exactly made an
+    # installed build read as missing, so Apply offered to download it again
+    # and auto-update thought the current release was not installed (#92).
+    lowered = strip_arch_suffix(normalized).lower()
+    return any(strip_arch_suffix(field).lower() == lowered for field in fields)
+
+
+_ARCH_SUFFIX_RE = re.compile(r"[-_](?:x86_64(?:[-_]v\d)?|aarch64|arm64)$", re.IGNORECASE)
+
+
+def strip_arch_suffix(name: str) -> str:
+    """Drop a trailing CPU-target suffix: "GE-Proton11-5-x86_64" -> "GE-Proton11-5"."""
+    return _ARCH_SUFFIX_RE.sub("", name.strip())
 
 
 def is_proton_ge_tool(tool: dict[str, Any]) -> bool:
