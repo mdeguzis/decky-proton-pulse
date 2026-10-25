@@ -745,6 +745,7 @@ export const zhCN: TranslationTree = {
     compatToolNotSet: (version: string) => `已应用启动选项，但 ${version} 还不在 Steam 的兼容性工具中。请重启 Steam，或在游戏的属性 > 兼容性中选择它。`,
     steamDefaultProton: () => `Steam 默认`,
     steamDefaultProtonNow: (tool: string) => `Steam 默认（当前为 ${tool}）`,
+    compatPendingRestart: () => "待重启",
     protonPulseWebsiteLabel: () => "Proton Pulse 网站",
             // Per-report analysis modal
     perReportAnalysisTitle: () => '报告分析',

@@ -800,6 +800,7 @@ export const cs: TranslationTree = {
     compatToolNotSet: (version: string) => `Možnosti spuštění byly použity, ale ${version} zatím není mezi nástroji kompatibility Steamu. Restartujte Steam nebo ho vyberte ve Vlastnostech hry > Kompatibilita.`,
     steamDefaultProton: () => `Výchozí ve Steamu`,
     steamDefaultProtonNow: (tool: string) => `Výchozí ve Steamu (nyní ${tool})`,
+    compatPendingRestart: () => "čeká na restart",
     perReportWhatsThis: () => `Co je to?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

@@ -800,6 +800,7 @@ export const ro: TranslationTree = {
     compatToolNotSet: (version: string) => `Opțiunile de lansare au fost aplicate, dar ${version} nu este încă printre instrumentele de compatibilitate Steam. Repornește Steam sau alege-l din Proprietăți > Compatibilitate ale jocului.`,
     steamDefaultProton: () => `Implicit Steam`,
     steamDefaultProtonNow: (tool: string) => `Implicit Steam (acum ${tool})`,
+    compatPendingRestart: () => "repornire în așteptare",
     perReportWhatsThis: () => `Ce este acesta?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

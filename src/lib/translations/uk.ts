@@ -800,6 +800,7 @@ export const uk: TranslationTree = {
     compatToolNotSet: (version: string) => `Параметри запуску застосовано, але ${version} ще немає серед інструментів сумісності Steam. Перезапустіть Steam або виберіть його у Властивостях гри > Сумісність.`,
     steamDefaultProton: () => `Типово в Steam`,
     steamDefaultProtonNow: (tool: string) => `Типово в Steam (зараз ${tool})`,
+    compatPendingRestart: () => "потрібен перезапуск",
     perReportWhatsThis: () => `Що це?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

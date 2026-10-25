@@ -800,6 +800,7 @@ export const el: TranslationTree = {
     compatToolNotSet: (version: string) => `Οι επιλογές εκκίνησης εφαρμόστηκαν, αλλά το ${version} δεν υπάρχει ακόμη στα εργαλεία συμβατότητας του Steam. Επανεκκινήστε το Steam ή επιλέξτε το από Ιδιότητες > Συμβατότητα του παιχνιδιού.`,
     steamDefaultProton: () => `Προεπιλογή Steam`,
     steamDefaultProtonNow: (tool: string) => `Προεπιλογή Steam (τώρα ${tool})`,
+    compatPendingRestart: () => "εκκρεμεί επανεκκίνηση",
     perReportWhatsThis: () => `Τι είναι αυτό;`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

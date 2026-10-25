@@ -800,6 +800,7 @@ export const zhTW: TranslationTree = {
     compatToolNotSet: (version: string) => `已套用啟動選項，但 ${version} 尚未出現在 Steam 的相容性工具中。請重新啟動 Steam，或在遊戲的內容 > 相容性中選擇它。`,
     steamDefaultProton: () => `Steam 預設`,
     steamDefaultProtonNow: (tool: string) => `Steam 預設（目前為 ${tool}）`,
+    compatPendingRestart: () => "待重新啟動",
     perReportWhatsThis: () => `這是什麼？`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

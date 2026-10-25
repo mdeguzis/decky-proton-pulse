@@ -745,6 +745,7 @@ export const fr: TranslationTree = {
     compatToolNotSet: (version: string) => `Options de lancement appliquées, mais ${version} n'est pas encore dans les outils de compatibilité de Steam. Redémarrez Steam ou choisissez-le dans Propriétés > Compatibilité du jeu.`,
     steamDefaultProton: () => `Par défaut de Steam`,
     steamDefaultProtonNow: (tool: string) => `Par défaut de Steam (actuellement ${tool})`,
+    compatPendingRestart: () => "redémarrage requis",
     protonPulseWebsiteLabel: () => "Site web Proton Pulse",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'Analyse du rapport',

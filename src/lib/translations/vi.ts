@@ -800,6 +800,7 @@ export const vi: TranslationTree = {
     compatToolNotSet: (version: string) => `Đã áp dụng tùy chọn khởi chạy, nhưng ${version} chưa có trong công cụ tương thích của Steam. Hãy khởi động lại Steam hoặc chọn nó trong Thuộc tính > Tương thích của trò chơi.`,
     steamDefaultProton: () => `Mặc định của Steam`,
     steamDefaultProtonNow: (tool: string) => `Mặc định của Steam (hiện là ${tool})`,
+    compatPendingRestart: () => "chờ khởi động lại",
     perReportWhatsThis: () => `Đây là gì?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

@@ -13,7 +13,7 @@ vi.mock('./steamApps', () => ({
   } as Record<number, string>)[appId] ?? ''),
 }));
 
-import { compatUsageGameNames, compatUsageLabel, sortRollingSlotsFirst } from './compatUsage';
+import { compatPendingRestartLabel, compatUsageGameNames, compatUsageLabel, sortRollingSlotsFirst } from './compatUsage';
 
 describe('compatUsageLabel', () => {
   it('shows the game count, singular and plural', () => {
@@ -68,3 +68,17 @@ describe('sortRollingSlotsFirst', () => {
     expect(rows.map((r) => r.key)).toEqual(['a', 'b']);
   });
 });
+
+describe('compatPendingRestartLabel (#137)', () => {
+  it('labels a build Steam has not loaded yet', () => {
+    expect(compatPendingRestartLabel({ pending_restart: true })).toBe('pending restart');
+  });
+
+  it('shows nothing when loaded, unknown or missing', () => {
+    expect(compatPendingRestartLabel({ pending_restart: false })).toBeNull();
+    expect(compatPendingRestartLabel({ pending_restart: null })).toBeNull();
+    expect(compatPendingRestartLabel({})).toBeNull();
+    expect(compatPendingRestartLabel(null)).toBeNull();
+  });
+});
+

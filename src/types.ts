@@ -125,6 +125,9 @@ export interface InstalledCompatTool {
   used_by_app_ids?: string[] | null;
   // True when this tool is Steam's default for every title (mapping "0").
   is_steam_default?: boolean;
+  // #137: installed after the running Steam client started, so Steam can't
+  // use it until it restarts. null = unknown (Steam start time unreadable).
+  pending_restart?: boolean | null;
 }
 
 export interface ProtonGeManagerState {

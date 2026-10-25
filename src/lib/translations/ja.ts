@@ -745,6 +745,7 @@ export const ja: TranslationTree = {
     compatToolNotSet: (version: string) => `起動オプションを適用しましたが、${version} はまだ Steam の互換性ツールにありません。Steam を再起動するか、ゲームのプロパティ > 互換性で選択してください。`,
     steamDefaultProton: () => `Steam の既定`,
     steamDefaultProtonNow: (tool: string) => `Steam の既定 (現在 ${tool})`,
+    compatPendingRestart: () => "再起動待ち",
     protonPulseWebsiteLabel: () => "Proton Pulse ウェブサイト",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'レポート分析',

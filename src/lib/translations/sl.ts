@@ -800,6 +800,7 @@ export const sl: TranslationTree = {
     compatToolNotSet: (version: string) => `Možnosti zagona so uporabljene, vendar ${version} še ni med Steamovimi orodji za združljivost. Znova zaženite Steam ali ga izberite v Lastnosti igre > Združljivost.`,
     steamDefaultProton: () => `Privzeto v Steamu`,
     steamDefaultProtonNow: (tool: string) => `Privzeto v Steamu (zdaj ${tool})`,
+    compatPendingRestart: () => "čaka na ponovni zagon",
     perReportWhatsThis: () => `Kaj je to?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

@@ -37,6 +37,7 @@ if _PLUGIN_DIR not in sys.path:
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
 from lib.compat_usage import annotate_tool_usage, steam_tool_choices, tool_vdf_internal_name
+from lib.compat_pending import annotate_pending_restart, steam_client_started_at
 from lib.compat_tools import (
     COMPAT_TOOL_CONFIGS,
     ensure_all_rolling_slots,
@@ -632,6 +633,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         installed = list_installed_compatibility_tools(all_latest_metadata=all_meta)
         # #133: used_by_app_ids per tool (None when config.vdf is unreadable).
         usage_available = annotate_tool_usage(installed)
+        # #137: builds Steam hasn't loaded yet (installed after it started).
+        annotate_pending_restart(installed, steam_client_started_at())
         current_release = releases[0] if releases else None
         config = COMPAT_TOOL_CONFIGS.get(tool_id, COMPAT_TOOL_CONFIGS["proton-ge"])
 

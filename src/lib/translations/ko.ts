@@ -745,6 +745,7 @@ export const ko: TranslationTree = {
     compatToolNotSet: (version: string) => `실행 옵션을 적용했지만 ${version}이(가) 아직 Steam 호환성 도구에 없습니다. Steam을 다시 시작하거나 게임 속성 > 호환성에서 선택하세요.`,
     steamDefaultProton: () => `Steam 기본값`,
     steamDefaultProtonNow: (tool: string) => `Steam 기본값 (현재 ${tool})`,
+    compatPendingRestart: () => "재시작 대기",
     protonPulseWebsiteLabel: () => "Proton Pulse 웹사이트",
             // Per-report analysis modal
     perReportAnalysisTitle: () => '보고서 분석',

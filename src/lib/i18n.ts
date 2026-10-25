@@ -805,6 +805,7 @@ export interface TranslationTree {
     compatToolNotSet?: (version: string) => string;
     steamDefaultProton?: () => string;
     steamDefaultProtonNow?: (tool: string) => string;
+    compatPendingRestart?: () => string;
     // About tab
     protonPulseWebsiteLabel?: () => string;
     // Per-report analysis modal (opened with Y on a focused report card)
@@ -1640,6 +1641,7 @@ export const en: TranslationTree = {
     compatToolNotSet: (version) => `Launch options applied, but ${version} isn't in Steam's compatibility tools yet. Restart Steam, or pick it in the game's Properties > Compatibility.`,
     steamDefaultProton: () => `Steam default`,
     steamDefaultProtonNow: (tool) => `Steam default (now ${tool})`,
+    compatPendingRestart: () => 'pending restart',
     // About tab
     protonPulseWebsiteLabel: () => 'Proton Pulse Website',
     // Per-report analysis modal

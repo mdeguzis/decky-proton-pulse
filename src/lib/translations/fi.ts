@@ -800,6 +800,7 @@ export const fi: TranslationTree = {
     compatToolNotSet: (version: string) => `Käynnistysasetukset otettiin käyttöön, mutta ${version} ei ole vielä Steamin yhteensopivuustyökaluissa. Käynnistä Steam uudelleen tai valitse se pelin kohdasta Ominaisuudet > Yhteensopivuus.`,
     steamDefaultProton: () => `Steamin oletus`,
     steamDefaultProtonNow: (tool: string) => `Steamin oletus (nyt ${tool})`,
+    compatPendingRestart: () => "odottaa uudelleenkäynnistystä",
     perReportWhatsThis: () => `Mikä tämä on?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

@@ -8,6 +8,7 @@ import { resolveAppName } from './steamApps';
 export interface CompatToolUsage {
   used_by_app_ids?: string[] | null;
   is_steam_default?: boolean;
+  pending_restart?: boolean | null;
 }
 
 // "used by N games", shown after the version on a tool row's second line,
@@ -22,6 +23,13 @@ export function compatUsageLabel(tool: CompatToolUsage | null | undefined): stri
   if (tool?.is_steam_default) parts.push(extras.compatSteamDefault());
   if (ids.length > 0 || !tool?.is_steam_default) parts.push(extras.compatUsedByGames(ids.length));
   return parts.join(', ');
+}
+
+// "pending restart" for a build installed after Steam started (#137); Steam
+// only loads compat tools at startup, so it isn't in Steam's picker yet.
+// null when not pending or unknown.
+export function compatPendingRestartLabel(tool: CompatToolUsage | null | undefined): string | null {
+  return tool?.pending_restart === true ? t().extras!.compatPendingRestart!() : null;
 }
 
 // Game names for the Info modal, sorted by name. Stale mappings for games

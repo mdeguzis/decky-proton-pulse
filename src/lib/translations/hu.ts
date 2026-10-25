@@ -800,6 +800,7 @@ export const hu: TranslationTree = {
     compatToolNotSet: (version: string) => `Az indítási beállítások alkalmazva, de a(z) ${version} még nincs a Steam kompatibilitási eszközei között. Indítsd újra a Steamet, vagy válaszd ki a játék Tulajdonságok > Kompatibilitás menüjében.`,
     steamDefaultProton: () => `Steam alapértelmezett`,
     steamDefaultProtonNow: (tool: string) => `Steam alapértelmezett (most ${tool})`,
+    compatPendingRestart: () => "újraindításra vár",
     perReportWhatsThis: () => `Mi ez?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

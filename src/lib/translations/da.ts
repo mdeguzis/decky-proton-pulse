@@ -800,6 +800,7 @@ export const da: TranslationTree = {
     compatToolNotSet: (version: string) => `Startindstillingerne er anvendt, men ${version} er endnu ikke blandt Steams kompatibilitetsværktøjer. Genstart Steam, eller vælg det under spillets Egenskaber > Kompatibilitet.`,
     steamDefaultProton: () => `Steam-standard`,
     steamDefaultProtonNow: (tool: string) => `Steam-standard (nu ${tool})`,
+    compatPendingRestart: () => "afventer genstart",
     perReportWhatsThis: () => `Hvad er dette?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

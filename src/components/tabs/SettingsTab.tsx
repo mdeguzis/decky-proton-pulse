@@ -8,7 +8,7 @@ import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
 import { cancelCompatToolInstall, getCompatManagerState, getCompatToolDetails, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
 import type { CompatToolDetails } from '../../lib/compatTools';
-import { compatUsageGameNames, compatUsageLabel, sortRollingSlotsFirst } from '../../lib/compatUsage';
+import { compatPendingRestartLabel, compatUsageGameNames, compatUsageLabel, sortRollingSlotsFirst } from '../../lib/compatUsage';
 import { useFocusableScroll } from '../../lib/useFocusableScroll';
 import { isAlreadyInstalledMessage, promptSteamRestartForTool } from '../../lib/steamRestartPrompt';
 
@@ -1383,6 +1383,10 @@ export function SettingsTab() {
                               {/* #133: "11-11-x86_64 | used by 2 games" */}
                               {compatUsageLabel(row.tool) && (
                                 <span style={{ color: '#8fa9bf' }}>{` | ${compatUsageLabel(row.tool)}`}</span>
+                              )}
+                              {/* #137: Steam loads tools only at startup */}
+                              {compatPendingRestartLabel(row.tool) && (
+                                <span style={{ color: '#f2c26b' }}>{` (${compatPendingRestartLabel(row.tool)})`}</span>
                               )}
                             </div>
                           )}
