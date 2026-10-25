@@ -24,6 +24,7 @@ import { getProtonDBSummary } from '../lib/protondb';
 import { RATING_COLORS } from '../lib/reportFormatters';
 import { t } from '../lib/i18n';
 import { type GameSourceInfo, getGameSource, sourceStoreLabel } from '../lib/gameSource';
+import { badgeAnchorFromSiblings } from '../lib/badgePlacement';
 import {
   type AntiCheatBadgeKind,
   getAntiCheatForApp,
@@ -155,20 +156,12 @@ function BadgeIcon({ appId }: { appId: number }) {
     // than getBoundingClientRect, which is viewport-absolute. If InnerContainer has
     // padding the rect approach offsets our badge relative to siblings, breaking
     // the navmesh's spatial grouping (we appear "above" instead of "to the right").
-    let maxRight = 0;
-    let sibTop = 8;
-    for (const sib of siblings) {
+    const boxes = siblings.map((sib) => {
       const st = window.getComputedStyle(sib);
-      const cssTop = parseFloat(st.top);
-      const cssLeft = parseFloat(st.left);
-      const cssWidth = parseFloat(st.width);
-      const rightEdge = (isNaN(cssLeft) ? 0 : cssLeft) + (isNaN(cssWidth) ? 0 : cssWidth);
-      if (rightEdge > maxRight) {
-        maxRight = rightEdge;
-        if (!isNaN(cssTop)) sibTop = cssTop;
-      }
-    }
-    const result = { top: sibTop, left: maxRight + 4 };
+      return { top: parseFloat(st.top), left: parseFloat(st.left), width: parseFloat(st.width) };
+    });
+    const anchor = badgeAnchorFromSiblings(boxes, parent.clientWidth);
+    const result = { top: anchor.top, left: anchor.left };
     void logFrontendEvent('DEBUG', 'gamePageBadge: measurePos', {
       sibCount: siblings.length,
       sibs: siblings.map((sib) => {
@@ -176,6 +169,9 @@ function BadgeIcon({ appId }: { appId: number }) {
         const r = sib.getBoundingClientRect();
         return { cssTop: st.top, cssLeft: st.left, cssWidth: st.width, rectTop: Math.round(r.top), rectLeft: Math.round(r.left), rectRight: Math.round(r.right), rectBottom: Math.round(r.bottom) };
       }),
+      containerWidth: parent.clientWidth,
+      considered: anchor.considered,
+      ignored: anchor.ignored,
       result,
     });
     return result;
