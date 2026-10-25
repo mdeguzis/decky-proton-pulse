@@ -45,8 +45,11 @@ export const LAUNCH_VAR_CATALOG: LaunchVarDef[] = [
   { key: 'MANGOHUD_CONFIG', type: 'enum', category: 'debug', description: 'MangoHud config preset', options: ['no_display', 'fps_only=1', 'full'] },
 ];
 
+// PROTON_VERSION="..." is never written (#92): no Proton build or the Steam
+// Linux Runtime reads it (only protontricks does), so it switched nothing and
+// only made users think it had. The config's version lives in
+// TrackedConfig.protonVersion and is applied with SpecifyCompatTool.
 export function buildLaunchOptions(
-  protonVersion: string | null,
   enabledVars: Record<string, string>,
   rawArgs?: string[],
   postCommandArgs?: string[],
@@ -60,9 +63,6 @@ export function buildLaunchOptions(
     for (const arg of rawArgs) {
       if (arg.trim()) parts.push(arg.trim());
     }
-  }
-  if (protonVersion) {
-    parts.push(`PROTON_VERSION="${protonVersion}"`);
   }
   parts.push('%command%');
   if (postCommandArgs) {
@@ -87,7 +87,7 @@ export function parseLaunchOptions(
     protonVersion = pvMatch[1];
   }
 
-  const withoutVersion = launchOptions.replace(/PROTON_VERSION="[^"]*"/, '').trim();
+  const withoutVersion = stripProtonVersion(launchOptions);
   const commandIndex = withoutVersion.indexOf('%command%');
   const beforeCommand = (commandIndex >= 0
     ? withoutVersion.slice(0, commandIndex)
@@ -120,6 +120,24 @@ export function parseLaunchOptions(
   return { protonVersion, vars, rawArgs, postCommandArgs };
 }
 
+// Legacy PROTON_VERSION tokens, quoted or bare, as older builds wrote them.
+const PROTON_VERSION_TOKEN = /(^|\s)PROTON_VERSION=(?:"[^"]*"|\S*)(?=\s|$)/g;
+
+/**
+ * Remove every PROTON_VERSION=... token and leave the rest of the string as
+ * the user wrote it (no re-tokenising, so quoted paths with spaces survive).
+ */
+export function stripProtonVersion(launchOptions: string): string {
+  return launchOptions.replace(PROTON_VERSION_TOKEN, '$1').replace(/\s{2,}/g, ' ').trim();
+}
+
+export function hasProtonVersion(launchOptions: string): boolean {
+  PROTON_VERSION_TOKEN.lastIndex = 0;
+  const found = PROTON_VERSION_TOKEN.test(launchOptions);
+  PROTON_VERSION_TOKEN.lastIndex = 0;
+  return found;
+}
+
 export function normalizeLaunchOptionsForComparison(launchOptions: string): string {
   return launchOptions
     .replace(/%command%/g, '')
@@ -143,17 +161,16 @@ function mergeUniqueArgs(existing: string[], incoming: string[]): string[] {
 }
 
 // structural append: parse both sides, merge by key (incoming wins for shared
-// KEY=value and PROTON_VERSION), dedupe wrappers and post-command flags, then
-// re-emit. fixes the duplicate-runtime bug from issue #68 where two
-// PROTON_VERSION="..." entries could end up side by side
+// KEY=value), dedupe wrappers and post-command flags, then re-emit. Legacy
+// PROTON_VERSION="..." tokens on either side are dropped (#92), which also
+// covers the duplicate-runtime case from #68.
 export function appendLaunchOptions(existing: string, incoming: string): string {
   const e = parseLaunchOptions(existing);
   const i = parseLaunchOptions(incoming);
 
   const mergedVars = { ...e.vars, ...i.vars };
-  const mergedProtonVersion = i.protonVersion ?? e.protonVersion;
   const mergedRawArgs = mergeUniqueArgs(e.rawArgs, i.rawArgs);
   const mergedPostCommandArgs = mergeUniqueArgs(e.postCommandArgs, i.postCommandArgs);
 
-  return buildLaunchOptions(mergedProtonVersion, mergedVars, mergedRawArgs, mergedPostCommandArgs);
+  return buildLaunchOptions(mergedVars, mergedRawArgs, mergedPostCommandArgs);
 }

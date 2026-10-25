@@ -134,7 +134,34 @@ export async function getSteamAppDetails(appId: number, timeoutMs = 1000): Promi
 
 export function getLaunchOptionsFromDetails(details: any): string {
   if (!details || typeof details !== 'object') return '';
+  // Non-Steam shortcuts keep their options in strShortcutLaunchOptions (the
+  // current client mirrors them into strLaunchOptions too, but the shortcut
+  // field is the one SetShortcutLaunchOptions writes, as decky-lsfg-vk reads it).
+  if (details.strShortcutExe && typeof details.strShortcutLaunchOptions === 'string') {
+    return details.strShortcutLaunchOptions;
+  }
   return typeof details.strLaunchOptions === 'string' ? details.strLaunchOptions : '';
+}
+
+/**
+ * Write a game's launch options with the API Steam uses for that kind of app:
+ * SetShortcutLaunchOptions for non-Steam shortcuts, SetAppLaunchOptions for
+ * Steam games (the split decky-lsfg-vk uses). Throws if the API is missing so
+ * callers' existing error toasts fire instead of a silent no-op.
+ */
+export async function setSteamLaunchOptions(appId: number, value: string): Promise<void> {
+  const apps = (globalThis as any).SteamClient?.Apps;
+  const shortcut = isSteamShortcutApp(appId);
+  const api = shortcut ? 'SetShortcutLaunchOptions' : 'SetAppLaunchOptions';
+  const setter = apps?.[api] ?? (shortcut ? apps?.SetAppLaunchOptions : undefined);
+  if (typeof setter !== 'function') {
+    void logFrontendEvent('ERROR', 'setSteamLaunchOptions: Steam launch options API missing', { appId, api });
+    throw new Error(`SteamClient.Apps.${api} is unavailable`);
+  }
+  await setter.call(apps, appId, value);
+  void logFrontendEvent('DEBUG', 'setSteamLaunchOptions: wrote launch options', {
+    appId, api: setter === apps?.[api] ? api : 'SetAppLaunchOptions', length: value.length,
+  });
 }
 
 // Values Steam returns for "no explicit tool set" -- i.e. the game runs

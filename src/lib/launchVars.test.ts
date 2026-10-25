@@ -4,6 +4,8 @@ import {
   LAUNCH_VAR_CATALOG,
   appendLaunchOptions,
   buildLaunchOptions,
+  hasProtonVersion,
+  stripProtonVersion,
   normalizeLaunchOptionsForComparison,
   parseLaunchOptions,
 } from './launchVars';
@@ -41,34 +43,54 @@ describe('LAUNCH_VAR_CATALOG', () => {
 });
 
 describe('buildLaunchOptions', () => {
-  it('builds with proton version only', () => {
-    const result = buildLaunchOptions('GE-Proton9-27', {});
-    expect(result).toBe('PROTON_VERSION="GE-Proton9-27" %command%');
-  });
-
-  it('builds with vars and no proton version', () => {
-    const result = buildLaunchOptions(null, { MANGOHUD: '1', DXVK_ASYNC: '1' });
+  it('builds with vars before %command%', () => {
+    const result = buildLaunchOptions({ MANGOHUD: '1', DXVK_ASYNC: '1' });
     expect(result).toBe('MANGOHUD=1 DXVK_ASYNC=1 %command%');
   });
 
-  it('builds with both proton version and vars', () => {
-    const result = buildLaunchOptions('GE-Proton9-27', { MANGOHUD: '1' });
-    expect(result).toBe('MANGOHUD=1 PROTON_VERSION="GE-Proton9-27" %command%');
-  });
-
-  it('returns just %command% when no version and no vars', () => {
-    const result = buildLaunchOptions(null, {});
-    expect(result).toBe('%command%');
+  it('returns just %command% when there are no vars', () => {
+    expect(buildLaunchOptions({})).toBe('%command%');
   });
 
   it('quotes values containing spaces', () => {
-    const result = buildLaunchOptions(null, { MANGOHUD_CONFIG: 'fps_only=1' });
+    const result = buildLaunchOptions({ MANGOHUD_CONFIG: 'fps_only=1' });
     expect(result).toBe('MANGOHUD_CONFIG=fps_only=1 %command%');
   });
 
   it('puts post-command toggle args after %command%', () => {
-    const result = buildLaunchOptions('GE-Proton9-27', { MANGOHUD: '1' }, ['gamemoderun'], ['-log', '--trace']);
-    expect(result).toBe('MANGOHUD=1 gamemoderun PROTON_VERSION="GE-Proton9-27" %command% -log --trace');
+    const result = buildLaunchOptions({ MANGOHUD: '1' }, ['gamemoderun'], ['-log', '--trace']);
+    expect(result).toBe('MANGOHUD=1 gamemoderun %command% -log --trace');
+  });
+
+  it('never writes PROTON_VERSION (#92: nothing at launch reads it)', () => {
+    expect(buildLaunchOptions({ MANGOHUD: '1' }, ['gamemoderun'])).not.toContain('PROTON_VERSION');
+  });
+});
+
+describe('stripProtonVersion (#92)', () => {
+  it('removes quoted and bare PROTON_VERSION tokens', () => {
+    expect(stripProtonVersion('PROTON_VERSION="GE-Proton10-1" %command%')).toBe('%command%');
+    expect(stripProtonVersion('MANGOHUD=1 PROTON_VERSION=GE-Proton10-1 %command%')).toBe('MANGOHUD=1 %command%');
+    expect(stripProtonVersion('PROTON_VERSION="a" PROTON_VERSION="b" %command%')).toBe('%command%');
+  });
+
+  it('leaves everything else exactly as written, quoted paths with spaces included', () => {
+    const opts = '~/proton-launch %command% "/run/media/deck/My Games/roms/18wheelr.zip"';
+    expect(stripProtonVersion(`PROTON_VERSION="GE-Proton10-1" ${opts}`)).toBe(opts);
+    expect(stripProtonVersion('~/lsfg %command%')).toBe('~/lsfg %command%');
+  });
+
+  it('does not touch variables that only contain the word', () => {
+    expect(stripProtonVersion('MY_PROTON_VERSION=1 %command%')).toBe('MY_PROTON_VERSION=1 %command%');
+  });
+
+  it('hasProtonVersion detects the token without false positives', () => {
+    expect(hasProtonVersion('PROTON_VERSION="GE-Proton10-1" %command%')).toBe(true);
+    expect(hasProtonVersion('~/lsfg %command%')).toBe(false);
+    expect(hasProtonVersion('MY_PROTON_VERSION=1 %command%')).toBe(false);
+    // stable across repeated calls (the regex is global)
+    expect(hasProtonVersion('PROTON_VERSION=x %command%')).toBe(true);
+    expect(hasProtonVersion('PROTON_VERSION=x %command%')).toBe(true);
   });
 });
 
@@ -109,11 +131,10 @@ describe('parseLaunchOptions', () => {
   });
 
   it('round-trips with buildLaunchOptions', () => {
-    const version = 'GE-Proton10-5';
     const vars = { MANGOHUD: '1', DXVK_ASYNC: '1' };
-    const built = buildLaunchOptions(version, vars, ['gamemoderun'], ['-log']);
+    const built = buildLaunchOptions(vars, ['gamemoderun'], ['-log']);
     const parsed = parseLaunchOptions(built);
-    expect(parsed.protonVersion).toBe(version);
+    expect(parsed.protonVersion).toBeNull();
     expect(parsed.vars).toEqual(vars);
     expect(parsed.rawArgs).toEqual(['gamemoderun']);
     expect(parsed.postCommandArgs).toEqual(['-log']);
@@ -130,21 +151,17 @@ describe('launch option conflict helpers', () => {
     expect(appendLaunchOptions('PROTON_LOG=1 %command%', 'MANGOHUD=1 %command%')).toBe(
       'PROTON_LOG=1 MANGOHUD=1 %command%',
     );
-    expect(appendLaunchOptions('', 'PROTON_VERSION="GE-Proton10-1" %command%')).toBe(
-      'PROTON_VERSION="GE-Proton10-1" %command%',
-    );
+    expect(appendLaunchOptions('', 'PROTON_VERSION="GE-Proton10-1" %command%')).toBe('%command%');
     expect(appendLaunchOptions('', '')).toBe('%command%');
   });
 
-  // issue #68: incoming PROTON_VERSION should replace existing, not duplicate it
-  it('replaces PROTON_VERSION when both sides set one, preserves other vars', () => {
+  // #68 / #92: legacy PROTON_VERSION on either side is dropped, never duplicated
+  it('drops PROTON_VERSION from both sides and preserves other vars', () => {
     const result = appendLaunchOptions(
       'PROTON_VERSION="GE-Proton9-20" PROTON_LOG=1 %command%',
       'PROTON_VERSION="GE-Proton10-1" %command%',
     );
-    // PROTON_LOG from existing stays put, runtime gets replaced, no duplicate version
-    expect(result).toBe('PROTON_LOG=1 PROTON_VERSION="GE-Proton10-1" %command%');
-    expect(result.match(/PROTON_VERSION=/g)).toHaveLength(1);
+    expect(result).toBe('PROTON_LOG=1 %command%');
   });
 
   it('overrides shared env vars with incoming values', () => {
@@ -160,7 +177,7 @@ describe('launch option conflict helpers', () => {
       'MANGOHUD=1 PROTON_LOG=1 %command%',
       'PROTON_VERSION="GE-Proton10-1" %command%',
     );
-    expect(result).toBe('MANGOHUD=1 PROTON_LOG=1 PROTON_VERSION="GE-Proton10-1" %command%');
+    expect(result).toBe('MANGOHUD=1 PROTON_LOG=1 %command%');
   });
 
   it('dedupes wrappers like gamemoderun and adds new ones from incoming', () => {
@@ -176,11 +193,11 @@ describe('launch option conflict helpers', () => {
     expect(result).toBe('%command% -log -nojoy');
   });
 
-  it('keeps existing PROTON_VERSION when incoming has none', () => {
+  it('drops an existing PROTON_VERSION when merging', () => {
     const result = appendLaunchOptions(
       'PROTON_VERSION="GE-Proton9-20" %command%',
       'MANGOHUD=1 %command%',
     );
-    expect(result).toBe('MANGOHUD=1 PROTON_VERSION="GE-Proton9-20" %command%');
+    expect(result).toBe('MANGOHUD=1 %command%');
   });
 });

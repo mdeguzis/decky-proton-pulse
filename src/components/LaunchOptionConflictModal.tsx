@@ -89,10 +89,6 @@ export function showLaunchOptionConflictPreview(
 // screenshot-mode previews and possible future explicit callers, but the
 // primary resolver is now unconditional.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function resolveLaunchOptionsWithPrompt(
-  _appName: string,
-  _currentLaunchOptions: string,
-  incomingLaunchOptions: string,
-): Promise<string | null> {
-  return incomingLaunchOptions;
-}
+// resolveLaunchOptionsWithPrompt was removed (#134). Since 57e5465 it only
+// returned the incoming string, so the Configure tab apply overwrote a game's
+// whole launch options with PROTON_VERSION="..." %command%.

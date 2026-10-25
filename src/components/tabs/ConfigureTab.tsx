@@ -13,7 +13,7 @@ import type { VoteTotals } from '../../lib/cache';
 import { getSetting, setSetting } from '../../lib/settings';
 import type { CdnReport, ScoredReport, SystemInfo, GpuVendor } from '../../types';
 import { logFrontendEvent } from '../../lib/logger';
-import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, isSteamShortcutApp, NON_STEAM_ID_THRESHOLD } from '../../lib/steamApps';
+import { getLaunchOptionsFromDetails, getSteamAppDetails, getSteamAppOverview, isSteamShortcutApp, NON_STEAM_ID_THRESHOLD, setSteamLaunchOptions } from '../../lib/steamApps';
 import { getGameSource, sourceSubtitle, type GameSourceInfo } from '../../lib/gameSource';
 import { GameBanner } from '../GameBanner';
 import { checkProtonVersionAvailability, getProtonGeManagerState, installProtonGe } from '../../lib/compatTools';
@@ -26,11 +26,11 @@ import { ReportCard, type DisplayReportCard } from '../ReportCard';
 import { showPerReportAnalysisModal } from '../PerReportAnalysisModal';
 import { ReportDetailModal } from '../ReportDetailModal';
 import { RATING_COLORS } from '../../lib/reportFormatters';
-import { resolveLaunchOptionsWithPrompt, showLaunchOptionConflictPreview } from '../LaunchOptionConflictModal';
+import { showLaunchOptionConflictPreview } from '../LaunchOptionConflictModal';
 import { t } from '../../lib/i18n';
 import { applyCompatToolAndNotify } from '../../lib/compatToolSelect';
 import { addTrackedConfig } from '../../lib/trackedConfigs';
-import { parseLaunchOptions } from '../../lib/launchVars';
+import { hasProtonVersion, parseLaunchOptions, stripProtonVersion } from '../../lib/launchVars';
 import { computeCombinedTier, type PulseTierResult } from '../../lib/pulseTier';
 import { computeGameStats } from '../../lib/gameStats';
 import { matchesConfigFilter, type ConfigFilter } from '../../lib/reportFilters';
@@ -1201,21 +1201,20 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
         });
       }
 
-      const nextLaunchOptions = `PROTON_VERSION="${launchProtonVersion}" %command%`;
+      // Applying a report's Proton version is a compat tool switch, nothing
+      // more (#92). It used to write PROTON_VERSION="..." %command% over the
+      // game's launch options: that variable does nothing at launch, and the
+      // write replaced whatever the user had there (#134). Launch options are
+      // now only touched to drop a PROTON_VERSION an older build left behind.
       const currentDetails = await getSteamAppDetails(appId);
-      const resolvedLaunchOptions = await resolveLaunchOptionsWithPrompt(
-        appName,
-        getLaunchOptionsFromDetails(currentDetails.details),
-        nextLaunchOptions,
-      );
-      if (!resolvedLaunchOptions) {
-        toaster.toast({ title: 'Proton Pulse', body: t().configure.applyCancelled });
-        return;
+      const currentLaunchOptions = getLaunchOptionsFromDetails(currentDetails.details);
+      if (hasProtonVersion(currentLaunchOptions)) {
+        const cleaned = stripProtonVersion(currentLaunchOptions);
+        await setSteamLaunchOptions(appId, cleaned === '%command%' ? '' : cleaned);
+        void logFrontendEvent('INFO', 'Apply removed legacy PROTON_VERSION from launch options', {
+          appId, appName, before: currentLaunchOptions, after: cleaned,
+        });
       }
-
-      await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
-      // PROTON_VERSION in launch options is only our record; this is what
-      // actually switches the game's compat tool in Steam (#92).
       await applyCompatToolAndNotify(appId, launchProtonVersion);
       const detailsResult = await getSteamAppDetails(appId);
       const appliedLaunchOptions = getLaunchOptionsFromDetails(detailsResult.details);

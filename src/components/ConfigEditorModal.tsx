@@ -32,7 +32,7 @@ import { t } from '../lib/i18n';
 import { applyCompatToolAndNotify } from '../lib/compatToolSelect';
 import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } from '../lib/playtime';
 import { NativePulseReportModal } from './NativePulseReportModal';
-import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
+import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp, setSteamLaunchOptions } from '../lib/steamApps';
 import { getGameSource, sourceSubtitle, type GameSourceInfo } from '../lib/gameSource';
 import { GameBanner } from './GameBanner';
 import type { GpuVendor, ProtonGeManagerState, SystemInfo } from '../types';
@@ -689,7 +689,10 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     existingConfig?.profileName ?? (appName ?? '').trim(),
   );
   const [profileNameTouched, setProfileNameTouched] = useState(false);
-  const [protonVersion, setProtonVersion] = useState(initialParsedState.protonVersion);
+  // The version comes from the saved config (#92: it is no longer written into
+  // launch options); a PROTON_VERSION parsed out of an older config's launch
+  // options is only a fallback.
+  const [protonVersion, setProtonVersion] = useState(existingConfig?.protonVersion || initialParsedState.protonVersion);
   const [enabledVars, setEnabledVars] = useState<Record<string, string>>(initialParsedState.enabledVars);
   const [enabledRawKeys, setEnabledRawKeys] = useState<Set<string>>(
     () => new Set(parsed.rawArgs.filter((arg) => catalogRawKeys.has(arg))),
@@ -864,7 +867,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
   }, [customToggles, enabledCustomToggleIds]);
 
   const preview = useMemo(
-    () => buildLaunchOptions(protonVersion || null, allVars, rawArgs, postCommandArgs),
+    () => buildLaunchOptions(allVars, rawArgs, postCommandArgs),
     [protonVersion, allVars, rawArgs, postCommandArgs],
   );
 
@@ -940,7 +943,7 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     const { pushCloud = false, openReport = false, writeToSteam = true, markActive = true } = opts;
     try {
       if (writeToSteam) {
-        await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
+        await setSteamLaunchOptions(appId, resolvedLaunchOptions);
         // Switch Steam's compat tool too; PROTON_VERSION alone does nothing (#92).
         await applyCompatToolAndNotify(appId, protonVersion);
       }

@@ -42,6 +42,7 @@ LATEST_INSTALL_MARKER = ".proton-pulse-latest-install"
 
 
 def installed_by_latest_process(tool: dict[str, Any]) -> bool:
+    """True when the latest rolling process installed this build (marker present)."""
     path = str(tool.get("path") or "")
     return bool(path) and (Path(path) / LATEST_INSTALL_MARKER).is_file()
 
@@ -317,3 +318,32 @@ def prune_unused_versions(
         removed, failed,
     )
     return {"ok": not failed, "removed": removed, "failed": failed}
+
+
+def steam_tool_choices(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Installed tools as {tool_name, display_name, directory_name, source} (#92).
+
+    tool_name is the exact name SteamClient.Apps.SpecifyCompatTool expects:
+    the compat_tools block key for custom tools, Valve's short name
+    (proton_11) for official builds. Steam's own listing calls
+    (Apps.GetAvailableCompatTools, Settings.GetGlobalCompatTools) are gone in
+    the October 2026 client, and SpecifyCompatTool silently resets a game to
+    the default when given a name it does not know, so the name has to be
+    right. Tools with no resolvable name are left out rather than guessed.
+    """
+    choices: list[dict[str, Any]] = []
+    for tool in tools:
+        directory = str(tool.get("directory_name") or "")
+        if tool.get("source") == "valve":
+            name = valve_mapping_name(directory)
+        else:
+            name = tool_vdf_internal_name(tool) or str(tool.get("internal_name") or "") or directory
+        if not name:
+            continue
+        choices.append({
+            "tool_name": name,
+            "display_name": str(tool.get("display_name") or directory),
+            "directory_name": directory,
+            "source": tool.get("source"),
+        })
+    return choices

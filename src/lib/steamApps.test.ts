@@ -22,6 +22,7 @@ import {
   getSteamPlaytimeForeverMinutes,
   isSteamShortcutApp,
   resolveAppName,
+  setSteamLaunchOptions,
 } from './steamApps';
 
 const originalSteamClient = (globalThis as any).SteamClient;
@@ -280,5 +281,40 @@ describe('steamApps helpers', () => {
       const result = await mod.getGridArtworkDataUrl(99);
       expect(result).toBeNull();
     });
+  });
+});
+
+
+describe('launch options for Steam games vs shortcuts (#92)', () => {
+  const SHORTCUT = 3719959674; // >= 2^31: non-Steam shortcut id
+  const STEAM_GAME = 1593500;
+
+  it('writes shortcuts with SetShortcutLaunchOptions and Steam games with SetAppLaunchOptions', async () => {
+    const setApp = vi.fn();
+    const setShortcut = vi.fn();
+    (globalThis as any).SteamClient = { Apps: { SetAppLaunchOptions: setApp, SetShortcutLaunchOptions: setShortcut } };
+    await setSteamLaunchOptions(SHORTCUT, '~/proton-launch %command%');
+    await setSteamLaunchOptions(STEAM_GAME, '~/lsfg %command%');
+    expect(setShortcut).toHaveBeenCalledWith(SHORTCUT, '~/proton-launch %command%');
+    expect(setApp).toHaveBeenCalledWith(STEAM_GAME, '~/lsfg %command%');
+    expect(setApp).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to SetAppLaunchOptions for a shortcut on clients without the shortcut API', async () => {
+    const setApp = vi.fn();
+    (globalThis as any).SteamClient = { Apps: { SetAppLaunchOptions: setApp } };
+    await setSteamLaunchOptions(SHORTCUT, 'x %command%');
+    expect(setApp).toHaveBeenCalledWith(SHORTCUT, 'x %command%');
+  });
+
+  it('throws instead of silently doing nothing when the API is missing', async () => {
+    (globalThis as any).SteamClient = { Apps: {} };
+    await expect(setSteamLaunchOptions(STEAM_GAME, '%command%')).rejects.toThrow('SetAppLaunchOptions is unavailable');
+  });
+
+  it('reads strShortcutLaunchOptions for shortcuts, strLaunchOptions otherwise', () => {
+    expect(getLaunchOptionsFromDetails({ strShortcutExe: '/x', strShortcutLaunchOptions: 'a %command%', strLaunchOptions: 'b' })).toBe('a %command%');
+    expect(getLaunchOptionsFromDetails({ strLaunchOptions: '~/lsfg %command%' })).toBe('~/lsfg %command%');
+    expect(getLaunchOptionsFromDetails(null)).toBe('');
   });
 });

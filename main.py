@@ -36,7 +36,7 @@ if _PLUGIN_DIR not in sys.path:
 # pylint: disable=wrong-import-position
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
-from lib.compat_usage import annotate_tool_usage, tool_vdf_internal_name
+from lib.compat_usage import annotate_tool_usage, steam_tool_choices, tool_vdf_internal_name
 from lib.compat_tools import (
     COMPAT_TOOL_CONFIGS,
     ensure_all_rolling_slots,
@@ -673,6 +673,18 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             "tool_id": tool_id,
             "tool_label": config["label"],
         }
+
+    async def get_compat_tool_choices(self) -> list[dict[str, Any]]:
+        """Installed compat tools with the exact names SpecifyCompatTool takes (#92)."""
+        tools = list_installed_compatibility_tools(
+            all_latest_metadata={tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
+        )
+        choices = steam_tool_choices(tools)
+        decky.logger.debug(
+            f"get_compat_tool_choices: {len(choices)} of {len(tools)} tools"
+            f" names={[c['tool_name'] for c in choices]}"
+        )
+        return choices
 
     async def trim_unused_compat_versions(self) -> dict[str, Any]:
         """Auto-trim now, for when the setting is switched on (#133).

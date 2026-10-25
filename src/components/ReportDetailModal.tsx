@@ -24,7 +24,7 @@ import {
   MATCHING_GUIDE_LEGEND_PREFIX,
   MATCHING_GUIDE_LEGEND_RED,
 } from '../lib/matchingGuide';
-import { getSteamAppDetails, getLaunchOptionsFromDetails, isSteamShortcutApp } from '../lib/steamApps';
+import { getSteamAppDetails, getLaunchOptionsFromDetails, isSteamShortcutApp, setSteamLaunchOptions } from '../lib/steamApps';
 import { getGameSource, sourceSubtitle, type GameSourceInfo } from '../lib/gameSource';
 import { GameBanner } from './GameBanner';
 import { buildLaunchOptions, parseLaunchOptions } from '../lib/launchVars';
@@ -1136,11 +1136,11 @@ export function ReportDetailModal({
     void logFrontendEvent('INFO', 'ReportDetail: Opening config editor pre-filled from report', {
       appId, appName, protonVersion: report.protonVersion,
     });
-    // Parse the current launch options to carry over any existing toggles/vars,
-    // then override the proton version with the report's version.
+    // Parse the current launch options to carry over any existing toggles/vars.
+    // The report's Proton version rides on existingConfig.protonVersion and is
+    // applied with SpecifyCompatTool, not written into launch options (#92).
     const existing = parseLaunchOptions(currentLaunchOptions);
     const prefilledLaunchOptions = buildLaunchOptions(
-      report.protonVersion || existing.protonVersion,
       existing.vars,
       existing.rawArgs,
       existing.postCommandArgs,
@@ -1172,7 +1172,7 @@ export function ReportDetailModal({
   const handleClearLaunchOptions = async () => {
     void logFrontendEvent('INFO', 'ReportDetail: Clearing launch options', { appId, appName });
     try {
-      await SteamClient.Apps.SetAppLaunchOptions(appId, '');
+      await setSteamLaunchOptions(appId, '');
       setLaunchOptionsDisplay('');
       void logFrontendEvent('INFO', 'ReportDetail: Launch options cleared', { appId });
       toaster.toast({ title: 'Proton Pulse', body: t().toast.cleared });

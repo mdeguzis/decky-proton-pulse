@@ -349,3 +349,26 @@ def test_tool_vdf_internal_name_for_details(tmp_path: Path) -> None:
     # modal then falls back to the listing's internal_name.
     assert compat_usage.tool_vdf_internal_name({"path": str(slot_dir), "source": "valve"}) is None
     assert compat_usage.tool_vdf_internal_name({"path": str(tmp_path / "nope"), "source": "custom"}) is None
+
+
+# --- steam_tool_choices (#92) ---
+
+def test_steam_tool_choices_use_names_specifycompattool_accepts(tmp_path: Path) -> None:
+    slot_dir = tmp_path / "Proton-GE-Latest"
+    slot_dir.mkdir()
+    (slot_dir / "compatibilitytool.vdf").write_text(SLOT_VDF)
+    tools = [
+        _tool("Proton-GE-Latest", internal="Proton-GE-Latest", managed_slot="latest", path=str(slot_dir)),
+        _tool("GE-Proton11-11-x86_64", path=str(tmp_path / "missing-vdf")),
+        _tool("Proton 11.0", source="valve", managed_slot=None, tool_id=None),
+        _tool("Proton - Experimental", source="valve", managed_slot=None, tool_id=None),
+        _tool("Proton EasyAntiCheat Runtime", source="valve", managed_slot=None, tool_id=None),
+    ]
+    choices = {c["directory_name"]: c["tool_name"] for c in compat_usage.steam_tool_choices(tools)}
+    # Verified on a Deck: the slot is proton_ge_latest, Valve 11.0 is proton_11.
+    assert choices == {
+        "Proton-GE-Latest": "proton_ge_latest",
+        "GE-Proton11-11-x86_64": "GE-Proton11-11-x86_64",
+        "Proton 11.0": "proton_11",
+        "Proton - Experimental": "proton_experimental",
+    }

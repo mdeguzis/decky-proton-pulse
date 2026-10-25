@@ -9,7 +9,8 @@ import { applyCompatToolAndNotify } from '../../lib/compatToolSelect';
 import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } from '../../lib/screenshotAutomation';
 import { ConfigEditorModal } from '../ConfigEditorModal';
 import { NativePulseReportModal } from '../NativePulseReportModal';
-import { getCompatToolForApp, getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../../lib/steamApps';
+import { getCompatToolForApp, getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp, setSteamLaunchOptions } from '../../lib/steamApps';
+import { stripProtonVersion } from '../../lib/launchVars';
 import { GameBanner } from '../GameBanner';
 import type { GpuVendor, SystemInfo } from '../../types';
 import {
@@ -335,7 +336,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           // deleteMyReport is a no-op if nothing was ever submitted, so
           // this is safe even for configs that never hit Proton Pulse
           void logFrontendEvent('INFO', 'Deleting tracked config', { appId: config.appId, appName: config.appName });
-          SteamClient.Apps.SetAppLaunchOptions(config.appId, '');
+          void setSteamLaunchOptions(config.appId, '').catch(() => { /* logged in setSteamLaunchOptions */ });
           // Multi-config-per-app: scope removal to this specific profile so
           // deleting one card doesn't wipe every profile the user has for
           // this game. Cloud delete matches on (voter_id, app_id, profile_name).
@@ -369,7 +370,9 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
 
   const handleReapply = async (config: TrackedConfig) => {
     try {
-      await SteamClient.Apps.SetAppLaunchOptions(config.appId, config.launchOptions);
+      // Configs saved by older builds still carry PROTON_VERSION="..."; it does
+      // nothing at launch (#92), so drop it on the way back into Steam.
+      await setSteamLaunchOptions(config.appId, stripProtonVersion(config.launchOptions));
       await applyCompatToolAndNotify(config.appId, config.protonVersion); // #92
       addTrackedConfig({ ...config, appliedAt: Date.now() });
       void logFrontendEvent('INFO', 'Config reapplied from manage menu', {
