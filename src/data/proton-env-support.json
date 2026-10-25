@@ -1,0 +1,1076 @@
+{
+  "_meta": {
+    "schema_version": 1,
+    "generated_at": "2026-10-25T21:24:24Z",
+    "generator": "python3 scripts/extract-proton-env-support.py [--tag <tool_id>=<tag>]",
+    "how_to_update": "Bump tools.<id>.source.tag (or pass --tag) and re-run the generator. It refetches each tool's proton script from source.raw_url and rewrites switches and env_reads.",
+    "method": "switches = check_environment(\"PROTON_X\", \"option\") pairs in the proton script; env_reads = other environment variables the script reads (os.environ, g_session.env, env_nonzero). A switch a tool does not list is silently ignored by that tool.",
+    "notes": [
+      "Setting a switch to 0 actively removes the option, even if the game's built-in fix enabled it.",
+      "PROTON_VERSION is not read by any Proton build or the Steam Linux Runtime; only protontricks reads it.",
+      "The compat tool itself can only be chosen with SteamClient.Apps.SpecifyCompatTool, never a launch option."
+    ],
+    "issues": [
+      "https://github.com/mdeguzis/decky-proton-pulse/issues/92",
+      "https://github.com/mdeguzis/decky-proton-pulse/issues/135",
+      "https://github.com/mdeguzis/proton-pulse-web/issues/564"
+    ],
+    "wiki": "https://github.com/mdeguzis/decky-proton-pulse/wiki/Compatibility-Tools"
+  },
+  "tools": {
+    "ge": {
+      "source": {
+        "label": "GE-Proton",
+        "repo": "GloriousEggroll/proton-ge-custom",
+        "tag": "GE-Proton11-11",
+        "file": "proton",
+        "repo_url": "https://github.com/GloriousEggroll/proton-ge-custom",
+        "release_url": "https://github.com/GloriousEggroll/proton-ge-custom/releases/tag/GE-Proton11-11",
+        "file_url": "https://github.com/GloriousEggroll/proton-ge-custom/blob/GE-Proton11-11/proton",
+        "raw_url": "https://raw.githubusercontent.com/GloriousEggroll/proton-ge-custom/GE-Proton11-11/proton",
+        "sha256": "204d3b1dfb73f0fc50e65e226a584ddcc4ce949872723cb6358b9f04cee8fd29"
+      },
+      "switch_count": 51,
+      "env_read_count": 131,
+      "switches": {
+        "DXVK_NVAPI_VKREFLEX": "vkreflex",
+        "ENABLE_VKBASALT": "vkbasalt",
+        "LOW_LATENCY_LAYER": "lowlatencylayer",
+        "PROTON_DISABLE_NVAPI": "disablenvapi",
+        "PROTON_DLSS_INDICATOR": "dlsshud",
+        "PROTON_DLSS_UPGRADE": "dlss",
+        "PROTON_DXVK_D3D8": "dxvkd3d8",
+        "PROTON_ENABLE_HDR": "hdr",
+        "PROTON_ENABLE_WAYLAND": "wayland",
+        "PROTON_ENABLE_WINEBTH": "winebth",
+        "PROTON_FORCE_LARGE_ADDRESS_AWARE": "forcelgadd",
+        "PROTON_FORCE_NVAPI": "forcenvapi",
+        "PROTON_FSR3_UPGRADE": "fsr3",
+        "PROTON_FSR4_INDICATOR": "fsr4hud",
+        "PROTON_FSR4_UPGRADE": "fsr4",
+        "PROTON_HEAP_DELAY_FREE": "heapdelayfree",
+        "PROTON_HEAP_ZERO_MEMORY": "heapzeromemory",
+        "PROTON_HIDE_APU": "hideapu",
+        "PROTON_HIDE_INTEL_GPU": "hideintelgpu",
+        "PROTON_HIDE_NVIDIA_GPU": "hidenvgpu",
+        "PROTON_HIDE_VANGOGH_GPU": "hidevggpu",
+        "PROTON_LOCAL_SHADER_CACHE": "localshadercache",
+        "PROTON_MLFG_UPGRADE": "mlfg",
+        "PROTON_NATIVE_AGS": "nativeags",
+        "PROTON_NO_D3D10": "nod3d10",
+        "PROTON_NO_D3D11": "nod3d11",
+        "PROTON_NO_ESYNC": "noesync",
+        "PROTON_NO_FSYNC": "nofsync",
+        "PROTON_NO_NTSYNC": "nontsync",
+        "PROTON_NO_WM_DECORATION": "nowmdecoration",
+        "PROTON_NO_XIM": "noxim",
+        "PROTON_NVIDIA_LIBS": "nvidialibs",
+        "PROTON_NVIDIA_LIBS_NO_32BIT": "nvidialibsno32",
+        "PROTON_NVIDIA_NVCUDA": "nvcuda",
+        "PROTON_NVIDIA_NVENC": "nvenc",
+        "PROTON_NVIDIA_NVML": "nvml",
+        "PROTON_NVIDIA_NVOPTIX": "nvoptix",
+        "PROTON_OLD_GL_STRING": "oldglstr",
+        "PROTON_PREFER_SDL": "sdlinput",
+        "PROTON_SET_GAME_DRIVE": "gamedrive",
+        "PROTON_SET_STEAM_DRIVE": "steamdrive",
+        "PROTON_USE_HDR": "hdr",
+        "PROTON_USE_OPTISCALER": "optiscaler",
+        "PROTON_USE_SDL": "sdlinput",
+        "PROTON_USE_WAYLAND": "wayland",
+        "PROTON_USE_WINED3D": "wined3d",
+        "PROTON_USE_WINED3D11": "wined3d",
+        "PROTON_USE_WOW64": "wow64",
+        "PROTON_USE_WRITECOPY": "writecopy",
+        "PROTON_XESS_UPGRADE": "xess",
+        "PYROVEIL": "pyroveil"
+      },
+      "env_reads": [
+        "COPYPREFIX",
+        "DISABLE_WINE_WAYLAND_STEAM_OVERLAY_LAYER",
+        "DXVK_ENABLE_NVAPI",
+        "DXVK_HDR",
+        "DXVK_LOG_LEVEL",
+        "DXVK_NO_HDR",
+        "DXVK_NVAPI_ALLOW_OTHER_DRIVERS",
+        "DXVK_NVAPI_DRIVER_VERSION",
+        "DXVK_NVAPI_LOG_LEVEL",
+        "DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS",
+        "ESPEAK_DATA_PATH",
+        "FEX_APP_CONFIG",
+        "FEX_APP_CONFIG_LOCATION",
+        "FEX_DISKCACHE",
+        "FNA3D_FORCE_DRIVER",
+        "FSR_FG_WATERMARK",
+        "FSR_WATERMARK",
+        "HOME",
+        "HOST_LC_ALL",
+        "INTC_ALT_DRIVER_EXTENSIONS_PATH",
+        "LC_ALL",
+        "LC_CTYPE",
+        "LC_MESSAGES",
+        "LD_PRELOAD",
+        "MEDIACONV_AUDIO_DUMP_FILE",
+        "MEDIACONV_AUDIO_TRANSCODED_FILE",
+        "MEDIACONV_BLANK_AUDIO_FILE",
+        "MEDIACONV_BLANK_VIDEO_FILE",
+        "MEDIACONV_VIDEO_DUMP_FILE",
+        "MEDIACONV_VIDEO_TRANSCODED_FILE",
+        "MESA_EXTENSION_MAX_YEAR",
+        "MIMALLOC_DISABLE_REDIRECT",
+        "NVIDIA_WINE_DLL_DIR",
+        "ORIG_",
+        "PATH",
+        "PRESSURE_VESSEL_RUNTIME_BASE",
+        "PROTON_ADD_CONFIG",
+        "PROTON_CPU_TOPOLOGY",
+        "PROTON_CRASH_REPORT_DIR",
+        "PROTON_DEATH_STRANDING_CONTROLLER_EFFECTS",
+        "PROTON_DEATH_STRANDING_FORCE_ENVIRONMENT_EFFECTS",
+        "PROTON_DISABLE_HIDRAW",
+        "PROTON_DLL_COPY",
+        "PROTON_EMULATE_STEAMINPUT",
+        "PROTON_ENABLE_MHWILDS_USB_AUDIO",
+        "PROTON_LIMIT_ADDRESS_SPACE",
+        "PROTON_LIMIT_RESOLUTIONS",
+        "PROTON_LOG",
+        "PROTON_LOG_DIR",
+        "PROTON_MEDIACONV_NO_VIDEO",
+        "PROTON_NO_STEAMINPUT",
+        "PROTON_PIPEWIRE_ALSA_PLUGIN",
+        "PROTON_REMOTE_DEBUG_CMD",
+        "PROTON_SONY_AUTO_XINPUT",
+        "PROTON_SONY_DUALSENSE_AS_DUALSHOCK4",
+        "PROTON_SONY_DUALSENSE_EDGE_AS_DUALSENSE",
+        "PROTON_SONY_DUALSHOCK4_V2_AS_V1",
+        "PROTON_SPOOF_STEAMINPUT_VIDPID",
+        "PROTON_STEAMINPUT_FALLBACK",
+        "PROTON_STEAMINPUT_XINPUT_FALLBACK",
+        "PROTON_USE_ARM64",
+        "PROTON_USE_D7VK",
+        "PROTON_USE_XALIA",
+        "PROTON_VR_RUNTIME",
+        "PROTON_WAYLAND_MONITOR",
+        "PROTON_XINPUT_PERSISTENT_PLAYER1",
+        "PYROVEIL_CONFIG",
+        "SDL_GAMECONTROLLER_ALLOW_STEAM_VIRTUAL_GAMEPAD",
+        "SDL_GAMECONTROLLER_IGNORE_DEVICES",
+        "STEAM_BASE_FOLDER",
+        "STEAM_COMPAT_APP_ID",
+        "STEAM_COMPAT_CLIENT_INSTALL_PATH",
+        "STEAM_COMPAT_CONFIG",
+        "STEAM_COMPAT_DATA_PATH",
+        "STEAM_COMPAT_FEX_CONFIG",
+        "STEAM_COMPAT_INSTALL_PATH",
+        "STEAM_COMPAT_LIBRARY_PATHS",
+        "STEAM_COMPAT_MEDIA_PATH",
+        "STEAM_COMPAT_TRANSCODED_MEDIA_PATH",
+        "STEAM_FEX_MULTIBLOCK",
+        "STEAM_FEX_TSOENABLED",
+        "STORE",
+        "UMU_ID",
+        "UMU_USE_STEAM",
+        "VKD3D_DEBUG",
+        "VKD3D_FEATURE_LEVEL",
+        "VKD3D_SHADER_DEBUG",
+        "VR_OVERRIDE",
+        "VR_PATHREG_OVERRIDE",
+        "WAYLANDDRV_PRIMARY_MONITOR",
+        "WAYLANDDRV_SSD",
+        "WAYLAND_DISPLAY",
+        "WINEARCH",
+        "WINEDEBUG",
+        "WINEDLLOVERRIDES",
+        "WINEDLLPATH",
+        "WINEESYNC",
+        "WINEFSYNC",
+        "WINELOADERNOEXEC",
+        "WINENTSYNC",
+        "WINEPREFIX",
+        "WINE_CPU_TOPOLOGY",
+        "WINE_CRASH_REPORT_DIR",
+        "WINE_DISABLE_EXE_ASLR",
+        "WINE_DISABLE_FULLSCREEN_HACK",
+        "WINE_DISABLE_GAMESCOPE_MAX_SIZE_HACK",
+        "WINE_DISABLE_HARDWARE_SCHEDULING",
+        "WINE_DISABLE_VULKAN_OPWR",
+        "WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER",
+        "WINE_GRAPHICS_DRIVER",
+        "WINE_HEAP_DELAY_FREE",
+        "WINE_HEAP_TOP_DOWN",
+        "WINE_HEAP_ZERO_MEMORY",
+        "WINE_HIDE_AMD_CPU",
+        "WINE_HIDE_AMD_GPU",
+        "WINE_HIDE_APU",
+        "WINE_HIDE_INTEL_GPU",
+        "WINE_HIDE_NVIDIA_GPU",
+        "WINE_HIDE_VANGOGH_GPU",
+        "WINE_LARGE_ADDRESS_AWARE",
+        "WINE_LD_PRELOAD",
+        "WINE_MONO_HIDETYPES",
+        "WINE_MONO_TRACE",
+        "WINE_MOVE_HACK",
+        "WINE_NO_WM_DECORATION",
+        "WINE_SIMULATE_WRITECOPY",
+        "WINE_USE_EGL",
+        "WINE_WAYLAND_STEAM_OVERLAY_LAYER",
+        "XALIA_SUPPORTED_ONLY",
+        "XDG_CONFIG_HOME",
+        "XLOCALEDIR"
+      ]
+    },
+    "cachyos": {
+      "source": {
+        "label": "Proton-CachyOS",
+        "repo": "CachyOS/proton-cachyos",
+        "tag": "cachyos-11.0-20260702-slr",
+        "file": "proton",
+        "repo_url": "https://github.com/CachyOS/proton-cachyos",
+        "release_url": "https://github.com/CachyOS/proton-cachyos/releases/tag/cachyos-11.0-20260702-slr",
+        "file_url": "https://github.com/CachyOS/proton-cachyos/blob/cachyos-11.0-20260702-slr/proton",
+        "raw_url": "https://raw.githubusercontent.com/CachyOS/proton-cachyos/cachyos-11.0-20260702-slr/proton",
+        "sha256": "aad4d855bc57faa839d49e38054125b53c44ee6b9ef472d1c1627482e8ac5572"
+      },
+      "switch_count": 51,
+      "env_read_count": 114,
+      "switches": {
+        "DXVK_NVAPI_VKREFLEX": "vkreflex",
+        "ENABLE_VKBASALT": "vkbasalt",
+        "LOW_LATENCY_LAYER": "lowlatencylayer",
+        "PROTON_D7VK_DDRAW": "d7vkddraw",
+        "PROTON_DISABLE_NVAPI": "disablenvapi",
+        "PROTON_DLSS_INDICATOR": "dlsshud",
+        "PROTON_DLSS_UPGRADE": "dlss",
+        "PROTON_DXVK_D3D8": "dxvkd3d8",
+        "PROTON_DXVK_LOWLATENCY": "dxvklowlatency",
+        "PROTON_DXVK_SAREK": "dxvksarek",
+        "PROTON_ENABLE_MEDIACONV": "mediaconv",
+        "PROTON_ENABLE_WAYLAND": "wayland",
+        "PROTON_FORCE_LARGE_ADDRESS_AWARE": "forcelgadd",
+        "PROTON_FORCE_NVAPI": "forcenvapi",
+        "PROTON_FSR3_UPGRADE": "fsr3",
+        "PROTON_FSR4_INDICATOR": "fsr4hud",
+        "PROTON_FSR4_UPGRADE": "fsr4",
+        "PROTON_HEAP_DELAY_FREE": "heapdelayfree",
+        "PROTON_HEAP_ZERO_MEMORY": "heapzeromemory",
+        "PROTON_HIDE_APU": "hideapu",
+        "PROTON_HIDE_INTEL_GPU": "hideintelgpu",
+        "PROTON_HIDE_NVIDIA_GPU": "hidenvgpu",
+        "PROTON_HIDE_VANGOGH_GPU": "hidevggpu",
+        "PROTON_LOCAL_SHADER_CACHE": "localshadercache",
+        "PROTON_MLFG_UPGRADE": "mlfg",
+        "PROTON_NATIVE_AGS": "nativeags",
+        "PROTON_NO_D3D10": "nod3d10",
+        "PROTON_NO_D3D11": "nod3d11",
+        "PROTON_NO_ESYNC": "noesync",
+        "PROTON_NO_FSYNC": "nofsync",
+        "PROTON_NO_WM_DECORATION": "nowmdecoration",
+        "PROTON_NO_XIM": "noxim",
+        "PROTON_NVIDIA_LIBS": "nvidialibs",
+        "PROTON_NVIDIA_LIBS_NO_32BIT": "nvidialibsno32",
+        "PROTON_NVIDIA_NVCUDA": "nvcuda",
+        "PROTON_NVIDIA_NVENC": "nvenc",
+        "PROTON_NVIDIA_NVML": "nvml",
+        "PROTON_NVIDIA_NVOPTIX": "nvoptix",
+        "PROTON_OLD_GL_STRING": "oldglstr",
+        "PROTON_PREFER_SDL": "sdlinput",
+        "PROTON_SET_GAME_DRIVE": "gamedrive",
+        "PROTON_SET_STEAM_DRIVE": "steamdrive",
+        "PROTON_USE_OPTISCALER": "optiscaler",
+        "PROTON_USE_PIPEWIRE": "pipewire",
+        "PROTON_USE_SDL": "sdlinput",
+        "PROTON_USE_WAYLAND": "wayland",
+        "PROTON_USE_WINED3D": "wined3d",
+        "PROTON_USE_WINED3D11": "wined3d",
+        "PROTON_USE_WOW64": "wow64",
+        "PROTON_XESS_UPGRADE": "xess",
+        "PYROVEIL": "pyroveil"
+      },
+      "env_reads": [
+        "DXVK_ASYNC",
+        "DXVK_ENABLE_NVAPI",
+        "DXVK_FILTER_DEVICE_NAME",
+        "DXVK_FILTER_DEVICE_UUID",
+        "DXVK_HUD",
+        "DXVK_LOG_LEVEL",
+        "DXVK_NVAPI_ALLOW_OTHER_DRIVERS",
+        "DXVK_NVAPI_DRIVER_VERSION",
+        "DXVK_NVAPI_LOG_LEVEL",
+        "DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS",
+        "ESPEAK_DATA_PATH",
+        "FEX_APP_CONFIG",
+        "FEX_APP_CONFIG_LOCATION",
+        "FNA3D_FORCE_DRIVER",
+        "FSR_FG_WATERMARK",
+        "FSR_WATERMARK",
+        "GST_GL_WINDOW",
+        "GST_PLUGIN_SYSTEM_PATH_1_0",
+        "HOME",
+        "HOST_LC_ALL",
+        "LC_ALL",
+        "LC_CTYPE",
+        "LC_MESSAGES",
+        "MEDIACONV_AUDIO_DUMP_FILE",
+        "MEDIACONV_AUDIO_TRANSCODED_FILE",
+        "MEDIACONV_BLANK_AUDIO_FILE",
+        "MEDIACONV_BLANK_VIDEO_FILE",
+        "MEDIACONV_VIDEO_DUMP_FILE",
+        "MEDIACONV_VIDEO_TRANSCODED_FILE",
+        "MESA_EXTENSION_MAX_YEAR",
+        "MIMALLOC_DISABLE_REDIRECT",
+        "NVIDIA_WINE_DLL_DIR",
+        "ORIG_",
+        "PATH",
+        "PRESSURE_VESSEL_RUNTIME_BASE",
+        "PROTON_AUDIO_CONVERT",
+        "PROTON_AUDIO_CONVERT_BIN",
+        "PROTON_CPU_TOPOLOGY",
+        "PROTON_CRASH_REPORT_DIR",
+        "PROTON_DEMUX",
+        "PROTON_DISABLE_HIDRAW",
+        "PROTON_DLL_COPY",
+        "PROTON_EMULATE_STEAMINPUT",
+        "PROTON_LIMIT_ADDRESS_SPACE",
+        "PROTON_LIMIT_RESOLUTIONS",
+        "PROTON_LOG",
+        "PROTON_LOG_DIR",
+        "PROTON_MEDIACONV_NO_VIDEO",
+        "PROTON_MEDIA_FORCE_GST",
+        "PROTON_NO_STEAMINPUT",
+        "PROTON_REMOTE_DEBUG_CMD",
+        "PROTON_USE_ARM64",
+        "PROTON_USE_XALIA",
+        "PROTON_VIDEO_CONVERT",
+        "PROTON_VR_RUNTIME",
+        "PYROVEIL_CONFIG",
+        "SDL_GAMECONTROLLER_ALLOW_STEAM_VIRTUAL_GAMEPAD",
+        "SDL_GAMECONTROLLER_IGNORE_DEVICES",
+        "STEAM_COMPAT_APP_ID",
+        "STEAM_COMPAT_CLIENT_INSTALL_PATH",
+        "STEAM_COMPAT_CONFIG",
+        "STEAM_COMPAT_DATA_PATH",
+        "STEAM_COMPAT_FEX_CONFIG",
+        "STEAM_COMPAT_INSTALL_PATH",
+        "STEAM_COMPAT_LIBRARY_PATHS",
+        "STEAM_COMPAT_MEDIA_PATH",
+        "STEAM_COMPAT_TRANSCODED_MEDIA_PATH",
+        "STEAM_FEX_MULTIBLOCK",
+        "STEAM_FEX_TSOENABLED",
+        "STORE",
+        "UMU_ID",
+        "UMU_USE_STEAM",
+        "VKD3D_DEBUG",
+        "VKD3D_FEATURE_LEVEL",
+        "VKD3D_SHADER_DEBUG",
+        "VR_OVERRIDE",
+        "VR_PATHREG_OVERRIDE",
+        "WAYLANDDRV_SSD",
+        "WAYLAND_DISPLAY",
+        "WINEARCH",
+        "WINEDEBUG",
+        "WINEDLLOVERRIDES",
+        "WINEDLLPATH",
+        "WINEESYNC",
+        "WINEFSYNC",
+        "WINELOADERNOEXEC",
+        "WINEPREFIX",
+        "WINE_AUDIO_DRIVER",
+        "WINE_CPU_TOPOLOGY",
+        "WINE_CRASH_REPORT_DIR",
+        "WINE_DISABLE_FULLSCREEN_HACK",
+        "WINE_DISABLE_GAMESCOPE_MAX_SIZE_HACK",
+        "WINE_DISABLE_HARDWARE_SCHEDULING",
+        "WINE_DISABLE_VULKAN_OPWR",
+        "WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER",
+        "WINE_GST_REGISTRY_DIR",
+        "WINE_HEAP_DELAY_FREE",
+        "WINE_HEAP_TOP_DOWN",
+        "WINE_HEAP_ZERO_MEMORY",
+        "WINE_HIDE_AMD_GPU",
+        "WINE_HIDE_APU",
+        "WINE_HIDE_INTEL_GPU",
+        "WINE_HIDE_NVIDIA_GPU",
+        "WINE_HIDE_VANGOGH_GPU",
+        "WINE_LARGE_ADDRESS_AWARE",
+        "WINE_MONO_HIDETYPES",
+        "WINE_MONO_TRACE",
+        "WINE_MOVE_HACK",
+        "WINE_NO_WM_DECORATION",
+        "WINE_SIMULATE_WRITECOPY",
+        "WINE_USE_EGL",
+        "XALIA_SUPPORTED_ONLY",
+        "XDG_CONFIG_HOME",
+        "XLOCALEDIR"
+      ]
+    },
+    "valve-experimental": {
+      "source": {
+        "label": "Proton Experimental",
+        "repo": "ValveSoftware/Proton",
+        "tag": "experimental-11.0-20261014",
+        "file": "proton",
+        "repo_url": "https://github.com/ValveSoftware/Proton",
+        "release_url": "https://github.com/ValveSoftware/Proton/releases/tag/experimental-11.0-20261014",
+        "file_url": "https://github.com/ValveSoftware/Proton/blob/experimental-11.0-20261014/proton",
+        "raw_url": "https://raw.githubusercontent.com/ValveSoftware/Proton/experimental-11.0-20261014/proton",
+        "sha256": "2304e055b98c0016b54273bfe67633a0fb122913fabcdd4857639b3835a23d75"
+      },
+      "switch_count": 19,
+      "env_read_count": 87,
+      "switches": {
+        "PROTON_DISABLE_NVAPI": "disablenvapi",
+        "PROTON_DXVK_D3D8": "dxvkd3d8",
+        "PROTON_FORCE_LARGE_ADDRESS_AWARE": "forcelgadd",
+        "PROTON_FORCE_NVAPI": "forcenvapi",
+        "PROTON_HEAP_DELAY_FREE": "heapdelayfree",
+        "PROTON_HEAP_ZERO_MEMORY": "heapzeromemory",
+        "PROTON_HIDE_APU": "hideapu",
+        "PROTON_HIDE_INTEL_GPU": "hideintelgpu",
+        "PROTON_HIDE_NVIDIA_GPU": "hidenvgpu",
+        "PROTON_HIDE_VANGOGH_GPU": "hidevggpu",
+        "PROTON_NO_D3D10": "nod3d10",
+        "PROTON_NO_D3D11": "nod3d11",
+        "PROTON_NO_FSYNC": "nofsync",
+        "PROTON_NO_XIM": "noxim",
+        "PROTON_OLD_GL_STRING": "oldglstr",
+        "PROTON_SET_GAME_DRIVE": "gamedrive",
+        "PROTON_SET_STEAM_DRIVE": "steamdrive",
+        "PROTON_USE_WINED3D": "wined3d",
+        "PROTON_USE_WINED3D11": "wined3d"
+      },
+      "env_reads": [
+        "DXVK_ENABLE_NVAPI",
+        "DXVK_LOG_LEVEL",
+        "DXVK_NVAPI_ALLOW_OTHER_DRIVERS",
+        "DXVK_NVAPI_DRIVER_VERSION",
+        "DXVK_NVAPI_LOG_LEVEL",
+        "ESPEAK_DATA_PATH",
+        "FEX_APP_CONFIG",
+        "FEX_APP_CONFIG_LOCATION",
+        "FEX_DISKCACHE",
+        "FNA3D_FORCE_DRIVER",
+        "GST_PLUGIN_SYSTEM_PATH_1_0",
+        "HOME",
+        "HOST_LC_ALL",
+        "LC_ALL",
+        "LC_CTYPE",
+        "LC_MESSAGES",
+        "MEDIACONV_AUDIO_DUMP_FILE",
+        "MEDIACONV_AUDIO_TRANSCODED_FILE",
+        "MEDIACONV_BLANK_AUDIO_FILE",
+        "MEDIACONV_BLANK_VIDEO_FILE",
+        "MEDIACONV_VIDEO_DUMP_FILE",
+        "MEDIACONV_VIDEO_TRANSCODED_FILE",
+        "MESA_EXTENSION_MAX_YEAR",
+        "MIMALLOC_DISABLE_REDIRECT",
+        "NVIDIA_WINE_DLL_DIR",
+        "ORIG_",
+        "PATH",
+        "PRESSURE_VESSEL_RUNTIME_BASE",
+        "PROTON_CPU_TOPOLOGY",
+        "PROTON_CRASH_REPORT_DIR",
+        "PROTON_DISABLE_HIDRAW",
+        "PROTON_DLL_COPY",
+        "PROTON_LIMIT_ADDRESS_SPACE",
+        "PROTON_LIMIT_RESOLUTIONS",
+        "PROTON_LOG",
+        "PROTON_LOG_DIR",
+        "PROTON_MEDIACONV_NO_VIDEO",
+        "PROTON_REMOTE_DEBUG_CMD",
+        "PROTON_SPOOF_STEAMINPUT_VIDPID",
+        "PROTON_USE_ARM64",
+        "PROTON_USE_WOW64",
+        "PROTON_USE_XALIA",
+        "PROTON_VR_RUNTIME",
+        "STEAM_COMPAT_APP_ID",
+        "STEAM_COMPAT_CLIENT_INSTALL_PATH",
+        "STEAM_COMPAT_CONFIG",
+        "STEAM_COMPAT_DATA_PATH",
+        "STEAM_COMPAT_FEX_CONFIG",
+        "STEAM_COMPAT_INSTALL_PATH",
+        "STEAM_COMPAT_LIBRARY_PATHS",
+        "STEAM_COMPAT_MEDIA_PATH",
+        "STEAM_COMPAT_TRANSCODED_MEDIA_PATH",
+        "STEAM_FEX_MULTIBLOCK",
+        "STEAM_FEX_TSOENABLED",
+        "VKD3D_DEBUG",
+        "VKD3D_FEATURE_LEVEL",
+        "VKD3D_SHADER_DEBUG",
+        "VR_OVERRIDE",
+        "VR_PATHREG_OVERRIDE",
+        "WINEARCH",
+        "WINEDEBUG",
+        "WINEDLLOVERRIDES",
+        "WINEDLLPATH",
+        "WINEFSYNC",
+        "WINELOADERNOEXEC",
+        "WINEPREFIX",
+        "WINE_CPU_TOPOLOGY",
+        "WINE_CRASH_REPORT_DIR",
+        "WINE_DISABLE_GAMESCOPE_MAX_SIZE_HACK",
+        "WINE_DISABLE_HARDWARE_SCHEDULING",
+        "WINE_DISABLE_VULKAN_OPWR",
+        "WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER",
+        "WINE_GST_REGISTRY_DIR",
+        "WINE_HEAP_DELAY_FREE",
+        "WINE_HEAP_TOP_DOWN",
+        "WINE_HEAP_ZERO_MEMORY",
+        "WINE_HIDE_AMD_CPU",
+        "WINE_HIDE_AMD_GPU",
+        "WINE_HIDE_APU",
+        "WINE_HIDE_INTEL_GPU",
+        "WINE_HIDE_NVIDIA_GPU",
+        "WINE_HIDE_VANGOGH_GPU",
+        "WINE_LARGE_ADDRESS_AWARE",
+        "WINE_MONO_HIDETYPES",
+        "WINE_MONO_TRACE",
+        "XALIA_SUPPORTED_ONLY",
+        "XDG_CONFIG_HOME"
+      ]
+    },
+    "valve-stable": {
+      "source": {
+        "label": "Proton (stable)",
+        "repo": "ValveSoftware/Proton",
+        "tag": "proton-11.0-2c",
+        "file": "proton",
+        "repo_url": "https://github.com/ValveSoftware/Proton",
+        "release_url": "https://github.com/ValveSoftware/Proton/releases/tag/proton-11.0-2c",
+        "file_url": "https://github.com/ValveSoftware/Proton/blob/proton-11.0-2c/proton",
+        "raw_url": "https://raw.githubusercontent.com/ValveSoftware/Proton/proton-11.0-2c/proton",
+        "sha256": "787504a79bacf6b303984a9a846cf47463f36599248e8306b26d5faf78267aad"
+      },
+      "switch_count": 19,
+      "env_read_count": 84,
+      "switches": {
+        "PROTON_DISABLE_NVAPI": "disablenvapi",
+        "PROTON_DXVK_D3D8": "dxvkd3d8",
+        "PROTON_FORCE_LARGE_ADDRESS_AWARE": "forcelgadd",
+        "PROTON_FORCE_NVAPI": "forcenvapi",
+        "PROTON_HEAP_DELAY_FREE": "heapdelayfree",
+        "PROTON_HEAP_ZERO_MEMORY": "heapzeromemory",
+        "PROTON_HIDE_APU": "hideapu",
+        "PROTON_HIDE_INTEL_GPU": "hideintelgpu",
+        "PROTON_HIDE_NVIDIA_GPU": "hidenvgpu",
+        "PROTON_HIDE_VANGOGH_GPU": "hidevggpu",
+        "PROTON_NO_D3D10": "nod3d10",
+        "PROTON_NO_D3D11": "nod3d11",
+        "PROTON_NO_FSYNC": "nofsync",
+        "PROTON_NO_XIM": "noxim",
+        "PROTON_OLD_GL_STRING": "oldglstr",
+        "PROTON_SET_GAME_DRIVE": "gamedrive",
+        "PROTON_SET_STEAM_DRIVE": "steamdrive",
+        "PROTON_USE_WINED3D": "wined3d",
+        "PROTON_USE_WINED3D11": "wined3d"
+      },
+      "env_reads": [
+        "DXVK_ENABLE_NVAPI",
+        "DXVK_LOG_LEVEL",
+        "DXVK_NVAPI_ALLOW_OTHER_DRIVERS",
+        "DXVK_NVAPI_DRIVER_VERSION",
+        "DXVK_NVAPI_LOG_LEVEL",
+        "ESPEAK_DATA_PATH",
+        "FEX_APP_CONFIG",
+        "FEX_APP_CONFIG_LOCATION",
+        "FNA3D_FORCE_DRIVER",
+        "GST_PLUGIN_SYSTEM_PATH_1_0",
+        "HOME",
+        "HOST_LC_ALL",
+        "LC_ALL",
+        "LC_CTYPE",
+        "LC_MESSAGES",
+        "MEDIACONV_AUDIO_DUMP_FILE",
+        "MEDIACONV_AUDIO_TRANSCODED_FILE",
+        "MEDIACONV_BLANK_AUDIO_FILE",
+        "MEDIACONV_BLANK_VIDEO_FILE",
+        "MEDIACONV_VIDEO_DUMP_FILE",
+        "MEDIACONV_VIDEO_TRANSCODED_FILE",
+        "MESA_EXTENSION_MAX_YEAR",
+        "MIMALLOC_DISABLE_REDIRECT",
+        "NVIDIA_WINE_DLL_DIR",
+        "ORIG_",
+        "PATH",
+        "PRESSURE_VESSEL_RUNTIME_BASE",
+        "PROTON_CPU_TOPOLOGY",
+        "PROTON_CRASH_REPORT_DIR",
+        "PROTON_DISABLE_HIDRAW",
+        "PROTON_DLL_COPY",
+        "PROTON_LIMIT_ADDRESS_SPACE",
+        "PROTON_LIMIT_RESOLUTIONS",
+        "PROTON_LOG",
+        "PROTON_LOG_DIR",
+        "PROTON_MEDIACONV_NO_VIDEO",
+        "PROTON_REMOTE_DEBUG_CMD",
+        "PROTON_USE_ARM64",
+        "PROTON_USE_WOW64",
+        "PROTON_USE_XALIA",
+        "PROTON_VR_RUNTIME",
+        "STEAM_COMPAT_APP_ID",
+        "STEAM_COMPAT_CLIENT_INSTALL_PATH",
+        "STEAM_COMPAT_CONFIG",
+        "STEAM_COMPAT_DATA_PATH",
+        "STEAM_COMPAT_FEX_CONFIG",
+        "STEAM_COMPAT_INSTALL_PATH",
+        "STEAM_COMPAT_LIBRARY_PATHS",
+        "STEAM_COMPAT_MEDIA_PATH",
+        "STEAM_COMPAT_TRANSCODED_MEDIA_PATH",
+        "STEAM_FEX_MULTIBLOCK",
+        "STEAM_FEX_TSOENABLED",
+        "VKD3D_DEBUG",
+        "VKD3D_FEATURE_LEVEL",
+        "VKD3D_SHADER_DEBUG",
+        "VR_OVERRIDE",
+        "VR_PATHREG_OVERRIDE",
+        "WINEARCH",
+        "WINEDEBUG",
+        "WINEDLLOVERRIDES",
+        "WINEDLLPATH",
+        "WINEFSYNC",
+        "WINELOADERNOEXEC",
+        "WINEPREFIX",
+        "WINE_CPU_TOPOLOGY",
+        "WINE_CRASH_REPORT_DIR",
+        "WINE_DISABLE_GAMESCOPE_MAX_SIZE_HACK",
+        "WINE_DISABLE_HARDWARE_SCHEDULING",
+        "WINE_DISABLE_VULKAN_OPWR",
+        "WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER",
+        "WINE_GST_REGISTRY_DIR",
+        "WINE_HEAP_DELAY_FREE",
+        "WINE_HEAP_TOP_DOWN",
+        "WINE_HEAP_ZERO_MEMORY",
+        "WINE_HIDE_AMD_GPU",
+        "WINE_HIDE_APU",
+        "WINE_HIDE_INTEL_GPU",
+        "WINE_HIDE_NVIDIA_GPU",
+        "WINE_HIDE_VANGOGH_GPU",
+        "WINE_LARGE_ADDRESS_AWARE",
+        "WINE_MONO_HIDETYPES",
+        "WINE_MONO_TRACE",
+        "XALIA_SUPPORTED_ONLY",
+        "XDG_CONFIG_HOME"
+      ]
+    }
+  },
+  "switches": {
+    "DXVK_NVAPI_VKREFLEX": {
+      "option": "vkreflex",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "ENABLE_VKBASALT": {
+      "option": "vkbasalt",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "LOW_LATENCY_LAYER": {
+      "option": "lowlatencylayer",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_D7VK_DDRAW": {
+      "option": "d7vkddraw",
+      "tools": [
+        "cachyos"
+      ]
+    },
+    "PROTON_DISABLE_NVAPI": {
+      "option": "disablenvapi",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_DLSS_INDICATOR": {
+      "option": "dlsshud",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_DLSS_UPGRADE": {
+      "option": "dlss",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_DXVK_D3D8": {
+      "option": "dxvkd3d8",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_DXVK_LOWLATENCY": {
+      "option": "dxvklowlatency",
+      "tools": [
+        "cachyos"
+      ]
+    },
+    "PROTON_DXVK_SAREK": {
+      "option": "dxvksarek",
+      "tools": [
+        "cachyos"
+      ]
+    },
+    "PROTON_ENABLE_HDR": {
+      "option": "hdr",
+      "tools": [
+        "ge"
+      ]
+    },
+    "PROTON_ENABLE_MEDIACONV": {
+      "option": "mediaconv",
+      "tools": [
+        "cachyos"
+      ]
+    },
+    "PROTON_ENABLE_WAYLAND": {
+      "option": "wayland",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_ENABLE_WINEBTH": {
+      "option": "winebth",
+      "tools": [
+        "ge"
+      ]
+    },
+    "PROTON_FORCE_LARGE_ADDRESS_AWARE": {
+      "option": "forcelgadd",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_FORCE_NVAPI": {
+      "option": "forcenvapi",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_FSR3_UPGRADE": {
+      "option": "fsr3",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_FSR4_INDICATOR": {
+      "option": "fsr4hud",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_FSR4_UPGRADE": {
+      "option": "fsr4",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_HEAP_DELAY_FREE": {
+      "option": "heapdelayfree",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_HEAP_ZERO_MEMORY": {
+      "option": "heapzeromemory",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_HIDE_APU": {
+      "option": "hideapu",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_HIDE_INTEL_GPU": {
+      "option": "hideintelgpu",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_HIDE_NVIDIA_GPU": {
+      "option": "hidenvgpu",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_HIDE_VANGOGH_GPU": {
+      "option": "hidevggpu",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_LOCAL_SHADER_CACHE": {
+      "option": "localshadercache",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_MLFG_UPGRADE": {
+      "option": "mlfg",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NATIVE_AGS": {
+      "option": "nativeags",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NO_D3D10": {
+      "option": "nod3d10",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_NO_D3D11": {
+      "option": "nod3d11",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_NO_ESYNC": {
+      "option": "noesync",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NO_FSYNC": {
+      "option": "nofsync",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_NO_NTSYNC": {
+      "option": "nontsync",
+      "tools": [
+        "ge"
+      ]
+    },
+    "PROTON_NO_WM_DECORATION": {
+      "option": "nowmdecoration",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NO_XIM": {
+      "option": "noxim",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_NVIDIA_LIBS": {
+      "option": "nvidialibs",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NVIDIA_LIBS_NO_32BIT": {
+      "option": "nvidialibsno32",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NVIDIA_NVCUDA": {
+      "option": "nvcuda",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NVIDIA_NVENC": {
+      "option": "nvenc",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NVIDIA_NVML": {
+      "option": "nvml",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NVIDIA_NVOPTIX": {
+      "option": "nvoptix",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_OLD_GL_STRING": {
+      "option": "oldglstr",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_PREFER_SDL": {
+      "option": "sdlinput",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_SET_GAME_DRIVE": {
+      "option": "gamedrive",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_SET_STEAM_DRIVE": {
+      "option": "steamdrive",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_USE_HDR": {
+      "option": "hdr",
+      "tools": [
+        "ge"
+      ]
+    },
+    "PROTON_USE_OPTISCALER": {
+      "option": "optiscaler",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_USE_PIPEWIRE": {
+      "option": "pipewire",
+      "tools": [
+        "cachyos"
+      ]
+    },
+    "PROTON_USE_SDL": {
+      "option": "sdlinput",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_USE_WAYLAND": {
+      "option": "wayland",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_USE_WINED3D": {
+      "option": "wined3d",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_USE_WINED3D11": {
+      "option": "wined3d",
+      "tools": [
+        "ge",
+        "cachyos",
+        "valve-experimental",
+        "valve-stable"
+      ]
+    },
+    "PROTON_USE_WOW64": {
+      "option": "wow64",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_USE_WRITECOPY": {
+      "option": "writecopy",
+      "tools": [
+        "ge"
+      ]
+    },
+    "PROTON_XESS_UPGRADE": {
+      "option": "xess",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    },
+    "PYROVEIL": {
+      "option": "pyroveil",
+      "tools": [
+        "ge",
+        "cachyos"
+      ]
+    }
+  }
+}
