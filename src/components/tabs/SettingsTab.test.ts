@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildInstallProgressDetails,
   getInstallStatusToastStamp,
+  installPredatesSteamStart,
   resetInstallStatusToastMemory,
   shouldPollInstallStatus,
   shouldShowInstallStatusToast,
@@ -280,3 +281,48 @@ describe('SettingsTab release-row progress dedup guard', () => {
     );
   });
 });
+
+describe('installPredatesSteamStart (#137)', () => {
+  const done = (finished_at: number | null) => makeManagerState({ state: 'success', tag_name: 'GE-Proton11-5', finished_at }).install_status;
+
+  it('an install from before the current Steam client started is not announced again', () => {
+    // Logged on the Deck: install 19:37:44, Steam restarted 19:38:12, tab reopened 19:38:28.
+    expect(installPredatesSteamStart(done(1792971464), 1792971492.11)).toBe(true);
+  });
+
+  it('an install after Steam started still prompts', () => {
+    expect(installPredatesSteamStart(done(1792971600), 1792971492.11)).toBe(false);
+  });
+
+  it('never silences when either time is unknown', () => {
+    expect(installPredatesSteamStart(done(null), 1792971492.11)).toBe(false);
+    expect(installPredatesSteamStart(done(1792971464), null)).toBe(false);
+    expect(installPredatesSteamStart(done(1792971464), undefined)).toBe(false);
+  });
+});
+
+describe('announced install stamp survives a plugin reload (#137)', () => {
+  it('reads the stamp back from settings when memory was wiped', () => {
+    const store = new Map<string, string>();
+    (globalThis as any).localStorage = {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => { store.set(k, v); },
+    };
+    try {
+      resetInstallStatusToastMemory();
+      const status = makeManagerState({ state: 'success', tag_name: 'GE-Proton11-5', finished_at: 1792971464 }).install_status;
+      expect(shouldShowInstallStatusToast(status)).toBe(true);
+      // Simulate the frontend reloading: memory gone, saved setting kept.
+      const saved = new Map(store);
+      resetInstallStatusToastMemory();
+      saved.forEach((v, k) => store.set(k, v));
+      expect(shouldShowInstallStatusToast(status)).toBe(false);
+      // A different install is still announced.
+      expect(shouldShowInstallStatusToast({ ...status, finished_at: 1792971999 })).toBe(true);
+    } finally {
+      delete (globalThis as any).localStorage;
+      resetInstallStatusToastMemory();
+    }
+  });
+});
+

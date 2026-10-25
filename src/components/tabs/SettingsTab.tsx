@@ -24,7 +24,7 @@ import type { CompatToolId, CompatToolRelease, InstalledCompatTool, ProtonGeMana
 import { COMPAT_TOOL_OPTIONS } from '../../types';
 import { t } from '../../lib/i18n';
 import { registerScreenshotAutomationHandler } from '../../lib/screenshotAutomation';
-import { buildInstallProgressDetails, shouldPollInstallStatus, shouldShowInstallStatusToast } from './settingsTabProgress';
+import { buildInstallProgressDetails, installPredatesSteamStart, shouldPollInstallStatus, shouldShowInstallStatusToast } from './settingsTabProgress';
 
 const getAutoUpdateKey = (toolId: CompatToolId) => `compat-auto-update-${toolId}`;
 const RESTART_HINT = ' Steam may need a restart before the new compatibility tool appears everywhere.';
@@ -1064,6 +1064,14 @@ export function SettingsTab() {
       return;
     }
     setInstallingTag(null);
+    if (installPredatesSteamStart(installStatus, managerState.steam_started_at)) {
+      // Finished before this Steam client started, so the restart already
+      // loaded it; the backend just still remembers it (#137).
+      void logFrontendEvent('DEBUG', 'Install finished before Steam started, not announcing again', {
+        tag: installStatus.tag_name, finishedAt: installStatus.finished_at, steamStartedAt: managerState.steam_started_at,
+      });
+      return;
+    }
     if (installStatus.state === 'success' && !isAlreadyInstalledMessage(installStatus.message)) {
       // A fresh build can't be used until Steam restarts (#137).
       promptSteamRestartForTool(installStatus.tag_name ?? 'Proton', 'compat-tools-tab');

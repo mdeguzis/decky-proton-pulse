@@ -634,7 +634,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         # #133: used_by_app_ids per tool (None when config.vdf is unreadable).
         usage_available = annotate_tool_usage(installed)
         # #137: builds Steam hasn't loaded yet (installed after it started).
-        annotate_pending_restart(installed, steam_client_started_at())
+        steam_started_at = steam_client_started_at()
+        annotate_pending_restart(installed, steam_started_at)
         current_release = releases[0] if releases else None
         config = COMPAT_TOOL_CONFIGS.get(tool_id, COMPAT_TOOL_CONFIGS["proton-ge"])
 
@@ -675,6 +676,10 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             ),
             "tool_id": tool_id,
             "tool_label": config["label"],
+            # #137: lets the frontend tell an install that finished before
+            # the current Steam client started (already picked up by that
+            # restart) from one that still needs a restart.
+            "steam_started_at": steam_started_at,
         }
 
     async def get_compat_tool_choices(self) -> list[dict[str, Any]]:

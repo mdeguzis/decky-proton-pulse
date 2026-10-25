@@ -1,5 +1,10 @@
 import type { ProtonGeManagerState } from '../../types';
+import { getSetting, setSetting } from '../../lib/settings';
 
+// Kept in memory and in plugin settings: a plugin reload (self-update)
+// without a Steam restart wipes memory but must not re-announce the same
+// install (#137).
+const ANNOUNCED_STAMP_KEY = 'compat-install-announced-stamp';
 let lastConsumedInstallToastStamp: string | null = null;
 
 export interface InstallProgressLabels {
@@ -99,16 +104,43 @@ export function shouldShowInstallStatusToast(
     return false;
   }
 
-  if (lastConsumedInstallToastStamp === stamp) {
+  if (lastConsumedInstallToastStamp === stamp || getSetting<string | null>(ANNOUNCED_STAMP_KEY, null) === stamp) {
+    lastConsumedInstallToastStamp = stamp;
     return false;
   }
 
   lastConsumedInstallToastStamp = stamp;
+  try {
+    setSetting(ANNOUNCED_STAMP_KEY, stamp);
+  } catch {
+    // No storage (tests, or a broken localStorage): memory still dedupes this session.
+  }
   return true;
+}
+
+/**
+ * True when a finished install predates the running Steam client (#137).
+ * The backend outlives a Steam restart and keeps reporting its last
+ * install, while the frontend reloads and forgets it already announced it;
+ * an install from before the restart is already loaded by Steam, so it
+ * must not raise the restart prompt again. Unknown times return false so
+ * a real fresh install is never silenced.
+ */
+export function installPredatesSteamStart(
+  installStatus: ProtonGeManagerState['install_status'],
+  steamStartedAt: number | null | undefined,
+): boolean {
+  if (!installStatus.finished_at || steamStartedAt == null) return false;
+  return installStatus.finished_at <= steamStartedAt;
 }
 
 export function resetInstallStatusToastMemory(): void {
   lastConsumedInstallToastStamp = null;
+  try {
+    setSetting(ANNOUNCED_STAMP_KEY, null);
+  } catch {
+    // see above
+  }
 }
 
 function formatByteCount(value: number | null | undefined): string {

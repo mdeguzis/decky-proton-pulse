@@ -151,6 +151,8 @@ export interface ProtonGeManagerState {
     finished_at: number | null;
     install_as_latest: boolean;
   };
+  // #137: epoch seconds the running Steam client started; null if unknown.
+  steam_started_at?: number | null;
 }
 
 export interface ProtonVersionAvailability {

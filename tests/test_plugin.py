@@ -1443,9 +1443,12 @@ def test_get_compat_manager_state_proton_ge(plugin: Plugin) -> None:
         patch("main.list_installed_compatibility_tools", return_value=installed_tools),
         patch("main.get_install_status", return_value=install_status),
         patch("main.installed_tool_matches_version", side_effect=lambda tool, ver: tool["display_name"] == ver),
+        patch("main.steam_client_started_at", return_value=1700000000.5),
     ):
         state = asyncio.run(plugin.get_compat_manager_state("proton-ge", False))
 
+    # #137: the frontend compares install finished_at against this.
+    assert state["steam_started_at"] == 1700000000.5
     assert state["tool_id"] == "proton-ge"
     assert state["tool_label"] == "Proton-GE"
     assert state["current_release"] == releases[0]
