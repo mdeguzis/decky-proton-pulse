@@ -30,6 +30,7 @@ from typing import Any
 
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 
+from .game_platforms import _library_folders as _steamapps_dirs
 from .steam_paths import compat_tools_dirs, find_steam_root
 
 STEAM_DEFAULT_APP_ID = "0"
@@ -206,6 +207,35 @@ def usage_for_tool(tool: dict[str, Any], mapping: dict[str, str]) -> dict[str, A
     }
 
 
+# Non-Steam shortcut ids are 32-bit with the high bit set. They have no
+# appmanifest, so they are always counted.
+_SHORTCUT_ID_MIN = 2**31
+
+
+def installed_steam_app_ids() -> set[str] | None:
+    """App ids with an appmanifest in any Steam library, or None if none could be read.
+
+    None (not an empty set) when no library folder is found, so a broken
+    lookup never turns every tool into "used by 0 games".
+    """
+    dirs = _steamapps_dirs()
+    if not dirs:
+        return None
+    ids: set[str] = set()
+    for steamapps in dirs:
+        if not steamapps.is_dir():
+            continue
+        for manifest in steamapps.glob("appmanifest_*.acf"):
+            app_id = manifest.name[len("appmanifest_"):-len(".acf")]
+            if app_id.isdigit():
+                ids.add(app_id)
+    return ids
+
+
+def _is_installed_or_shortcut(app_id: str, installed: set[str]) -> bool:
+    return app_id in installed or (app_id.isdigit() and int(app_id) >= _SHORTCUT_ID_MIN)
+
+
 def annotate_tool_usage(tools: list[dict[str, Any]]) -> bool:
     """Add used_by_app_ids / is_steam_default to each tool in place.
 
@@ -224,8 +254,27 @@ def annotate_tool_usage(tools: list[dict[str, Any]]) -> bool:
             tool["used_by_app_ids"] = None
             tool["is_steam_default"] = False
         return False
+    # Steam keeps a game's CompatToolMapping entry after it is uninstalled,
+    # so "used by" counts only installed games and non-Steam shortcuts.
+    # Auto-trim (select_prunable_versions) still reads the full mapping:
+    # keeping a build a stale entry points at is the safe side.
+    installed = installed_steam_app_ids()
+    stale: dict[str, list[str]] = {}
     for tool in tools:
-        tool.update(usage_for_tool(tool, mapping))
+        usage = usage_for_tool(tool, mapping)
+        if installed is not None:
+            kept = [a for a in usage["used_by_app_ids"] if _is_installed_or_shortcut(a, installed)]
+            dropped = [a for a in usage["used_by_app_ids"] if a not in kept]
+            if dropped:
+                stale[str(tool.get("directory_name"))] = dropped
+            usage["used_by_app_ids"] = kept
+        tool.update(usage)
+    if installed is None:
+        decky.logger.warning(
+            "annotate_tool_usage: no Steam library found, counting uninstalled games too"
+        )
+    elif stale:
+        decky.logger.debug("annotate_tool_usage: ignored uninstalled games | %s", stale)
     decky.logger.debug(
         "annotate_tool_usage: %d tools, in use=%s",
         len(tools),

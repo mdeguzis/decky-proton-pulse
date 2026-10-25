@@ -166,11 +166,64 @@ def test_annotate_marks_usage_unknown_when_config_unreadable() -> None:
 
 def test_annotate_fills_usage() -> None:
     tools = [_tool("GE-Proton11-5-x86_64"), _tool("GE-Proton11-6-x86_64")]
-    with patch.object(compat_usage, "read_compat_tool_mapping",
-                      return_value=parse_compat_tool_mapping(CONFIG_VDF)):
+    with (
+        patch.object(compat_usage, "read_compat_tool_mapping",
+                     return_value=parse_compat_tool_mapping(CONFIG_VDF)),
+        patch.object(compat_usage, "installed_steam_app_ids", return_value={"257510"}),
+    ):
         assert annotate_tool_usage(tools) is True
     assert tools[0]["used_by_app_ids"] == ["257510"]
     assert tools[1]["used_by_app_ids"] == []
+
+
+def _mapping(**pairs: str) -> dict[str, str]:
+    return {k.lstrip("_"): v for k, v in pairs.items()}
+
+
+def test_annotate_ignores_uninstalled_games_but_keeps_shortcuts() -> None:
+    # Seen on the Deck: God of War (1593500) uninstalled, Steam kept its mapping.
+    mapping = _mapping(_1593500="GE-Proton11-5-x86_64", _21690="GE-Proton11-5-x86_64",
+                       _4092442637="GE-Proton11-5-x86_64", _0="proton_experimental")
+    tools = [_tool("GE-Proton11-5-x86_64")]
+    with (
+        patch.object(compat_usage, "read_compat_tool_mapping", return_value=mapping),
+        patch.object(compat_usage, "installed_steam_app_ids", return_value={"21690"}),
+    ):
+        assert annotate_tool_usage(tools) is True
+    assert tools[0]["used_by_app_ids"] == ["21690", "4092442637"]
+
+
+def test_annotate_counts_everything_when_no_library_found() -> None:
+    mapping = _mapping(_1593500="GE-Proton11-5-x86_64")
+    tools = [_tool("GE-Proton11-5-x86_64")]
+    with (
+        patch.object(compat_usage, "read_compat_tool_mapping", return_value=mapping),
+        patch.object(compat_usage, "installed_steam_app_ids", return_value=None),
+    ):
+        annotate_tool_usage(tools)
+    # Unknown install state must never read as "used by 0 games".
+    assert tools[0]["used_by_app_ids"] == ["1593500"]
+
+
+def test_prune_still_sees_uninstalled_games() -> None:
+    # Auto-trim uses the full mapping, so a stale entry keeps its build.
+    mapping = _mapping(_1593500="GE-Proton11-5-x86_64")
+    assert compat_usage.usage_for_tool(_tool("GE-Proton11-5-x86_64"), mapping)["used_by_app_ids"] == ["1593500"]
+
+
+def test_installed_steam_app_ids_reads_manifests(tmp_path: Path) -> None:
+    lib_a = tmp_path / "a" / "steamapps"
+    lib_b = tmp_path / "b" / "steamapps"
+    lib_a.mkdir(parents=True)
+    lib_b.mkdir(parents=True)
+    (lib_a / "appmanifest_21690.acf").write_text("x")
+    (lib_b / "appmanifest_1145350.acf").write_text("x")
+    (lib_b / "appmanifest_bogus.acf").write_text("x")
+    missing = tmp_path / "c" / "steamapps"
+    with patch.object(compat_usage, "_steamapps_dirs", return_value=[lib_a, lib_b, missing]):
+        assert compat_usage.installed_steam_app_ids() == {"21690", "1145350"}
+    with patch.object(compat_usage, "_steamapps_dirs", return_value=[]):
+        assert compat_usage.installed_steam_app_ids() is None
 
 
 def test_read_mapping_raises_without_steam_root() -> None:
