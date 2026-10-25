@@ -347,3 +347,52 @@ def test_unknown_tool_id_returns_error(tmp_path):
     with _patch_dirs(tmp_path):
         result = ensure_rolling_slot("proton-nonexistent")
     assert result == {"ok": False, "reason": "unknown-tool"}
+
+
+# --- install pipeline refreshes the slot for the tool that was installed ---
+# Regression: _do_download_and_install referenced an undefined tool_config,
+# and a broad except turned the NameError into a warning, so the slot never
+# refreshed after any install.
+
+def _run_install(tmp_path: Path, tool_id: str, slot_result: dict, slot_side_effect=None):
+    from lib import proton_ge  # pylint: disable=import-outside-toplevel
+
+    release = {"tag_name": "v1", "asset_name": "v1.tar.gz", "asset_size": 1}
+    with (
+        patch.object(proton_ge, "compat_tools_dir", return_value=tmp_path),
+        patch.object(proton_ge, "_download_release"),
+        patch.object(proton_ge, "extract_archive_safely"),
+        patch.object(proton_ge, "finalize_extracted_compat_tool",
+                     return_value={"success": True, "message": "Installed v1"}),
+        patch.object(proton_ge, "write_latest_metadata"),
+        patch("lib.compat_tools.ensure_rolling_slot",
+              return_value=slot_result, side_effect=slot_side_effect) as slot_mock,
+    ):
+        result = proton_ge._do_download_and_install(  # pylint: disable=protected-access
+            "v1", release, "https://example.invalid/v1.tar.gz",
+            install_as_latest=False, force_reinstall=False,
+            _set=lambda **_kw: None, _cancel=lambda: False, _set_process=lambda _p: None,
+            tool_id=tool_id,
+        )
+    return result, slot_mock
+
+
+def test_install_refreshes_rolling_slot_for_installed_tool(tmp_path: Path) -> None:
+    for tool_id in ("proton-ge", "proton-cachyos"):
+        result, slot_mock = _run_install(tmp_path, tool_id, {"ok": True, "changed": True})
+        slot_mock.assert_called_once_with(tool_id)
+        assert result["success"] is True
+        assert result["rolling_slot"] == {"ok": True, "changed": True}
+
+
+def test_install_reports_structural_slot_failure(tmp_path: Path) -> None:
+    result, _ = _run_install(tmp_path, "proton-ge", {"ok": False, "reason": "rebuild-failed"})
+    assert result["success"] is False
+    assert "rebuild-failed" in result["message"]
+
+
+def test_install_survives_slot_oserror(tmp_path: Path) -> None:
+    result, _ = _run_install(tmp_path, "proton-ge", {}, slot_side_effect=OSError("read-only"))
+    assert result["success"] is True
+    assert "rolling_slot" not in result
+

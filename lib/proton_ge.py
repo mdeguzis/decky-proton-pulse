@@ -402,6 +402,7 @@ def install_sync(  # pylint: disable=too-many-arguments,too-many-positional-argu
         force_reinstall,
         _set, _cancel, _set_process,
         latest_slot_name=latest_slot_name,
+        tool_id=tool_id,
     )
 
 
@@ -415,6 +416,7 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
     _cancel: Any,
     _set_process: Any,
     latest_slot_name: str = PROTON_GE_LATEST_SLOT_NAME,
+    tool_id: str = "proton-ge",
 ) -> dict[str, Any]:
     """Handle the download/extract/finalize pipeline in a temp dir."""
     asset_size = release.get("asset_size")
@@ -483,7 +485,11 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
             if result.get("success"):
                 try:
                     from .compat_tools import ensure_rolling_slot  # pylint: disable=import-outside-toplevel
-                    slot_result = ensure_rolling_slot(tool_config["id"])
+                    slot_result = ensure_rolling_slot(tool_id)
+                    decky.logger.debug(
+                        f"Rolling slot refresh after install | tool_id={tool_id}"
+                        f" version={normalized} result={slot_result}"
+                    )
                     result["rolling_slot"] = slot_result
                     if not slot_result.get("ok") and slot_result.get("reason") not in {"no-source", "slot-is-real-dir"}:
                         # Structural failure -- the tool we just installed can't
@@ -494,9 +500,14 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
                             f"Installed {normalized} but the Proton-Latest slot "
                             f"could not be created: {slot_result.get('reason')}"
                         )
-                except Exception as _slot_err:  # pylint: disable=broad-except
+                except OSError as _slot_err:
+                    # Only filesystem errors are recoverable here. A broad
+                    # except once hid a NameError, so the slot silently
+                    # never refreshed after any install.
                     decky.logger.warning(
-                        f"Rolling slot refresh after install failed: {_slot_err}"
+                        f"Rolling slot refresh after install failed"
+                        f" | tool_id={tool_id} version={normalized}"
+                        f" error={type(_slot_err).__name__}: {_slot_err}"
                     )
             result["release"] = release
             return result
