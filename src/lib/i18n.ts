@@ -143,6 +143,8 @@ export interface TranslationTree {
     hardwareComparisonDescription: string;
     launchPreview: string;
     currentLaunchOptions: string;
+    applyCompatTool: string;
+    launchOptionsAfterApply: string;
     noLaunchOptions: string;
     hardwareMatch: string;
     hardwareMatchPercent: (percent: number) => string;
@@ -957,6 +959,8 @@ export const en: TranslationTree = {
     hardwareComparisonDescription: 'Left side is the ProtonDB report. Right side is our current system.',
     launchPreview: 'Launch Preview',
     currentLaunchOptions: 'Current Launch Options',
+    applyCompatTool: 'Compatibility tool',
+    launchOptionsAfterApply: 'Launch options after Apply',
     noLaunchOptions: 'No launch options set',
     hardwareMatch: 'Hardware Match',
     hardwareMatchPercent: (percent) => `${percent}% match`,

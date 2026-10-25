@@ -92,6 +92,8 @@ export const zhTW: TranslationTree = {
     hardwareComparisonDescription: '左側為 ProtonDB 報告，右側為我們目前的系統。',
     launchPreview: '啟動預覽',
     currentLaunchOptions: '目前的啟動選項',
+    applyCompatTool: '相容性工具',
+    launchOptionsAfterApply: '套用後的啟動選項',
     noLaunchOptions: '未設定啟動選項',
     hardwareMatch: '硬體匹配',
     hardwareMatchPercent: (percent) => `${percent}% 匹配`,

@@ -92,6 +92,8 @@ export const hu: TranslationTree = {
     hardwareComparisonDescription: 'Bal oldalon a ProtonDB-jelentés látható. Jobb oldalon a jelenlegi rendszerünk.',
     launchPreview: 'Indítási előnézet',
     currentLaunchOptions: 'Jelenlegi indítási lehetőségek',
+    applyCompatTool: 'Kompatibilitási eszköz',
+    launchOptionsAfterApply: 'Indítási beállítások alkalmazás után',
     noLaunchOptions: 'Nincsenek beállítva indítási lehetőségek',
     hardwareMatch: 'Hardveregyezés',
     hardwareMatchPercent: (percent) => `${percent}% egyezés`,

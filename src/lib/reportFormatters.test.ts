@@ -9,7 +9,7 @@ import { setSteamDefaultTool } from './steamDefaultState';
 import {
   RATING_COLORS,
   buildNotesPreview,
-  buildLaunchOptionPreview,
+  launchOptionsAfterApply,
   formatProtonLabel,
   formatTimestamp,
   matchLabel,
@@ -28,7 +28,12 @@ describe('reportFormatters', () => {
 
   it('formats timestamps and launch option previews', () => {
     expect(formatTimestamp(1712707200)).toBe('2024-04-10');
-    expect(buildLaunchOptionPreview('GE-Proton10-1')).toBe('PROTON_VERSION="GE-Proton10-1" %command%');
+    // Apply never writes PROTON_VERSION (#92); the preview shows the user's
+    // options as they will be after Apply.
+    expect(launchOptionsAfterApply('~/lsfg %command%')).toBe('~/lsfg %command%');
+    expect(launchOptionsAfterApply('PROTON_VERSION="GE-Proton10-1" ~/lsfg %command%')).toBe('~/lsfg %command%');
+    expect(launchOptionsAfterApply('PROTON_VERSION="GE-Proton10-1" %command%')).toBe('');
+    expect(launchOptionsAfterApply('')).toBe('');
   });
 
   it('builds note previews from the first non-empty line and truncates with brackets', () => {

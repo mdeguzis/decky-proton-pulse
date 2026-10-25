@@ -92,6 +92,8 @@ export const vi: TranslationTree = {
     hardwareComparisonDescription: 'Bên trái là báo cáo ProtonDB. Bên phải là hệ thống hiện tại của chúng tôi.',
     launchPreview: 'Xem trước khởi chạy',
     currentLaunchOptions: 'Tùy chọn khởi chạy hiện tại',
+    applyCompatTool: 'Công cụ tương thích',
+    launchOptionsAfterApply: 'Tùy chọn khởi chạy sau khi áp dụng',
     noLaunchOptions: 'Chưa đặt tùy chọn khởi chạy',
     hardwareMatch: 'Khớp phần cứng',
     hardwareMatchPercent: (percent) => `Khớp ${percent}%`,

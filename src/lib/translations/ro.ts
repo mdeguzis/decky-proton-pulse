@@ -92,6 +92,8 @@ export const ro: TranslationTree = {
     hardwareComparisonDescription: 'In stanga este raportul ProtonDB. In dreapta este sistemul nostru actual.',
     launchPreview: 'Previzualizare lansare',
     currentLaunchOptions: 'Optiunile de lansare curente',
+    applyCompatTool: 'Instrument de compatibilitate',
+    launchOptionsAfterApply: 'Opțiuni de lansare după aplicare',
     noLaunchOptions: 'Nu sunt setate optiuni de lansare',
     hardwareMatch: 'Potrivire hardware',
     hardwareMatchPercent: (percent) => `${percent}% potrivire`,

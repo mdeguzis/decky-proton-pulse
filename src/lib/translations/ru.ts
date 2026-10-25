@@ -122,6 +122,8 @@ export const ru: TranslationTree = {
     hardwareComparisonDescription: 'Слева показан отчёт ProtonDB. Справа показана наша текущая система.',
     launchPreview: 'Предпросмотр запуска',
     currentLaunchOptions: 'Текущие параметры запуска',
+    applyCompatTool: 'Инструмент совместимости',
+    launchOptionsAfterApply: 'Параметры запуска после применения',
     noLaunchOptions: 'Параметры запуска не заданы',
     hardwareMatch: 'Совпадение оборудования',
     hardwareMatchPercent: (percent) => `${percent}% совпадения`,

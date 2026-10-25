@@ -14,7 +14,7 @@ import {
   RATING_COLORS,
   formatProtonLabel,
   formatTimestamp,
-  buildLaunchOptionPreview,
+  launchOptionsAfterApply,
 } from '../lib/reportFormatters';
 import { getHardwareMatchPercent, getHardwareMatchBreakdown, matchColor, type FieldMatchInfo } from '../lib/scoring';
 import {
@@ -1587,15 +1587,24 @@ export function ReportDetailModal({
             outline: 'none',
           }}
         >
+            {/* What Apply does (#92, #134): sets the game's compat tool and
+                leaves launch options alone apart from dropping a legacy
+                PROTON_VERSION. Current options only show when that differs. */}
             <InfoSection title={t().detail.launchPreview}>
               <InfoRow
-                label={t().detail.launchPreview}
-                value={buildLaunchOptionPreview(report.protonVersion)}
+                label={t().detail.applyCompatTool}
+                value={formatProtonLabel(report.protonVersion)}
               />
               <InfoRow
-                label={t().detail.currentLaunchOptions}
-                value={launchOptionsDisplay || t().detail.noLaunchOptions}
+                label={t().detail.launchOptionsAfterApply}
+                value={launchOptionsAfterApply(launchOptionsDisplay) || t().detail.noLaunchOptions}
               />
+              {launchOptionsAfterApply(launchOptionsDisplay) !== launchOptionsDisplay.trim() && (
+                <InfoRow
+                  label={t().detail.currentLaunchOptions}
+                  value={launchOptionsDisplay || t().detail.noLaunchOptions}
+                />
+              )}
             </InfoSection>
 
             <div ref={hardwareSectionRef}>

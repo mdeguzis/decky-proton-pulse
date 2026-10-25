@@ -92,6 +92,8 @@ export const da: TranslationTree = {
     hardwareComparisonDescription: 'Til venstre er ProtonDB-rapporten. Til højre er vores nuværende system.',
     launchPreview: 'Startforhåndsvisning',
     currentLaunchOptions: 'Nuværende startindstillinger',
+    applyCompatTool: 'Kompatibilitetsværktøj',
+    launchOptionsAfterApply: 'Startindstillinger efter anvendelse',
     noLaunchOptions: 'Ingen startindstillinger angivet',
     hardwareMatch: 'Hardware-match',
     hardwareMatchPercent: (percent) => `${percent}% overensstemmelse`,

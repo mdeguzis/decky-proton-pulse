@@ -92,6 +92,8 @@ export const uk: TranslationTree = {
     hardwareComparisonDescription: 'Ліворуч - звіт ProtonDB. Праворуч - наша поточна система.',
     launchPreview: 'Попередній перегляд запуску',
     currentLaunchOptions: 'Поточні параметри запуску',
+    applyCompatTool: 'Інструмент сумісності',
+    launchOptionsAfterApply: 'Параметри запуску після застосування',
     noLaunchOptions: 'Параметри запуску не встановлено',
     hardwareMatch: 'Відповідність апаратного забезпечення',
     hardwareMatchPercent: (percent) => `${percent}% відповідності`,

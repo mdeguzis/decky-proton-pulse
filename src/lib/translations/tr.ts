@@ -92,6 +92,8 @@ export const tr: TranslationTree = {
     hardwareComparisonDescription: 'Solda ProtonDB raporu, sağda mevcut sistemimiz yer alır.',
     launchPreview: 'Başlatma Önizlemesi',
     currentLaunchOptions: 'Mevcut Başlatma Seçenekleri',
+    applyCompatTool: 'Uyumluluk aracı',
+    launchOptionsAfterApply: 'Uygulandıktan sonraki başlatma seçenekleri',
     noLaunchOptions: 'Başlatma seçeneği ayarlanmadı',
     hardwareMatch: 'Donanım Eşleşmesi',
     hardwareMatchPercent: (percent) => `%${percent} eşleşme`,

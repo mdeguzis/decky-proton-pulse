@@ -149,7 +149,7 @@
     "title": "Manage Game Launch Option Conflict",
     "caption": "Conflict prompt shown when Steam already has launch options and Proton Pulse is about to apply a different configuration.",
     "instructions": "Open the launch option conflict prompt from Manage Game before applying a new configuration.",
-    "automation": { "tab": "manage-game", "target": "manage-game/launch-option-conflict", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "currentLaunchOptions": "PROTON_LOG=1 DXVK_HUD=devinfo %command%", "incomingLaunchOptions": "MANGOHUD=1 PROTON_VERSION=\"GE-Proton10-1\" %command%", "waitMs": 900 }
+    "automation": { "tab": "manage-game", "target": "manage-game/launch-option-conflict", "appId": 2561580, "appName": "Horizon Zero Dawn Remastered", "currentLaunchOptions": "PROTON_LOG=1 DXVK_HUD=devinfo %command%", "incomingLaunchOptions": "MANGOHUD=1 %command%", "waitMs": 900 }
   },
   {
     "group": "logs",

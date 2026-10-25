@@ -92,6 +92,8 @@ export const cs: TranslationTree = {
     hardwareComparisonDescription: 'Vlevo je zpráva ProtonDB. Vpravo je náš aktuální systém.',
     launchPreview: 'Náhled spuštění',
     currentLaunchOptions: 'Aktuální možnosti spuštění',
+    applyCompatTool: 'Nástroj kompatibility',
+    launchOptionsAfterApply: 'Možnosti spuštění po použití',
     noLaunchOptions: 'Žádné možnosti spuštění nastaveny',
     hardwareMatch: 'Shoda hardwaru',
     hardwareMatchPercent: (percent) => `${percent}% shoda`,

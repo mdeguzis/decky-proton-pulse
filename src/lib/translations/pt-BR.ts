@@ -92,6 +92,8 @@ export const ptBR: TranslationTree = {
     hardwareComparisonDescription: 'À esquerda está o relatório do ProtonDB. À direita está o nosso sistema atual.',
     launchPreview: 'Prévia de Inicialização',
     currentLaunchOptions: 'Opções de Inicialização Atuais',
+    applyCompatTool: 'Ferramenta de compatibilidade',
+    launchOptionsAfterApply: 'Opções de inicialização após aplicar',
     noLaunchOptions: 'Nenhuma opção de inicialização definida',
     hardwareMatch: 'Compatibilidade de Hardware',
     hardwareMatchPercent: (percent) => `${percent}% de compatibilidade`,

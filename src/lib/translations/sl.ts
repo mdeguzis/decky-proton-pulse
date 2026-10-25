@@ -92,6 +92,8 @@ export const sl: TranslationTree = {
     hardwareComparisonDescription: 'Na levi je porocilo ProtonDB. Na desni je naš trenutni sistem.',
     launchPreview: 'Predogled zagona',
     currentLaunchOptions: 'Trenutne možnosti zagona',
+    applyCompatTool: 'Orodje za združljivost',
+    launchOptionsAfterApply: 'Možnosti zagona po uporabi',
     noLaunchOptions: 'Ni nastavljenih možnosti zagona',
     hardwareMatch: 'Ujemanje strojne opreme',
     hardwareMatchPercent: (percent) => `${percent}% ujemanje`,

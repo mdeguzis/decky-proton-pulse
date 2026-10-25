@@ -92,6 +92,8 @@ export const nl: TranslationTree = {
     hardwareComparisonDescription: 'Links staat het ProtonDB-rapport. Rechts staat ons huidige systeem.',
     launchPreview: 'Startvoorbeeld',
     currentLaunchOptions: 'Huidige startopties',
+    applyCompatTool: 'Compatibiliteitstool',
+    launchOptionsAfterApply: 'Startopties na toepassen',
     noLaunchOptions: 'Geen startopties ingesteld',
     hardwareMatch: 'Hardware-overeenkomst',
     hardwareMatchPercent: (percent) => `${percent}% overeenkomst`,

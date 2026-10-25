@@ -1,3 +1,4 @@
+import { stripProtonVersion } from './launchVars';
 // src/lib/reportFormatters.ts
 
 import { isSteamDefaultProton, steamDefaultToolSync } from './steamDefaultState';
@@ -27,8 +28,12 @@ export function formatTimestamp(timestamp: number): string {
   return new Date(timestamp * 1000).toISOString().slice(0, 10);
 }
 
-export function buildLaunchOptionPreview(protonVersion: string): string {
-  return `PROTON_VERSION="${protonVersion}" %command%`;
+// What Apply will leave in the game's launch options (#92, #134): the
+// current options with any legacy PROTON_VERSION token removed. Apply sets
+// the Proton version through SpecifyCompatTool, never through launch options.
+export function launchOptionsAfterApply(currentLaunchOptions: string): string {
+  const cleaned = stripProtonVersion(currentLaunchOptions);
+  return cleaned === '%command%' ? '' : cleaned;
 }
 
 export function buildNotesPreview(notes: string, maxLength = 120): string {

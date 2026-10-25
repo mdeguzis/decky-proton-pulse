@@ -92,6 +92,8 @@ export const zhCN: TranslationTree = {
     hardwareComparisonDescription: '左侧是 ProtonDB 报告，右侧是我们当前的系统。',
     launchPreview: '启动预览',
     currentLaunchOptions: '当前启动选项',
+    applyCompatTool: '兼容性工具',
+    launchOptionsAfterApply: '应用后的启动选项',
     noLaunchOptions: '未设置启动选项',
     hardwareMatch: '硬件匹配',
     hardwareMatchPercent: (percent) => `${percent}% 匹配`,

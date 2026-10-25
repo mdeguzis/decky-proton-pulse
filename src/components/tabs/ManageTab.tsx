@@ -196,7 +196,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           appName: targetAppName,
           profileName: action.profileName ?? 'Steam Deck Tweaks',
           protonVersion: action.protonVersion ?? 'GE-Proton10-1',
-          launchOptions: 'MANGOHUD=1 DXVK_ASYNC=1 PROTON_VERSION="GE-Proton10-1" %command%',
+          launchOptions: 'MANGOHUD=1 DXVK_ASYNC=1 %command%',
           enabledVars: {
             MANGOHUD: '1',
             DXVK_ASYNC: '1',
@@ -236,7 +236,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           appName: targetAppName,
           profileName: action.profileName ?? 'Steam Deck Tweaks',
           protonVersion: action.protonVersion ?? 'GE-Proton10-1',
-          launchOptions: 'MANGOHUD=1 PROTON_VERSION="GE-Proton10-1" gamemoderun %command%',
+          launchOptions: 'MANGOHUD=1 gamemoderun %command%',
           enabledVars: { MANGOHUD: '1' },
           appliedAt: Date.now() - 1000 * 60 * 18,
           isEdited: true,
@@ -261,7 +261,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
           appName: targetAppName,
           profileName: action.profileName ?? 'Steam Deck Tweaks',
           protonVersion: action.protonVersion ?? 'GE-Proton10-1',
-          launchOptions: 'MANGOHUD=1 DXVK_HUD=devinfo PROTON_VERSION="GE-Proton10-1" %command%',
+          launchOptions: 'MANGOHUD=1 DXVK_HUD=devinfo %command%',
           enabledVars: {
             MANGOHUD: '1',
             DXVK_HUD: 'devinfo',
@@ -286,7 +286,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         sysInfo={sysInfo}
         protonVersion={action.protonVersion ?? 'GE-Proton10-1'}
         autoDuration="oneToFourHours"
-        launchOptions={'MANGOHUD=1 PROTON_VERSION="GE-Proton10-1" %command%'}
+        launchOptions={'MANGOHUD=1 %command%'}
         onSubmitted={() => { void refreshReportStatuses(); }}
       />,
     );

@@ -92,6 +92,8 @@ export const el: TranslationTree = {
     hardwareComparisonDescription: 'Αριστερά είναι η αναφορά ProtonDB. Δεξιά είναι το τρέχον σύστημά μας.',
     launchPreview: 'Προεπισκόπηση εκκίνησης',
     currentLaunchOptions: 'Τρέχουσες επιλογές εκκίνησης',
+    applyCompatTool: 'Εργαλείο συμβατότητας',
+    launchOptionsAfterApply: 'Επιλογές εκκίνησης μετά την εφαρμογή',
     noLaunchOptions: 'Δεν έχουν οριστεί επιλογές εκκίνησης',
     hardwareMatch: 'Αντιστοίχιση υλικού',
     hardwareMatchPercent: (percent) => `${percent}% αντιστοίχιση`,

@@ -92,6 +92,8 @@ export const fi: TranslationTree = {
     hardwareComparisonDescription: 'Vasemmalla on ProtonDB-raportti. Oikealla on nykyinen järjestelmämme.',
     launchPreview: 'Käynnistyksen esikatselu',
     currentLaunchOptions: 'Nykyiset käynnistysasetukset',
+    applyCompatTool: 'Yhteensopivuustyökalu',
+    launchOptionsAfterApply: 'Käynnistysasetukset käyttöönoton jälkeen',
     noLaunchOptions: 'Käynnistysasetuksia ei ole määritetty',
     hardwareMatch: 'Laitteiston vastaavuus',
     hardwareMatchPercent: (percent) => `${percent}% vastaavuus`,

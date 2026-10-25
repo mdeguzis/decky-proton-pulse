@@ -92,6 +92,8 @@ export const ko: TranslationTree = {
     hardwareComparisonDescription: '왼쪽은 ProtonDB 보고서이고, 오른쪽은 현재 시스템입니다.',
     launchPreview: '실행 미리보기',
     currentLaunchOptions: '현재 실행 옵션',
+    applyCompatTool: '호환성 도구',
+    launchOptionsAfterApply: '적용 후 실행 옵션',
     noLaunchOptions: '실행 옵션이 설정되지 않았습니다',
     hardwareMatch: '하드웨어 일치',
     hardwareMatchPercent: (percent) => `${percent}% 일치`,

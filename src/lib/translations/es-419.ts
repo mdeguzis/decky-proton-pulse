@@ -92,6 +92,8 @@ export const es419: TranslationTree = {
     hardwareComparisonDescription: 'A la izquierda esta el reporte de ProtonDB. A la derecha esta nuestro sistema actual.',
     launchPreview: 'Vista previa de inicio',
     currentLaunchOptions: 'Opciones de inicio actuales',
+    applyCompatTool: 'Herramienta de compatibilidad',
+    launchOptionsAfterApply: 'Opciones de inicio después de aplicar',
     noLaunchOptions: 'No hay opciones de inicio configuradas',
     hardwareMatch: 'Coincidencia de hardware',
     hardwareMatchPercent: (percent) => `${percent}% de coincidencia`,

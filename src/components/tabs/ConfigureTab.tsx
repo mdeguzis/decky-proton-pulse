@@ -1413,7 +1413,7 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
     showLaunchOptionConflictPreview(
       action.appName || appName,
       action.currentLaunchOptions || 'PROTON_LOG=1 DXVK_HUD=devinfo %command%',
-      action.incomingLaunchOptions || 'MANGOHUD=1 PROTON_VERSION="GE-Proton10-1" %command%',
+      action.incomingLaunchOptions || 'MANGOHUD=1 %command%',
     );
   }), [appName]);
 

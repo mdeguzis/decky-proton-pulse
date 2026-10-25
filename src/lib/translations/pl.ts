@@ -92,6 +92,8 @@ export const pl: TranslationTree = {
     hardwareComparisonDescription: 'Po lewej raport ProtonDB. Po prawej nasz bieżący system.',
     launchPreview: 'Podgląd uruchamiania',
     currentLaunchOptions: 'Bieżące opcje uruchamiania',
+    applyCompatTool: 'Narzędzie zgodności',
+    launchOptionsAfterApply: 'Opcje uruchamiania po zastosowaniu',
     noLaunchOptions: 'Nie ustawiono opcji uruchamiania',
     hardwareMatch: 'Zgodność sprzętu',
     hardwareMatchPercent: (percent) => `${percent}% zgodności`,

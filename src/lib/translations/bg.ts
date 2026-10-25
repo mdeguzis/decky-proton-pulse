@@ -92,6 +92,8 @@ export const bg: TranslationTree = {
     hardwareComparisonDescription: 'Вляво е докладът от ProtonDB. Вдясно е нашата текуща система.',
     launchPreview: 'Преглед на стартирането',
     currentLaunchOptions: 'Текущи опции за стартиране',
+    applyCompatTool: 'Инструмент за съвместимост',
+    launchOptionsAfterApply: 'Опции за стартиране след прилагане',
     noLaunchOptions: 'Няма зададени опции за стартиране',
     hardwareMatch: 'Съвпадение на хардуер',
     hardwareMatchPercent: (percent) => `${percent}% съвпадение`,

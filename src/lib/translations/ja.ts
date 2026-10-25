@@ -92,6 +92,8 @@ export const ja: TranslationTree = {
     hardwareComparisonDescription: '左側は ProtonDB のレポート、右側は現在のシステムです。',
     launchPreview: '起動プレビュー',
     currentLaunchOptions: '現在の起動オプション',
+    applyCompatTool: '互換性ツール',
+    launchOptionsAfterApply: '適用後の起動オプション',
     noLaunchOptions: '起動オプションが設定されていません',
     hardwareMatch: 'ハードウェア一致',
     hardwareMatchPercent: (percent) => `${percent}% 一致`,
