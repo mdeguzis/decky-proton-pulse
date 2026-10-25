@@ -89,6 +89,8 @@ export interface CompatToolDetails {
   installed_at_iso?: string | null;
   size_bytes?: number;
   source?: string | null;
+  used_by_app_ids?: string[] | null;
+  is_steam_default?: boolean;
 }
 
 const getCompatToolDetailsCallable = callable<
