@@ -784,6 +784,7 @@ export const uk: TranslationTree = {
     antiCheatDeniedHint: () => "Розробник вирішив не підтримувати Linux. Мережева гра не працюватиме, якою б не була оцінка.",
     antiCheatUnofficialHint: () => "Античит працює в Linux без офіційної підтримки. Оновлення гри може зламати мережеву гру.",
     antiCheatPlannedHint: () => "Підтримку Linux для античиту заплановано. До її появи мережева гра може не працювати.",
+    compatToolNotSet: (version: string) => `Параметри запуску застосовано, але ${version} ще немає серед інструментів сумісності Steam. Перезапустіть Steam або виберіть його у Властивостях гри > Сумісність.`,
     perReportWhatsThis: () => `Що це?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

@@ -784,6 +784,7 @@ export const no: TranslationTree = {
     antiCheatDeniedHint: () => "Utvikleren har valgt å ikke tillate Linux. Nettspill fungerer ikke, uansett hva vurderingen sier.",
     antiCheatUnofficialHint: () => "Antijuksen fungerer på Linux uten offisiell støtte. En spilloppdatering kan ødelegge nettspill.",
     antiCheatPlannedHint: () => "Linux-støtte for antijuksen er planlagt. Inntil da fungerer kanskje ikke nettspill.",
+    compatToolNotSet: (version: string) => `Startalternativene er brukt, men ${version} er ikke blant Steams kompatibilitetsverktøy ennå. Start Steam på nytt, eller velg det under spillets Egenskaper > Kompatibilitet.`,
     perReportWhatsThis: () => `Hva er dette?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

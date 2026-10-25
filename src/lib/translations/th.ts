@@ -784,6 +784,7 @@ export const th: TranslationTree = {
     antiCheatDeniedHint: () => "ผู้พัฒนาเลือกไม่อนุญาต Linux เล่นออนไลน์ไม่ได้ ไม่ว่าคะแนนจะเป็นอย่างไร",
     antiCheatUnofficialHint: () => "แอนตี้ชีตทำงานบน Linux โดยไม่มีการรองรับอย่างเป็นทางการ การอัปเดตเกมอาจทำให้เล่นออนไลน์ไม่ได้",
     antiCheatPlannedHint: () => "มีแผนให้แอนตี้ชีตรองรับ Linux จนกว่าจะรองรับ อาจเล่นออนไลน์ไม่ได้",
+    compatToolNotSet: (version: string) => `ใช้ตัวเลือกการเปิดแล้ว แต่ ${version} ยังไม่อยู่ในเครื่องมือความเข้ากันได้ของ Steam รีสตาร์ท Steam หรือเลือกได้ที่ คุณสมบัติ > ความเข้ากันได้ ของเกม`,
     perReportWhatsThis: () => `นี่คืออะไร?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

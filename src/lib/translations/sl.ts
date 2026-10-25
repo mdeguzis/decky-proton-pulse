@@ -784,6 +784,7 @@ export const sl: TranslationTree = {
     antiCheatDeniedHint: () => "Razvijalec se je odločil, da Linuxa ne dovoli. Igranje prek spleta ne bo delovalo, ne glede na oceno.",
     antiCheatUnofficialHint: () => "Protigoljufijski sistem deluje na Linuxu brez uradne podpore. Posodobitev igre lahko pokvari igranje prek spleta.",
     antiCheatPlannedHint: () => "Podpora za Linux je načrtovana. Do takrat igranje prek spleta morda ne bo delovalo.",
+    compatToolNotSet: (version: string) => `Možnosti zagona so uporabljene, vendar ${version} še ni med Steamovimi orodji za združljivost. Znova zaženite Steam ali ga izberite v Lastnosti igre > Združljivost.`,
     perReportWhatsThis: () => `Kaj je to?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

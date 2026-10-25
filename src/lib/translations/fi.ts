@@ -784,6 +784,7 @@ export const fi: TranslationTree = {
     antiCheatDeniedHint: () => "Kehittäjä päätti olla sallimatta Linuxia. Verkkopeli ei toimi, arviosta riippumatta.",
     antiCheatUnofficialHint: () => "Huijauksenesto toimii Linuxissa ilman virallista tukea. Pelin päivitys voi rikkoa verkkopelin.",
     antiCheatPlannedHint: () => "Huijauksenestolle on suunnitteilla Linux-tuki. Siihen asti verkkopeli ei ehkä toimi.",
+    compatToolNotSet: (version: string) => `Käynnistysasetukset otettiin käyttöön, mutta ${version} ei ole vielä Steamin yhteensopivuustyökaluissa. Käynnistä Steam uudelleen tai valitse se pelin kohdasta Ominaisuudet > Yhteensopivuus.`,
     perReportWhatsThis: () => `Mikä tämä on?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

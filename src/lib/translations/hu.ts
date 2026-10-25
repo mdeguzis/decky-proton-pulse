@@ -784,6 +784,7 @@ export const hu: TranslationTree = {
     antiCheatDeniedHint: () => "A fejlesztő úgy döntött, hogy nem engedi a Linuxot. Az online játék nem működik, bármit mond az értékelés.",
     antiCheatUnofficialHint: () => "A csalásvédelem hivatalos támogatás nélkül működik Linuxon. Egy játékfrissítés elronthatja az online játékot.",
     antiCheatPlannedHint: () => "A csalásvédelem Linux-támogatása tervben van. Addig az online játék lehet, hogy nem működik.",
+    compatToolNotSet: (version: string) => `Az indítási beállítások alkalmazva, de a(z) ${version} még nincs a Steam kompatibilitási eszközei között. Indítsd újra a Steamet, vagy válaszd ki a játék Tulajdonságok > Kompatibilitás menüjében.`,
     perReportWhatsThis: () => `Mi ez?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

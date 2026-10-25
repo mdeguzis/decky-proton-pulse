@@ -5,6 +5,7 @@ import { toaster } from '../../lib/notify';
 import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, getActiveConfigForApp, onConfigSaved, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
+import { applyCompatToolAndNotify } from '../../lib/compatToolSelect';
 import { registerScreenshotAutomationHandler, type ScreenshotAutomationAction } from '../../lib/screenshotAutomation';
 import { ConfigEditorModal } from '../ConfigEditorModal';
 import { NativePulseReportModal } from '../NativePulseReportModal';
@@ -369,6 +370,7 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
   const handleReapply = async (config: TrackedConfig) => {
     try {
       await SteamClient.Apps.SetAppLaunchOptions(config.appId, config.launchOptions);
+      await applyCompatToolAndNotify(config.appId, config.protonVersion); // #92
       addTrackedConfig({ ...config, appliedAt: Date.now() });
       void logFrontendEvent('INFO', 'Config reapplied from manage menu', {
         appId: config.appId, appName: displayName(config), launchOptions: config.launchOptions,

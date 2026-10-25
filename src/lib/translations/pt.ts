@@ -784,6 +784,7 @@ export const pt: TranslationTree = {
     antiCheatDeniedHint: () => "O programador decidiu não permitir o Linux. O jogo online não vai funcionar, seja qual for a classificação.",
     antiCheatUnofficialHint: () => "O anti-batota funciona no Linux sem suporte oficial. Uma atualização do jogo pode estragar o jogo online.",
     antiCheatPlannedHint: () => "O suporte do anti-batota para Linux está previsto. Até lá, o jogo online pode não funcionar.",
+    compatToolNotSet: (version: string) => `Opções de arranque aplicadas, mas ${version} ainda não está nas ferramentas de compatibilidade do Steam. Reinicie o Steam ou escolha-o em Propriedades > Compatibilidade do jogo.`,
     perReportWhatsThis: () => `O que é isto?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

@@ -784,6 +784,7 @@ export const zhTW: TranslationTree = {
     antiCheatDeniedHint: () => "開發者選擇不允許 Linux。無論評級如何，線上遊戲都無法運作。",
     antiCheatUnofficialHint: () => "反作弊在沒有官方支援的情況下可在 Linux 上運作。遊戲更新可能會讓線上遊戲失效。",
     antiCheatPlannedHint: () => "反作弊計畫支援 Linux。在支援推出之前，線上遊戲可能無法運作。",
+    compatToolNotSet: (version: string) => `已套用啟動選項，但 ${version} 尚未出現在 Steam 的相容性工具中。請重新啟動 Steam，或在遊戲的內容 > 相容性中選擇它。`,
     perReportWhatsThis: () => `這是什麼？`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

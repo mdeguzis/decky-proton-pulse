@@ -784,6 +784,7 @@ export const da: TranslationTree = {
     antiCheatDeniedHint: () => "Udvikleren har valgt ikke at tillade Linux. Onlinespil virker ikke, uanset hvad bedømmelsen siger.",
     antiCheatUnofficialHint: () => "Anti-snyd virker på Linux uden officiel understøttelse. En spilopdatering kan ødelægge onlinespil.",
     antiCheatPlannedHint: () => "Linux-understøttelse af anti-snyd er planlagt. Indtil da virker onlinespil måske ikke.",
+    compatToolNotSet: (version: string) => `Startindstillingerne er anvendt, men ${version} er endnu ikke blandt Steams kompatibilitetsværktøjer. Genstart Steam, eller vælg det under spillets Egenskaber > Kompatibilitet.`,
     perReportWhatsThis: () => `Hvad er dette?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

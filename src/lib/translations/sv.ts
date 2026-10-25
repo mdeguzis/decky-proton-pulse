@@ -784,6 +784,7 @@ export const sv: TranslationTree = {
     antiCheatDeniedHint: () => "Utvecklaren har valt att inte tillåta Linux. Onlinespel fungerar inte, oavsett vad betyget säger.",
     antiCheatUnofficialHint: () => "Anti-fusket fungerar på Linux utan officiellt stöd. En speluppdatering kan förstöra onlinespel.",
     antiCheatPlannedHint: () => "Linuxstöd för anti-fusket är planerat. Tills dess kanske onlinespel inte fungerar.",
+    compatToolNotSet: (version: string) => `Startalternativen har tillämpats, men ${version} finns inte bland Steams kompatibilitetsverktyg än. Starta om Steam eller välj det under spelets Egenskaper > Kompatibilitet.`,
     perReportWhatsThis: () => `Vad är detta?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

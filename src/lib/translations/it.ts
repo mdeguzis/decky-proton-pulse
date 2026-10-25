@@ -784,6 +784,7 @@ export const it: TranslationTree = {
     antiCheatDeniedHint: () => "Lo sviluppatore ha scelto di non consentire Linux. Il gioco online non funzionerà, qualunque sia la valutazione.",
     antiCheatUnofficialHint: () => "L'anti-cheat funziona su Linux senza supporto ufficiale. Un aggiornamento del gioco può rompere il gioco online.",
     antiCheatPlannedHint: () => "Il supporto Linux per l'anti-cheat è previsto. Fino ad allora il gioco online potrebbe non funzionare.",
+    compatToolNotSet: (version: string) => `Opzioni di avvio applicate, ma ${version} non è ancora tra gli strumenti di compatibilità di Steam. Riavvia Steam o sceglilo in Proprietà > Compatibilità del gioco.`,
     perReportWhatsThis: () => "Che cos'è?",
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

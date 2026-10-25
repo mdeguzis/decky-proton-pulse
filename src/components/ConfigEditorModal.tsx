@@ -29,6 +29,7 @@ import {
 } from '../lib/customToggles';
 import { logFrontendEvent, callWithTimeout } from '../lib/logger';
 import { t } from '../lib/i18n';
+import { applyCompatToolAndNotify } from '../lib/compatToolSelect';
 import { bucketPlaytimeMinutes, buildConfigKey, getEffectivePlaytimeMinutes } from '../lib/playtime';
 import { NativePulseReportModal } from './NativePulseReportModal';
 import { getLaunchOptionsFromDetails, getSteamAppDetails, isSteamShortcutApp } from '../lib/steamApps';
@@ -940,6 +941,8 @@ export function ConfigEditorModal({ appId, appName, existingConfig, gpuVendor, o
     try {
       if (writeToSteam) {
         await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
+        // Switch Steam's compat tool too; PROTON_VERSION alone does nothing (#92).
+        await applyCompatToolAndNotify(appId, protonVersion);
       }
       const config: TrackedConfig = {
         appId,

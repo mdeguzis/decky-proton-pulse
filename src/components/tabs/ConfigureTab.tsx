@@ -28,6 +28,7 @@ import { ReportDetailModal } from '../ReportDetailModal';
 import { RATING_COLORS } from '../../lib/reportFormatters';
 import { resolveLaunchOptionsWithPrompt, showLaunchOptionConflictPreview } from '../LaunchOptionConflictModal';
 import { t } from '../../lib/i18n';
+import { applyCompatToolAndNotify } from '../../lib/compatToolSelect';
 import { addTrackedConfig } from '../../lib/trackedConfigs';
 import { parseLaunchOptions } from '../../lib/launchVars';
 import { computeCombinedTier, type PulseTierResult } from '../../lib/pulseTier';
@@ -1215,6 +1216,9 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
       }
 
       await SteamClient.Apps.SetAppLaunchOptions(appId, resolvedLaunchOptions);
+      // PROTON_VERSION in launch options is only our record; this is what
+      // actually switches the game's compat tool in Steam (#92).
+      await applyCompatToolAndNotify(appId, launchProtonVersion);
       const detailsResult = await getSteamAppDetails(appId);
       const appliedLaunchOptions = getLaunchOptionsFromDetails(detailsResult.details);
       setCurrentLaunchOptions(appliedLaunchOptions);

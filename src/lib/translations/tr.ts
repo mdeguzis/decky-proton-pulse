@@ -729,6 +729,7 @@ export const tr: TranslationTree = {
     antiCheatDeniedHint: () => "Geliştirici Linux'a izin vermemeyi seçti. Puan ne derse desin, çevrimiçi oyun çalışmaz.",
     antiCheatUnofficialHint: () => "Hile koruması Linux'ta resmi destek olmadan çalışıyor. Bir oyun güncellemesi çevrimiçi oyunu bozabilir.",
     antiCheatPlannedHint: () => "Hile koruması için Linux desteği planlanıyor. O zamana kadar çevrimiçi oyun çalışmayabilir.",
+    compatToolNotSet: (version: string) => `Başlatma seçenekleri uygulandı, ancak ${version} henüz Steam uyumluluk araçlarında yok. Steam'i yeniden başlatın veya oyunun Özellikler > Uyumluluk bölümünden seçin.`,
     protonPulseWebsiteLabel: () => "Proton Pulse Web Sitesi",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'Rapor analizi',

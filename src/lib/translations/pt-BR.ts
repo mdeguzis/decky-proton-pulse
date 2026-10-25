@@ -729,6 +729,7 @@ export const ptBR: TranslationTree = {
     antiCheatDeniedHint: () => "O desenvolvedor decidiu não permitir o Linux. O jogo online não vai funcionar, seja qual for a avaliação.",
     antiCheatUnofficialHint: () => "O anti-cheat funciona no Linux sem suporte oficial. Uma atualização do jogo pode quebrar o jogo online.",
     antiCheatPlannedHint: () => "O suporte do anti-cheat ao Linux está planejado. Até lá, o jogo online pode não funcionar.",
+    compatToolNotSet: (version: string) => `Opções de inicialização aplicadas, mas ${version} ainda não está nas ferramentas de compatibilidade do Steam. Reinicie o Steam ou escolha-o em Propriedades > Compatibilidade do jogo.`,
     protonPulseWebsiteLabel: () => "Site do Proton Pulse",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'Análise do relatório',

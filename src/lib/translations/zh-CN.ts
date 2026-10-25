@@ -729,6 +729,7 @@ export const zhCN: TranslationTree = {
     antiCheatDeniedHint: () => "开发者选择不允许 Linux。无论评级如何，在线游戏都无法运行。",
     antiCheatUnofficialHint: () => "反作弊在没有官方支持的情况下可在 Linux 上运行。游戏更新可能会导致在线游戏失效。",
     antiCheatPlannedHint: () => "反作弊计划支持 Linux。在支持上线之前，在线游戏可能无法运行。",
+    compatToolNotSet: (version: string) => `已应用启动选项，但 ${version} 还不在 Steam 的兼容性工具中。请重启 Steam，或在游戏的属性 > 兼容性中选择它。`,
     protonPulseWebsiteLabel: () => "Proton Pulse 网站",
             // Per-report analysis modal
     perReportAnalysisTitle: () => '报告分析',

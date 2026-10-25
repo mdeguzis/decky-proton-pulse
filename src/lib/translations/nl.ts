@@ -784,6 +784,7 @@ export const nl: TranslationTree = {
     antiCheatDeniedHint: () => "De ontwikkelaar heeft ervoor gekozen Linux niet toe te staan. Online spelen werkt niet, wat de beoordeling ook zegt.",
     antiCheatUnofficialHint: () => "De anti-cheat werkt op Linux zonder officiële ondersteuning. Een game-update kan online spelen breken.",
     antiCheatPlannedHint: () => "Linux-ondersteuning voor de anti-cheat is gepland. Tot die tijd werkt online spelen misschien niet.",
+    compatToolNotSet: (version: string) => `Startopties toegepast, maar ${version} staat nog niet tussen de compatibiliteitstools van Steam. Start Steam opnieuw of kies het via Eigenschappen > Compatibiliteit van de game.`,
     perReportWhatsThis: () => `Wat is dit?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',

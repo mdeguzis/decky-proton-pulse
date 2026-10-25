@@ -784,6 +784,7 @@ export const vi: TranslationTree = {
     antiCheatDeniedHint: () => "Nhà phát triển đã chọn không cho phép Linux. Chơi trực tuyến sẽ không hoạt động, bất kể điểm đánh giá.",
     antiCheatUnofficialHint: () => "Hệ thống chống gian lận chạy trên Linux mà không có hỗ trợ chính thức. Một bản cập nhật game có thể làm hỏng chơi trực tuyến.",
     antiCheatPlannedHint: () => "Hỗ trợ Linux cho hệ thống chống gian lận đã được lên kế hoạch. Trước khi có, chơi trực tuyến có thể không hoạt động.",
+    compatToolNotSet: (version: string) => `Đã áp dụng tùy chọn khởi chạy, nhưng ${version} chưa có trong công cụ tương thích của Steam. Hãy khởi động lại Steam hoặc chọn nó trong Thuộc tính > Tương thích của trò chơi.`,
     perReportWhatsThis: () => `Đây là gì?`,
     reportFormProtonValve: () => 'Valve Proton',
     reportFormProtonCachyOS: () => 'Proton-CachyOS',
