@@ -8,6 +8,16 @@ import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
 import { cancelCompatToolInstall, getCompatManagerState, getCompatToolDetails, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
 import type { CompatToolDetails } from '../../lib/compatTools';
+import { compatUsageGameNames, compatUsageLabel, sortRollingSlotsFirst } from '../../lib/compatUsage';
+import { useFocusableScroll } from '../../lib/useFocusableScroll';
+
+// Typed so onFocus can scroll the focused row into view (useFocusableScroll).
+const PpDialogButton = DialogButton as React.ComponentType<
+  React.ComponentProps<typeof DialogButton> & {
+    onFocus?: (e: React.FocusEvent<HTMLElement>) => void;
+    onBlur?: () => void;
+  }
+>;
 import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
 import type { CompatToolId, CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { COMPAT_TOOL_OPTIONS } from '../../types';
@@ -245,6 +255,8 @@ function ToolDetailsModal({
     return () => { alive = false; };
   }, [directoryName]);
 
+  const { onRowFocus, onRowBlur, focusBorder } = useFocusableScroll({ block: 'nearest' });
+
   const rows: [string, React.ReactNode][] = details && details.ok ? [
     ['Type', _toolKindLabel(details)],
     ['Location', <span style={{ fontFamily: 'monospace', fontSize: 11, wordBreak: 'break-all' }}>{details.path}</span>],
@@ -255,25 +267,61 @@ function ToolDetailsModal({
   if (details?.ok && details.is_rolling_slot && details.current_target) {
     rows.push(['Currently points at', <span style={{ fontFamily: 'monospace', fontSize: 11, wordBreak: 'break-all' }}>{details.current_target}</span>]);
   }
+  // #133: games whose Steam compat mapping names this tool, one row each so
+  // the D-pad can walk a long list. Omitted when config.vdf could not be
+  // read (used_by_app_ids === null).
+  if (details?.ok && Array.isArray(details.used_by_app_ids)) {
+    const extras = t().extras!;
+    const usedBy: React.ReactNode[] = [];
+    if (details.is_steam_default) {
+      usedBy.push(<span style={{ color: '#6faee8' }}>{extras.compatSteamDefault()}</span>);
+    }
+    usedBy.push(...compatUsageGameNames(details.used_by_app_ids));
+    if (usedBy.length === 0) usedBy.push(<span style={{ color: '#7a9bb5' }}>{extras.compatUsedByNone()}</span>);
+    usedBy.forEach((value, i) => rows.push([i === 0 ? extras.compatUsedByLabel() : '', value]));
+  }
+
+  // Every row is a focusable button so the D-pad can scroll the list; a
+  // plain overflow div is not reachable by Steam's gamepad routing.
+  const rowStyle = (id: string): React.CSSProperties => ({
+    display: 'grid',
+    gridTemplateColumns: '140px 1fr',
+    columnGap: 12,
+    width: '100%',
+    minHeight: 0,
+    padding: '4px 8px 4px 0',
+    margin: 0,
+    fontSize: 12,
+    color: '#c8dcea',
+    lineHeight: 1.5,
+    textAlign: 'left',
+    background: 'transparent',
+    border: 'none',
+    boxShadow: 'none',
+    borderRadius: 0,
+    borderRight: focusBorder(id),
+  });
 
   return (
     <ModalRoot
       onCancel={onClose}
       bAllowFullSize
-      className="pp-release-info-modal"
-      modalClassName="pp-release-info-modal"
+      className="pp-tool-info-modal"
+      modalClassName="pp-tool-info-modal"
     >
+      {/* Clear Steam's top status bar (~60px) and the bottom button bar
+          (~50px, see BPM bottom bar rule) so no edge of the box is hidden. */}
       <style>{`
-        .pp-release-info-modal,
-        .pp-release-info-modal > div,
-        .pp-release-info-modal .DialogContent_InnerWidth {
-          max-height: 80vh !important;
-          height: 80vh !important;
+        .pp-tool-info-modal,
+        .pp-tool-info-modal > div,
+        .pp-tool-info-modal .DialogContent_InnerWidth {
+          max-height: calc(100vh - 160px) !important;
+          height: calc(100vh - 160px) !important;
           padding: 0 !important;
         }
-        .pp-release-info-modal .ModalPosition { inset: 60px 0 70px 0 !important; }
+        .pp-tool-info-modal .ModalPosition { inset: 80px 0 80px 0 !important; }
       `}</style>
-      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(80vh - 40px)', padding: '16px 20px 0' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 200px)', padding: '16px 20px 0' }}>
         <div style={{ flexShrink: 0, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#eef7ff' }}>{title}</div>
           <div style={{ fontSize: 11, color: '#7a9bb5', marginTop: 4 }}>
@@ -281,24 +329,32 @@ function ToolDetailsModal({
           </div>
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+        <Focusable style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', paddingTop: 8 }}>
           {errorText ? (
-            <div style={{ fontSize: 12, color: '#e08080' }}>Could not load details: {errorText}</div>
+            <PpDialogButton onClick={() => {}} onFocus={onRowFocus('error')} onBlur={onRowBlur} style={rowStyle('error')}>
+              <span style={{ gridColumn: '1 / -1', color: '#e08080' }}>Could not load details: {errorText}</span>
+            </PpDialogButton>
           ) : details == null ? (
-            <div style={{ fontSize: 12, color: '#7a9bb5' }}>Loading...</div>
+            <PpDialogButton onClick={() => {}} onFocus={onRowFocus('loading')} onBlur={onRowBlur} style={rowStyle('loading')}>
+              <span style={{ gridColumn: '1 / -1', color: '#7a9bb5' }}>Loading...</span>
+            </PpDialogButton>
           ) : !details.ok ? (
-            <div style={{ fontSize: 12, color: '#e08080' }}>{details.error || 'Unknown error'}</div>
+            <PpDialogButton onClick={() => {}} onFocus={onRowFocus('error')} onBlur={onRowBlur} style={rowStyle('error')}>
+              <span style={{ gridColumn: '1 / -1', color: '#e08080' }}>{details.error || 'Unknown error'}</span>
+            </PpDialogButton>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', rowGap: 8, columnGap: 12, fontSize: 12, color: '#c8dcea', lineHeight: 1.5, paddingBottom: 12 }}>
-              {rows.map(([label, value]) => (
-                <>
-                  <div key={`${label}-l`} style={{ color: '#7a9bb5' }}>{label}</div>
-                  <div key={`${label}-v`}>{value}</div>
-                </>
-              ))}
-            </div>
+            rows.map(([label, value], i) => {
+              const id = `row-${i}`;
+              return (
+                <PpDialogButton key={id} onClick={() => {}} onFocus={onRowFocus(id)} onBlur={onRowBlur} style={rowStyle(id)}>
+                  <span style={{ color: '#7a9bb5' }}>{label}</span>
+                  <span style={{ minWidth: 0 }}>{value}</span>
+                </PpDialogButton>
+              );
+            })
           )}
-        </div>
+          <div style={{ height: 24, flexShrink: 0 }} aria-hidden="true" />
+        </Focusable>
 
         <Focusable style={{ flexShrink: 0, padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <DialogButton onClick={onClose} style={{ width: '100%' }}>
@@ -897,8 +953,10 @@ export function SettingsTab() {
     });
   }, [installedReleaseTags, installingTag, managerState, removingTool, selectedTool]);
 
+  // Rolling slots (Proton-GE-Latest / Proton-CachyOS-Latest) always sort to
+  // the top; the rest keep their order (sort is stable).
   const installedCompatibilityRows = useMemo(
-    () => compatibilityRows.filter((row) => row.installed),
+    () => sortRollingSlotsFirst(compatibilityRows.filter((row) => row.installed)),
     [compatibilityRows],
   );
   const availableCompatibilityRows = useMemo(
@@ -1260,7 +1318,7 @@ export function SettingsTab() {
                         key={row.key}
                         style={{
                           display: 'grid',
-                          gridTemplateColumns: 'minmax(0, 1fr) auto',
+                          gridTemplateColumns: 'minmax(0, 1fr) 150px auto',
                           gap: 12,
                           alignItems: 'center',
                           padding: '12px 0',
@@ -1304,6 +1362,11 @@ export function SettingsTab() {
                               {row.versionLabel}
                             </div>
                           )}
+                        </div>
+                        {/* #133: games using this tool, left aligned in a fixed
+                            column so the labels line up across rows. */}
+                        <div style={{ minWidth: 0, textAlign: 'left', fontSize: 11, color: '#8fa9bf', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {compatUsageLabel(row.tool)}
                         </div>
                         <Focusable
                           style={{ marginLeft: 'auto', boxShadow: 'none', display: 'flex', justifyContent: 'right' }}
