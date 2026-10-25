@@ -18,6 +18,7 @@ import { getGameSource, sourceSubtitle, type GameSourceInfo } from '../../lib/ga
 import { GameBanner } from '../GameBanner';
 import { cancelProtonGeInstall, checkProtonVersionAvailability, getProtonGeManagerState } from '../../lib/compatTools';
 import { installProtonGeAndWait, type InstallStatus } from '../../lib/compatInstallWait';
+import { promptSteamRestartForTool } from '../../lib/steamRestartPrompt';
 import { buildInstallProgressDetails } from './settingsTabProgress';
 import {
   registerScreenshotAutomationHandler,
@@ -184,7 +185,7 @@ export interface EditedReportEntry {
   updatedAt: number;
 }
 
-type MissingVersionChoice = 'install' | 'pick' | 'latest' | 'closest' | 'cancel';
+type MissingVersionChoice = 'install' | 'install-restart' | 'pick' | 'latest' | 'closest' | 'cancel';
 
 function launchVersionValueForTool(tool: { internal_name: string; directory_name: string }): string {
   return tool.internal_name || tool.directory_name;
@@ -357,7 +358,9 @@ function MissingVersionModal({
     void logFrontendEvent('INFO', 'Missing version dialog: installing in place', { version: requiredVersion });
     void installProtonGeAndWait(requiredVersion, { onProgress: setInstallStatus }).then((result) => {
       if (result.success) {
-        onResolve('install');
+        // A fresh build is unknown to Steam until it restarts (#137), so
+        // don't attempt the switch; the caller shows the restart prompt.
+        onResolve(result.alreadyInstalled ? 'install' : 'install-restart');
         return;
       }
       setInstalling(false);
@@ -1173,6 +1176,15 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
           return;
         }
 
+        if (choice === 'install-restart') {
+          const installed = availability.normalized_version ?? targetReport.protonVersion;
+          void logFrontendEvent('INFO', 'Apply deferred: installed version needs a Steam restart', {
+            appId, appName, version: installed,
+          });
+          promptSteamRestartForTool(installed, 'configure-missing-version');
+          return;
+        }
+
         if (choice === 'pick') {
           if (installedTools.length === 0) {
             toaster.toast({ title: 'Proton Pulse', body: t().configure.noCompatTools });
@@ -1221,6 +1233,9 @@ function ConfigureTabContent({ appId, appName, sysInfo }: Props) {
                 title: 'Proton Pulse',
                 body: t().configure.installFailed(availability.normalized_version),
               });
+            } else if (!installResult.alreadyInstalled) {
+              promptSteamRestartForTool(availability.normalized_version, 'configure-closest-fallback');
+              return;
             } else {
               launchProtonVersion = availability.normalized_version;
             }

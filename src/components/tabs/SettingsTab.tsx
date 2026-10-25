@@ -10,6 +10,7 @@ import { cancelCompatToolInstall, getCompatManagerState, getCompatToolDetails, i
 import type { CompatToolDetails } from '../../lib/compatTools';
 import { compatUsageGameNames, compatUsageLabel, sortRollingSlotsFirst } from '../../lib/compatUsage';
 import { useFocusableScroll } from '../../lib/useFocusableScroll';
+import { isAlreadyInstalledMessage, promptSteamRestartForTool } from '../../lib/steamRestartPrompt';
 
 // Typed so onFocus can scroll the focused row into view (useFocusableScroll).
 const PpDialogButton = DialogButton as React.ComponentType<
@@ -1063,14 +1064,19 @@ export function SettingsTab() {
       return;
     }
     setInstallingTag(null);
-    toaster.toast({
-      title: 'Proton Pulse',
-      body: installStatus.message ?? (
-        installStatus.state === 'success'
-          ? withRestartHint(`${installStatus.tag_name ?? 'Proton-GE'} installed.`)
-          : `${installStatus.tag_name ?? 'Proton-GE'} failed to install.`
-      ),
-    });
+    if (installStatus.state === 'success' && !isAlreadyInstalledMessage(installStatus.message)) {
+      // A fresh build can't be used until Steam restarts (#137).
+      promptSteamRestartForTool(installStatus.tag_name ?? 'Proton', 'compat-tools-tab');
+    } else {
+      toaster.toast({
+        title: 'Proton Pulse',
+        body: installStatus.message ?? (
+          installStatus.state === 'success'
+            ? withRestartHint(`${installStatus.tag_name ?? 'Proton-GE'} installed.`)
+            : `${installStatus.tag_name ?? 'Proton-GE'} failed to install.`
+        ),
+      });
+    }
     void refreshManager(true);
   }, [managerState]);
 
@@ -1170,10 +1176,14 @@ export function SettingsTab() {
           void (async () => {
             setInstallingTag(`archive:${archivePath}`);
             const result = await installCompatibilityToolArchive(archivePath);
-            toaster.toast({
-              title: 'Proton Pulse',
-              body: result.success ? withRestartHint(result.message) : `Install failed: ${result.message}`,
-            });
+            if (result.success && !result.already_installed) {
+              promptSteamRestartForTool(archivePath.split('/').pop() || archivePath, 'compat-tools-archive');
+            } else {
+              toaster.toast({
+                title: 'Proton Pulse',
+                body: result.success ? withRestartHint(result.message) : `Install failed: ${result.message}`,
+              });
+            }
             maybeToastRollingSlotChange(result);
             setInstallingTag(null);
             if (result.success) {
