@@ -20,10 +20,11 @@ vi.mock('@decky/ui', () => ({
   showModal: showModalMock,
 }));
 
-import { isAlreadyInstalledMessage, promptSteamRestartForTool, restartSteam } from './steamRestartPrompt';
+import { isAlreadyInstalledMessage, promptSteamRestartForTool, restartSteam, _resetSteamRestartPromptForTests } from './steamRestartPrompt';
 
 let startRestart: ReturnType<typeof vi.fn>;
 beforeEach(() => {
+  _resetSteamRestartPromptForTests();
   logMock.mockReset();
   closeMock.mockReset();
   showModalMock.mockReset().mockReturnValue({ Close: closeMock });
@@ -73,5 +74,19 @@ describe('promptSteamRestartForTool', () => {
     showModalMock.mock.calls[0][0].props.onCancel();
     expect(startRestart).not.toHaveBeenCalled();
     expect(closeMock).toHaveBeenCalled();
+  });
+
+  it('prompts once per tool, so the Compatibility Tools tab does not repeat the Configure prompt', () => {
+    promptSteamRestartForTool('GE-Proton10-3', 'configure-missing-version');
+    promptSteamRestartForTool('ge-proton10-3 ', 'compat-tools-tab');
+    expect(showModalMock).toHaveBeenCalledTimes(1);
+    expect(logMock).toHaveBeenCalledWith('DEBUG', 'Steam restart prompt already shown for this tool, skipping',
+      { toolName: 'ge-proton10-3 ', source: 'compat-tools-tab' });
+  });
+
+  it('still prompts for a different tool', () => {
+    promptSteamRestartForTool('GE-Proton10-3', 'configure-missing-version');
+    promptSteamRestartForTool('GE-Proton10-4', 'compat-tools-tab');
+    expect(showModalMock).toHaveBeenCalledTimes(2);
   });
 });

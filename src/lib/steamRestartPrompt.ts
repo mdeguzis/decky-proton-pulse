@@ -35,11 +35,26 @@ export function restartSteam(source: string): boolean {
   }
 }
 
+// Tools already prompted for in this Steam session. One install can reach
+// this prompt twice: the Configure dialog prompts when its install finishes,
+// then the Compatibility Tools tab sees the same finished install in the
+// backend status on its next mount and prompted again. A Steam restart
+// reloads the plugin, which clears this set, so the next install after a
+// restart prompts as usual.
+const _prompted = new Set<string>();
+
 /**
  * "Restart Steam to use <tool>" with Restart Steam / Close. Shared by the
  * Configure dialog and the Compatibility Tools tab so both behave the same.
+ * Shown at most once per tool per Steam session.
  */
 export function promptSteamRestartForTool(toolName: string, source: string): void {
+  const key = toolName.trim().toLowerCase();
+  if (_prompted.has(key)) {
+    void logFrontendEvent('DEBUG', 'Steam restart prompt already shown for this tool, skipping', { toolName, source });
+    return;
+  }
+  _prompted.add(key);
   const extras = t().extras!;
   void logFrontendEvent('INFO', 'Steam restart prompt shown after install', { toolName, source });
   // createElement rather than JSX keeps this a plain .ts module.
@@ -59,4 +74,9 @@ export function promptSteamRestartForTool(toolName: string, source: string): voi
       },
     }),
   );
+}
+
+/** Test hook. */
+export function _resetSteamRestartPromptForTests(): void {
+  _prompted.clear();
 }
