@@ -730,6 +730,8 @@ export const ja: TranslationTree = {
     antiCheatUnofficialHint: () => "アンチチートは公式サポートなしで Linux 上で動作しています。ゲームのアップデートでオンラインプレイが壊れることがあります。",
     antiCheatPlannedHint: () => "アンチチートの Linux 対応が予定されています。対応するまでオンラインプレイは動作しない可能性があります。",
     compatToolNotSet: (version: string) => `起動オプションを適用しましたが、${version} はまだ Steam の互換性ツールにありません。Steam を再起動するか、ゲームのプロパティ > 互換性で選択してください。`,
+    steamDefaultProton: () => `Steam の既定`,
+    steamDefaultProtonNow: (tool: string) => `Steam の既定 (現在 ${tool})`,
     protonPulseWebsiteLabel: () => "Proton Pulse ウェブサイト",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'レポート分析',

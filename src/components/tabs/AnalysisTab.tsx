@@ -21,7 +21,8 @@ import type { GamepadEvent } from '@decky/ui';
 import { getProtonDBReportsWithDiagnostics } from '../../lib/protondb';
 import { getUserConfigs, type UserConfigRow } from '../../lib/userConfigs';
 import { computeGameStats, type GameStats, type Tier } from '../../lib/gameStats';
-import { RATING_COLORS } from '../../lib/reportFormatters';
+import { RATING_COLORS, formatProtonLabel } from '../../lib/reportFormatters';
+import { isSteamDefaultProton } from '../../lib/compatToolSelect';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
 import { useFocusableScroll } from '../../lib/useFocusableScroll';
@@ -318,7 +319,7 @@ export function AnalysisTab({ appId }: Props) {
           style={{ ...ROW, borderRight: focusBorder(`ver-${v.ver}`) }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <span style={{ color: '#c8dcea', fontWeight: 600 }}>{v.ver}</span>
+            <span style={{ color: '#c8dcea', fontWeight: 600 }}>{isSteamDefaultProton(v.ver) ? formatProtonLabel(v.ver) : v.ver}</span>
             <span style={{ fontSize: 10, color: '#6a7d8e' }}>
               {t().extras!.analysisVersionTotal!(v.total)}
             </span>

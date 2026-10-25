@@ -11,6 +11,7 @@ import {
   findInReactTree,
 } from '@decky/ui';
 import { useEffect, useState } from 'react';
+import { loadSteamDefaultTool } from './lib/compatToolSelect';
 import {
   definePlugin,
   routerHook,
@@ -267,6 +268,8 @@ export default definePlugin(() => {
 
   // init cache from localStorage and start prefetch in background
   initCache();
+  // Name the tool behind "Default" reports (#115); loads async, labels fall back to "Steam default".
+  void loadSteamDefaultTool();
   initCloudSync();
   startAutoFlush();
 

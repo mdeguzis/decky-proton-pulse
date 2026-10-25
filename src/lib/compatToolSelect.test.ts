@@ -5,7 +5,10 @@ vi.mock('./logger', () => ({ logFrontendEvent: logMock }));
 vi.mock('./notify', () => ({ toaster: { toast: toastMock } }));
 vi.mock('./i18n', () => ({ t: () => ({ extras: { compatToolNotSet: (v: string) => `not set: ${v}` } }) }));
 
-import { matchCompatTool, applyCompatToolForVersion, applyCompatToolAndNotify } from './compatToolSelect';
+import {
+  matchCompatTool, applyCompatToolForVersion, applyCompatToolAndNotify,
+  isSteamDefaultProton, loadSteamDefaultTool, steamDefaultToolSync, _resetSteamDefaultForTests,
+} from './compatToolSelect';
 
 const TOOLS = [
   { strToolName: 'proton_9', strDisplayName: 'Proton 9.0-4' },
@@ -26,6 +29,8 @@ beforeEach(() => {
 });
 afterEach(() => {
   delete (globalThis as any).SteamClient;
+  delete (globalThis as any).settingsStore;
+  _resetSteamDefaultForTests();
   vi.useRealTimers();
 });
 
@@ -115,3 +120,68 @@ describe('applyCompatToolAndNotify', () => {
     expect(toastMock).not.toHaveBeenCalled();
   });
 });
+
+describe('Steam default reports (#115)', () => {
+  it('recognises the ways reports and Steam spell default', () => {
+    for (const v of ['Default', 'default', ' Proton Default ', 'proton_default', 'steam_default', 'Steam-Default']) {
+      expect(isSteamDefaultProton(v)).toBe(true);
+    }
+    for (const v of ['', null, undefined, 'Proton 9.0-4', 'Default-ish', 'GE-Proton10-1']) {
+      expect(isSteamDefaultProton(v as string)).toBe(false);
+    }
+  });
+
+  it('applying a Default config clears the per-game override, no lookup, no toast', async () => {
+    await expect(applyCompatToolAndNotify(10, 'Default')).resolves.toEqual({ status: 'steam-default' });
+    expect(specify).toHaveBeenCalledWith(10, '');
+    expect(available).not.toHaveBeenCalled();
+    expect(toastMock).not.toHaveBeenCalled();
+  });
+
+  it('reports unavailable if clearing the override throws', async () => {
+    specify.mockImplementation(() => { throw new Error('nope'); });
+    await expect(applyCompatToolForVersion(10, 'default')).resolves.toEqual({ status: 'unavailable', reason: 'nope' });
+    specify.mockImplementation(() => { throw 'raw'; });
+    await expect(applyCompatToolForVersion(10, 'default')).resolves.toEqual({ status: 'unavailable', reason: 'raw' });
+  });
+
+  it('loads the global default once and maps it to a display name', async () => {
+    (globalThis as any).settingsStore = { settings: { strCompatTool: 'proton_experimental' } };
+    const getGlobal = vi.fn().mockResolvedValue(TOOLS);
+    (globalThis as any).SteamClient.Settings = { GetGlobalCompatTools: getGlobal };
+    await Promise.all([loadSteamDefaultTool(), loadSteamDefaultTool()]);
+    await loadSteamDefaultTool();
+    expect(getGlobal).toHaveBeenCalledTimes(1);
+    expect(steamDefaultToolSync()).toEqual({ toolName: 'proton_experimental', displayName: 'Proton Experimental' });
+  });
+
+  it('falls back to the internal name when the global list is missing, unmatched or fails', async () => {
+    (globalThis as any).settingsStore = { settings: { strCompatTool: 'proton_9' } };
+    await expect(loadSteamDefaultTool()).resolves.toEqual({ toolName: 'proton_9', displayName: 'proton_9' });
+
+    _resetSteamDefaultForTests();
+    (globalThis as any).SteamClient.Settings = { GetGlobalCompatTools: vi.fn().mockResolvedValue({}) };
+    await expect(loadSteamDefaultTool()).resolves.toEqual({ toolName: 'proton_9', displayName: 'proton_9' });
+
+    _resetSteamDefaultForTests();
+    (globalThis as any).SteamClient.Settings = { GetGlobalCompatTools: vi.fn().mockRejectedValue('busy') };
+    await expect(loadSteamDefaultTool()).resolves.toEqual({ toolName: 'proton_9', displayName: 'proton_9' });
+    expect(logMock).toHaveBeenCalledWith('WARNING', 'compatTool: GetGlobalCompatTools failed, showing internal name', expect.objectContaining({ reason: 'busy' }));
+
+    _resetSteamDefaultForTests();
+    vi.useFakeTimers();
+    (globalThis as any).SteamClient.Settings = { GetGlobalCompatTools: vi.fn().mockReturnValue(new Promise(() => {})) };
+    const p = loadSteamDefaultTool();
+    await vi.advanceTimersByTimeAsync(5000);
+    await expect(p).resolves.toEqual({ toolName: 'proton_9', displayName: 'proton_9' });
+  });
+
+  it('returns null when Steam has no global default set', async () => {
+    await expect(loadSteamDefaultTool()).resolves.toBeNull();
+    (globalThis as any).settingsStore = { settings: { strCompatTool: '' } };
+    _resetSteamDefaultForTests();
+    await expect(loadSteamDefaultTool()).resolves.toBeNull();
+    expect(steamDefaultToolSync()).toBeNull();
+  });
+});
+

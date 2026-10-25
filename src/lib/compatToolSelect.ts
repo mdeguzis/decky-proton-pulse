@@ -18,6 +18,7 @@
 import { toaster } from './notify';
 import { logFrontendEvent } from './logger';
 import { t } from './i18n';
+import { isSteamDefaultProton, setSteamDefaultTool, steamDefaultToolSync, type SteamDefaultTool } from './steamDefaultState';
 
 export interface CompatToolOption {
   strToolName: string;
@@ -26,11 +27,85 @@ export interface CompatToolOption {
 
 export type CompatToolApplyResult =
   | { status: 'set'; toolName: string; displayName: string }
+  | { status: 'steam-default' }
   | { status: 'no-version' }
   | { status: 'no-match'; available: number }
   | { status: 'unavailable'; reason: string };
 
 const LIST_TIMEOUT_MS = 5000;
+
+// --- Steam default (#115) ---
+//
+// ProtonDB reports often list the version as "Default": the reporter ran
+// whatever Steam's default tool was at the time. That is not a tool name, so
+// it can neither be matched nor shown as "Proton Default". Applying it means
+// "follow Steam's default" (clear the per-game override, as Wine Cellar and
+// armada-control do with SpecifyCompatTool(appId, "")), and showing it means
+// naming the tool Steam would use today. The global default lives in
+// settingsStore.settings.strCompatTool (read the same way by junkstore and
+// GameVault); GetGlobalCompatTools maps it to a display name.
+
+export { isSteamDefaultProton, steamDefaultToolSync };
+export type { SteamDefaultTool };
+
+let _steamDefaultLoaded = false;
+let _steamDefaultPending: Promise<SteamDefaultTool | null> | null = null;
+
+async function readSteamDefaultTool(): Promise<SteamDefaultTool | null> {
+  const toolName: unknown = (globalThis as any).settingsStore?.settings?.strCompatTool;
+  if (typeof toolName !== 'string' || !toolName) {
+    void logFrontendEvent('DEBUG', 'compatTool: no global default tool in settingsStore', {
+      source: 'settingsStore.settings.strCompatTool', value: toolName ?? null,
+    });
+    return null;
+  }
+  let displayName = toolName;
+  const getGlobal = (globalThis as any).SteamClient?.Settings?.GetGlobalCompatTools;
+  if (typeof getGlobal === 'function') {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const tools = await Promise.race([
+        getGlobal() as Promise<CompatToolOption[]>,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error(`GetGlobalCompatTools timed out after ${LIST_TIMEOUT_MS}ms`)), LIST_TIMEOUT_MS);
+        }),
+      ]);
+      const hit = Array.isArray(tools) ? tools.find((t) => t.strToolName === toolName) : undefined;
+      if (hit?.strDisplayName) displayName = hit.strDisplayName;
+    } catch (err) {
+      void logFrontendEvent('WARNING', 'compatTool: GetGlobalCompatTools failed, showing internal name', {
+        toolName, reason: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+  void logFrontendEvent('DEBUG', 'compatTool: Steam default tool loaded', {
+    toolName, displayName, source: 'settingsStore.settings.strCompatTool',
+  });
+  return { toolName, displayName };
+}
+
+/** Load (once per session) the tool Steam uses by default. Never throws. */
+export function loadSteamDefaultTool(): Promise<SteamDefaultTool | null> {
+  if (_steamDefaultLoaded) return Promise.resolve(steamDefaultToolSync());
+  if (!_steamDefaultPending) {
+    _steamDefaultPending = readSteamDefaultTool().then((d) => {
+      setSteamDefaultTool(d);
+      _steamDefaultLoaded = true;
+      _steamDefaultPending = null;
+      return d;
+    });
+  }
+  return _steamDefaultPending;
+}
+
+/** Test hook. */
+export function _resetSteamDefaultForTests(): void {
+  setSteamDefaultTool(null);
+  _steamDefaultLoaded = false;
+  _steamDefaultPending = null;
+}
 
 function norm(s: string): string {
   return s.toLowerCase().replace(/[\s_-]+/g, '');
@@ -81,6 +156,20 @@ export async function applyCompatToolForVersion(appId: number, version: string |
   if (!apps?.SpecifyCompatTool) {
     void logFrontendEvent('WARNING', 'compatTool: SpecifyCompatTool missing on SteamClient.Apps', { appId, version });
     return { status: 'unavailable', reason: 'SpecifyCompatTool missing' };
+  }
+  if (isSteamDefaultProton(version)) {
+    // "Default" means follow Steam's default, which is no per-game override.
+    try {
+      apps.SpecifyCompatTool(appId, '');
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      void logFrontendEvent('ERROR', 'compatTool: clearing per-game override threw', { appId, version, reason });
+      return { status: 'unavailable', reason };
+    }
+    void logFrontendEvent('INFO', 'compatTool: config says Steam default, cleared per-game override', {
+      appId, version, source: 'SteamClient.Apps.SpecifyCompatTool("")',
+    });
+    return { status: 'steam-default' };
   }
   let tools: CompatToolOption[];
   try {

@@ -790,6 +790,8 @@ export interface TranslationTree {
     antiCheatUnofficialHint?: () => string;
     antiCheatPlannedHint?: () => string;
     compatToolNotSet?: (version: string) => string;
+    steamDefaultProton?: () => string;
+    steamDefaultProtonNow?: (tool: string) => string;
     // About tab
     protonPulseWebsiteLabel?: () => string;
     // Per-report analysis modal (opened with Y on a focused report card)
@@ -1610,6 +1612,8 @@ export const en: TranslationTree = {
     antiCheatUnofficialHint: () => 'The anti-cheat works on Linux without official support. A game update can break online play.',
     antiCheatPlannedHint: () => 'Linux support for the anti-cheat is planned. Until it ships, online play may not work.',
     compatToolNotSet: (version) => `Launch options applied, but ${version} isn't in Steam's compatibility tools yet. Restart Steam, or pick it in the game's Properties > Compatibility.`,
+    steamDefaultProton: () => `Steam default`,
+    steamDefaultProtonNow: (tool) => `Steam default (now ${tool})`,
     // About tab
     protonPulseWebsiteLabel: () => 'Proton Pulse Website',
     // Per-report analysis modal

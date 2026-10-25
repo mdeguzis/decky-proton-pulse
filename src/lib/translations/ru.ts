@@ -760,6 +760,8 @@ export const ru: TranslationTree = {
     antiCheatUnofficialHint: () => "Античит работает в Linux без официальной поддержки. Обновление игры может сломать сетевую игру.",
     antiCheatPlannedHint: () => "Поддержка Linux для античита запланирована. До её выхода сетевая игра может не работать.",
     compatToolNotSet: (version: string) => `Параметры запуска применены, но ${version} пока нет среди инструментов совместимости Steam. Перезапустите Steam или выберите его в свойствах игры > Совместимость.`,
+    steamDefaultProton: () => `По умолчанию в Steam`,
+    steamDefaultProtonNow: (tool: string) => `По умолчанию в Steam (сейчас ${tool})`,
     protonPulseWebsiteLabel: () => "Веб-сайт Proton Pulse",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'Анализ отчёта',

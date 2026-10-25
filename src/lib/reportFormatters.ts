@@ -1,5 +1,8 @@
 // src/lib/reportFormatters.ts
 
+import { isSteamDefaultProton, steamDefaultToolSync } from './steamDefaultState';
+import { t } from './i18n';
+
 export const RATING_COLORS: Record<string, string> = {
   platinum: '#e5e4e2',
   gold: '#ffd700',
@@ -11,6 +14,11 @@ export const RATING_COLORS: Record<string, string> = {
 
 export function formatProtonLabel(version: string): string {
   const trimmed = version.trim();
+  // "Default" is Steam's default tool at report time, not a version (#115).
+  if (isSteamDefaultProton(trimmed)) {
+    const now = steamDefaultToolSync();
+    return now ? t().extras!.steamDefaultProtonNow!(now.displayName) : t().extras!.steamDefaultProton!();
+  }
   if (/^ge-proton/i.test(trimmed)) return `Proton GE ${trimmed.replace(/^ge-proton/i, '')}`;
   return `Proton ${trimmed}`;
 }

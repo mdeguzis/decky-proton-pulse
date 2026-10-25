@@ -1,4 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+// formatProtonLabel reads i18n (#115), which imports react's useSyncExternalStore.
+vi.mock('react', () => ({
+  useSyncExternalStore: (_s: unknown, getSnapshot: () => unknown) => getSnapshot(),
+}));
+import { setSteamDefaultTool } from './steamDefaultState';
 
 import {
   RATING_COLORS,
@@ -39,3 +45,19 @@ describe('reportFormatters', () => {
     expect(matchLabel('unknown', null)).toBe('Unknown GPU match');
   });
 });
+
+describe('formatProtonLabel for "Default" reports (#115)', () => {
+  afterEach(() => setSteamDefaultTool(null));
+
+  it('says Steam default instead of "Proton Default" when the tool is unknown', () => {
+    expect(formatProtonLabel('Default')).toBe('Steam default');
+    expect(formatProtonLabel(' proton_default ')).toBe('Steam default');
+  });
+
+  it('names the tool Steam uses today once it has loaded', () => {
+    setSteamDefaultTool({ toolName: 'proton_9', displayName: 'Proton 9.0-4' });
+    expect(formatProtonLabel('Default')).toBe('Steam default (now Proton 9.0-4)');
+    expect(formatProtonLabel('9.0-4')).toBe('Proton 9.0-4');
+  });
+});
+

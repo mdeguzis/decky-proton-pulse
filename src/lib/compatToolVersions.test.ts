@@ -1,4 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// formatProtonLabel reads i18n (#115), which imports react's useSyncExternalStore.
+vi.mock('react', () => ({
+  useSyncExternalStore: (_s: unknown, getSnapshot: () => unknown) => getSnapshot(),
+}));
 import {
   buildVersionOptions,
   compatToolTypeForProtonKind,

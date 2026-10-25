@@ -730,6 +730,8 @@ export const es: TranslationTree = {
     antiCheatUnofficialHint: () => "El antitrampas funciona en Linux sin soporte oficial. Una actualización del juego puede romper el juego en línea.",
     antiCheatPlannedHint: () => "Está previsto que el antitrampas admita Linux. Hasta entonces, puede que el juego en línea no funcione.",
     compatToolNotSet: (version: string) => `Se han aplicado las opciones de lanzamiento, pero ${version} aún no está en las herramientas de compatibilidad de Steam. Reinicia Steam o elígelo en Propiedades > Compatibilidad del juego.`,
+    steamDefaultProton: () => `Predeterminado de Steam`,
+    steamDefaultProtonNow: (tool: string) => `Predeterminado de Steam (ahora ${tool})`,
     protonPulseWebsiteLabel: () => "Sitio web de Proton Pulse",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'Análisis del informe',
