@@ -652,6 +652,12 @@ export interface TranslationTree {
     compatLatest: () => string;
     compatAvailable: () => string;
     compatLatestSlot: () => string;
+    compatUsedByGames: (count: number) => string;
+    compatSteamDefault: () => string;
+    compatUsedByLabel: () => string;
+    compatUsedByNone: () => string;
+    compatAutoTrim: () => string;
+    compatAutoTrimDescription: () => string;
     compatCustom: () => string;
     compatNotInstalled: () => string;
     compatLoadingReleaseFeed: () => string;
@@ -1472,6 +1478,12 @@ export const en: TranslationTree = {
     compatLatest: () => 'Latest',
     compatAvailable: () => 'Available',
     compatLatestSlot: () => 'Latest Slot',
+    compatUsedByGames: (count) => `used by ${count} ${count === 1 ? 'game' : 'games'}`,
+    compatSteamDefault: () => 'Steam default',
+    compatUsedByLabel: () => 'Used by',
+    compatUsedByNone: () => 'No games',
+    compatAutoTrim: () => 'Auto-trim unused older Proton tool versions installed from latest rolling release mechanisms',
+    compatAutoTrimDescription: () => 'After Proton-GE-Latest or Proton-CachyOS-Latest updates, remove older versions of that tool that no game is set to use. The newest version, and any version a game uses, is always kept.',
     compatCustom: () => 'Custom',
     compatNotInstalled: () => 'Not Installed',
     compatLoadingReleaseFeed: () => 'Loading release feed...',

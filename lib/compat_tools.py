@@ -645,6 +645,11 @@ def _versioned_tools_for(tool_id: str) -> list[dict[str, Any]]:
     return matching
 
 
+def versioned_tools_for(tool_id: str) -> list[dict[str, Any]]:
+    """Public form of _versioned_tools_for for other modules (#133 pruning)."""
+    return _versioned_tools_for(tool_id)
+
+
 def ensure_rolling_slot(tool_id: str) -> dict[str, Any]:
     """Point the tool's latest-slot at the newest installed versioned build.
 

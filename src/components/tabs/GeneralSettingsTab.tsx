@@ -4,6 +4,7 @@ import type { GamepadEvent } from '@decky/ui';
 import { callable, openFilePicker, FileSelectionType } from '@decky/api';
 import { useEffect, useRef, useState } from 'react';
 import { getSetting, setSetting } from '../../lib/settings';
+import { COMPAT_AUTO_TRIM_KEY } from '../../lib/compatTools';
 import { NOTIFICATIONS_ENABLED_KEY, TOAST_SOUND_KEY, toaster } from '../../lib/notify';
 import { logFrontendEvent, callWithTimeout } from '../../lib/logger';
 import { t, setLanguage, useLanguage, LANGUAGES, LANGUAGE_NAMES, detectLanguage, type Language } from '../../lib/i18n';
@@ -498,6 +499,7 @@ export function GeneralSettingsTab() {
   }, []);
   const [debugEnabled, setDebugEnabled] = useState(() => getSetting('debugEnabled', false));
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => getSetting(NOTIFICATIONS_ENABLED_KEY, true));
+  const [compatAutoTrim, setCompatAutoTrim] = useState(() => getSetting<unknown>(COMPAT_AUTO_TRIM_KEY, false) === true);
   const [toastSoundEnabled, setToastSoundEnabled] = useState(() => getSetting(TOAST_SOUND_KEY, true));
   const [cloudAutoSync, setCloudAutoSync] = useState(() => isAutoSyncEnabled() || isPluginSettingsAutoSyncEnabled());
   const [syncPollInterval, setSyncPollIntervalLocal] = useState(() => getSyncPollIntervalMinutes());
@@ -1542,15 +1544,28 @@ const [cefDebuggingEnabled, setCefDebuggingEnabledLocal] = useState(false);
         </div>
       )}
 
-      {/* advanced section: cache management */}
-      {advancedEnabled && (
-        <div style={sectionStyle()}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
-            {t().compatTools.compatToolsSection}
-          </div>
-          <CompatAutoUpdateStatusBox />
+      {/* Compatibility tools: the auto-trim toggle is always visible (#133);
+          the auto-update status box stays an advanced-mode detail. */}
+      <div style={sectionStyle()}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#eef7ff', marginBottom: 8 }}>
+          {t().compatTools.compatToolsSection}
         </div>
-      )}
+        <div style={focusClipRowStyle()}>
+          <ToggleField
+            label={extras.compatAutoTrim()}
+            description={extras.compatAutoTrimDescription()}
+            checked={compatAutoTrim}
+            onChange={(enabled) => {
+              setCompatAutoTrim(enabled);
+              setSetting(COMPAT_AUTO_TRIM_KEY, enabled);
+              void logFrontendEvent('INFO', 'Compat auto-trim setting changed', {
+                key: COMPAT_AUTO_TRIM_KEY, nextValue: enabled,
+              });
+            }}
+          />
+        </div>
+        {advancedEnabled && <CompatAutoUpdateStatusBox />}
+      </div>
 
       {advancedEnabled && (
         <div style={sectionStyle()}>

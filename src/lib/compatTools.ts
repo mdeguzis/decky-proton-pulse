@@ -1,14 +1,20 @@
 // Compatibility tool management patterns inspired by decky-wine-cellar by FlashyReese (MIT):
 // https://github.com/FlashyReese/decky-wine-cellar
 import { callable } from '@decky/api';
+import { getSetting } from './settings';
 import type { CompatToolId, ProtonGeManagerState, ProtonVersionAvailability } from '../types';
+
+// #133: "Auto-trim unused older Proton tool versions" setting. Off by default
+// because it deletes installed builds. Read here, in the one wrapper every
+// install goes through, so no caller can forget to pass it.
+export const COMPAT_AUTO_TRIM_KEY = 'compat-auto-trim-unused';
 
 const getCompatManagerStateCallable = callable<
   [tool_id: CompatToolId, force_refresh?: boolean],
   ProtonGeManagerState
 >('get_compat_manager_state');
 const installCompatToolCallable = callable<
-  [tool_id: CompatToolId, version?: string | null, install_as_latest?: boolean, force_reinstall?: boolean],
+  [tool_id: CompatToolId, version?: string | null, install_as_latest?: boolean, force_reinstall?: boolean, prune_unused?: boolean],
   { success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }
 >('install_compat_tool');
 const cancelCompatToolInstallCallable = callable<
@@ -36,7 +42,8 @@ export async function installCompatTool(
   installAsLatest = false,
   forceReinstall = false,
 ): Promise<{ success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }> {
-  return installCompatToolCallable(toolId, version ?? null, installAsLatest, forceReinstall);
+  const pruneUnused = getSetting<unknown>(COMPAT_AUTO_TRIM_KEY, false) === true;
+  return installCompatToolCallable(toolId, version ?? null, installAsLatest, forceReinstall, pruneUnused);
 }
 
 export async function cancelCompatToolInstall(toolId: CompatToolId): Promise<{ success: boolean; message: string }> {
@@ -89,6 +96,8 @@ export interface CompatToolDetails {
   installed_at_iso?: string | null;
   size_bytes?: number;
   source?: string | null;
+  used_by_app_ids?: string[] | null;
+  is_steam_default?: boolean;
 }
 
 const getCompatToolDetailsCallable = callable<
