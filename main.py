@@ -36,6 +36,7 @@ if _PLUGIN_DIR not in sys.path:
 # pylint: disable=wrong-import-position
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
+from lib.compat_usage import annotate_tool_usage, tool_vdf_internal_name
 from lib.compat_tools import (
     COMPAT_TOOL_CONFIGS,
     ensure_all_rolling_slots,
@@ -59,6 +60,7 @@ from lib.proton_ge import (
     make_initial_status,
     read_latest_metadata,
     set_install_status,
+    trim_unused_latest_installs,
 )
 import lib.lsfg_vk as _lsfg_vk_mod
 from lib.metrics_export import export_metrics_to_disk
@@ -628,6 +630,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         releases = get_releases_sync(force_refresh, tool_id)
         all_meta = {tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
         installed = list_installed_compatibility_tools(all_latest_metadata=all_meta)
+        # #133: used_by_app_ids per tool (None when config.vdf is unreadable).
+        usage_available = annotate_tool_usage(installed)
         current_release = releases[0] if releases else None
         config = COMPAT_TOOL_CONFIGS.get(tool_id, COMPAT_TOOL_CONFIGS["proton-ge"])
 
@@ -661,6 +665,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             "current_installed": current_installed,
             "current_latest_slot_installed": current_latest_slot_installed,
             "installed_tools": installed,
+            "usage_available": usage_available,
             "releases": releases,
             "install_status": get_install_status(
                 self._proton_ge_install_status, self._proton_ge_install_lock
@@ -668,6 +673,13 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             "tool_id": tool_id,
             "tool_label": config["label"],
         }
+
+    async def trim_unused_compat_versions(self) -> dict[str, Any]:
+        """Auto-trim now, for when the setting is switched on (#133).
+
+        Returns {"tools": {tool_id: {ok, removed, failed, reason?}}}.
+        """
+        return {"tools": trim_unused_latest_installs()}
 
     async def refresh_rolling_slots(self) -> dict[str, Any]:
         """Force a re-symlink of every rolling latest-slot (#116).
@@ -731,6 +743,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         except OSError:
             pass
 
+        annotate_tool_usage([match])
+
         managed_slot = match.get("managed_slot")
         is_rolling_slot = managed_slot == "latest"
         current_target: str | None = None
@@ -746,7 +760,10 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             "ok": True,
             "directory_name": directory_name,
             "display_name": match.get("display_name"),
-            "internal_name": match.get("internal_name"),
+            # The block key in compatibilitytool.vdf is the name Steam uses
+            # (proton_ge_latest), not the directory name the listing falls
+            # back to.
+            "internal_name": tool_vdf_internal_name(match) or match.get("internal_name"),
             "tool_id": match.get("tool_id"),
             "managed_slot": managed_slot,
             "is_rolling_slot": is_rolling_slot,
@@ -755,16 +772,23 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             "installed_at_iso": installed_at,
             "size_bytes": size_bytes,
             "source": match.get("source"),
+            "used_by_app_ids": match.get("used_by_app_ids"),
+            "is_steam_default": match.get("is_steam_default", False),
         }
 
-    async def install_compat_tool(
+    async def install_compat_tool(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
         self,
         tool_id: str = "proton-ge",
         version: str | None = None,
         install_as_latest: bool = False,
         force_reinstall: bool = False,
+        prune_unused: bool = False,
     ) -> dict[str, Any]:
-        """Kick off a background install for any compat tool."""
+        """Kick off a background install for any compat tool.
+
+        prune_unused mirrors the "Auto-trim unused older Proton versions"
+        setting (#133): only honoured for install_as_latest installs.
+        """
         config = COMPAT_TOOL_CONFIGS.get(tool_id, COMPAT_TOOL_CONFIGS["proton-ge"])
         label = config["label"]
         releases = get_releases_sync(False, tool_id)
@@ -833,6 +857,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
                         cancel_ref,
                         process_ref,
                         tool_id,
+                        prune_unused=prune_unused,
                     )
                     if cancel_ref.is_set() and not result.get("success"):
                         set_install_status(
@@ -1379,6 +1404,10 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             shutil.rmtree(resolved)
             tool_id_for_uninstall = target.get("tool_id") or "proton-ge"
             clear_latest_metadata(target_name, tool_id_for_uninstall)
+            decky.logger.info(
+                f"uninstall_compatibility_tool: removed | directory={target_name}"
+                f" tool_id={target.get('tool_id')} path={resolved}"
+            )
             return {"success": True, "message": f"Removed {target_name}."}
         except OSError as err:
             decky.logger.error(

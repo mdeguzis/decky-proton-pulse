@@ -270,9 +270,11 @@ def test_migration_refuses_unsafe_vdf_display_name(tmp_path):
     assert not (tmp_path.parent / "etc").exists()  # nothing escaped
 
 
-def test_migration_refuses_when_versioned_dir_already_exists(tmp_path):
-    """If the target versioned dir name is already taken (e.g. a duplicate
-    install), migration must NOT clobber it -- refuse instead.
+def test_duplicate_slot_copy_is_removed_and_slot_rebuilt(tmp_path):
+    """The slot dir holds a full copy of a version that is also installed
+    under its own name (an install as latest used to extract into the slot,
+    #133). The plugin removes the duplicate copy, keeps the versioned
+    install untouched, and rebuilds the managed slot on top of it.
     """
     slot_path = tmp_path / "Proton-GE-Latest"
     slot_path.mkdir()
@@ -280,24 +282,39 @@ def test_migration_refuses_when_versioned_dir_already_exists(tmp_path):
         '"compatibilitytools" { "compat_tools" { "x" { "display_name" "GE-Proton10-19" } } }',
         encoding="utf-8",
     )
-    (slot_path / "proton").write_text("#!/bin/sh\n", encoding="utf-8")
-    # A separate versioned install already occupies the target name.
+    (slot_path / "proton").write_text("#!/bin/sh\n# slot copy\n", encoding="utf-8")
     existing = _mk_tool(tmp_path, "GE-Proton10-19")
     existing_proton = (existing / "proton").read_text()
     with _patch_dirs(tmp_path):
         result = ensure_rolling_slot("proton-ge")
-    # Neither dir got clobbered; the pre-existing one is intact.
+    assert result["ok"] is True
     assert existing.is_dir()
     assert (existing / "proton").read_text() == existing_proton
-    # Slot is still the unmigrated real dir.
-    assert slot_path.is_dir()
-    # And the outcome carries the actionable subreason + fix_hint so
-    # the frontend / support can surface exactly what needs to happen.
+    # The slot is now a managed link farm pointing at the versioned build.
+    assert (slot_path / ".proton-pulse-managed").read_text(encoding="utf-8") == str(existing.resolve())
+    assert (slot_path / "proton").is_symlink()
+
+
+def test_duplicate_slot_left_alone_when_existing_dir_is_a_different_tool(tmp_path):
+    """Only an exact duplicate is removed. If the versioned name is taken by
+    a dir whose VDF says something else, nothing is deleted."""
+    slot_path = tmp_path / "Proton-GE-Latest"
+    slot_path.mkdir()
+    (slot_path / "compatibilitytool.vdf").write_text(
+        '"compatibilitytools" { "compat_tools" { "x" { "display_name" "GE-Proton10-19" } } }',
+        encoding="utf-8",
+    )
+    other = tmp_path / "GE-Proton10-19"
+    other.mkdir()
+    (other / "compatibilitytool.vdf").write_text(
+        '"compatibilitytools" { "compat_tools" { "y" { "display_name" "Something-Else" } } }',
+        encoding="utf-8",
+    )
+    with _patch_dirs(tmp_path):
+        result = ensure_rolling_slot("proton-ge")
+    assert slot_path.is_dir() and not (slot_path / ".proton-pulse-managed").exists()
+    assert (other / "compatibilitytool.vdf").exists()
     assert result["ok"] is False
-    assert result["reason"] == "slot-is-real-dir"
-    assert result["subreason"] == "duplicate-versioned-install"
-    assert "sudo rm -rf" in result["fix_hint"]
-    assert str(slot_path) in result["fix_hint"]
 
 
 def test_slot_is_real_dir_without_duplicate_leaves_subreason_none(tmp_path):
@@ -396,3 +413,119 @@ def test_install_survives_slot_oserror(tmp_path: Path) -> None:
     assert result["success"] is True
     assert "rolling_slot" not in result
 
+
+def _run_install_with_prune(tmp_path: Path, install_as_latest: bool, prune_unused: bool = True):
+    from lib import proton_ge  # pylint: disable=import-outside-toplevel
+
+    release = {"tag_name": "v1", "asset_name": "v1.tar.gz", "asset_size": 1}
+    slot_ok = {"ok": True, "changed": True, "target": str(tmp_path / "GE-Proton11-11-x86_64")}
+    with (
+        patch.object(proton_ge, "compat_tools_dir", return_value=tmp_path),
+        patch.object(proton_ge, "_download_release"),
+        patch.object(proton_ge, "extract_archive_safely"),
+        patch.object(proton_ge, "finalize_extracted_compat_tool",
+                     return_value={"success": True, "message": "Installed v1"}),
+        patch.object(proton_ge, "write_latest_metadata"),
+        patch("lib.compat_tools.ensure_rolling_slot", return_value=slot_ok),
+        patch("lib.compat_tools.versioned_tools_for", return_value=[]),
+        patch("lib.compat_usage.prune_unused_versions",
+              return_value={"ok": True, "removed": ["GE-Proton11-6-x86_64"], "failed": {}}) as prune_mock,
+        patch.object(proton_ge, "clear_latest_metadata") as clear_mock,
+    ):
+        result = proton_ge._do_download_and_install(  # pylint: disable=protected-access
+            "v1", release, "https://example.invalid/v1.tar.gz",
+            install_as_latest=install_as_latest, force_reinstall=False,
+            _set=lambda **_kw: None, _cancel=lambda: False, _set_process=lambda _p: None,
+            tool_id="proton-ge", prune_unused=prune_unused,
+        )
+    return result, prune_mock, clear_mock
+
+
+def test_latest_install_prunes_unused_versions_keeping_slot_target(tmp_path: Path) -> None:
+    result, prune_mock, clear_mock = _run_install_with_prune(tmp_path, install_as_latest=True)
+    prune_mock.assert_called_once_with("proton-ge", [], {"GE-Proton11-11-x86_64"})
+    clear_mock.assert_called_once_with("GE-Proton11-6-x86_64", "proton-ge")
+    assert result["pruned"]["removed"] == ["GE-Proton11-6-x86_64"]
+    assert "Removed unused older versions: GE-Proton11-6-x86_64." in result["message"]
+
+
+def test_versioned_install_does_not_prune(tmp_path: Path) -> None:
+    result, prune_mock, _ = _run_install_with_prune(tmp_path, install_as_latest=False)
+    prune_mock.assert_not_called()
+    assert "pruned" not in result
+
+
+def test_latest_install_does_not_prune_when_setting_off(tmp_path: Path) -> None:
+    # Auto-trim is opt-in: with the setting off a latest install leaves every
+    # old build in place.
+    result, prune_mock, _ = _run_install_with_prune(tmp_path, install_as_latest=True, prune_unused=False)
+    prune_mock.assert_not_called()
+    assert "pruned" not in result
+
+
+def _run_latest_install(tmp_path: Path, finalize_result: dict):
+    from lib import proton_ge  # pylint: disable=import-outside-toplevel
+
+    release = {"tag_name": "GE-Proton11-11", "asset_name": "a.tar.gz", "asset_size": 1}
+    with (
+        patch.object(proton_ge, "compat_tools_dir", return_value=tmp_path),
+        patch.object(proton_ge, "_download_release"),
+        patch.object(proton_ge, "extract_archive_safely"),
+        patch.object(proton_ge, "finalize_extracted_compat_tool", return_value=finalize_result) as fin,
+        patch.object(proton_ge, "write_latest_metadata"),
+        patch.object(proton_ge, "mark_latest_install") as mark,
+        patch("lib.compat_tools.ensure_rolling_slot", return_value={"ok": True}),
+    ):
+        proton_ge._do_download_and_install(  # pylint: disable=protected-access
+            "GE-Proton11-11", release, "https://example.invalid/a.tar.gz",
+            install_as_latest=True, force_reinstall=False,
+            _set=lambda **_kw: None, _cancel=lambda: False, _set_process=lambda _p: None,
+            tool_id="proton-ge",
+        )
+    return fin, mark
+
+
+def test_latest_install_extracts_to_versioned_dir_and_marks_it(tmp_path: Path) -> None:
+    # Regression: install_as_latest extracted INTO Proton-GE-Latest, leaving a
+    # real-dir duplicate the slot refresh could not migrate.
+    fin, mark = _run_latest_install(
+        tmp_path, {"success": True, "directory_name": "GE-Proton11-11-x86_64", "message": "ok"})
+    assert "destination_name" not in fin.call_args.kwargs
+    mark.assert_called_once_with(tmp_path / "GE-Proton11-11-x86_64", "proton-ge", "GE-Proton11-11")
+
+
+def test_latest_install_does_not_mark_a_build_that_was_already_there(tmp_path: Path) -> None:
+    # A hand-installed build the latest process merely adopts keeps no marker,
+    # so auto-trim will never delete it later.
+    _, mark = _run_latest_install(tmp_path, {
+        "success": True, "already_installed": True,
+        "directory_name": "GE-Proton11-11-x86_64", "message": "already"})
+    mark.assert_not_called()
+
+
+def test_mark_latest_install_writes_marker(tmp_path: Path) -> None:
+    from lib import proton_ge  # pylint: disable=import-outside-toplevel
+    from lib.compat_usage import LATEST_INSTALL_MARKER, installed_by_latest_process  # pylint: disable=import-outside-toplevel
+
+    proton_ge.mark_latest_install(tmp_path, "proton-ge", "GE-Proton11-11")
+    assert (tmp_path / LATEST_INSTALL_MARKER).is_file()
+    assert installed_by_latest_process({"path": str(tmp_path)}) is True
+
+
+def test_trim_now_keeps_each_slot_target(tmp_path: Path) -> None:
+    from lib import proton_ge  # pylint: disable=import-outside-toplevel
+
+    slot = tmp_path / "Proton-GE-Latest"
+    slot.mkdir()
+    (slot / ".proton-pulse-managed").write_text(str(tmp_path / "GE-Proton11-11-x86_64"), encoding="utf-8")
+    with (
+        patch.object(proton_ge, "compat_tools_dir", return_value=tmp_path),
+        patch.object(proton_ge, "_prune_after_latest_install",
+                     return_value={"ok": True, "removed": [], "failed": {}}) as prune,
+    ):
+        outcomes = proton_ge.trim_unused_latest_installs()
+    calls = {c.args[0]: c.args[1] for c in prune.call_args_list}
+    assert calls["proton-ge"] == {"target": str(tmp_path / "GE-Proton11-11-x86_64")}
+    # CachyOS slot has no marker here: target unknown, newest build still kept by the selector.
+    assert calls["proton-cachyos"] == {"target": None}
+    assert set(outcomes) == {"proton-ge", "proton-cachyos"}

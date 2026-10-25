@@ -7,6 +7,7 @@ list of Proton builds the frontend can show to the user.
 from __future__ import annotations
 
 import re
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -536,7 +537,7 @@ def _populate_slot_symlinks(slot_path: Path, target_path: Path) -> None:
             )
 
 
-def _migrate_slot_dir_to_versioned_name(slot_path: Path, slot_name: str) -> Path | None:
+def _migrate_slot_dir_to_versioned_name(slot_path: Path, slot_name: str) -> Path | None:  # pylint: disable=too-many-return-statements
     """If slot_path is an unmanaged real directory that contains a full versioned
     Proton install (a compatibilitytool.vdf with display_name != slot_name),
     rename the slot directory to that versioned display_name so a proper
@@ -582,29 +583,38 @@ def _migrate_slot_dir_to_versioned_name(slot_path: Path, slot_name: str) -> Path
         return None
     versioned_dir = slot_path.parent / versioned_name
     if versioned_dir.exists():
-        # Two dirs on disk that both call themselves versioned_name. This
-        # happens when an older plugin ran the install twice: once with
-        # install_as_latest=True (dropped inside the slot dir) and once
-        # normally (dropped as its versioned dir). Now both are root-
-        # owned duplicates and the deck user cannot rm -rf either one to
-        # resolve. We log a highly actionable multi-line message rather
-        # than the terse "refusing" so a user (or support) grepping for
-        # trouble sees the exact commands to fix it.
+        # The slot dir holds a full copy of a version that is also installed
+        # under its own name (an install as latest used to extract into the
+        # slot). The plugin runs as root, so drop the duplicate copy and let
+        # ensure_rolling_slot rebuild the managed slot on top (#133). Only
+        # when the existing dir really is the same tool: anything else is
+        # left alone and reported.
+        existing_vdf = versioned_dir / "compatibilitytool.vdf"
+        try:
+            existing_text = existing_vdf.read_text(encoding="utf-8")
+            existing_name = (read_vdf_value(existing_text, "display_name") or "").strip()
+        except OSError:
+            existing_name = ""
+        if existing_name != versioned_name or slot_path.is_symlink():
+            decky.logger.warning(
+                "Rolling slot holds a real dir whose version name is taken by a different tool; "
+                f"leaving it alone | slot={slot_path} existing={versioned_dir} "
+                f"slot_version={versioned_name!r} existing_version={existing_name!r}"
+            )
+            return None
+        try:
+            shutil.rmtree(slot_path)
+        except OSError as err:
+            decky.logger.warning(
+                f"Rolling slot duplicate cleanup failed | slot={slot_path}"
+                f" error={type(err).__name__}: {err}"
+            )
+            return None
         decky.logger.warning(
-            "Rolling slot has a duplicate versioned install on disk.\n"
-            f"  Slot dir       : {slot_path}\n"
-            f"  Existing target: {versioned_dir}\n"
-            "  Both appear to hold the same versioned tool "
-            f"({versioned_name}). Cannot auto-migrate because the target "
-            "name is already taken and the slot dir is likely root-owned.\n"
-            "\n"
-            "  FIX: on the Deck, open Konsole (Desktop mode) and run --\n"
-            f"    sudo rm -rf {slot_path}\n"
-            "  Then in Decky's plugin manager, disable + re-enable Proton\n"
-            "  Pulse so the rolling slot rebuilds cleanly. Fully restart\n"
-            "  Steam afterwards so the compat picker rescans.\n"
+            f"Rolling slot held a duplicate copy of {versioned_name}; removed {slot_path} "
+            f"(the versioned install at {versioned_dir} is kept) and the slot will be rebuilt"
         )
-        return None
+        return versioned_dir
     try:
         slot_path.rename(versioned_dir)
     except OSError as err:
@@ -643,6 +653,11 @@ def _versioned_tools_for(tool_id: str) -> list[dict[str, Any]]:
 
     matching.sort(key=_rank, reverse=True)
     return matching
+
+
+def versioned_tools_for(tool_id: str) -> list[dict[str, Any]]:
+    """Public form of _versioned_tools_for for other modules (#133 pruning)."""
+    return _versioned_tools_for(tool_id)
 
 
 def ensure_rolling_slot(tool_id: str) -> dict[str, Any]:

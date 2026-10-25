@@ -31,6 +31,7 @@ from .compat_tools import (
     normalize_tag_for_tool,
     simplify_release,
 )
+from .compat_usage import LATEST_INSTALL_MARKER
 from .http_client import curl_download, curl_json
 from .plugin_utils import extract_archive_safely
 from .steam_paths import compat_tools_cache_dir, compat_tools_dir
@@ -59,6 +60,30 @@ def write_latest_metadata(tag_name: str, directory_name: str, tool_id: str = "pr
         "updated_at": int(time.time()),
     }
     path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def mark_latest_install(tool_dir: Path, tool_id: str, tag_name: str) -> None:
+    """Record that the latest rolling process installed tool_dir (#133).
+
+    Auto-trim only removes builds carrying this marker, so builds a user
+    installed by hand (or that predate the marker) are never deleted.
+    """
+    try:
+        (tool_dir / LATEST_INSTALL_MARKER).write_text(
+            json.dumps({
+                "tool_id": tool_id, "tag_name": tag_name, "installed_at": int(time.time()),
+            }),
+            encoding="utf-8",
+        )
+        decky.logger.debug(
+            f"mark_latest_install | dir={tool_dir.name} tool_id={tool_id} tag={tag_name}"
+        )
+    except OSError as err:
+        # Without the marker the build is simply never auto-trimmed, which is
+        # the safe direction; log so a missing trim can be explained.
+        decky.logger.warning(
+            f"mark_latest_install failed | dir={tool_dir} error={type(err).__name__}: {err}"
+        )
 
 
 def clear_latest_metadata(directory_name: str | None = None, tool_id: str = "proton-ge") -> None:
@@ -284,12 +309,14 @@ def finalize_extracted_compat_tool(
             return {
                 "success": True,
                 "already_installed": True,
+                "directory_name": destination.name,
                 "message": f"{destination.name} is already installed.",
             }
 
     shutil.move(str(source_dir), str(destination))
     return {
         "success": True,
+        "directory_name": destination.name,
         "message": f"Installed {destination.name}.{COMPAT_TOOL_RESTART_HINT}",
     }
 
@@ -305,6 +332,7 @@ def install_sync(  # pylint: disable=too-many-arguments,too-many-positional-argu
     cancel_flag: threading.Event,
     process_ref: list[subprocess.Popen[str] | None],
     tool_id: str = "proton-ge",
+    prune_unused: bool = False,
 ) -> dict[str, Any]:
     """Download, extract, and finalize a compat tool release."""
 
@@ -403,7 +431,45 @@ def install_sync(  # pylint: disable=too-many-arguments,too-many-positional-argu
         _set, _cancel, _set_process,
         latest_slot_name=latest_slot_name,
         tool_id=tool_id,
+        prune_unused=prune_unused,
     )
+
+
+def _prune_after_latest_install(tool_id: str, slot_result: dict[str, Any]) -> dict[str, Any]:
+    """Remove old builds of tool_id no game uses, after a latest install (#133).
+
+    Games mapped to the rolling slot run on its target, so only the target
+    (newest build) has to stay; older builds survive only if a game maps to
+    them directly or Steam uses them as its default.
+    """
+    # pylint: disable=import-outside-toplevel
+    from .compat_tools import versioned_tools_for
+    from .compat_usage import prune_unused_versions
+
+    target = slot_result.get("target")
+    keep = {Path(str(target)).name} if target else set()
+    outcome = prune_unused_versions(tool_id, versioned_tools_for(tool_id), keep)
+    for directory in outcome.get("removed", []):
+        clear_latest_metadata(directory, tool_id)
+    return outcome
+
+
+def trim_unused_latest_installs() -> dict[str, dict[str, Any]]:
+    """Run auto-trim for every rolling tool now (#133 toggle-on).
+
+    Same rules as the post-install trim; the build the slot currently
+    points at is read from the slot's marker and always kept.
+    """
+    outcomes: dict[str, dict[str, Any]] = {}
+    for tool_id, cfg in COMPAT_TOOL_CONFIGS.items():
+        marker = compat_tools_dir() / cfg["latest_slot_name"] / ".proton-pulse-managed"
+        try:
+            target = marker.read_text(encoding="utf-8").strip() or None
+        except OSError:
+            target = None
+        outcomes[tool_id] = _prune_after_latest_install(tool_id, {"target": target})
+    decky.logger.info(f"trim_unused_latest_installs | outcomes={outcomes}")
+    return outcomes
 
 
 def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
@@ -417,6 +483,7 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
     _set_process: Any,
     latest_slot_name: str = PROTON_GE_LATEST_SLOT_NAME,
     tool_id: str = "proton-ge",
+    prune_unused: bool = False,
 ) -> dict[str, Any]:
     """Handle the download/extract/finalize pipeline in a temp dir."""
     asset_size = release.get("asset_size")
@@ -468,14 +535,21 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
                 total_bytes=asset_size,
                 progress_fraction=1.0,
             )
-            dest_name = latest_slot_name if install_as_latest else None
+            # Always install under the versioned name. The rolling slot is a
+            # managed link farm that ensure_rolling_slot rebuilds below.
+            # PREVIOUSLY install_as_latest extracted INTO the slot dir, which
+            # left a 1.5 GB real-dir duplicate the slot refresh could not
+            # migrate whenever the versioned dir already existed (#133).
             result = finalize_extracted_compat_tool(
                 normalized, extract_dir, cd,
-                destination_name=dest_name,
-                replace_existing=install_as_latest or force_reinstall,
+                replace_existing=force_reinstall,
             )
             if result.get("success") and install_as_latest:
                 write_latest_metadata(normalized, latest_slot_name)
+                if not result.get("already_installed") and result.get("directory_name"):
+                    # Provenance for auto-trim: only builds the latest
+                    # process installed itself are ever trimmed.
+                    mark_latest_install(cd / str(result["directory_name"]), tool_id, normalized)
             # #116: refresh the rolling latest-slot symlink after every
             # successful install so Proton-GE-Latest / Proton-CachyOS-Latest
             # always points at the newest versioned build even when the
@@ -491,6 +565,18 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
                         f" version={normalized} result={slot_result}"
                     )
                     result["rolling_slot"] = slot_result
+                    if not prune_unused:
+                        decky.logger.debug(
+                            f"Prune after install skipped: auto-trim off | tool_id={tool_id}"
+                        )
+                    elif install_as_latest and slot_result.get("ok"):
+                        pruned = _prune_after_latest_install(tool_id, slot_result)
+                        result["pruned"] = pruned
+                        if pruned.get("removed"):
+                            result["message"] = (
+                                f"{result.get('message', '')} Removed unused older"
+                                f" versions: {', '.join(pruned['removed'])}."
+                            ).strip()
                     if not slot_result.get("ok") and slot_result.get("reason") not in {"no-source", "slot-is-real-dir"}:
                         # Structural failure -- the tool we just installed can't
                         # be reached via the Latest slot. User asked for this to
