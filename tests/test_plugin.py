@@ -1581,7 +1581,9 @@ def test_install_compat_tool_worker_cancelled(plugin: Plugin) -> None:
         cancel_ref: threading.Event,
         _process_ref: Any,
         _tool_id: str = "proton-ge",
+        prune_unused: bool = False,
     ) -> dict[str, Any]:
+        assert prune_unused is False  # default when the frontend omits it
         cancel_ref.set()
         return {"success": False, "message": "Cancelled by user"}
 
