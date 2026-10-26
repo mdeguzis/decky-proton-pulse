@@ -802,6 +802,7 @@ export const th: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `ค่าเริ่มต้นของ Steam (ตอนนี้ ${tool})`,
     compatPendingRestart: () => "รอรีสตาร์ท",
     compatCleanupUnused: () => `ลบที่ไม่ได้ใช้`,
+    compatCleanupFamily: (family: string) => `${family} (ทุกเวอร์ชัน)`,
     compatCleanupNothing: () => `ไม่มีอะไรให้ล้าง ทุกเวอร์ชันที่ติดตั้งกำลังใช้งานหรือถูกป้องกันอยู่`,
     compatCleanupTitle: (count: number) => `ลบเวอร์ชันที่ไม่ได้ใช้ ${count} รายการไหม`,
     compatCleanupBody: (list: string) => `ไม่มีเกมหรือทางลัดที่ติดตั้งใช้งานรายการเหล่านี้: ${list} เกมที่ติดตั้งใหม่ภายหลังอาจต้องติดตั้งเวอร์ชันนั้นอีกครั้ง`,

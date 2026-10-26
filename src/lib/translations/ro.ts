@@ -802,6 +802,7 @@ export const ro: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Implicit Steam (acum ${tool})`,
     compatPendingRestart: () => "repornire în așteptare",
     compatCleanupUnused: () => `Elimină neutilizate`,
+    compatCleanupFamily: (family: string) => `${family} (toate versiunile)`,
     compatCleanupNothing: () => `Nimic de curățat. Toate versiunile instalate sunt folosite sau protejate.`,
     compatCleanupTitle: (count: number) => `Elimini ${count} versiune/versiuni neutilizată/e?`,
     compatCleanupBody: (list: string) => `Niciun joc sau scurtătură instalată nu le folosește: ${list}. Un joc pe care îl reinstalezi mai târziu poate avea nevoie din nou de versiunea lui.`,

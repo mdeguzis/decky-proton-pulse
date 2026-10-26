@@ -802,6 +802,7 @@ export const cs: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Výchozí ve Steamu (nyní ${tool})`,
     compatPendingRestart: () => "čeká na restart",
     compatCleanupUnused: () => `Odebrat nepoužívané`,
+    compatCleanupFamily: (family: string) => `${family} (všechny verze)`,
     compatCleanupNothing: () => `Není co čistit. Všechny nainstalované verze se používají nebo jsou chráněné.`,
     compatCleanupTitle: (count: number) => `Odebrat nepoužívané verze (${count})?`,
     compatCleanupBody: (list: string) => `Žádná nainstalovaná hra ani zástupce je nepoužívá: ${list}. Hra, kterou později znovu nainstalujete, může svou verzi potřebovat znovu.`,

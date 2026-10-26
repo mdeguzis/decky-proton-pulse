@@ -802,6 +802,7 @@ export const fi: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Steamin oletus (nyt ${tool})`,
     compatPendingRestart: () => "odottaa uudelleenkäynnistystä",
     compatCleanupUnused: () => `Poista käyttämättömät`,
+    compatCleanupFamily: (family: string) => `${family} (kaikki versiot)`,
     compatCleanupNothing: () => `Ei siivottavaa. Jokainen asennettu versio on käytössä tai suojattu.`,
     compatCleanupTitle: (count: number) => `Poistetaanko ${count} käyttämätöntä versiota?`,
     compatCleanupBody: (list: string) => `Mikään asennettu peli tai pikakuvake ei käytä näitä: ${list}. Myöhemmin uudelleen asennettava peli voi tarvita versionsa uudelleen.`,

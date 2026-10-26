@@ -6,7 +6,7 @@ import { openFilePicker, FileSelectionType } from '@decky/api';
 import { toaster } from '../../lib/notify';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
-import { cancelCompatToolInstall, cleanupUnusedCompatTools, getCompatCleanupCandidates, getCompatManagerState, getCompatToolDetails, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
+import { cancelCompatToolInstall, cleanupUnusedCompatTools, getCompatCleanupCandidates, planCompatCleanup, getCompatManagerState, getCompatToolDetails, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
 import type { CompatToolDetails } from '../../lib/compatTools';
 import { compatPendingRestartLabel, compatUsageGameNames, compatUsageLabel, sortRollingSlotsFirst } from '../../lib/compatUsage';
 import { useFocusableScroll } from '../../lib/useFocusableScroll';
@@ -1161,7 +1161,7 @@ export function SettingsTab() {
   // backend re-checks every name, so this can only remove what it offered.
   const handleCleanupUnused = async () => {
     setCleaningUp(true);
-    let candidates: { directory_name: string; display_name: string }[];
+    let candidates: Awaited<ReturnType<typeof getCompatCleanupCandidates>>;
     try {
       candidates = await getCompatCleanupCandidates();
     } catch (error) {
@@ -1172,17 +1172,24 @@ export function SettingsTab() {
       setCleaningUp(false);
       return;
     }
-    void logFrontendEvent('INFO', 'Clean up unused: candidates', { names: candidates.map((c) => c.directory_name) });
-    if (candidates.length === 0) {
+    const plan = planCompatCleanup(
+      candidates,
+      (toolId) => getSetting(getAutoUpdateKey(toolId), false),
+      (family) => extras.compatCleanupFamily!(family),
+    );
+    const { names } = plan;
+    void logFrontendEvent('INFO', 'Clean up unused: candidates', {
+      names: candidates.map((c) => c.directory_name), offered: names, keptForAutoUpdate: plan.kept,
+    });
+    if (names.length === 0) {
       toaster.toast({ title: 'Proton Pulse', body: extras.compatCleanupNothing!() });
       setCleaningUp(false);
       return;
     }
-    const names = candidates.map((c) => c.directory_name);
     showModal(
       <ConfirmModal
-        strTitle={extras.compatCleanupTitle!(names.length)}
-        strDescription={extras.compatCleanupBody!(candidates.map((c) => c.display_name || c.directory_name).join(', '))}
+        strTitle={extras.compatCleanupTitle!(plan.lines.length)}
+        strDescription={extras.compatCleanupBody!(plan.lines.join(', '))}
         strOKButtonText={extras.compatCleanupConfirm!()}
         strCancelButtonText={t().common.cancel}
         onOK={() => {

@@ -802,6 +802,7 @@ export const vi: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Mặc định của Steam (hiện là ${tool})`,
     compatPendingRestart: () => "chờ khởi động lại",
     compatCleanupUnused: () => `Gỡ mục không dùng`,
+    compatCleanupFamily: (family: string) => `${family} (mọi phiên bản)`,
     compatCleanupNothing: () => `Không có gì để dọn. Mọi phiên bản đã cài đều đang dùng hoặc được bảo vệ.`,
     compatCleanupTitle: (count: number) => `Gỡ ${count} phiên bản không dùng?`,
     compatCleanupBody: (list: string) => `Không có trò chơi hay lối tắt đã cài nào dùng các mục này: ${list}. Trò chơi bạn cài lại sau có thể cần cài lại phiên bản của nó.`,

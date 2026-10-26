@@ -36,7 +36,7 @@ if _PLUGIN_DIR not in sys.path:
 # pylint: disable=wrong-import-position
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
-from lib.compat_usage import annotate_tool_usage, select_cleanup_candidates, steam_tool_choices, tool_vdf_internal_name
+from lib.compat_usage import annotate_tool_usage, family_fully_unused, select_cleanup_candidates, steam_tool_choices, tool_vdf_internal_name
 from lib.compat_pending import annotate_pending_restart, steam_client_started_at
 from lib.compat_tools import (
     COMPAT_TOOL_CONFIGS,
@@ -696,7 +696,14 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         return choices
 
     def _cleanup_candidates(self) -> list[dict[str, Any]]:
-        """Recompute the Clean up unused list from disk (#138)."""
+        """Recompute the Clean up unused list from disk (#138).
+
+        The newest build of each family and every slot's target are
+        protected so a -Latest slot never points at nothing. The exception
+        is a family that is unused end to end (slot and all builds, like an
+        untouched CachyOS): it is offered whole, slot included, and each of
+        its entries carries "family" so the UI can show it as one line.
+        """
         installed = list_installed_compatibility_tools(
             all_latest_metadata={tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
         )
@@ -704,26 +711,47 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             # Usage unknown: offer nothing rather than guess.
             return []
         annotate_pending_restart(installed, steam_client_started_at())
+        by_dir = {str(t.get("directory_name")): t for t in installed}
         protected: set[str] = set()
-        for tid in COMPAT_TOOL_CONFIGS:
-            family = versioned_tools_for(tid)
-            if family:
-                protected.add(str(family[0].get("directory_name") or ""))
-        for tool in installed:
-            target = tool.get("current_target_name")
-            if tool.get("managed_slot") == "latest" and target:
+        whole: list[dict[str, Any]] = []
+        family_of: dict[str, tuple[str, str]] = {}
+        for tid, cfg in COMPAT_TOOL_CONFIGS.items():
+            builds = [
+                by_dir.get(str(t.get("directory_name")), t) for t in versioned_tools_for(tid)
+            ]
+            slot = by_dir.get(cfg["latest_slot_name"])
+            if family_fully_unused(slot, builds):
+                for member in [slot, *builds]:
+                    if member:
+                        family_of[str(member.get("directory_name"))] = (tid, cfg["label"])
+                if slot:
+                    whole.append(slot)
+                continue
+            if builds:
+                protected.add(str(builds[0].get("directory_name") or ""))
+            target = slot.get("current_target_name") if slot else None
+            if target:
                 protected.add(str(target))
-        candidates = select_cleanup_candidates(installed, protected)
+        candidates = whole + select_cleanup_candidates(installed, protected)
+        for c in candidates:
+            fam = family_of.get(str(c.get("directory_name")))
+            c["family_tool_id"], c["family"] = fam if fam else (None, None)
         decky.logger.debug(
             f"cleanup candidates: {[c.get('directory_name') for c in candidates]}"
-            f" protected={sorted(protected)}"
+            f" protected={sorted(protected)} whole_families={sorted({f[1] for f in family_of.values()})}"
         )
         return candidates
 
     async def get_compat_cleanup_candidates(self) -> list[dict[str, Any]]:
         """Builds the Clean up unused button would remove (#138)."""
         return [
-            {"directory_name": c.get("directory_name"), "display_name": c.get("display_name")}
+            {
+                "directory_name": c.get("directory_name"),
+                "display_name": c.get("display_name"),
+                "family": c.get("family"),
+                "family_tool_id": c.get("family_tool_id"),
+                "is_slot": c.get("managed_slot") == "latest",
+            }
             for c in self._cleanup_candidates()
         ]
 
@@ -733,11 +761,15 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         Anything the frontend sends that is no longer a candidate (now used,
         newest, a slot target, or never was one) is skipped, never deleted.
         """
-        allowed = {str(c.get("directory_name")) for c in self._cleanup_candidates()}
+        candidates = self._cleanup_candidates()
+        allowed = {str(c.get("directory_name")) for c in candidates}
+        slots = {str(c.get("directory_name")) for c in candidates if c.get("managed_slot") == "latest"}
         removed: list[str] = []
         failed: list[dict[str, str]] = []
         skipped: list[str] = []
-        for name in directory_names or []:
+        # Slots first, so a -Latest slot never points at a removed build.
+        ordered = sorted(directory_names or [], key=lambda n: 0 if n in slots else 1)
+        for name in ordered:
             if not isinstance(name, str) or name not in allowed:
                 skipped.append(str(name))
                 continue

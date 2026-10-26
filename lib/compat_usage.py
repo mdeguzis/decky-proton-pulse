@@ -429,3 +429,21 @@ def select_cleanup_candidates(
         out.append(tool)
     return out
 
+
+def family_fully_unused(slot: dict[str, Any] | None, builds: list[dict[str, Any]]) -> bool:
+    """True when a tool family's -Latest slot and every build are unused (#138).
+
+    Then nothing needs the newest build or the slot, so Clean up unused may
+    offer the whole family. Unknown usage, the Steam default or a build
+    still pending a restart keeps the family protected.
+    """
+    members = [m for m in [slot, *builds] if m]
+    if not members:
+        return False
+    return all(
+        m.get("used_by_app_ids") == []
+        and not m.get("is_steam_default")
+        and not m.get("pending_restart")
+        for m in members
+    )
+

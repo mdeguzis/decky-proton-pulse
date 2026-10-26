@@ -802,6 +802,7 @@ export const sv: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Steam-standard (nu ${tool})`,
     compatPendingRestart: () => "väntar på omstart",
     compatCleanupUnused: () => `Ta bort oanvända`,
+    compatCleanupFamily: (family: string) => `${family} (alla versioner)`,
     compatCleanupNothing: () => `Inget att rensa. Alla installerade versioner används eller är skyddade.`,
     compatCleanupTitle: (count: number) => `Ta bort ${count} oanvända version(er)?`,
     compatCleanupBody: (list: string) => `Inget installerat spel eller genväg använder dessa: ${list}. Ett spel du installerar om senare kan behöva sin version igen.`,

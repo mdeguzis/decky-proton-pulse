@@ -802,6 +802,7 @@ export const uk: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Типово в Steam (зараз ${tool})`,
     compatPendingRestart: () => "потрібен перезапуск",
     compatCleanupUnused: () => `Видалити невикористані`,
+    compatCleanupFamily: (family: string) => `${family} (усі версії)`,
     compatCleanupNothing: () => `Нічого прибирати. Усі встановлені версії використовуються або захищені.`,
     compatCleanupTitle: (count: number) => `Видалити невикористані версії (${count})?`,
     compatCleanupBody: (list: string) => `Жодна встановлена гра чи ярлик їх не використовує: ${list}. Грі, яку ви встановите знову, може знову знадобитися її версія.`,

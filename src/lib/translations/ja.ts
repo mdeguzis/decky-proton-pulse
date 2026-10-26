@@ -747,6 +747,7 @@ export const ja: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Steam の既定 (現在 ${tool})`,
     compatPendingRestart: () => "再起動待ち",
     compatCleanupUnused: () => `未使用を削除`,
+    compatCleanupFamily: (family: string) => `${family} (すべてのバージョン)`,
     compatCleanupNothing: () => `整理するものはありません。インストール済みのバージョンはすべて使用中か保護されています。`,
     compatCleanupTitle: (count: number) => `未使用のバージョンを ${count} 件削除しますか？`,
     compatCleanupBody: (list: string) => `インストール済みのゲームやショートカットで使われていません: ${list}。後で再インストールしたゲームでは、そのバージョンが再び必要になることがあります。`,

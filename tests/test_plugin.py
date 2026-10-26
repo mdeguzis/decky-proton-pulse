@@ -1885,11 +1885,14 @@ def _cleanup_tools(root: pathlib.Path) -> list[dict]:
 
 def _cleanup_patches(root: pathlib.Path, tools: list[dict], usage_ok: bool = True):
     def annotate(ts: list[dict]) -> bool:
+        used = {"GE-Proton9-4": ["257510"], "Proton-GE-Latest": ["1145350"]}
         for t in ts:
-            t["used_by_app_ids"] = ["257510"] if t["directory_name"] == "GE-Proton9-4" else []
+            t["used_by_app_ids"] = used.get(t["directory_name"], [])
             t["is_steam_default"] = False
         return usage_ok
-    newest = [t for t in tools if t["directory_name"] == "GE-Proton11-11-x86_64"]
+    # versioned_tools_for returns the whole family newest first, like on the Deck.
+    order = ["GE-Proton11-11-x86_64", "GE-Proton11-5-x86_64", "GE-Proton9-4"]
+    newest = sorted((t for t in tools if t["directory_name"] in order), key=lambda t: order.index(t["directory_name"]))
     return (
         patch("main.read_latest_metadata", return_value=None),
         patch("main.list_installed_compatibility_tools", side_effect=lambda **_: [dict(t) for t in tools]),
@@ -1906,7 +1909,8 @@ def test_cleanup_candidates_skip_newest_slot_target_and_used(plugin: Plugin, tmp
     p = _cleanup_patches(tmp_path, tools)
     with p[0], p[1], p[2], p[3], p[4], p[5], p[6]:
         got = asyncio.run(plugin.get_compat_cleanup_candidates())
-    assert got == [{"directory_name": "GE-Proton11-5-x86_64", "display_name": "GE-Proton11-5-x86_64"}]
+    assert got == [{"directory_name": "GE-Proton11-5-x86_64", "display_name": "GE-Proton11-5-x86_64",
+                    "family": None, "family_tool_id": None, "is_slot": False}]
 
 
 def test_cleanup_offers_nothing_when_usage_unknown(plugin: Plugin, tmp_path: pathlib.Path) -> None:
@@ -1940,3 +1944,57 @@ def test_cleanup_reports_failed_removals(plugin: Plugin, tmp_path: pathlib.Path)
     assert result["removed"] == []
     assert result["failed"][0]["directory_name"] == "GE-Proton11-5-x86_64"
     assert "busy" in result["failed"][0]["message"]
+
+
+def test_cleanup_offers_a_fully_unused_family_whole_slot_first(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    # CachyOS on the Deck: slot and its only build used by 0 games.
+    ge = _cleanup_tools(tmp_path / "ge")
+    cachy_slot = tmp_path / "cachy" / "Proton-CachyOS-Latest"
+    cachy_build = tmp_path / "cachy" / "proton-cachyos-11.0-20260702-slr-x86_64"
+    cachy_slot.mkdir(parents=True)
+    cachy_build.mkdir(parents=True)
+    tools = ge + [
+        {"directory_name": cachy_slot.name, "display_name": "Proton-CachyOS-Latest", "path": str(cachy_slot),
+         "source": "custom", "tool_id": "proton-cachyos", "managed_slot": "latest",
+         "current_target_name": cachy_build.name},
+        {"directory_name": cachy_build.name, "display_name": cachy_build.name, "path": str(cachy_build),
+         "source": "custom", "tool_id": "proton-cachyos", "managed_slot": "versioned", "current_target_name": None},
+    ]
+    newest = {
+        "proton-ge": [t for t in tools if t["directory_name"] == "GE-Proton11-11-x86_64"],
+        "proton-cachyos": [t for t in tools if t["directory_name"] == cachy_build.name],
+    }
+
+    def annotate(ts: list[dict]) -> bool:
+        for t in ts:
+            used = {"GE-Proton9-4": ["257510"], "Proton-GE-Latest": ["1145350"]}
+            t["used_by_app_ids"] = used.get(t["directory_name"], [])
+            t["is_steam_default"] = False
+        return True
+
+    removed_order: list[str] = []
+
+    async def fake_uninstall(name: str) -> dict:
+        removed_order.append(name)
+        return {"success": True, "message": f"Removed {name}."}
+
+    with (
+        patch("main.read_latest_metadata", return_value=None),
+        patch("main.list_installed_compatibility_tools", side_effect=lambda **_: [dict(t) for t in tools]),
+        patch("main.annotate_tool_usage", side_effect=annotate),
+        patch("main.steam_client_started_at", return_value=None),
+        patch("main.versioned_tools_for", side_effect=lambda tid: newest.get(tid, [])),
+        patch.object(plugin, "uninstall_compatibility_tool", side_effect=fake_uninstall),
+    ):
+        offered = asyncio.run(plugin.get_compat_cleanup_candidates())
+        result = asyncio.run(plugin.cleanup_unused_compat_tools([cachy_build.name, cachy_slot.name]))
+
+    by_name = {o["directory_name"]: o for o in offered}
+    assert set(by_name) == {"GE-Proton11-5-x86_64", cachy_slot.name, cachy_build.name}
+    assert by_name[cachy_slot.name]["family"] == "Proton-CachyOS"
+    assert by_name[cachy_slot.name]["is_slot"] is True
+    assert by_name[cachy_build.name]["family_tool_id"] == "proton-cachyos"
+    assert by_name["GE-Proton11-5-x86_64"]["family"] is None  # GE slot is in use, family protected
+    assert removed_order == [cachy_slot.name, cachy_build.name]  # slot first
+    assert result["removed"] == removed_order
+

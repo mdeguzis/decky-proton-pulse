@@ -451,3 +451,16 @@ def test_cleanup_candidates_offer_only_unused_unprotected_custom_builds() -> Non
     picked = select_cleanup_candidates(tools, {"GE-Proton11-11-x86_64"})
     assert [t["directory_name"] for t in picked] == ["GE-Proton11-5-x86_64", "GE-Proton9-4"]
 
+
+def test_family_fully_unused() -> None:
+    from lib.compat_usage import family_fully_unused
+    slot = _annotated("Proton-CachyOS-Latest", [], managed_slot="latest")
+    build = _annotated("proton-cachyos-11.0-20260702-slr-x86_64", [])
+    assert family_fully_unused(slot, [build]) is True
+    assert family_fully_unused(None, [build]) is True
+    assert family_fully_unused(None, []) is False
+    assert family_fully_unused({**slot, "used_by_app_ids": ["21690"]}, [build]) is False
+    assert family_fully_unused(slot, [{**build, "used_by_app_ids": None}]) is False
+    assert family_fully_unused(slot, [{**build, "is_steam_default": True}]) is False
+    assert family_fully_unused(slot, [{**build, "pending_restart": True}]) is False
+

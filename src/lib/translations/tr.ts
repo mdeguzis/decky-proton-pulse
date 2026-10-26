@@ -747,6 +747,7 @@ export const tr: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Steam varsayılanı (şu an ${tool})`,
     compatPendingRestart: () => "yeniden başlatma bekliyor",
     compatCleanupUnused: () => `Kullanılmayanları kaldır`,
+    compatCleanupFamily: (family: string) => `${family} (tüm sürümler)`,
     compatCleanupNothing: () => `Temizlenecek bir şey yok. Yüklü her sürüm kullanımda veya korumalı.`,
     compatCleanupTitle: (count: number) => `${count} kullanılmayan sürüm kaldırılsın mı?`,
     compatCleanupBody: (list: string) => `Yüklü hiçbir oyun veya kısayol bunları kullanmıyor: ${list}. Daha sonra yeniden yüklediğiniz bir oyunun sürümüne yeniden ihtiyacı olabilir.`,

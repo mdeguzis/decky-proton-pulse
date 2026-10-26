@@ -802,6 +802,7 @@ export const hu: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Steam alapértelmezett (most ${tool})`,
     compatPendingRestart: () => "újraindításra vár",
     compatCleanupUnused: () => `Nem használtak törlése`,
+    compatCleanupFamily: (family: string) => `${family} (összes verzió)`,
     compatCleanupNothing: () => `Nincs mit törölni. Minden telepített verzió használatban van vagy védett.`,
     compatCleanupTitle: (count: number) => `Eltávolítasz ${count} nem használt verziót?`,
     compatCleanupBody: (list: string) => `Egyetlen telepített játék vagy parancsikon sem használja ezeket: ${list}. Egy később újratelepített játéknak újra szüksége lehet a verziójára.`,

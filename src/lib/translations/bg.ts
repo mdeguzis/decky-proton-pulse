@@ -802,6 +802,7 @@ export const bg: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `По подразбиране в Steam (сега ${tool})`,
     compatPendingRestart: () => "изисква рестарт",
     compatCleanupUnused: () => `Премахни неизползваните`,
+    compatCleanupFamily: (family: string) => `${family} (всички версии)`,
     compatCleanupNothing: () => `Няма какво да се почиства. Всички инсталирани версии се използват или са защитени.`,
     compatCleanupTitle: (count: number) => `Да се премахнат ли ${count} неизползвани версии?`,
     compatCleanupBody: (list: string) => `Нито една инсталирана игра или пряк път не ги използва: ${list}. Игра, която инсталирате отново по-късно, може да изисква версията ѝ отново.`,

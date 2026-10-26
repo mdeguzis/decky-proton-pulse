@@ -802,6 +802,7 @@ export const sl: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Privzeto v Steamu (zdaj ${tool})`,
     compatPendingRestart: () => "čaka na ponovni zagon",
     compatCleanupUnused: () => `Odstrani neuporabljene`,
+    compatCleanupFamily: (family: string) => `${family} (vse različice)`,
     compatCleanupNothing: () => `Ni česa počistiti. Vse nameščene različice so v uporabi ali zaščitene.`,
     compatCleanupTitle: (count: number) => `Odstranim neuporabljene različice (${count})?`,
     compatCleanupBody: (list: string) => `Nobena nameščena igra ali bližnjica jih ne uporablja: ${list}. Igra, ki jo pozneje znova namestite, bo morda spet potrebovala svojo različico.`,

@@ -802,6 +802,7 @@ export const el: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Προεπιλογή Steam (τώρα ${tool})`,
     compatPendingRestart: () => "εκκρεμεί επανεκκίνηση",
     compatCleanupUnused: () => `Αφαίρεση αχρησιμοποίητων`,
+    compatCleanupFamily: (family: string) => `${family} (όλες οι εκδόσεις)`,
     compatCleanupNothing: () => `Τίποτα για εκκαθάριση. Όλες οι εγκατεστημένες εκδόσεις χρησιμοποιούνται ή προστατεύονται.`,
     compatCleanupTitle: (count: number) => `Αφαίρεση ${count} αχρησιμοποίητων εκδόσεων;`,
     compatCleanupBody: (list: string) => `Κανένα εγκατεστημένο παιχνίδι ή συντόμευση δεν τις χρησιμοποιεί: ${list}. Ένα παιχνίδι που θα επανεγκαταστήσετε αργότερα μπορεί να χρειαστεί ξανά την έκδοσή του.`,

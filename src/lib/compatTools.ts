@@ -31,7 +31,42 @@ const installProtonGeCallable = callable<
 const cancelProtonGeInstallCallable = callable<[], { success: boolean; message: string }>('cancel_proton_ge_install');
 const uninstallCompatibilityToolCallable = callable<[directoryName: string], { success: boolean; message: string }>('uninstall_compatibility_tool');
 // #138 Clean up unused: list, then remove the confirmed names (re-checked backend-side).
-export interface CompatCleanupCandidate { directory_name: string; display_name: string }
+export interface CompatCleanupCandidate {
+  directory_name: string;
+  display_name: string;
+  // Set when the whole family (slot + every build) is unused and offered together.
+  family?: string | null;
+  family_tool_id?: CompatToolId | null;
+  is_slot?: boolean;
+}
+
+/**
+ * Dialog lines for the cleanup confirm (#138): a whole unused family is one
+ * line ("Proton-CachyOS (all versions)"), other builds are listed by name.
+ * Families with auto-update on are left out (auto-update would just
+ * reinstall them); `kept` reports which.
+ */
+export function planCompatCleanup(
+  candidates: CompatCleanupCandidate[],
+  autoUpdateOn: (toolId: CompatToolId) => boolean,
+  familyLabel: (family: string) => string,
+): { names: string[]; lines: string[]; kept: string[] } {
+  const names: string[] = [];
+  const lines: string[] = [];
+  const kept = new Set<string>();
+  const shown = new Set<string>();
+  for (const c of candidates) {
+    if (c.family && c.family_tool_id) {
+      if (autoUpdateOn(c.family_tool_id)) { kept.add(c.family); continue; }
+      names.push(c.directory_name);
+      if (!shown.has(c.family)) { shown.add(c.family); lines.push(familyLabel(c.family)); }
+      continue;
+    }
+    names.push(c.directory_name);
+    lines.push(c.display_name || c.directory_name);
+  }
+  return { names, lines, kept: [...kept] };
+}
 export interface CompatCleanupResult { removed: string[]; failed: { directory_name: string; message: string }[]; skipped: string[] }
 const getCompatCleanupCandidatesCallable = callable<[], CompatCleanupCandidate[]>('get_compat_cleanup_candidates');
 const cleanupUnusedCompatToolsCallable = callable<[directoryNames: string[]], CompatCleanupResult>('cleanup_unused_compat_tools');

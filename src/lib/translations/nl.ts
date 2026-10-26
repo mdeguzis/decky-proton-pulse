@@ -802,6 +802,7 @@ export const nl: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Steam-standaard (nu ${tool})`,
     compatPendingRestart: () => "herstart vereist",
     compatCleanupUnused: () => `Ongebruikte verwijderen`,
+    compatCleanupFamily: (family: string) => `${family} (alle versies)`,
     compatCleanupNothing: () => `Niets op te ruimen. Elke geïnstalleerde versie is in gebruik of beschermd.`,
     compatCleanupTitle: (count: number) => `${count} ongebruikte versie(s) verwijderen?`,
     compatCleanupBody: (list: string) => `Geen geïnstalleerde game of snelkoppeling gebruikt deze: ${list}. Een game die je later opnieuw installeert, heeft zijn versie misschien weer nodig.`,

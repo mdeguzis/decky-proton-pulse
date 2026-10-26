@@ -807,6 +807,7 @@ export interface TranslationTree {
     steamDefaultProtonNow?: (tool: string) => string;
     compatPendingRestart?: () => string;
     compatCleanupUnused?: () => string;
+    compatCleanupFamily?: (family: string) => string;
     compatCleanupNothing?: () => string;
     compatCleanupTitle?: (count: number) => string;
     compatCleanupBody?: (list: string) => string;
@@ -1650,6 +1651,7 @@ export const en: TranslationTree = {
     steamDefaultProtonNow: (tool) => `Steam default (now ${tool})`,
     compatPendingRestart: () => 'pending restart',
     compatCleanupUnused: () => `Remove unused`,
+    compatCleanupFamily: (family) => `${family} (all versions)`,
     compatCleanupNothing: () => `Nothing to clean up. Every installed version is in use or protected.`,
     compatCleanupTitle: (count) => `Remove ${count} unused version(s)?`,
     compatCleanupBody: (list) => `No installed game or shortcut uses these: ${list}. A game you reinstall later may need its version installed again.`,

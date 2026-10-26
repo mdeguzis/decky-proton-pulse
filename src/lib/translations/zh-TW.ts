@@ -802,6 +802,7 @@ export const zhTW: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Steam 預設（目前為 ${tool}）`,
     compatPendingRestart: () => "待重新啟動",
     compatCleanupUnused: () => `移除未使用`,
+    compatCleanupFamily: (family: string) => `${family}（所有版本）`,
     compatCleanupNothing: () => `沒有可清理的項目。所有已安裝的版本都在使用中或受保護。`,
     compatCleanupTitle: (count: number) => `移除 ${count} 個未使用的版本？`,
     compatCleanupBody: (list: string) => `沒有已安裝的遊戲或捷徑使用這些版本：${list}。之後重新安裝的遊戲可能需要再次安裝其版本。`,

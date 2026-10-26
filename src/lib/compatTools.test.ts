@@ -18,7 +18,7 @@ vi.mock('./settings', () => ({
   getSetting: vi.fn((key: string, fallback: unknown) => (settings.has(key) ? settings.get(key) : fallback)),
 }));
 
-import { COMPAT_AUTO_TRIM_KEY, cleanupUnusedCompatTools, getCompatCleanupCandidates, installCompatTool } from './compatTools';
+import { COMPAT_AUTO_TRIM_KEY, cleanupUnusedCompatTools, getCompatCleanupCandidates, installCompatTool, planCompatCleanup } from './compatTools';
 
 describe('installCompatTool auto-trim flag (#133)', () => {
   beforeEach(() => {
@@ -81,6 +81,34 @@ describe('Clean up unused (#138)', () => {
     fn.mockResolvedValueOnce(result);
     await expect(cleanupUnusedCompatTools(['GE-Proton11-5-x86_64'])).resolves.toEqual(result);
     expect(fn).toHaveBeenCalledWith(['GE-Proton11-5-x86_64']);
+  });
+});
+
+describe('planCompatCleanup (#138)', () => {
+  const candidates = [
+    { directory_name: 'Proton-CachyOS-Latest', display_name: 'Proton-CachyOS-Latest', family: 'Proton-CachyOS', family_tool_id: 'proton-cachyos' as const, is_slot: true },
+    { directory_name: 'proton-cachyos-11.0', display_name: 'proton-cachyos-11.0', family: 'Proton-CachyOS', family_tool_id: 'proton-cachyos' as const },
+    { directory_name: 'GE-Proton11-5-x86_64', display_name: 'GE-Proton11-5', family: null, family_tool_id: null },
+  ];
+  const label = (f: string) => `${f} (all versions)`;
+
+  it('shows a whole unused family as one line but removes every member', () => {
+    const plan = planCompatCleanup(candidates, () => false, label);
+    expect(plan.lines).toEqual(['Proton-CachyOS (all versions)', 'GE-Proton11-5']);
+    expect(plan.names).toEqual(['Proton-CachyOS-Latest', 'proton-cachyos-11.0', 'GE-Proton11-5-x86_64']);
+    expect(plan.kept).toEqual([]);
+  });
+
+  it('leaves out a family whose auto-update is on', () => {
+    const plan = planCompatCleanup(candidates, (id) => id === 'proton-cachyos', label);
+    expect(plan.names).toEqual(['GE-Proton11-5-x86_64']);
+    expect(plan.lines).toEqual(['GE-Proton11-5']);
+    expect(plan.kept).toEqual(['Proton-CachyOS']);
+  });
+
+  it('falls back to the directory name when there is no display name', () => {
+    const plan = planCompatCleanup([{ directory_name: 'X', display_name: '' }], () => false, label);
+    expect(plan.lines).toEqual(['X']);
   });
 });
 

@@ -747,6 +747,7 @@ export const fr: TranslationTree = {
     steamDefaultProtonNow: (tool: string) => `Par défaut de Steam (actuellement ${tool})`,
     compatPendingRestart: () => "redémarrage requis",
     compatCleanupUnused: () => `Supprimer inutilisés`,
+    compatCleanupFamily: (family: string) => `${family} (toutes les versions)`,
     compatCleanupNothing: () => `Rien à nettoyer. Chaque version installée est utilisée ou protégée.`,
     compatCleanupTitle: (count: number) => `Supprimer ${count} version(s) inutilisée(s) ?`,
     compatCleanupBody: (list: string) => `Aucun jeu ni raccourci installé ne les utilise : ${list}. Un jeu que vous réinstallerez plus tard pourra avoir besoin de sa version à nouveau.`,
