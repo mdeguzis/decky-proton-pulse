@@ -1863,3 +1863,80 @@ def test_get_compat_tool_details_unknown_tool(plugin: Plugin) -> None:
         result = asyncio.run(plugin.get_compat_tool_details("does-not-exist"))
     assert result["ok"] is False
     assert "tool not found" in result["error"]
+
+
+# --- Clean up unused (#138) ---
+
+
+def _cleanup_tools(root: pathlib.Path) -> list[dict]:
+    tools = []
+    for name, slot, target in [
+        ("GE-Proton11-11-x86_64", "versioned", None),
+        ("GE-Proton11-5-x86_64", "versioned", None),
+        ("GE-Proton9-4", "versioned", None),
+        ("Proton-GE-Latest", "latest", "GE-Proton11-11-x86_64"),
+    ]:
+        d = root / name
+        d.mkdir(parents=True, exist_ok=True)
+        tools.append({"directory_name": name, "display_name": name, "path": str(d), "source": "custom",
+                      "tool_id": "proton-ge", "managed_slot": slot, "current_target_name": target})
+    return tools
+
+
+def _cleanup_patches(root: pathlib.Path, tools: list[dict], usage_ok: bool = True):
+    def annotate(ts: list[dict]) -> bool:
+        for t in ts:
+            t["used_by_app_ids"] = ["257510"] if t["directory_name"] == "GE-Proton9-4" else []
+            t["is_steam_default"] = False
+        return usage_ok
+    newest = [t for t in tools if t["directory_name"] == "GE-Proton11-11-x86_64"]
+    return (
+        patch("main.read_latest_metadata", return_value=None),
+        patch("main.list_installed_compatibility_tools", side_effect=lambda **_: [dict(t) for t in tools]),
+        patch("main.annotate_tool_usage", side_effect=annotate),
+        patch("main.steam_client_started_at", return_value=None),
+        patch("main.versioned_tools_for", side_effect=lambda tid: newest if tid == "proton-ge" else []),
+        patch("main.compat_tools_dirs", return_value=[root]),
+        patch("main.clear_latest_metadata"),
+    )
+
+
+def test_cleanup_candidates_skip_newest_slot_target_and_used(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    tools = _cleanup_tools(tmp_path)
+    p = _cleanup_patches(tmp_path, tools)
+    with p[0], p[1], p[2], p[3], p[4], p[5], p[6]:
+        got = asyncio.run(plugin.get_compat_cleanup_candidates())
+    assert got == [{"directory_name": "GE-Proton11-5-x86_64", "display_name": "GE-Proton11-5-x86_64"}]
+
+
+def test_cleanup_offers_nothing_when_usage_unknown(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    tools = _cleanup_tools(tmp_path)
+    p = _cleanup_patches(tmp_path, tools, usage_ok=False)
+    with p[0], p[1], p[2], p[3], p[4], p[5], p[6]:
+        assert asyncio.run(plugin.get_compat_cleanup_candidates()) == []
+
+
+def test_cleanup_removes_only_rechecked_candidates(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    tools = _cleanup_tools(tmp_path)
+    p = _cleanup_patches(tmp_path, tools)
+    with p[0], p[1], p[2], p[3], p[4], p[5], p[6]:
+        result = asyncio.run(plugin.cleanup_unused_compat_tools(
+            ["GE-Proton11-5-x86_64", "GE-Proton11-11-x86_64", "GE-Proton9-4", "../../etc", 7]
+        ))
+    assert result["removed"] == ["GE-Proton11-5-x86_64"]
+    # Newest, in-use, a path traversal attempt and a non-string are never deleted.
+    assert result["skipped"] == ["GE-Proton11-11-x86_64", "GE-Proton9-4", "../../etc", "7"]
+    assert result["failed"] == []
+    assert not (tmp_path / "GE-Proton11-5-x86_64").exists()
+    assert (tmp_path / "GE-Proton11-11-x86_64").exists()
+    assert (tmp_path / "GE-Proton9-4").exists()
+
+
+def test_cleanup_reports_failed_removals(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    tools = _cleanup_tools(tmp_path)
+    p = _cleanup_patches(tmp_path, tools)
+    with p[0], p[1], p[2], p[3], p[4], p[5], p[6], patch("main.shutil.rmtree", side_effect=OSError("busy")):
+        result = asyncio.run(plugin.cleanup_unused_compat_tools(["GE-Proton11-5-x86_64"]))
+    assert result["removed"] == []
+    assert result["failed"][0]["directory_name"] == "GE-Proton11-5-x86_64"
+    assert "busy" in result["failed"][0]["message"]

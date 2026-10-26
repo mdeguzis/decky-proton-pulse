@@ -746,6 +746,13 @@ export const ja: TranslationTree = {
     steamDefaultProton: () => `Steam の既定`,
     steamDefaultProtonNow: (tool: string) => `Steam の既定 (現在 ${tool})`,
     compatPendingRestart: () => "再起動待ち",
+    compatCleanupUnused: () => `未使用を整理`,
+    compatCleanupNothing: () => `整理するものはありません。インストール済みのバージョンはすべて使用中か保護されています。`,
+    compatCleanupTitle: (count: number) => `未使用のバージョンを ${count} 件削除しますか？`,
+    compatCleanupBody: (list: string) => `インストール済みのゲームやショートカットで使われていません: ${list}。後で再インストールしたゲームでは、そのバージョンが再び必要になることがあります。`,
+    compatCleanupConfirm: () => `削除`,
+    compatCleanupDone: (count: number) => `未使用のバージョンを ${count} 件削除しました。`,
+    compatCleanupPartial: (count: number, failed: string) => `${count} 件削除しました。削除できなかったもの: ${failed}。`,
     protonPulseWebsiteLabel: () => "Proton Pulse ウェブサイト",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'レポート分析',

@@ -30,6 +30,11 @@ const installProtonGeCallable = callable<
 >('install_proton_ge');
 const cancelProtonGeInstallCallable = callable<[], { success: boolean; message: string }>('cancel_proton_ge_install');
 const uninstallCompatibilityToolCallable = callable<[directoryName: string], { success: boolean; message: string }>('uninstall_compatibility_tool');
+// #138 Clean up unused: list, then remove the confirmed names (re-checked backend-side).
+export interface CompatCleanupCandidate { directory_name: string; display_name: string }
+export interface CompatCleanupResult { removed: string[]; failed: { directory_name: string; message: string }[]; skipped: string[] }
+const getCompatCleanupCandidatesCallable = callable<[], CompatCleanupCandidate[]>('get_compat_cleanup_candidates');
+const cleanupUnusedCompatToolsCallable = callable<[directoryNames: string[]], CompatCleanupResult>('cleanup_unused_compat_tools');
 const installCompatibilityToolArchiveCallable = callable<[archivePath: string], { success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }>('install_compatibility_tool_archive');
 
 export async function getCompatManagerState(toolId: CompatToolId, forceRefresh = false): Promise<ProtonGeManagerState> {
@@ -93,6 +98,16 @@ export async function cancelProtonGeInstall(): Promise<{ success: boolean; messa
 
 export async function uninstallCompatibilityTool(directoryName: string): Promise<{ success: boolean; message: string }> {
   return uninstallCompatibilityToolCallable(directoryName);
+}
+
+export async function getCompatCleanupCandidates(): Promise<CompatCleanupCandidate[]> {
+  const result = await getCompatCleanupCandidatesCallable();
+  if (!Array.isArray(result)) throw new Error('get_compat_cleanup_candidates returned a non-array');
+  return result;
+}
+
+export async function cleanupUnusedCompatTools(directoryNames: string[]): Promise<CompatCleanupResult> {
+  return cleanupUnusedCompatToolsCallable(directoryNames);
 }
 
 export async function installCompatibilityToolArchive(archivePath: string): Promise<{ success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }> {

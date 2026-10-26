@@ -396,3 +396,36 @@ def steam_tool_choices(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "source": tool.get("source"),
         })
     return choices
+
+
+def select_cleanup_candidates(
+    tools: list[dict[str, Any]],
+    protected_dirs: set[str],
+) -> list[dict[str, Any]]:
+    """Installed builds the Clean up unused button may offer to remove (#138).
+
+    ``tools`` must already carry used_by_app_ids (installed games and
+    shortcuts only, see annotate_tool_usage), is_steam_default and
+    pending_restart. Unlike auto-trim this includes hand-installed builds and
+    ignores leftover mappings from uninstalled games, because the user
+    confirms the list before anything is deleted.
+
+    Never offered: Valve builds, rolling -Latest slots, anything in
+    protected_dirs (the newest build of each family and every slot's current
+    target), the Steam default, builds with unknown usage (None), and builds
+    still pending a Steam restart (just installed, likely about to be used).
+    """
+    out: list[dict[str, Any]] = []
+    for tool in tools:
+        directory = str(tool.get("directory_name") or "")
+        if not directory or directory in protected_dirs:
+            continue
+        if tool.get("source") != "custom" or tool.get("managed_slot") == "latest":
+            continue
+        if tool.get("used_by_app_ids") != [] or tool.get("is_steam_default"):
+            continue
+        if tool.get("pending_restart"):
+            continue
+        out.append(tool)
+    return out
+

@@ -425,3 +425,29 @@ def test_steam_tool_choices_use_names_specifycompattool_accepts(tmp_path: Path) 
         "Proton 11.0": "proton_11",
         "Proton - Experimental": "proton_experimental",
     }
+
+
+def _annotated(directory: str, used: list[str] | None, **extra: Any) -> dict[str, Any]:
+    tool = _tool(directory, path=f"/x/{directory}")
+    tool.update({"used_by_app_ids": used, "is_steam_default": False, "pending_restart": False})
+    tool.update(extra)
+    return tool
+
+
+def test_cleanup_candidates_offer_only_unused_unprotected_custom_builds() -> None:
+    from lib.compat_usage import select_cleanup_candidates
+    tools = [
+        _annotated("GE-Proton11-5-x86_64", []),                          # hand-installed, unused: offered
+        _annotated("GE-Proton9-4", []),                                  # unused: offered
+        _annotated("GE-Proton8-30", ["257510"]),                         # used
+        _annotated("GE-Proton11-11-x86_64", []),                         # newest: protected
+        _annotated("Proton-GE-Latest", [], managed_slot="latest"),       # slot
+        _annotated("GE-Proton10-1", [], is_steam_default=True),          # Steam default
+        _annotated("GE-Proton11-6", None),                               # usage unknown
+        _annotated("GE-Proton11-7", [], pending_restart=True),           # just installed
+        {**_annotated("Proton 9.0", []), "source": "valve"},             # Valve
+        _annotated("", []),                                              # nameless
+    ]
+    picked = select_cleanup_candidates(tools, {"GE-Proton11-11-x86_64"})
+    assert [t["directory_name"] for t in picked] == ["GE-Proton11-5-x86_64", "GE-Proton9-4"]
+

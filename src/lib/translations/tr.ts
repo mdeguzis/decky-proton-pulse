@@ -746,6 +746,13 @@ export const tr: TranslationTree = {
     steamDefaultProton: () => `Steam varsayılanı`,
     steamDefaultProtonNow: (tool: string) => `Steam varsayılanı (şu an ${tool})`,
     compatPendingRestart: () => "yeniden başlatma bekliyor",
+    compatCleanupUnused: () => `Kullanılmayanları temizle`,
+    compatCleanupNothing: () => `Temizlenecek bir şey yok. Yüklü her sürüm kullanımda veya korumalı.`,
+    compatCleanupTitle: (count: number) => `${count} kullanılmayan sürüm kaldırılsın mı?`,
+    compatCleanupBody: (list: string) => `Yüklü hiçbir oyun veya kısayol bunları kullanmıyor: ${list}. Daha sonra yeniden yüklediğiniz bir oyunun sürümüne yeniden ihtiyacı olabilir.`,
+    compatCleanupConfirm: () => `Kaldır`,
+    compatCleanupDone: (count: number) => `${count} kullanılmayan sürüm kaldırıldı.`,
+    compatCleanupPartial: (count: number, failed: string) => `${count} kaldırıldı. Kaldırılamayanlar: ${failed}.`,
     protonPulseWebsiteLabel: () => "Proton Pulse Web Sitesi",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'Rapor analizi',

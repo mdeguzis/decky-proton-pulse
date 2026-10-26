@@ -36,7 +36,7 @@ if _PLUGIN_DIR not in sys.path:
 # pylint: disable=wrong-import-position
 import decky  # type: ignore[import-untyped]  # pylint: disable=import-error
 from lib.cdn_cache import is_fresh, read_cached, write_cached
-from lib.compat_usage import annotate_tool_usage, steam_tool_choices, tool_vdf_internal_name
+from lib.compat_usage import annotate_tool_usage, select_cleanup_candidates, steam_tool_choices, tool_vdf_internal_name
 from lib.compat_pending import annotate_pending_restart, steam_client_started_at
 from lib.compat_tools import (
     COMPAT_TOOL_CONFIGS,
@@ -48,6 +48,7 @@ from lib.compat_tools import (
     matches_release_tag,
     normalize_proton_ge_tag,
     normalize_tag_for_tool,
+    versioned_tools_for,
 )
 from lib.plugin_logging import get_log_contents, log_frontend_event, sync_set_log_level
 from lib.plugin_utils import extract_archive_safely
@@ -693,6 +694,62 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             f" names={[c['tool_name'] for c in choices]}"
         )
         return choices
+
+    def _cleanup_candidates(self) -> list[dict[str, Any]]:
+        """Recompute the Clean up unused list from disk (#138)."""
+        installed = list_installed_compatibility_tools(
+            all_latest_metadata={tid: read_latest_metadata(tid) for tid in COMPAT_TOOL_CONFIGS}
+        )
+        if not annotate_tool_usage(installed):
+            # Usage unknown: offer nothing rather than guess.
+            return []
+        annotate_pending_restart(installed, steam_client_started_at())
+        protected: set[str] = set()
+        for tid in COMPAT_TOOL_CONFIGS:
+            family = versioned_tools_for(tid)
+            if family:
+                protected.add(str(family[0].get("directory_name") or ""))
+        for tool in installed:
+            target = tool.get("current_target_name")
+            if tool.get("managed_slot") == "latest" and target:
+                protected.add(str(target))
+        candidates = select_cleanup_candidates(installed, protected)
+        decky.logger.debug(
+            f"cleanup candidates: {[c.get('directory_name') for c in candidates]}"
+            f" protected={sorted(protected)}"
+        )
+        return candidates
+
+    async def get_compat_cleanup_candidates(self) -> list[dict[str, Any]]:
+        """Builds the Clean up unused button would remove (#138)."""
+        return [
+            {"directory_name": c.get("directory_name"), "display_name": c.get("display_name")}
+            for c in self._cleanup_candidates()
+        ]
+
+    async def cleanup_unused_compat_tools(self, directory_names: list[str]) -> dict[str, Any]:
+        """Remove the confirmed builds, re-checking each against a fresh list (#138).
+
+        Anything the frontend sends that is no longer a candidate (now used,
+        newest, a slot target, or never was one) is skipped, never deleted.
+        """
+        allowed = {str(c.get("directory_name")) for c in self._cleanup_candidates()}
+        removed: list[str] = []
+        failed: list[dict[str, str]] = []
+        skipped: list[str] = []
+        for name in directory_names or []:
+            if not isinstance(name, str) or name not in allowed:
+                skipped.append(str(name))
+                continue
+            result = await self.uninstall_compatibility_tool(name)
+            if result.get("success"):
+                removed.append(name)
+            else:
+                failed.append({"directory_name": name, "message": str(result.get("message"))})
+        decky.logger.info(
+            f"cleanup_unused_compat_tools: removed={removed} failed={failed} skipped={skipped}"
+        )
+        return {"removed": removed, "failed": failed, "skipped": skipped}
 
     async def trim_unused_compat_versions(self) -> dict[str, Any]:
         """Auto-trim now, for when the setting is switched on (#133).

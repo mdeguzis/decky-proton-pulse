@@ -18,7 +18,7 @@ vi.mock('./settings', () => ({
   getSetting: vi.fn((key: string, fallback: unknown) => (settings.has(key) ? settings.get(key) : fallback)),
 }));
 
-import { COMPAT_AUTO_TRIM_KEY, installCompatTool } from './compatTools';
+import { COMPAT_AUTO_TRIM_KEY, cleanupUnusedCompatTools, getCompatCleanupCandidates, installCompatTool } from './compatTools';
 
 describe('installCompatTool auto-trim flag (#133)', () => {
   beforeEach(() => {
@@ -62,3 +62,25 @@ describe('trimUnusedCompatVersions', () => {
     expect(await trimUnusedCompatVersions()).toEqual(tools);
   });
 });
+
+describe('Clean up unused (#138)', () => {
+  it('lists candidates from the backend', async () => {
+    const rows = [{ directory_name: 'GE-Proton11-5-x86_64', display_name: 'GE-Proton11-5' }];
+    callableMocks.get('get_compat_cleanup_candidates')!.mockResolvedValueOnce(rows);
+    await expect(getCompatCleanupCandidates()).resolves.toEqual(rows);
+  });
+
+  it('throws on a malformed candidate list instead of returning empty', async () => {
+    callableMocks.get('get_compat_cleanup_candidates')!.mockResolvedValueOnce({ nope: true });
+    await expect(getCompatCleanupCandidates()).rejects.toThrow('non-array');
+  });
+
+  it('sends the confirmed names to the backend', async () => {
+    const result = { removed: ['GE-Proton11-5-x86_64'], failed: [], skipped: [] };
+    const fn = callableMocks.get('cleanup_unused_compat_tools')!;
+    fn.mockResolvedValueOnce(result);
+    await expect(cleanupUnusedCompatTools(['GE-Proton11-5-x86_64'])).resolves.toEqual(result);
+    expect(fn).toHaveBeenCalledWith(['GE-Proton11-5-x86_64']);
+  });
+});
+

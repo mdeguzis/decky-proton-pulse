@@ -746,6 +746,13 @@ export const ko: TranslationTree = {
     steamDefaultProton: () => `Steam 기본값`,
     steamDefaultProtonNow: (tool: string) => `Steam 기본값 (현재 ${tool})`,
     compatPendingRestart: () => "재시작 대기",
+    compatCleanupUnused: () => `사용하지 않는 항목 정리`,
+    compatCleanupNothing: () => `정리할 항목이 없습니다. 설치된 모든 버전이 사용 중이거나 보호되어 있습니다.`,
+    compatCleanupTitle: (count: number) => `사용하지 않는 버전 ${count}개를 제거할까요?`,
+    compatCleanupBody: (list: string) => `설치된 게임이나 바로 가기에서 사용하지 않습니다: ${list}. 나중에 다시 설치하는 게임은 해당 버전을 다시 설치해야 할 수 있습니다.`,
+    compatCleanupConfirm: () => `제거`,
+    compatCleanupDone: (count: number) => `사용하지 않는 버전 ${count}개를 제거했습니다.`,
+    compatCleanupPartial: (count: number, failed: string) => `${count}개를 제거했습니다. 제거하지 못함: ${failed}.`,
     protonPulseWebsiteLabel: () => "Proton Pulse 웹사이트",
             // Per-report analysis modal
     perReportAnalysisTitle: () => '보고서 분석',

@@ -6,7 +6,7 @@ import { openFilePicker, FileSelectionType } from '@decky/api';
 import { toaster } from '../../lib/notify';
 import { getSetting, setSetting } from '../../lib/settings';
 import { logFrontendEvent } from '../../lib/logger';
-import { cancelCompatToolInstall, getCompatManagerState, getCompatToolDetails, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
+import { cancelCompatToolInstall, cleanupUnusedCompatTools, getCompatCleanupCandidates, getCompatManagerState, getCompatToolDetails, installCompatTool, installCompatibilityToolArchive, uninstallCompatibilityTool } from '../../lib/compatTools';
 import type { CompatToolDetails } from '../../lib/compatTools';
 import { compatPendingRestartLabel, compatUsageGameNames, compatUsageLabel, sortRollingSlotsFirst } from '../../lib/compatUsage';
 import { useFocusableScroll } from '../../lib/useFocusableScroll';
@@ -1149,6 +1149,66 @@ export function SettingsTab() {
     }
   };
 
+  const [cleaningUp, setCleaningUp] = useState(false);
+
+  // #138: list versions no installed game uses, confirm, then remove. The
+  // backend re-checks every name, so this can only remove what it offered.
+  const handleCleanupUnused = async () => {
+    setCleaningUp(true);
+    let candidates: { directory_name: string; display_name: string }[];
+    try {
+      candidates = await getCompatCleanupCandidates();
+    } catch (error) {
+      void logFrontendEvent('ERROR', 'Clean up unused: candidate lookup failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      toaster.toast({ title: 'Proton Pulse', body: extras.compatLoadFailed() });
+      setCleaningUp(false);
+      return;
+    }
+    void logFrontendEvent('INFO', 'Clean up unused: candidates', { names: candidates.map((c) => c.directory_name) });
+    if (candidates.length === 0) {
+      toaster.toast({ title: 'Proton Pulse', body: extras.compatCleanupNothing!() });
+      setCleaningUp(false);
+      return;
+    }
+    const names = candidates.map((c) => c.directory_name);
+    showModal(
+      <ConfirmModal
+        strTitle={extras.compatCleanupTitle!(names.length)}
+        strDescription={extras.compatCleanupBody!(candidates.map((c) => c.display_name || c.directory_name).join(', '))}
+        strOKButtonText={extras.compatCleanupConfirm!()}
+        strCancelButtonText={t().common.cancel}
+        onOK={() => {
+          void (async () => {
+            try {
+              const result = await cleanupUnusedCompatTools(names);
+              void logFrontendEvent('INFO', 'Clean up unused: done', { ...result });
+              toaster.toast({
+                title: 'Proton Pulse',
+                body: result.failed.length > 0
+                  ? extras.compatCleanupPartial!(result.removed.length, result.failed.map((f) => f.directory_name).join(', '))
+                  : extras.compatCleanupDone!(result.removed.length),
+              });
+            } catch (error) {
+              void logFrontendEvent('ERROR', 'Clean up unused: remove failed', {
+                names, error: error instanceof Error ? error.message : String(error),
+              });
+              toaster.toast({ title: 'Proton Pulse', body: extras.compatCleanupPartial!(0, names.join(', ')) });
+            } finally {
+              setCleaningUp(false);
+              await refreshManager(true);
+            }
+          })();
+        }}
+        onCancel={() => {
+          void logFrontendEvent('INFO', 'Clean up unused: cancelled', { names });
+          setCleaningUp(false);
+        }}
+      />,
+    );
+  };
+
   const handleUninstallTool = async (tool: InstalledCompatTool) => {
     setRemovingTool(tool.directory_name);
     const result = await uninstallCompatibilityTool(tool.directory_name);
@@ -1266,15 +1326,24 @@ export function SettingsTab() {
               {t().compatTools.description}
             </div>
           </div>
-          <CompactActionButton
-            label={loadingManager ? t().compatTools.refreshing : t().compatTools.refresh}
-            onClick={() => {
-              setAutoUpdateTriggered(false);
-              void refreshManager(true, true);
-            }}
-            disabled={loadingManager || installingTag !== null}
-            fullWidth={false}
-          />
+          <Focusable style={{ display: 'flex', gap: 8 }}>
+            <CompactActionButton
+              label={loadingManager ? t().compatTools.refreshing : t().compatTools.refresh}
+              onClick={() => {
+                setAutoUpdateTriggered(false);
+                void refreshManager(true, true);
+              }}
+              disabled={loadingManager || installingTag !== null}
+              fullWidth={false}
+            />
+            {/* #138: manual cleanup for what auto-trim deliberately keeps */}
+            <CompactActionButton
+              label={extras.compatCleanupUnused!()}
+              onClick={() => void handleCleanupUnused()}
+              disabled={loadingManager || cleaningUp || installingTag !== null || removingTool !== null}
+              fullWidth={false}
+            />
+          </Focusable>
         </div>
 
         <div style={{ marginBottom: 10 }}>

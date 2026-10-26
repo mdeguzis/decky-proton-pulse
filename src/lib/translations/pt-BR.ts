@@ -746,6 +746,13 @@ export const ptBR: TranslationTree = {
     steamDefaultProton: () => `Padrão do Steam`,
     steamDefaultProtonNow: (tool: string) => `Padrão do Steam (agora ${tool})`,
     compatPendingRestart: () => "reinício pendente",
+    compatCleanupUnused: () => `Limpar não usados`,
+    compatCleanupNothing: () => `Nada para limpar. Todas as versões instaladas estão em uso ou protegidas.`,
+    compatCleanupTitle: (count: number) => `Remover ${count} versão(ões) não usada(s)?`,
+    compatCleanupBody: (list: string) => `Nenhum jogo ou atalho instalado usa estas: ${list}. Um jogo que você reinstalar depois pode precisar da versão de novo.`,
+    compatCleanupConfirm: () => `Remover`,
+    compatCleanupDone: (count: number) => `${count} versão(ões) não usada(s) removida(s).`,
+    compatCleanupPartial: (count: number, failed: string) => `${count} removida(s). Não foi possível remover: ${failed}.`,
     protonPulseWebsiteLabel: () => "Site do Proton Pulse",
             // Per-report analysis modal
     perReportAnalysisTitle: () => 'Análise do relatório',

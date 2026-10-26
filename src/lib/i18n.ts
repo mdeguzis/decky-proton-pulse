@@ -806,6 +806,13 @@ export interface TranslationTree {
     steamDefaultProton?: () => string;
     steamDefaultProtonNow?: (tool: string) => string;
     compatPendingRestart?: () => string;
+    compatCleanupUnused?: () => string;
+    compatCleanupNothing?: () => string;
+    compatCleanupTitle?: (count: number) => string;
+    compatCleanupBody?: (list: string) => string;
+    compatCleanupConfirm?: () => string;
+    compatCleanupDone?: (count: number) => string;
+    compatCleanupPartial?: (count: number, failed: string) => string;
     // About tab
     protonPulseWebsiteLabel?: () => string;
     // Per-report analysis modal (opened with Y on a focused report card)
@@ -1642,6 +1649,13 @@ export const en: TranslationTree = {
     steamDefaultProton: () => `Steam default`,
     steamDefaultProtonNow: (tool) => `Steam default (now ${tool})`,
     compatPendingRestart: () => 'pending restart',
+    compatCleanupUnused: () => `Clean up unused`,
+    compatCleanupNothing: () => `Nothing to clean up. Every installed version is in use or protected.`,
+    compatCleanupTitle: (count) => `Remove ${count} unused version(s)?`,
+    compatCleanupBody: (list) => `No installed game or shortcut uses these: ${list}. A game you reinstall later may need its version installed again.`,
+    compatCleanupConfirm: () => `Remove`,
+    compatCleanupDone: (count) => `Removed ${count} unused version(s).`,
+    compatCleanupPartial: (count, failed) => `Removed ${count}. Could not remove: ${failed}.`,
     // About tab
     protonPulseWebsiteLabel: () => 'Proton Pulse Website',
     // Per-report analysis modal
