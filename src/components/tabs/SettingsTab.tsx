@@ -1163,7 +1163,7 @@ export function SettingsTab() {
     setCleaningUp(true);
     let candidates: Awaited<ReturnType<typeof getCompatCleanupCandidates>>;
     try {
-      candidates = await getCompatCleanupCandidates();
+      candidates = await getCompatCleanupCandidates(selectedTool, autoUpdateCurrent);
     } catch (error) {
       void logFrontendEvent('ERROR', 'Clean up unused: candidate lookup failed', {
         error: error instanceof Error ? error.message : String(error),
@@ -1179,7 +1179,7 @@ export function SettingsTab() {
     );
     const { names } = plan;
     void logFrontendEvent('INFO', 'Clean up unused: candidates', {
-      names: candidates.map((c) => c.directory_name), offered: names, keptForAutoUpdate: plan.kept,
+      toolId: selectedTool, names: candidates.map((c) => c.directory_name), offered: names, keptForAutoUpdate: plan.kept,
     });
     if (names.length === 0) {
       toaster.toast({ title: 'Proton Pulse', body: extras.compatCleanupNothing!() });
@@ -1195,7 +1195,7 @@ export function SettingsTab() {
         onOK={() => {
           void (async () => {
             try {
-              const result = await cleanupUnusedCompatTools(names);
+              const result = await cleanupUnusedCompatTools(names, selectedTool, autoUpdateCurrent);
               void logFrontendEvent('INFO', 'Clean up unused: done', { ...result });
               toaster.toast({
                 title: 'Proton Pulse',

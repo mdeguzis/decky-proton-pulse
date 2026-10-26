@@ -707,7 +707,7 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         )
         return choices
 
-    def _cleanup_candidates(self) -> list[dict[str, Any]]:
+    def _cleanup_candidates(self, auto_update_tool_ids: set[str] | None = None) -> list[dict[str, Any]]:
         """Recompute the Clean up unused list from disk (#138).
 
         The newest build of each family and every slot's target are
@@ -732,7 +732,10 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
                 by_dir.get(str(t.get("directory_name")), t) for t in versioned_tools_for(tid)
             ]
             slot = by_dir.get(cfg["latest_slot_name"])
-            if family_fully_unused(slot, builds):
+            # Auto-update on: the latest build and its slot are what the toggle
+            # keeps installed, so never offer them, even if no game uses them.
+            auto_update = tid in (auto_update_tool_ids or set())
+            if not auto_update and family_fully_unused(slot, builds):
                 for member in [slot, *builds]:
                     if member:
                         family_of[str(member.get("directory_name"))] = (tid, cfg["label"])
@@ -754,8 +757,22 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
         )
         return candidates
 
-    async def get_compat_cleanup_candidates(self) -> list[dict[str, Any]]:
-        """Builds the Clean up unused button would remove (#138)."""
+    @staticmethod
+    def _in_scope(candidate: dict[str, Any], tool_id: str | None) -> bool:
+        """Remove unused acts on the tool selected in the picker only (#138)."""
+        if not tool_id:
+            return True
+        return (candidate.get("tool_id") or candidate.get("family_tool_id")) == tool_id
+
+    async def get_compat_cleanup_candidates(
+        self, tool_id: str | None = None, auto_update: bool = False
+    ) -> list[dict[str, Any]]:
+        """Builds the Remove unused button would remove for ``tool_id`` (#138).
+
+        ``auto_update`` is that tool's auto-update toggle (a frontend setting);
+        when on, its latest build and slot are protected.
+        """
+        protect = {tool_id} if (auto_update and tool_id) else set()
         return [
             {
                 "directory_name": c.get("directory_name"),
@@ -764,16 +781,20 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
                 "family_tool_id": c.get("family_tool_id"),
                 "is_slot": c.get("managed_slot") == "latest",
             }
-            for c in self._cleanup_candidates()
+            for c in self._cleanup_candidates(protect)
+            if self._in_scope(c, tool_id)
         ]
 
-    async def cleanup_unused_compat_tools(self, directory_names: list[str]) -> dict[str, Any]:
+    async def cleanup_unused_compat_tools(
+        self, directory_names: list[str], tool_id: str | None = None, auto_update: bool = False
+    ) -> dict[str, Any]:
         """Remove the confirmed builds, re-checking each against a fresh list (#138).
 
         Anything the frontend sends that is no longer a candidate (now used,
         newest, a slot target, or never was one) is skipped, never deleted.
         """
-        candidates = self._cleanup_candidates()
+        protect = {tool_id} if (auto_update and tool_id) else set()
+        candidates = [c for c in self._cleanup_candidates(protect) if self._in_scope(c, tool_id)]
         allowed = {str(c.get("directory_name")) for c in candidates}
         slots = {str(c.get("directory_name")) for c in candidates if c.get("managed_slot") == "latest"}
         removed: list[str] = []
@@ -791,7 +812,8 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             else:
                 failed.append({"directory_name": name, "message": str(result.get("message"))})
         decky.logger.info(
-            f"cleanup_unused_compat_tools: removed={removed} failed={failed} skipped={skipped}"
+            f"cleanup_unused_compat_tools: tool_id={tool_id} auto_update={auto_update} removed={removed}"
+            f" failed={failed} skipped={skipped}"
         )
         return {"removed": removed, "failed": failed, "skipped": skipped}
 

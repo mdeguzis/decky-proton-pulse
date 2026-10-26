@@ -68,8 +68,8 @@ export function planCompatCleanup(
   return { names, lines, kept: [...kept] };
 }
 export interface CompatCleanupResult { removed: string[]; failed: { directory_name: string; message: string }[]; skipped: string[] }
-const getCompatCleanupCandidatesCallable = callable<[], CompatCleanupCandidate[]>('get_compat_cleanup_candidates');
-const cleanupUnusedCompatToolsCallable = callable<[directoryNames: string[]], CompatCleanupResult>('cleanup_unused_compat_tools');
+const getCompatCleanupCandidatesCallable = callable<[toolId: CompatToolId, autoUpdate: boolean], CompatCleanupCandidate[]>('get_compat_cleanup_candidates');
+const cleanupUnusedCompatToolsCallable = callable<[directoryNames: string[], toolId: CompatToolId, autoUpdate: boolean], CompatCleanupResult>('cleanup_unused_compat_tools');
 const installCompatibilityToolArchiveCallable = callable<[archivePath: string], { success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }>('install_compatibility_tool_archive');
 
 export async function getCompatManagerState(toolId: CompatToolId, forceRefresh = false): Promise<ProtonGeManagerState> {
@@ -135,14 +135,17 @@ export async function uninstallCompatibilityTool(directoryName: string): Promise
   return uninstallCompatibilityToolCallable(directoryName);
 }
 
-export async function getCompatCleanupCandidates(): Promise<CompatCleanupCandidate[]> {
-  const result = await getCompatCleanupCandidatesCallable();
+// Scoped to the tool selected in the Compatibility Tools picker (#138).
+// autoUpdate is that tool's toggle; when on, the backend protects its
+// latest build and slot.
+export async function getCompatCleanupCandidates(toolId: CompatToolId, autoUpdate: boolean): Promise<CompatCleanupCandidate[]> {
+  const result = await getCompatCleanupCandidatesCallable(toolId, autoUpdate);
   if (!Array.isArray(result)) throw new Error('get_compat_cleanup_candidates returned a non-array');
   return result;
 }
 
-export async function cleanupUnusedCompatTools(directoryNames: string[]): Promise<CompatCleanupResult> {
-  return cleanupUnusedCompatToolsCallable(directoryNames);
+export async function cleanupUnusedCompatTools(directoryNames: string[], toolId: CompatToolId, autoUpdate: boolean): Promise<CompatCleanupResult> {
+  return cleanupUnusedCompatToolsCallable(directoryNames, toolId, autoUpdate);
 }
 
 export async function installCompatibilityToolArchive(archivePath: string): Promise<{ success: boolean; message: string; already_installed?: boolean; rolling_slot?: { ok: boolean; changed?: boolean; reason?: string; target?: string; slot?: string } }> {

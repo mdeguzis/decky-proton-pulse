@@ -66,21 +66,23 @@ describe('trimUnusedCompatVersions', () => {
 describe('Clean up unused (#138)', () => {
   it('lists candidates from the backend', async () => {
     const rows = [{ directory_name: 'GE-Proton11-5-x86_64', display_name: 'GE-Proton11-5' }];
-    callableMocks.get('get_compat_cleanup_candidates')!.mockResolvedValueOnce(rows);
-    await expect(getCompatCleanupCandidates()).resolves.toEqual(rows);
+    const fn = callableMocks.get('get_compat_cleanup_candidates')!;
+    fn.mockResolvedValueOnce(rows);
+    await expect(getCompatCleanupCandidates('proton-ge', true)).resolves.toEqual(rows);
+    expect(fn).toHaveBeenLastCalledWith('proton-ge', true);
   });
 
   it('throws on a malformed candidate list instead of returning empty', async () => {
     callableMocks.get('get_compat_cleanup_candidates')!.mockResolvedValueOnce({ nope: true });
-    await expect(getCompatCleanupCandidates()).rejects.toThrow('non-array');
+    await expect(getCompatCleanupCandidates('proton-ge', false)).rejects.toThrow('non-array');
   });
 
   it('sends the confirmed names to the backend', async () => {
     const result = { removed: ['GE-Proton11-5-x86_64'], failed: [], skipped: [] };
     const fn = callableMocks.get('cleanup_unused_compat_tools')!;
     fn.mockResolvedValueOnce(result);
-    await expect(cleanupUnusedCompatTools(['GE-Proton11-5-x86_64'])).resolves.toEqual(result);
-    expect(fn).toHaveBeenCalledWith(['GE-Proton11-5-x86_64']);
+    await expect(cleanupUnusedCompatTools(['GE-Proton11-5-x86_64'], 'proton-ge', false)).resolves.toEqual(result);
+    expect(fn).toHaveBeenCalledWith(['GE-Proton11-5-x86_64'], 'proton-ge', false);
   });
 });
 

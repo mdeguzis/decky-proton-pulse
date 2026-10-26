@@ -2010,7 +2010,15 @@ def test_cleanup_offers_a_fully_unused_family_whole_slot_first(plugin: Plugin, t
         patch.object(plugin, "uninstall_compatibility_tool", side_effect=fake_uninstall),
     ):
         offered = asyncio.run(plugin.get_compat_cleanup_candidates())
-        result = asyncio.run(plugin.cleanup_unused_compat_tools([cachy_build.name, cachy_slot.name]))
+        ge_only = asyncio.run(plugin.get_compat_cleanup_candidates("proton-ge"))
+        cachy_only = asyncio.run(plugin.get_compat_cleanup_candidates("proton-cachyos"))
+        # Scoped remove: asking the GE scope to delete CachyOS deletes nothing.
+        cross = asyncio.run(plugin.cleanup_unused_compat_tools([cachy_slot.name], "proton-ge"))
+        result = asyncio.run(plugin.cleanup_unused_compat_tools([cachy_build.name, cachy_slot.name], "proton-cachyos"))
+
+    assert [o["directory_name"] for o in ge_only] == ["GE-Proton11-5-x86_64"]
+    assert [o["directory_name"] for o in cachy_only] == [cachy_slot.name, cachy_build.name]
+    assert cross == {"removed": [], "failed": [], "skipped": [cachy_slot.name]}
 
     by_name = {o["directory_name"]: o for o in offered}
     assert set(by_name) == {"GE-Proton11-5-x86_64", cachy_slot.name, cachy_build.name}
@@ -2020,4 +2028,42 @@ def test_cleanup_offers_a_fully_unused_family_whole_slot_first(plugin: Plugin, t
     assert by_name["GE-Proton11-5-x86_64"]["family"] is None  # GE slot is in use, family protected
     assert removed_order == [cachy_slot.name, cachy_build.name]  # slot first
     assert result["removed"] == removed_order
+
+
+def test_cleanup_protects_latest_when_auto_update_on(plugin: Plugin, tmp_path: pathlib.Path) -> None:
+    cachy_slot = tmp_path / "Proton-CachyOS-Latest"
+    cachy_build = tmp_path / "proton-cachyos-11.0-20261015-slr-x86_64"
+    cachy_slot.mkdir()
+    cachy_build.mkdir()
+    tools = [
+        {"directory_name": cachy_slot.name, "display_name": cachy_slot.name, "path": str(cachy_slot),
+         "source": "custom", "tool_id": "proton-cachyos", "managed_slot": "latest",
+         "current_target_name": cachy_build.name},
+        {"directory_name": cachy_build.name, "display_name": cachy_build.name, "path": str(cachy_build),
+         "source": "custom", "tool_id": "proton-cachyos", "managed_slot": "versioned", "current_target_name": None},
+    ]
+
+    def annotate(ts: list[dict]) -> bool:
+        for t in ts:
+            t["used_by_app_ids"] = []
+            t["is_steam_default"] = False
+        return True
+
+    with (
+        patch("main.read_latest_metadata", return_value=None),
+        patch("main.list_installed_compatibility_tools", side_effect=lambda **_: [dict(t) for t in tools]),
+        patch("main.annotate_tool_usage", side_effect=annotate),
+        patch("main.steam_client_started_at", return_value=None),
+        patch("main.versioned_tools_for", side_effect=lambda tid: [tools[1]] if tid == "proton-cachyos" else []),
+        patch.object(plugin, "uninstall_compatibility_tool") as uninstall_mock,
+    ):
+        offered_on = asyncio.run(plugin.get_compat_cleanup_candidates("proton-cachyos", True))
+        offered_off = asyncio.run(plugin.get_compat_cleanup_candidates("proton-cachyos", False))
+        result = asyncio.run(plugin.cleanup_unused_compat_tools(
+            [cachy_slot.name, cachy_build.name], "proton-cachyos", True))
+
+    assert offered_on == []
+    assert {o["directory_name"] for o in offered_off} == {cachy_slot.name, cachy_build.name}
+    assert result == {"removed": [], "failed": [], "skipped": [cachy_slot.name, cachy_build.name]}
+    uninstall_mock.assert_not_called()
 
