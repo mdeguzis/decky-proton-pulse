@@ -709,6 +709,7 @@ function CompactActionButton({
   fullWidth,
   danger,
   active,
+  fitLabel,
 }: {
   label: string;
   onClick: () => void;
@@ -716,6 +717,7 @@ function CompactActionButton({
   fullWidth?: boolean;
   danger?: boolean;
   active?: boolean;
+  fitLabel?: boolean;
 }) {
   return (
     <DialogButton
@@ -724,10 +726,14 @@ function CompactActionButton({
       onOKButton={disabled ? undefined : onClick}
       style={{
         minWidth: fullWidth ? '100%' : 96,
-        width: fullWidth ? '100%' : undefined,
+        width: fullWidth ? '100%' : fitLabel ? 'auto' : undefined,
         height: 34,
-        padding: '0 10px',
+        padding: fitLabel ? '0 14px' : '0 10px',
         fontSize: 11,
+        // fitLabel: size to the label on one line instead of DialogButton's
+        // default width, which wrapped "Clean up unused" onto two cramped
+        // lines in the header (#138). Not used inside fixed grid columns.
+        ...(fitLabel ? { whiteSpace: 'nowrap' as const, lineHeight: '34px' } : {}),
         boxShadow: active ? '0 0 0 1px rgba(160, 210, 255, 0.38) inset, 0 0 16px rgba(111, 174, 232, 0.18)' : undefined,
         ...(danger ? {
           background: 'linear-gradient(180deg, #702c2c 0%, #5d1f1f 100%)',
@@ -1335,6 +1341,7 @@ export function SettingsTab() {
               }}
               disabled={loadingManager || installingTag !== null}
               fullWidth={false}
+              fitLabel
             />
             {/* #138: manual cleanup for what auto-trim deliberately keeps */}
             <CompactActionButton
@@ -1342,6 +1349,7 @@ export function SettingsTab() {
               onClick={() => void handleCleanupUnused()}
               disabled={loadingManager || cleaningUp || installingTag !== null || removingTool !== null}
               fullWidth={false}
+              fitLabel
             />
           </Focusable>
         </div>
