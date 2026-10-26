@@ -546,3 +546,42 @@ def test_set_install_status_keeps_started_at_when_the_run_finishes() -> None:
     assert status["started_at"] == 1_800_000_000
     assert status["finished_at"] == 1_800_000_040
     assert status["stage"] is None  # progress fields still reset on completion
+
+
+# Regression: a CachyOS "install as latest" wrote proton-ge-latest.json
+# (tool_id was not passed), which made GE's slot look missing.
+
+def test_latest_install_writes_metadata_for_its_own_tool(tmp_path: Path) -> None:
+    from lib import proton_ge  # pylint: disable=import-outside-toplevel
+
+    release = {"tag_name": "cachyos-11.0-20261015-slr", "asset_name": "x.tar.xz", "asset_size": 1}
+    with (
+        patch.object(proton_ge, "compat_tools_dir", return_value=tmp_path),
+        patch.object(proton_ge, "_download_release"),
+        patch.object(proton_ge, "extract_archive_safely"),
+        patch.object(proton_ge, "finalize_extracted_compat_tool",
+                     return_value={"success": True, "message": "Installed", "already_installed": True}),
+        patch.object(proton_ge, "write_latest_metadata") as write_mock,
+        patch("lib.compat_tools.ensure_rolling_slot", return_value={"ok": True, "changed": False}),
+    ):
+        proton_ge._do_download_and_install(  # pylint: disable=protected-access
+            "cachyos-11.0-20261015-slr", release, "https://example.invalid/x.tar.xz",
+            install_as_latest=True, force_reinstall=False,
+            _set=lambda **_kw: None, _cancel=lambda: False, _set_process=lambda _p: None,
+            latest_slot_name="Proton-CachyOS-Latest",  # as install_sync passes it
+            tool_id="proton-cachyos",
+        )
+    write_mock.assert_called_once_with("cachyos-11.0-20261015-slr", "Proton-CachyOS-Latest", "proton-cachyos")
+
+
+def test_read_latest_metadata_ignores_another_tools_slot(tmp_path: Path) -> None:
+    import json  # pylint: disable=import-outside-toplevel
+    from lib import proton_ge  # pylint: disable=import-outside-toplevel
+
+    with patch.object(proton_ge, "compat_tools_cache_dir", return_value=tmp_path):
+        (tmp_path / "proton-ge-latest.json").write_text(json.dumps(
+            {"tag_name": "cachyos-11.0-20261015-slr", "directory_name": "Proton-CachyOS-Latest"}))
+        assert proton_ge.read_latest_metadata("proton-ge") is None
+        (tmp_path / "proton-ge-latest.json").write_text(json.dumps(
+            {"tag_name": "GE-Proton11-11", "directory_name": "Proton-GE-Latest"}))
+        assert proton_ge.read_latest_metadata("proton-ge")["tag_name"] == "GE-Proton11-11"

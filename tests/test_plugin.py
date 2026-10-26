@@ -1477,6 +1477,29 @@ def test_get_compat_manager_state_cachyos(plugin: Plugin) -> None:
     assert state["current_installed"] is True
 
 
+def test_cachyos_slot_counts_as_current_by_its_target(plugin: Plugin) -> None:
+    # Real layout on the Deck: the slot's names never contain the CachyOS tag.
+    tag = "cachyos-11.0-20261015-slr"
+    slot = {"display_name": "Proton-CachyOS-Latest", "directory_name": "Proton-CachyOS-Latest",
+            "internal_name": "proton_cachyos_latest", "managed_slot": "latest", "tool_id": "proton-cachyos",
+            "current_target_name": "proton-cachyos-11.0-20261015-slr-x86_64", "latest_tag": None}
+
+    def run(tools: list[dict]) -> dict:
+        with (
+            patch("main.get_releases_sync", return_value=[{"tag_name": tag, "asset_size": 1}]),
+            patch("main.read_latest_metadata", return_value=None),
+            patch("main.list_installed_compatibility_tools", return_value=tools),
+            patch("main.get_install_status", return_value={"state": "idle"}),
+        ):
+            return asyncio.run(plugin.get_compat_manager_state("proton-cachyos", False))
+
+    assert run([dict(slot)])["current_latest_slot_installed"] is True
+    old = {**slot, "current_target_name": "proton-cachyos-11.0-20260702-slr-x86_64"}
+    assert run([old])["current_latest_slot_installed"] is False
+    by_tag = {**old, "latest_tag": tag}
+    assert run([by_tag])["current_latest_slot_installed"] is True
+
+
 def test_get_compat_manager_state_empty_releases(plugin: Plugin) -> None:
     with (
         patch("main.get_releases_sync", return_value=[]),

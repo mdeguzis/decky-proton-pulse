@@ -649,12 +649,24 @@ class Plugin:  # pylint: disable=too-many-instance-attributes
             current_release
             and any(_matches(t, current_release["tag_name"]) for t in installed)
         )
+        def _slot_is_current(tool: dict[str, Any], tag: str) -> bool:
+            # A slot's own names (Proton-CachyOS-Latest, proton_cachyos_latest)
+            # never contain a CachyOS tag, so also accept the build it points
+            # at or its recorded tag. Without this the CachyOS slot never
+            # counted as current and auto-update reinstalled on every start.
+            target = str(tool.get("current_target_name") or "").lower()
+            return (
+                _matches(tool, tag)
+                or (bool(target) and tag.lower() in target)
+                or str(tool.get("latest_tag") or "").lower() == tag.lower()
+            )
+
         current_latest_slot_installed = bool(
             current_release
             and any(
                 t.get("managed_slot") == "latest"
                 and t.get("tool_id") == tool_id
-                and _matches(t, current_release["tag_name"])
+                and _slot_is_current(t, current_release["tag_name"])
                 for t in installed
             )
         )

@@ -106,7 +106,12 @@ def clear_latest_metadata(directory_name: str | None = None, tool_id: str = "pro
 
 
 def read_latest_metadata(tool_id: str = "proton-ge") -> dict[str, Any] | None:
-    """Load the 'latest' slot metadata from disk, or None if missing."""
+    """Load the 'latest' slot metadata from disk, or None if missing.
+
+    A record naming another family's slot is ignored: an older build wrote
+    CachyOS installs into proton-ge-latest.json, which made Proton-GE's
+    latest slot look missing and auto-update reinstall on every start.
+    """
     path = _latest_metadata_path(tool_id)
     if not path.exists():
         return None
@@ -114,6 +119,18 @@ def read_latest_metadata(tool_id: str = "proton-ge") -> dict[str, Any] | None:
         raw = path.read_text(encoding="utf-8")
         payload: dict[str, Any] = json.loads(raw)  # type: ignore[assignment]
     except (json.JSONDecodeError, OSError):
+        return None
+    directory = payload.get("directory_name") if isinstance(payload, dict) else None
+    foreign = {
+        cfg["latest_slot_name"]
+        for tid, cfg in COMPAT_TOOL_CONFIGS.items()
+        if tid != tool_id
+    }
+    if directory in foreign:
+        decky.logger.warning(
+            f"read_latest_metadata: ignoring {path.name}, it names another tool's slot"
+            f" | tool_id={tool_id} directory_name={directory} tag={payload.get('tag_name')}"
+        )
         return None
     return payload
 
@@ -546,7 +563,9 @@ def _do_download_and_install(  # pylint: disable=too-many-arguments,too-many-pos
                 replace_existing=force_reinstall,
             )
             if result.get("success") and install_as_latest:
-                write_latest_metadata(normalized, latest_slot_name)
+                # tool_id matters: without it every CachyOS "latest" install
+                # overwrote proton-ge-latest.json (seen on the Deck).
+                write_latest_metadata(normalized, latest_slot_name, tool_id)
                 if not result.get("already_installed") and result.get("directory_name"):
                     # Provenance for auto-trim: only builds the latest
                     # process installed itself are ever trimmed.
