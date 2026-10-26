@@ -20,6 +20,7 @@ const PpDialogButton = DialogButton as React.ComponentType<
   }
 >;
 import { maybeToastRollingSlotChange } from '../../lib/rollingSlotToast';
+import { CleanupVersionList } from '../CleanupVersionList';
 import type { CompatToolId, CompatToolRelease, InstalledCompatTool, ProtonGeManagerState } from '../../types';
 import { COMPAT_TOOL_OPTIONS } from '../../types';
 import { t } from '../../lib/i18n';
@@ -1189,7 +1190,7 @@ export function SettingsTab() {
     showModal(
       <ConfirmModal
         strTitle={extras.compatCleanupTitle!(plan.lines.length)}
-        strDescription={extras.compatCleanupBody!(plan.lines.join(', '))}
+        strDescription={<CleanupVersionList intro={extras.compatCleanupIntro!()} lines={plan.lines} />}
         strOKButtonText={extras.compatCleanupConfirm!()}
         strCancelButtonText={t().common.cancel}
         onOK={() => {

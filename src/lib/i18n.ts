@@ -810,7 +810,7 @@ export interface TranslationTree {
     compatCleanupFamily?: (family: string) => string;
     compatCleanupNothing?: () => string;
     compatCleanupTitle?: (count: number) => string;
-    compatCleanupBody?: (list: string) => string;
+    compatCleanupIntro?: () => string;
     compatCleanupConfirm?: () => string;
     compatCleanupDone?: (count: number) => string;
     compatCleanupPartial?: (count: number, failed: string) => string;
@@ -1654,7 +1654,7 @@ export const en: TranslationTree = {
     compatCleanupFamily: (family) => `${family} (all versions)`,
     compatCleanupNothing: () => `Nothing to clean up. Every installed version is in use or protected.`,
     compatCleanupTitle: (count) => `Remove ${count} unused version(s)?`,
-    compatCleanupBody: (list) => `No installed game or shortcut uses these: ${list}. A game you reinstall later may need its version installed again.`,
+    compatCleanupIntro: () => `No installed game or shortcut uses these. A game you reinstall later may need its version installed again.`,
     compatCleanupConfirm: () => `Remove`,
     compatCleanupDone: (count) => `Removed ${count} unused version(s).`,
     compatCleanupPartial: (count, failed) => `Removed ${count}. Could not remove: ${failed}.`,
