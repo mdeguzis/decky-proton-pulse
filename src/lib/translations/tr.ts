@@ -327,7 +327,7 @@ export const tr: TranslationTree = {
     filterGames: 'Oyunları filtrele...',
     configureCurrentGame: 'Mevcut oyunu yapılandır',
     emptyState: 'Henüz yapılandırma yok. Başlamak için Bu Oyunu Yönet bölümünden bir rapor uygulayın.',
-    deleteConfirm: (name) => `${name} yapılandırmasını silmek istiyor musunuz? Oyunun başlatma seçenekleri temizlenecektir.`,
+    deleteConfirm: (name) => `${name} yapılandırması silinsin mi? Proton Pulse bulutundaki eşitlenmiş kopyası da kaldırılır. Yayımladığınız rapor profilinizde kalır. Oyunun başlatma seçenekleri yalnızca bu yapılandırmanın uyguladıklarıyla birebir aynıysa temizlenir.`,
     deleteConfirmTitle: 'Yapılandırmayı sil',
     deleteAction: 'Sil',
     infoAction: 'Bilgi',

@@ -327,7 +327,7 @@ export const sv: TranslationTree = {
     filterGames: 'Filtrera spel...',
     configureCurrentGame: 'Konfigurera nuvarande spel',
     emptyState: 'Inga konfigurationer. Tillämpa en rapport under "Hantera det här spelet" för att börja.',
-    deleteConfirm: (name) => `Ta bort konfiguration för ${name}? Spelets startalternativ återställs.`,
+    deleteConfirm: (name) => `Ta bort konfigurationen för ${name}? Den synkroniserade kopian i Proton Pulse-molnet tas också bort. En rapport som du har publicerat finns kvar på din profil. Spelets startalternativ rensas bara om de är exakt de som den här konfigurationen tillämpade.`,
     deleteConfirmTitle: 'Ta bort konfiguration',
     deleteAction: 'Ta bort',
     infoAction: 'Info',

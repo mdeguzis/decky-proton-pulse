@@ -327,7 +327,7 @@ export const de: TranslationTree = {
     filterGames: 'Spiele filtern...',
     configureCurrentGame: 'Aktuelles Spiel konfigurieren',
     emptyState: 'Noch keine Konfigurationen. Wende einen Bericht unter „Dieses Spiel verwalten" an, um zu beginnen.',
-    deleteConfirm: (name) => `Konfiguration für ${name} löschen? Die Startoptionen des Spiels werden zurückgesetzt.`,
+    deleteConfirm: (name) => `Die Konfiguration für ${name} löschen? Die synchronisierte Kopie in der Proton Pulse Cloud wird ebenfalls entfernt. Ein veröffentlichter Bericht bleibt in deinem Profil. Die Startoptionen des Spiels werden nur gelöscht, wenn sie genau denen entsprechen, die diese Konfiguration angewendet hat.`,
     deleteConfirmTitle: 'Konfiguration löschen',
     deleteAction: 'Löschen',
     infoAction: 'Info',

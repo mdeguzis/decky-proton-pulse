@@ -327,7 +327,7 @@ export const cs: TranslationTree = {
     filterGames: 'Filtrovat hry...',
     configureCurrentGame: 'Konfigurovat aktuální hru',
     emptyState: 'Žádné konfigurace. Použijte zprávu v části "Spravovat tuto hru" pro začátek.',
-    deleteConfirm: (name) => `Smazat konfiguraci pro ${name}? Možnosti spuštění hry budou obnoveny.`,
+    deleteConfirm: (name) => `Smazat konfiguraci pro ${name}? Odstraní se i její synchronizovaná kopie v cloudu Proton Pulse. Zveřejněné hlášení zůstane ve vašem profilu. Možnosti spuštění hry se vymažou jen tehdy, pokud jsou přesně ty, které tato konfigurace použila.`,
     deleteConfirmTitle: 'Smazat konfiguraci',
     deleteAction: 'Smazat',
     infoAction: 'Info',

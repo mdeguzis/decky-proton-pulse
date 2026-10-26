@@ -327,7 +327,7 @@ export const pl: TranslationTree = {
     filterGames: 'Filtruj gry...',
     configureCurrentGame: 'Skonfiguruj bieżącą grę',
     emptyState: 'Brak konfiguracji. Zastosuj raport w sekcji "Zarządzaj tą grą", aby rozpocząć.',
-    deleteConfirm: (name) => `Usunąć konfigurację dla ${name}? Opcje uruchamiania gry zostaną zresetowane.`,
+    deleteConfirm: (name) => `Usunąć konfigurację dla ${name}? Jej zsynchronizowana kopia w chmurze Proton Pulse również zostanie usunięta. Opublikowany raport zostaje w Twoim profilu. Opcje uruchamiania gry są czyszczone tylko wtedy, gdy są dokładnie takie, jakie zastosowała ta konfiguracja.`,
     deleteConfirmTitle: 'Usuń konfigurację',
     deleteAction: 'Usuń',
     infoAction: 'Info',

@@ -327,7 +327,7 @@ export const ro: TranslationTree = {
     filterGames: 'Filtreaza jocuri...',
     configureCurrentGame: 'Configureaza jocul curent',
     emptyState: 'Fara configuratii. Foloseste un raport in "Gestioneaza acest joc" pentru a incepe.',
-    deleteConfirm: (name) => `Sterge configuratia pentru ${name}? Optiunile de lansare ale jocului vor fi restaurate.`,
+    deleteConfirm: (name) => `Ștergi configurația pentru ${name}? Copia sincronizată din cloudul Proton Pulse este eliminată și ea. Un raport pe care l-ai publicat rămâne în profilul tău. Opțiunile de lansare ale jocului sunt golite doar dacă sunt exact cele aplicate de această configurație.`,
     deleteConfirmTitle: 'Sterge configuratia',
     deleteAction: 'Sterge',
     infoAction: 'Info',

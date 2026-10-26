@@ -327,7 +327,7 @@ export const hu: TranslationTree = {
     filterGames: 'Játékok szűrése...',
     configureCurrentGame: 'Jelenlegi játék konfigurálása',
     emptyState: 'Nincsenek konfigurációk. Használjon egy jelentést a "Játék kezelése" szakaszból a kezdéshez.',
-    deleteConfirm: (name) => `Törli a(z) ${name} konfigurációját? A játék indítási lehetőségei visszaállnak.`,
+    deleteConfirm: (name) => `Törlöd a(z) ${name} konfigurációját? A Proton Pulse felhőben lévő szinkronizált másolata is törlődik. A közzétett jelentésed a profilodon marad. A játék indítási beállításai csak akkor törlődnek, ha pontosan azok, amelyeket ez a konfiguráció alkalmazott.`,
     deleteConfirmTitle: 'Konfiguráció törlése',
     deleteAction: 'Törlés',
     infoAction: 'Info',

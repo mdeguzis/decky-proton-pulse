@@ -327,7 +327,7 @@ export const da: TranslationTree = {
     filterGames: 'Filtrer spil...',
     configureCurrentGame: 'Konfigurer nuværende spil',
     emptyState: 'Ingen konfigurationer. Brug en rapport under "Administrer dette spil" for at komme i gang.',
-    deleteConfirm: (name) => `Slet konfiguration for ${name}? Spillets startindstillinger vil blive gendannet.`,
+    deleteConfirm: (name) => `Slet konfigurationen for ${name}? Den synkroniserede kopi i Proton Pulse-skyen fjernes også. En rapport, du har udgivet, bliver på din profil. Spillets startindstillinger ryddes kun, hvis de er præcis dem, denne konfiguration anvendte.`,
     deleteConfirmTitle: 'Slet konfiguration',
     deleteAction: 'Slet',
     infoAction: 'Info',

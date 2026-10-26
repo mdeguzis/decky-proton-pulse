@@ -327,7 +327,7 @@ export const fi: TranslationTree = {
     filterGames: 'Suodata pelit...',
     configureCurrentGame: 'Määritä nykyinen peli',
     emptyState: 'Ei asetuksia. Käytä raporttia "Hallitse tätä peliä" -osiosta aloittaaksesi.',
-    deleteConfirm: (name) => `Poistetaanko ${name}:n asetus? Pelin käynnistysasetukset palautetaan.`,
+    deleteConfirm: (name) => `Poistetaanko pelin ${name} määritys? Myös sen synkronoitu kopio Proton Pulse -pilvessä poistetaan. Julkaisemasi raportti jää profiiliisi. Pelin käynnistysasetukset tyhjennetään vain, jos ne ovat täsmälleen ne, jotka tämä määritys otti käyttöön.`,
     deleteConfirmTitle: 'Poista asetus',
     deleteAction: 'Poista',
     infoAction: 'Tiedot',

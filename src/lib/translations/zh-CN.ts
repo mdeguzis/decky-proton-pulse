@@ -327,7 +327,7 @@ export const zhCN: TranslationTree = {
     filterGames: '筛选游戏...',
     configureCurrentGame: '配置当前游戏',
     emptyState: '暂无配置。前往「管理此游戏」应用报告以开始使用。',
-    deleteConfirm: (name) => `删除 ${name} 的配置？游戏的启动选项将被清除。`,
+    deleteConfirm: (name) => `删除 ${name} 的配置？它在 Proton Pulse 云端的同步副本也会被删除。你已发布的报告会保留在你的个人资料中。只有当游戏的启动选项与此配置应用的内容完全一致时，才会被清除。`,
     deleteConfirmTitle: '删除配置',
     deleteAction: '删除',
     infoAction: '信息',

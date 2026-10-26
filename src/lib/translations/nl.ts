@@ -327,7 +327,7 @@ export const nl: TranslationTree = {
     filterGames: 'Spellen filteren...',
     configureCurrentGame: 'Huidig spel configureren',
     emptyState: 'Geen configuraties. Pas een rapport toe onder "Dit spel beheren" om te beginnen.',
-    deleteConfirm: (name) => `Configuratie voor ${name} verwijderen? De startopties van het spel worden gereset.`,
+    deleteConfirm: (name) => `De configuratie voor ${name} verwijderen? De gesynchroniseerde kopie in de Proton Pulse-cloud wordt ook verwijderd. Een rapport dat je hebt gepubliceerd blijft op je profiel staan. De startopties van de game worden alleen gewist als ze precies zijn wat deze configuratie heeft toegepast.`,
     deleteConfirmTitle: 'Configuratie verwijderen',
     deleteAction: 'Verwijderen',
     infoAction: 'Info',

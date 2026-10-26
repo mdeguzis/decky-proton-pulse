@@ -327,7 +327,7 @@ export const vi: TranslationTree = {
     filterGames: 'Lọc trò chơi...',
     configureCurrentGame: 'Cấu hình trò chơi hiện tại',
     emptyState: 'Không có cấu hình. Áp dụng báo cáo trong "Quản lý trò chơi này" để bắt đầu.',
-    deleteConfirm: (name) => `Xóa cấu hình cho ${name}? Tùy chọn khởi chạy của trò chơi sẽ được đặt lại.`,
+    deleteConfirm: (name) => `Xóa cấu hình của ${name}? Bản sao đã đồng bộ trên đám mây Proton Pulse cũng bị xóa. Báo cáo bạn đã đăng vẫn ở trên hồ sơ của bạn. Tùy chọn khởi chạy của trò chơi chỉ bị xóa nếu chúng đúng y như những gì cấu hình này đã áp dụng.`,
     deleteConfirmTitle: 'Xóa cấu hình',
     deleteAction: 'Xóa',
     infoAction: 'Thông tin',

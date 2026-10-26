@@ -327,7 +327,7 @@ export const sl: TranslationTree = {
     filterGames: 'Filtriraj igre...',
     configureCurrentGame: 'Konfiguriraj trenutno igro',
     emptyState: 'Ni konfiguracij. Uporabite porocilo v razdelku "Upravljaj to igro" za zacetek.',
-    deleteConfirm: (name) => `Izbriši konfiguracijo za ${name}? Možnosti zagona igre bodo obnovljene.`,
+    deleteConfirm: (name) => `Izbrišem konfiguracijo za ${name}? Odstrani se tudi njena sinhronizirana kopija v oblaku Proton Pulse. Poročilo, ki ste ga objavili, ostane v vašem profilu. Možnosti zagona igre se počistijo samo, če so natanko tiste, ki jih je uveljavila ta konfiguracija.`,
     deleteConfirmTitle: 'Izbriši konfiguracijo',
     deleteAction: 'Izbriši',
     infoAction: 'Info',

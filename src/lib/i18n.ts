@@ -1206,7 +1206,7 @@ export const en: TranslationTree = {
     filterGames: 'Filter games...',
     configureCurrentGame: 'Configure Current Game',
     emptyState: 'No saved configurations yet. Apply a report from Manage This Game to get started.',
-    deleteConfirm: (name) => `Delete config for ${name}? This clears the game's launch options and also removes your synced config and any submitted report from the Proton Pulse cloud.`,
+    deleteConfirm: (name) => `Delete the ${name} config? Its synced copy in the Proton Pulse cloud is removed too. A report you published stays on your profile. The game's launch options are only cleared if they are exactly what this config applied.`,
     deleteConfirmTitle: 'Delete Configuration',
     deleteAction: 'Delete',
     infoAction: 'Info',

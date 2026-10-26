@@ -327,7 +327,7 @@ export const zhTW: TranslationTree = {
     filterGames: '篩選遊戲...',
     configureCurrentGame: '設定目前遊戲',
     emptyState: '尚無設定，在「管理此遊戲」中套用報告以開始。',
-    deleteConfirm: (name) => `刪除 ${name} 的設定？遊戲的啟動選項將被重設。`,
+    deleteConfirm: (name) => `刪除 ${name} 的設定？它在 Proton Pulse 雲端的同步副本也會被刪除。你已發布的報告會保留在你的個人檔案中。只有當遊戲的啟動選項與此設定套用的內容完全一致時，才會被清除。`,
     deleteConfirmTitle: '刪除設定',
     deleteAction: '刪除',
     infoAction: '資訊',

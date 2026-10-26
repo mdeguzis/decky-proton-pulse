@@ -327,7 +327,7 @@ export const ja: TranslationTree = {
     filterGames: 'ゲームを絞り込む...',
     configureCurrentGame: '現在のゲームを設定',
     emptyState: 'まだ設定がありません。「このゲームを管理」からレポートを適用して始めましょう。',
-    deleteConfirm: (name) => `${name}の設定を削除しますか？ゲームの起動オプションがクリアされます。`,
+    deleteConfirm: (name) => `${name} の構成を削除しますか？Proton Pulse クラウドの同期コピーも削除されます。公開したレポートはプロフィールに残ります。ゲームの起動オプションは、この構成が適用した内容と完全に一致する場合にのみ消去されます。`,
     deleteConfirmTitle: '設定の削除',
     deleteAction: '削除',
     infoAction: '情報',

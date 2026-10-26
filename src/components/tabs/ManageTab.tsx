@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Focusable, DialogButton, ConfirmModal, showModal, showContextMenu, Menu, MenuItem, TextField } from '@decky/ui';
 import { toaster } from '../../lib/notify';
-import { getTrackedConfigs, addTrackedConfig, removeTrackedConfig, getActiveConfigForApp, onConfigSaved, type TrackedConfig } from '../../lib/trackedConfigs';
+import { getTrackedConfigs, addTrackedConfig, getActiveConfigForApp, onConfigSaved, type TrackedConfig } from '../../lib/trackedConfigs';
 import { logFrontendEvent } from '../../lib/logger';
 import { t } from '../../lib/i18n';
 import { applyCompatToolAndNotify } from '../../lib/compatToolSelect';
@@ -20,12 +20,12 @@ import {
   pushAllConfigs,
   pushConfig,
   onCloudConfigPushed,
-  deleteCloudConfig,
   type CloudConfigRow,
   type SyncStatus,
   getSyncPollIntervalMinutes,
 } from '../../lib/cloudSync';
-import { deleteMyReport, getMyConfig, getMyReportStatuses, makeReportStatusKey } from '../../lib/userConfigs';
+import { getMyConfig, getMyReportStatuses, makeReportStatusKey } from '../../lib/userConfigs';
+import { deleteConfigProfile } from '../../lib/configDelete';
 import { getVoterId } from '../../lib/voting';
 import { getLinkedProtonPulseUserId } from '../../lib/protonPulseAccount';
 import { getSetting } from '../../lib/settings';
@@ -331,36 +331,20 @@ export function ManageTab({ appId, appName, gpuVendor, sysInfo }: Props) {
         strDescription={t().configManager.deleteConfirm(displayName(config))}
         strOKButtonText={t().configManager.deleteAction}
         onOK={() => {
-          // Delete everywhere in one shot: wipe launch options, drop the
-          // tracked config, and remove any submitted report from the cloud.
-          // deleteMyReport is a no-op if nothing was ever submitted, so
-          // this is safe even for configs that never hit Proton Pulse
-          void logFrontendEvent('INFO', 'Deleting tracked config', { appId: config.appId, appName: config.appName });
-          void setSteamLaunchOptions(config.appId, '').catch(() => { /* logged in setSteamLaunchOptions */ });
-          // Multi-config-per-app: scope removal to this specific profile so
-          // deleting one card doesn't wipe every profile the user has for
-          // this game. Cloud delete matches on (voter_id, app_id, profile_name).
-          removeTrackedConfig(config.appId, config.profileName);
-          refresh();
-          void Promise.all([
-            deleteMyReport(String(config.appId)),
-            deleteCloudConfig(config.appId, config.profileName),
-          ])
-            .then(([reportResult, cloudResult]) => {
-              if (!reportResult.ok) {
-                void logFrontendEvent('WARNING', 'Supabase report delete failed during full delete', {
-                  appId: config.appId, error: reportResult.error,
-                });
-              }
-              if (!cloudResult) {
-                void logFrontendEvent('WARNING', 'Cloud config delete failed during full delete', {
-                  appId: config.appId,
-                });
-              }
+          // Removes this profile and its cloud backup. Launch options are
+          // cleared only if they are exactly what this profile applied, and
+          // the published report is never touched (#118, #134).
+          void deleteConfigProfile(config)
+            .then(() => {
+              refresh();
               // refresh cloud state so the synced badge clears right away
               return refreshCloud();
             })
-            .catch(() => {});
+            .catch((e) => {
+              void logFrontendEvent('ERROR', 'Config delete failed', {
+                appId: config.appId, error: e instanceof Error ? e.message : String(e),
+              });
+            });
           toaster.toast({ title: 'Proton Pulse', body: t().toast.cleared });
         }}
         onCancel={() => {}}
