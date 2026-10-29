@@ -9,6 +9,11 @@ the tag and re-run:
 
     python3 scripts/extract-proton-env-support.py --tag ge=GE-Proton11-12
     python3 scripts/extract-proton-env-support.py            # re-extract current tags
+    python3 scripts/extract-proton-env-support.py --latest   # newest tag per tool (#564)
+
+--latest asks the GitHub API for each tool's newest tag and only rewrites
+the file when one changed, so a scheduled run that finds nothing new leaves
+it alone (generated_at would otherwise change every run).
 
 Fetches raw.githubusercontent.com/<repo>/<tag>/<file>. Any fetch failure
 raises: a partial file would silently tell the plugin a switch is unsupported.
@@ -19,6 +24,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 import urllib.request
@@ -135,6 +141,72 @@ def build(sources: dict[str, dict[str, str]], fetcher=fetch) -> dict[str, Any]:
     }
 
 
+# --- Newest tag per tool (#564) ---------------------------------------------
+# GE and CachyOS publish GitHub releases, so their latest release is the
+# newest build. Valve's "latest release" lags: on 2026-10-29 it was
+# proton-11.0-2 while lettered point builds (2b, 2c, 2e) exist only as tags,
+# so both Valve tools are picked from tags. Experimental tags also include
+# one-off branches (experimental-5.13-shmem-20201212); only the plain
+# experimental-X.Y-YYYYMMDD shape counts.
+VALVE_STABLE_RE = re.compile(r"^proton-(\d+)\.(\d+)-(\d+)([a-z]?)$")
+VALVE_EXPERIMENTAL_RE = re.compile(r"^experimental-(\d+)\.(\d+)-(\d{8})$")
+
+
+def github_api(path: str) -> Any:
+    """GET api.github.com/<path>. Uses GITHUB_TOKEN when set. Errors propagate."""
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "decky-proton-pulse/extract-proton-env-support"}
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(f"https://api.github.com/{path}", headers=headers)
+    with urllib.request.urlopen(req, timeout=30) as resp:  # HTTPError / URLError propagate
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _tag_names(api, repo: str, prefix: str) -> list[str]:
+    refs = api(f"repos/{repo}/git/matching-refs/tags/{prefix}")
+    return [r["ref"].removeprefix("refs/tags/") for r in refs if isinstance(r, dict) and "ref" in r]
+
+
+def newest_valve_stable(tags: list[str]) -> str | None:
+    best = None
+    for t in tags:
+        m = VALVE_STABLE_RE.match(t)
+        if m:
+            key = (int(m[1]), int(m[2]), int(m[3]), m[4])
+            if best is None or key > best[0]:
+                best = (key, t)
+    return best[1] if best else None
+
+
+def newest_valve_experimental(tags: list[str]) -> str | None:
+    best = None
+    for t in tags:
+        m = VALVE_EXPERIMENTAL_RE.match(t)
+        if m:
+            key = (int(m[1]), int(m[2]), m[3])
+            if best is None or key > best[0]:
+                best = (key, t)
+    return best[1] if best else None
+
+
+def latest_tags(sources: dict[str, dict[str, str]], api=github_api) -> dict[str, str]:
+    """Newest tag for every tool in sources. Raises if any tool has none."""
+    out: dict[str, str] = {}
+    for tool_id, src in sources.items():
+        repo = src["repo"]
+        if tool_id == "valve-stable":
+            tag = newest_valve_stable(_tag_names(api, repo, "proton-"))
+        elif tool_id == "valve-experimental":
+            tag = newest_valve_experimental(_tag_names(api, repo, "experimental-"))
+        else:
+            tag = (api(f"repos/{repo}/releases/latest") or {}).get("tag_name")
+        if not tag:
+            raise ValueError(f"{tool_id}: no release tag found for {repo}")
+        out[tool_id] = tag
+    return out
+
+
 def current_sources(path: Path) -> dict[str, dict[str, str]]:
     if not path.exists():
         return {k: dict(v) for k, v in DEFAULT_SOURCES.items()}
@@ -150,9 +222,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tag", action="append", default=[], metavar="TOOL=TAG",
                         help="override a tool's release tag, e.g. ge=GE-Proton11-12")
     parser.add_argument("--out", type=Path, default=DATA_PATH)
+    parser.add_argument("--latest", action="store_true",
+                        help="use each tool's newest tag; leave the file alone if none changed")
     args = parser.parse_args(argv)
 
     sources = current_sources(args.out)
+    if args.latest:
+        newest = latest_tags(sources)
+        changed = {t: (sources[t]["tag"], tag) for t, tag in newest.items() if sources[t]["tag"] != tag}
+        if not changed:
+            print("all tools already at their newest tag; nothing to do", file=sys.stderr)
+            return 0
+        for tool_id, (old, new) in changed.items():
+            print(f"{tool_id}: {old} -> {new}", file=sys.stderr)
+            sources[tool_id]["tag"] = new
     for override in args.tag:
         tool_id, _, tag = override.partition("=")
         if tool_id not in sources or not tag:
