@@ -6,7 +6,9 @@ vi.mock('./logger', () => ({
 
 vi.mock('./voting', () => ({
   getVoterId: vi.fn().mockResolvedValue('abc123voterId'),
-  restRequest: vi.fn(),
+  // Every cloud sync read and write goes through the client_* RPCs
+  // (#62); the install secret is added inside callClientRpc.
+  callClientRpc: vi.fn(),
 }));
 
 vi.mock('./settings', () => {
@@ -28,6 +30,7 @@ vi.mock('./settings', () => {
 });
 
 vi.mock('./trackedConfigs', () => ({
+  DEFAULT_PROFILE_NAME: 'Default',
   getTrackedConfigs: vi.fn().mockReturnValue([]),
   addTrackedConfig: vi.fn(),
   onConfigSaved: vi.fn(),
@@ -48,13 +51,13 @@ vi.mock('./localDataBackup', () => ({
   applyPluginSettingsBackupPayload: vi.fn(() => 1),
 }));
 
-import { restRequest } from './voting';
+import { callClientRpc } from './voting';
 import type { TrackedConfig } from './trackedConfigs';
 import { getTrackedConfigs, addTrackedConfig, onConfigSaved } from './trackedConfigs';
 import { getLinkedProtonPulseUserId } from './protonPulseAccount';
 import { applyPluginSettingsBackupPayload, buildPluginSettingsBackupPayload } from './localDataBackup';
 
-const mockRestRequest = vi.mocked(restRequest);
+const mockRpc = vi.mocked(callClientRpc);
 const mockGetLinkedProtonPulseUserId = vi.mocked(getLinkedProtonPulseUserId);
 const mockGetTrackedConfigs = vi.mocked(getTrackedConfigs);
 const mockAddTrackedConfig = vi.mocked(addTrackedConfig);
@@ -90,46 +93,38 @@ beforeEach(async () => {
 
 describe('pushConfig', () => {
   it('upserts a config to Supabase', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: null, status: 201 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: null, status: 201 });
 
     const { pushConfig } = await import('./cloudSync');
     const ok = await pushConfig(makeConfig());
 
     expect(ok).toBe(true);
-    expect(mockRestRequest).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
 
-    const [path, init, query] = mockRestRequest.mock.calls[0];
-    if (!init) {
-      throw new Error('Expected request init to be defined');
-    }
-    expect(path).toBe('user_proton_configs');
-    expect(init.method).toBe('POST');
-    // Multi-config-per-app: PK is (voter_id, app_id, profile_name) so the
-    // upsert target must include profile_name; without it two profiles for
-    // the same game would collide on the old (voter_id, app_id) constraint.
-    expect(query).toMatchObject({ on_conflict: 'voter_id,app_id,profile_name' });
-
-    const body = JSON.parse(init.body as string);
-    expect(body.voter_id).toBe('abc123voterId');
-    expect(body.proton_pulse_user_id).toBe('pp-user-123');
-    expect(body.installation_id).toBe('install-123');
-    expect(body.is_published).toBe(false);
-    expect(body.app_id).toBe(12345);
-    expect(body.app_name).toBe('Test Game');
-    // profile_name is a top-level column now (was only inside the config blob).
-    expect(body.profile_name).toBeTruthy();
-    expect(body.config).toMatchObject({ appId: 12345, protonVersion: 'GE-Proton9-27' });
+    const [fn, args] = mockRpc.mock.calls[0];
+    expect(fn).toBe('client_save_cloud_config');
+    // Multi-config-per-app: the server upserts on (voter_id, app_id,
+    // profile_name), so the profile has to be sent explicitly.
+    expect(args).toMatchObject({
+      p_installation_id: 'install-123',
+      p_app_id: 12345,
+      p_app_name: 'Test Game',
+      p_profile_name: 'My Profile',
+    });
+    expect(args.p_config).toMatchObject({ appId: 12345, protonVersion: 'GE-Proton9-27' });
+    // the linked account is derived server-side from the install link
+    expect(args).not.toHaveProperty('p_proton_pulse_user_id');
   });
 
   it('returns false on Supabase error', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'insert failed', status: 400 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'insert failed', status: 400 });
 
     const { pushConfig } = await import('./cloudSync');
     expect(await pushConfig(makeConfig())).toBe(false);
   });
 
   it('returns false when request throws', async () => {
-    mockRestRequest.mockRejectedValueOnce(new Error('offline'));
+    mockRpc.mockRejectedValueOnce(new Error('offline'));
 
     const { pushConfig } = await import('./cloudSync');
     expect(await pushConfig(makeConfig())).toBe(false);
@@ -138,27 +133,30 @@ describe('pushConfig', () => {
 
 describe('deleteCloudConfig', () => {
   it('deletes the cloud row for the local voter and app', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: null, status: 204 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: null, status: 204 });
 
     const { deleteCloudConfig } = await import('./cloudSync');
     const ok = await deleteCloudConfig(620);
 
     expect(ok).toBe(true);
-    expect(mockRestRequest).toHaveBeenCalledWith(
-      'user_proton_configs',
-      expect.objectContaining({
-        method: 'DELETE',
-        headers: { 'x-client-id': 'abc123voterId' },
-      }),
-      {
-        voter_id: 'eq.abc123voterId',
-        app_id: 'eq.620',
-      },
-    );
+    expect(mockRpc).toHaveBeenCalledWith('client_delete_cloud_config', {
+      p_app_id: 620, p_profile_name: null,
+    });
+  });
+
+  it('scopes the delete to one profile when given', async () => {
+    mockRpc.mockResolvedValueOnce({ data: 1, error: null, status: 200 });
+
+    const { deleteCloudConfig } = await import('./cloudSync');
+    await deleteCloudConfig(620, ' Night ');
+
+    expect(mockRpc).toHaveBeenCalledWith('client_delete_cloud_config', {
+      p_app_id: 620, p_profile_name: 'Night',
+    });
   });
 
   it('returns false when deleting the cloud row fails', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'delete failed', status: 500 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'delete failed', status: 500 });
 
     const { deleteCloudConfig } = await import('./cloudSync');
     await expect(deleteCloudConfig(620)).resolves.toBe(false);
@@ -167,7 +165,7 @@ describe('deleteCloudConfig', () => {
 
 describe('onCloudConfigPushed', () => {
   it('notifies subscribers on successful manual push with source=manual', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: null, status: 201 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: null, status: 201 });
 
     const { pushConfig, onCloudConfigPushed } = await import('./cloudSync');
     const spy = vi.fn();
@@ -181,7 +179,7 @@ describe('onCloudConfigPushed', () => {
   });
 
   it('tags auto-sync pushes with source=auto so the global listener can toast failures without doubling up manual toasts', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'boom', status: 500 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'boom', status: 500 });
 
     const { pushConfig, onCloudConfigPushed } = await import('./cloudSync');
     const spy = vi.fn();
@@ -196,7 +194,7 @@ describe('onCloudConfigPushed', () => {
   });
 
   it('unsubscribe stops further callbacks', async () => {
-    mockRestRequest.mockResolvedValue({ data: null, error: null, status: 201 });
+    mockRpc.mockResolvedValue({ data: null, error: null, status: 201 });
 
     const { pushConfig, onCloudConfigPushed } = await import('./cloudSync');
     const spy = vi.fn();
@@ -213,40 +211,35 @@ describe('onCloudConfigPushed', () => {
 
 describe('plugin settings cloud sync', () => {
   it('upserts plugin settings using the local backup payload', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: null, status: 201 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: null, status: 201 });
 
     const { pushPluginSettings } = await import('./cloudSync');
     const ok = await pushPluginSettings();
 
     expect(ok).toBe(true);
     expect(mockBuildPluginSettingsBackupPayload).toHaveBeenCalled();
-    const [path, init, query] = mockRestRequest.mock.calls[0];
-    if (!init) {
-      throw new Error('Expected request init to be defined');
-    }
-    expect(path).toBe('user_plugin_settings');
-    expect(query).toMatchObject({ on_conflict: 'voter_id,plugin_id' });
-    const body = JSON.parse(init.body as string);
-    expect(body.plugin_id).toBe('proton-pulse');
-    expect(body.payload.entries).toEqual({ theme: '"dark"' });
+    const [fn, args] = mockRpc.mock.calls[0];
+    expect(fn).toBe('client_save_plugin_settings');
+    expect(args.p_plugin_id).toBe('proton-pulse');
+    expect((args.p_payload as { entries: unknown }).entries).toEqual({ theme: '"dark"' });
   });
 
   it('returns false when the plugin settings push errors', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'push failed', status: 500 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'push failed', status: 500 });
 
     const { pushPluginSettings } = await import('./cloudSync');
     expect(await pushPluginSettings()).toBe(false);
   });
 
   it('returns false when the plugin settings push throws', async () => {
-    mockRestRequest.mockRejectedValueOnce(new Error('offline'));
+    mockRpc.mockRejectedValueOnce(new Error('offline'));
 
     const { pushPluginSettings } = await import('./cloudSync');
     expect(await pushPluginSettings()).toBe(false);
   });
 
   it('fetches plugin settings from Supabase', async () => {
-    mockRestRequest.mockResolvedValueOnce({
+    mockRpc.mockResolvedValueOnce({
       data: [{
         voter_id: 'abc123voterId',
         plugin_id: 'proton-pulse',
@@ -270,7 +263,7 @@ describe('plugin settings cloud sync', () => {
   });
 
   it('returns null when fetching plugin settings throws', async () => {
-    mockRestRequest.mockRejectedValueOnce('offline');
+    mockRpc.mockRejectedValueOnce('offline');
 
     const { fetchCloudPluginSettings } = await import('./cloudSync');
     const result = await fetchCloudPluginSettings();
@@ -279,7 +272,7 @@ describe('plugin settings cloud sync', () => {
   });
 
   it('restores plugin settings from the cloud payload', async () => {
-    mockRestRequest.mockResolvedValueOnce({
+    mockRpc.mockResolvedValueOnce({
       data: [{
         voter_id: 'abc123voterId',
         plugin_id: 'proton-pulse',
@@ -303,7 +296,7 @@ describe('plugin settings cloud sync', () => {
   });
 
   it('reports whether plugin settings cloud backup exists', async () => {
-    mockRestRequest
+    mockRpc
       .mockResolvedValueOnce({
         data: [{
           voter_id: 'abc123voterId',
@@ -334,20 +327,20 @@ describe('pushAllConfigs', () => {
       makeConfig({ appId: 1, appName: 'A' }),
       makeConfig({ appId: 2, appName: 'B' }),
     ]);
-    mockRestRequest.mockResolvedValue({ data: null, error: null, status: 201 });
+    mockRpc.mockResolvedValue({ data: null, error: null, status: 201 });
 
     const { pushAllConfigs } = await import('./cloudSync');
     const results = await pushAllConfigs();
 
     expect(results).toEqual({ total: 2, succeeded: 2, failed: 0 });
-    expect(mockRestRequest).toHaveBeenCalledTimes(2);
+    expect(mockRpc).toHaveBeenCalledTimes(2);
   });
 });
 
 describe('fetchCloudConfigs', () => {
   it('returns configs from Supabase', async () => {
     const cfg = makeConfig();
-    mockRestRequest.mockResolvedValueOnce({
+    mockRpc.mockResolvedValueOnce({
       data: [
         {
           voter_id: 'abc123voterId',
@@ -374,27 +367,25 @@ describe('fetchCloudConfigs', () => {
     expect(result[0].config.appId).toBe(12345);
   });
 
-  it('filters by voter id alone when no account is linked', async () => {
+  it('asks client_my_cloud_configs with the install id; the server works out the linked account', async () => {
     mockGetLinkedProtonPulseUserId.mockReturnValueOnce(null);
-    mockRestRequest.mockResolvedValueOnce({ data: [], error: null, status: 200 });
+    mockRpc.mockResolvedValueOnce({ data: [], error: null, status: 200 });
 
     const { fetchCloudConfigs } = await import('./cloudSync');
     await fetchCloudConfigs();
 
-    const query = mockRestRequest.mock.calls[0][2] as Record<string, string>;
-    expect(query.voter_id).toBe('eq.abc123voterId');
-    expect(query.or).toBeUndefined();
+    expect(mockRpc).toHaveBeenCalledWith('client_my_cloud_configs', { p_installation_id: 'install-123' });
   });
 
   it('throws on error response', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'broken', status: 500 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'broken', status: 500 });
 
     const { fetchCloudConfigs } = await import('./cloudSync');
     await expect(fetchCloudConfigs()).rejects.toThrow();
   });
 
   it('throws when fetch throws', async () => {
-    mockRestRequest.mockRejectedValueOnce(new Error('offline'));
+    mockRpc.mockRejectedValueOnce(new Error('offline'));
 
     const { fetchCloudConfigs } = await import('./cloudSync');
     await expect(fetchCloudConfigs()).rejects.toThrow();
@@ -403,7 +394,7 @@ describe('fetchCloudConfigs', () => {
 
 describe('checkHasCloudBackup', () => {
   it('returns true when cloud has configs', async () => {
-    mockRestRequest.mockResolvedValueOnce({
+    mockRpc.mockResolvedValueOnce({
       data: [{ app_id: 1 }],
       error: null,
       status: 200,
@@ -414,21 +405,21 @@ describe('checkHasCloudBackup', () => {
   });
 
   it('returns false when cloud is empty', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: [], error: null, status: 200 });
+    mockRpc.mockResolvedValueOnce({ data: [], error: null, status: 200 });
 
     const { checkHasCloudBackup } = await import('./cloudSync');
     expect(await checkHasCloudBackup()).toBe(false);
   });
 
   it('returns false on error', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'down', status: 500 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'down', status: 500 });
 
     const { checkHasCloudBackup } = await import('./cloudSync');
     expect(await checkHasCloudBackup()).toBe(false);
   });
 
   it('returns false when the existence check throws', async () => {
-    mockRestRequest.mockRejectedValueOnce(new Error('offline'));
+    mockRpc.mockRejectedValueOnce(new Error('offline'));
 
     const { checkHasCloudBackup } = await import('./cloudSync');
     expect(await checkHasCloudBackup()).toBe(false);
@@ -465,7 +456,7 @@ describe('restoreCloudConfigs', () => {
     const localCfg = makeConfig({ appId: 500, appName: 'Local Game' });
     const cloudCfg = makeConfig({ appId: 500, appName: 'Cloud Game' });
     mockGetTrackedConfigs.mockReturnValue([localCfg]);
-    mockRestRequest.mockResolvedValueOnce({
+    mockRpc.mockResolvedValueOnce({
       data: [
         { voter_id: 'abc123voterId', app_id: 500, app_name: 'Cloud Game', profile_name: 'Default', config: cloudCfg, updated_at: '2026-04-11T00:00:00Z' },
       ],
@@ -489,7 +480,7 @@ describe('restoreCloudConfigs', () => {
 
     const cloudA = makeConfig({ appId: 100, appName: 'Cloud Only A' });
     const cloudB = makeConfig({ appId: 200, appName: 'Cloud Only B' });
-    mockRestRequest.mockResolvedValueOnce({
+    mockRpc.mockResolvedValueOnce({
       data: [
         { voter_id: 'abc123voterId', app_id: 100, app_name: 'Cloud Only A', profile_name: 'Default', config: cloudA, updated_at: '2026-04-11T00:00:00Z' },
         { voter_id: 'abc123voterId', app_id: 200, app_name: 'Cloud Only B', profile_name: 'Default', config: cloudB, updated_at: '2026-04-11T00:00:00Z' },
@@ -507,7 +498,7 @@ describe('restoreCloudConfigs', () => {
   });
 
   it('throws when cloud fetch fails', async () => {
-    mockRestRequest.mockResolvedValueOnce({ data: null, error: 'offline', status: 500 });
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'offline', status: 500 });
 
     const { restoreCloudConfigs } = await import('./cloudSync');
     await expect(restoreCloudConfigs()).rejects.toThrow();
@@ -519,7 +510,7 @@ describe('restoreCloudConfigs', () => {
     mockAddTrackedConfig.mockImplementationOnce(() => {
       throw new Error('disk full');
     });
-    mockRestRequest.mockResolvedValueOnce({
+    mockRpc.mockResolvedValueOnce({
       data: [
         { voter_id: 'abc123voterId', app_id: 600, app_name: 'Cloud Game', profile_name: 'Default', config: makeConfig({ appId: 600 }), updated_at: '2026-04-11T00:00:00Z' },
       ],
@@ -542,7 +533,7 @@ describe('cloud auto-sync lifecycle', () => {
       savedCallback = cb;
       return unsubscribe;
     });
-    mockRestRequest.mockResolvedValue({ data: null, error: null, status: 201 });
+    mockRpc.mockResolvedValue({ data: null, error: null, status: 201 });
 
     const { initCloudSync } = await import('./cloudSync');
     initCloudSync();
@@ -555,7 +546,7 @@ describe('cloud auto-sync lifecycle', () => {
     }
     callback(makeConfig({ appId: 77, appName: 'Auto Sync Game' }));
     await flushAsyncWork();
-    expect(mockRestRequest).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
   });
 
   it('counts failed pushes in pushAllConfigs', async () => {
@@ -563,7 +554,7 @@ describe('cloud auto-sync lifecycle', () => {
       makeConfig({ appId: 1, appName: 'A' }),
       makeConfig({ appId: 2, appName: 'B' }),
     ]);
-    mockRestRequest
+    mockRpc
       .mockResolvedValueOnce({ data: null, error: null, status: 201 })
       .mockResolvedValueOnce({ data: null, error: 'boom', status: 500 });
 
@@ -589,7 +580,7 @@ describe('cloud auto-sync lifecycle', () => {
     }
     callback(makeConfig({ appId: 88 }));
 
-    expect(mockRestRequest).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
     teardownCloudSync();
     setAutoSyncEnabled(true);
   });
@@ -607,7 +598,7 @@ describe('cloud auto-sync lifecycle', () => {
 
   it('pushes plugin settings after settings change when enabled', async () => {
     vi.useFakeTimers();
-    mockRestRequest.mockResolvedValue({ data: null, error: null, status: 201 });
+    mockRpc.mockResolvedValue({ data: null, error: null, status: 201 });
 
     const { initCloudSync, setPluginSettingsAutoSyncEnabled } = await import('./cloudSync');
     const { setSetting } = await import('./settings');
@@ -617,17 +608,16 @@ describe('cloud auto-sync lifecycle', () => {
     setSetting('language', 'en');
     await vi.advanceTimersByTimeAsync(500);
 
-    expect(mockRestRequest).toHaveBeenCalledWith(
-      'user_plugin_settings',
-      expect.objectContaining({ method: 'POST' }),
-      expect.objectContaining({ on_conflict: 'voter_id,plugin_id' }),
+    expect(mockRpc).toHaveBeenCalledWith(
+      'client_save_plugin_settings',
+      expect.objectContaining({ p_plugin_id: 'proton-pulse' }),
     );
     vi.useRealTimers();
   });
 
   it('resets the pending plugin settings timer when changes arrive back-to-back', async () => {
     vi.useFakeTimers();
-    mockRestRequest.mockResolvedValue({ data: null, error: null, status: 201 });
+    mockRpc.mockResolvedValue({ data: null, error: null, status: 201 });
 
     const { initCloudSync, setPluginSettingsAutoSyncEnabled } = await import('./cloudSync');
     const { setSetting } = await import('./settings');
@@ -638,10 +628,10 @@ describe('cloud auto-sync lifecycle', () => {
     await vi.advanceTimersByTimeAsync(300);
     setSetting('language', 'de');
     await vi.advanceTimersByTimeAsync(499);
-    expect(mockRestRequest).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(1);
-    expect(mockRestRequest).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
 
@@ -657,7 +647,7 @@ describe('cloud auto-sync lifecycle', () => {
     teardownCloudSync();
     await vi.advanceTimersByTimeAsync(500);
 
-    expect(mockRestRequest).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
 
@@ -672,7 +662,7 @@ describe('cloud auto-sync lifecycle', () => {
     setSetting('language', 'en');
     await vi.advanceTimersByTimeAsync(500);
 
-    expect(mockRestRequest).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
 });

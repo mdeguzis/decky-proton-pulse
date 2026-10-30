@@ -1,6 +1,6 @@
 // src/lib/cloudSync.ts
 import { logFrontendEvent } from './logger';
-import { getVoterId, restRequest } from './voting';
+import { callClientRpc, getVoterId } from './voting';
 import { getSetting, setSetting, onSettingsChanged } from './settings';
 import { getTrackedConfigs, addTrackedConfig, onConfigSaved, DEFAULT_PROFILE_NAME, type TrackedConfig } from './trackedConfigs';
 import { getInstallationId, getLinkedProtonPulseUserId } from './protonPulseAccount';
@@ -90,22 +90,14 @@ export async function pushConfig(
     // read but a stray caller could still pass an unnormalised object.
     const profileName = (config.profileName || '').trim() || DEFAULT_PROFILE_NAME;
 
-    const { error } = await restRequest<null>('user_proton_configs', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({
-        voter_id: voterId,
-        proton_pulse_user_id: protonPulseUserId,
-        installation_id: installationId,
-        is_published: false,
-        app_id: config.appId,
-        app_name: config.appName,
-        profile_name: profileName,
-        config,
-        updated_at: new Date().toISOString(),
-      }),
-    }, {
-      on_conflict: 'voter_id,app_id,profile_name',
+    // client_save_cloud_config derives the linked account from this
+    // install's link + secret; the caller no longer sends it.
+    const { error } = await callClientRpc<null>('client_save_cloud_config', {
+      p_installation_id: installationId,
+      p_app_id: config.appId,
+      p_app_name: config.appName,
+      p_profile_name: profileName,
+      p_config: config,
     });
 
     if (error) {
@@ -163,26 +155,20 @@ export interface CloudPluginSettingsRow {
 export type SyncStatus = 'synced' | 'not-synced';
 
 export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
-  const voterId = await getVoterId();
   const linkedUserId = getLinkedProtonPulseUserId();
 
-  // When the account is linked, fetch all configs belonging to this user ID
-  // (regardless of which device/voter_id submitted them) plus any local-only
-  // configs that were never linked. Without the OR, configs pushed from a
-  // different installation show up on the web profile but not here.
-  const query: Record<string, string> = {
-    select: 'voter_id,proton_pulse_user_id,installation_id,app_id,app_name,profile_name,config,updated_at,is_published',
-  };
-  if (linkedUserId) {
-    query['or'] = `(voter_id.eq.${voterId},proton_pulse_user_id.eq.${linkedUserId})`;
-  } else {
-    query['voter_id'] = `eq.${voterId}`;
-  }
-
-  const { data, error } = await restRequest<CloudConfigRow[]>('user_proton_configs', { method: 'GET' }, query);
+  // client_my_cloud_configs returns this install's rows plus, when the
+  // install is linked, rows other installs of the same account pushed. The
+  // server works out the account from the install's link + secret, so
+  // configs pushed from a different installation still show up here.
+  const { data, error, status } = await callClientRpc<CloudConfigRow[]>('client_my_cloud_configs', {
+    p_installation_id: getInstallationId(),
+  });
 
   if (error || !data) {
-    void logFrontendEvent('ERROR', 'Cloud sync: fetch failed', { error, linkedUserId: linkedUserId ?? null });
+    void logFrontendEvent('ERROR', 'Cloud sync: fetch failed', {
+      error, status, linkedUserId: linkedUserId ?? null, source: 'rpc/client_my_cloud_configs',
+    });
     throw new Error(typeof error === 'string' ? error : 'fetch failed');
   }
 
@@ -201,7 +187,7 @@ export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
   const deduped = [...byKey.values()];
 
   void logFrontendEvent('DEBUG', 'Cloud sync: fetched configs', {
-    raw: data.length, deduped: deduped.length, source: linkedUserId ? 'user_id+voter_id' : 'voter_id',
+    raw: data.length, deduped: deduped.length, linked: Boolean(linkedUserId), source: 'rpc/client_my_cloud_configs',
   });
   return deduped;
 }
@@ -211,17 +197,11 @@ export async function fetchCloudConfigs(): Promise<CloudConfigRow[]> {
 // (legacy call pattern -- matches removeTrackedConfig's overload).
 export async function deleteCloudConfig(appId: number, profileName?: string): Promise<boolean> {
   try {
-    const voterId = await getVoterId();
-    const query: Record<string, string> = {
-      voter_id: `eq.${voterId}`,
-      app_id: `eq.${appId}`,
-    };
     const scoped = (profileName || '').trim();
-    if (scoped) query['profile_name'] = `eq.${scoped}`;
-    const { error } = await restRequest<null>('user_proton_configs', {
-      method: 'DELETE',
-      headers: { 'x-client-id': voterId },
-    }, query);
+    const { error } = await callClientRpc<number>('client_delete_cloud_config', {
+      p_app_id: appId,
+      p_profile_name: scoped || null,
+    });
 
     if (error) {
       void logFrontendEvent('ERROR', 'Cloud sync: delete failed', { appId, error });
@@ -243,18 +223,9 @@ export async function pushPluginSettings(
   payload: LocalDataBackupPayload = buildPluginSettingsBackupPayload(),
 ): Promise<boolean> {
   try {
-    const voterId = await getVoterId();
-    const { error } = await restRequest<null>('user_plugin_settings', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({
-        voter_id: voterId,
-        plugin_id: PLUGIN_ID,
-        payload,
-        updated_at: new Date().toISOString(),
-      }),
-    }, {
-      on_conflict: 'voter_id,plugin_id',
+    const { error } = await callClientRpc<null>('client_save_plugin_settings', {
+      p_plugin_id: PLUGIN_ID,
+      p_payload: payload,
     });
 
     if (error) {
@@ -276,15 +247,8 @@ export async function pushPluginSettings(
 
 export async function fetchCloudPluginSettings(): Promise<CloudPluginSettingsRow | null> {
   try {
-    const voterId = await getVoterId();
-    const { data, error } = await restRequest<CloudPluginSettingsRow[]>('user_plugin_settings', {
-      method: 'GET',
-      headers: { Range: '0-0' },
-    }, {
-      select: 'voter_id,plugin_id,payload,updated_at',
-      voter_id: `eq.${voterId}`,
-      plugin_id: `eq.${PLUGIN_ID}`,
-      limit: '1',
+    const { data, error } = await callClientRpc<CloudPluginSettingsRow[]>('client_my_plugin_settings', {
+      p_plugin_id: PLUGIN_ID,
     });
 
     if (error || !data?.length) {
@@ -311,19 +275,9 @@ export async function restoreCloudPluginSettings(): Promise<number> {
 
 export async function checkHasCloudBackup(): Promise<boolean> {
   try {
-    const voterId = await getVoterId();
-    const { data, error } = await restRequest<{ app_id: number }[]>('user_proton_configs', {
-      method: 'GET',
-      headers: { Range: '0-0' }, // just need one row to confirm existence
-    }, {
-      select: 'app_id',
-      voter_id: `eq.${voterId}`,
-      limit: '1',
-    });
-
-    if (error || !data) return false;
-    return data.length > 0;
+    return (await fetchCloudConfigs()).length > 0;
   } catch {
+    // fetchCloudConfigs already logged the failure with its context.
     return false;
   }
 }

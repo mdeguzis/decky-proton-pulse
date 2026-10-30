@@ -7,6 +7,7 @@ vi.mock('./logger', () => ({
 vi.mock('./voting', () => ({
   getVoterId: vi.fn().mockResolvedValue('abc123voterId'),
   restRequest: vi.fn(),
+  callClientRpc: vi.fn(),
 }));
 
 vi.mock('./trackedConfigs', () => ({
@@ -21,12 +22,14 @@ vi.mock('./steamApps', () => ({
   getSteamPlaytimeForeverMinutes: vi.fn().mockResolvedValue(0),
 }));
 
-import { getVoterId, restRequest } from './voting';
+import { callClientRpc, getVoterId, restRequest } from './voting';
 import { getActiveConfigForApp } from './trackedConfigs';
 import { getSteamPlaytimeForeverMinutes } from './steamApps';
 
 const mockGetVoterId = vi.mocked(getVoterId);
 const mockRestRequest = vi.mocked(restRequest);
+// Session writes go through client_start_playtime / client_finish_playtime.
+const mockRpc = vi.mocked(callClientRpc);
 const mockGetActiveConfigForApp = vi.mocked(getActiveConfigForApp);
 const mockGetSteamPlaytimeForeverMinutes = vi.mocked(getSteamPlaytimeForeverMinutes);
 
@@ -60,6 +63,7 @@ describe('playtime', () => {
     mockGetVoterId.mockResolvedValue('abc123voterId');
     mockGetActiveConfigForApp.mockReturnValue(null);
     mockRestRequest.mockReset();
+    mockRpc.mockReset();
     mockGetSteamPlaytimeForeverMinutes.mockReset();
     mockGetSteamPlaytimeForeverMinutes.mockResolvedValue(0);
     (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
@@ -91,41 +95,34 @@ describe('playtime', () => {
       },
     };
     mockGetActiveConfigForApp.mockReturnValue(makeConfig());
-    mockRestRequest
-      .mockResolvedValueOnce({ data: [{ id: 77 }], error: null, status: 201 })
-      .mockResolvedValueOnce({ data: null, error: null, status: 204 });
+    mockRpc
+      .mockResolvedValueOnce({ data: 77, error: null, status: 200 })
+      .mockResolvedValueOnce({ data: true, error: null, status: 200 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
 
     startSessionTracking();
     await flushAsyncWork();
 
-    expect(mockRestRequest).toHaveBeenCalledTimes(1);
-    const [insertPath, insertInit, insertQuery] = mockRestRequest.mock.calls[0];
-    expect(insertPath).toBe('config_playtime');
-    expect(insertInit?.method).toBe('POST');
-    expect(insertQuery).toEqual({ select: 'id' });
-    expect(JSON.parse(String(insertInit?.body))).toMatchObject({
-      voter_id: 'abc123voterId',
-      app_id: '123',
-      config_key: '1700000000000_GE-Proton10-1',
-      proton_version: 'GE-Proton10-1',
-      source: 'protondb',
-      duration_minutes: 0,
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    const [startFn, startArgs] = mockRpc.mock.calls[0];
+    expect(startFn).toBe('client_start_playtime');
+    expect(startArgs).toMatchObject({
+      p_app_id: '123',
+      p_config_key: '1700000000000_GE-Proton10-1',
+      p_proton_version: 'GE-Proton10-1',
+      p_source: 'protondb',
     });
+    expect(mockRestRequest).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(61_000);
     stopSessionTracking();
     await flushAsyncWork();
 
-    expect(mockRestRequest).toHaveBeenCalledTimes(2);
-    const [patchPath, patchInit, patchQuery] = mockRestRequest.mock.calls[1];
-    expect(patchPath).toBe('config_playtime');
-    expect(patchInit?.method).toBe('PATCH');
-    expect(patchQuery).toEqual({ id: 'eq.77' });
-    expect(JSON.parse(String(patchInit?.body))).toMatchObject({
-      duration_minutes: 1,
-    });
+    expect(mockRpc).toHaveBeenCalledTimes(2);
+    const [finishFn, finishArgs] = mockRpc.mock.calls[1];
+    expect(finishFn).toBe('client_finish_playtime');
+    expect(finishArgs).toMatchObject({ p_row_id: 77, p_duration_minutes: 1 });
   });
 
   it('falls back to inserting a completed session when the initial insert fails', async () => {
@@ -141,9 +138,9 @@ describe('playtime', () => {
       profileName: 'Custom Profile',
       source: 'user',
     }));
-    mockRestRequest
+    mockRpc
       .mockResolvedValueOnce({ data: null, error: 'insert failed', status: 500 })
-      .mockResolvedValueOnce({ data: null, error: null, status: 201 });
+      .mockResolvedValueOnce({ data: 5, error: null, status: 200 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
 
@@ -154,17 +151,16 @@ describe('playtime', () => {
     stopSessionTracking();
     await flushAsyncWork();
 
-    expect(mockRestRequest).toHaveBeenCalledTimes(2);
-    const [completedPath, completedInit] = mockRestRequest.mock.calls[1];
-    expect(completedPath).toBe('config_playtime');
-    expect(completedInit?.method).toBe('POST');
-    expect(JSON.parse(String(completedInit?.body))).toMatchObject({
-      voter_id: 'abc123voterId',
-      app_id: '456',
-      config_key: 'custom:Custom Profile',
-      source: 'user',
-      duration_minutes: 1,
+    expect(mockRpc).toHaveBeenCalledTimes(2);
+    const [completedFn, completedArgs] = mockRpc.mock.calls[1];
+    expect(completedFn).toBe('client_start_playtime');
+    expect(completedArgs).toMatchObject({
+      p_app_id: '456',
+      p_config_key: 'custom:Custom Profile',
+      p_source: 'user',
+      p_duration_minutes: 1,
     });
+    expect(completedArgs.p_session_end).toEqual(expect.any(String));
   });
 
   it('skips submitting sessions shorter than one minute', async () => {
@@ -175,7 +171,7 @@ describe('playtime', () => {
       },
     };
     mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 321 }));
-    mockRestRequest.mockResolvedValueOnce({ data: [{ id: 11 }], error: null, status: 201 });
+    mockRpc.mockResolvedValueOnce({ data: 11, error: null, status: 200 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
 
@@ -186,7 +182,7 @@ describe('playtime', () => {
     stopSessionTracking();
     await flushAsyncWork();
 
-    expect(mockRestRequest).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
   });
 
   it('handles missing or broken Steam session state without crashing', async () => {
@@ -210,6 +206,7 @@ describe('playtime', () => {
     await flushAsyncWork();
 
     expect(mockRestRequest).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it('returns aggregated playtime totals by config key', async () => {
@@ -253,7 +250,7 @@ describe('playtime', () => {
     };
     mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 789 }));
     // initial insert fails, then fallback insert also fails
-    mockRestRequest
+    mockRpc
       .mockResolvedValueOnce({ data: null, error: 'insert failed', status: 500 })
       .mockResolvedValueOnce({ data: null, error: 'still broken', status: 500 });
 
@@ -267,7 +264,7 @@ describe('playtime', () => {
     await flushAsyncWork();
 
     // both calls were made, and the second one hit the error branch
-    expect(mockRestRequest).toHaveBeenCalledTimes(2);
+    expect(mockRpc).toHaveBeenCalledTimes(2);
   });
 
   it('logs error when PATCH update fails', async () => {
@@ -276,9 +273,9 @@ describe('playtime', () => {
       GameSessions: { GetRunningApps: runningApps },
     };
     mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 555 }));
-    // initial insert succeeds, but PATCH fails
-    mockRestRequest
-      .mockResolvedValueOnce({ data: [{ id: 42 }], error: null, status: 201 })
+    // initial insert succeeds, but closing the session fails
+    mockRpc
+      .mockResolvedValueOnce({ data: 42, error: null, status: 200 })
       .mockResolvedValueOnce({ data: null, error: 'patch failed', status: 500 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
@@ -290,8 +287,34 @@ describe('playtime', () => {
     stopSessionTracking();
     await flushAsyncWork();
 
-    expect(mockRestRequest).toHaveBeenCalledTimes(2);
-    expect(mockRestRequest.mock.calls[1][1]?.method).toBe('PATCH');
+    expect(mockRpc).toHaveBeenCalledTimes(2);
+    expect(mockRpc.mock.calls[1][0]).toBe('client_finish_playtime');
+  });
+
+  it('closes nothing and warns when the session row is not ours', async () => {
+    const runningApps = vi.fn().mockReturnValue([{ appid: 556 }]);
+    (globalThis as unknown as { SteamClient?: unknown }).SteamClient = {
+      GameSessions: { GetRunningApps: runningApps },
+    };
+    mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 556 }));
+    mockRpc
+      .mockResolvedValueOnce({ data: 43, error: null, status: 200 })
+      .mockResolvedValueOnce({ data: false, error: null, status: 200 });
+
+    const { startSessionTracking, stopSessionTracking } = await import('./playtime');
+    const { logFrontendEvent } = await import('./logger');
+
+    startSessionTracking();
+    await flushAsyncWork();
+    vi.advanceTimersByTime(61_000);
+    stopSessionTracking();
+    await flushAsyncWork();
+
+    expect(vi.mocked(logFrontendEvent)).toHaveBeenCalledWith(
+      'WARNING',
+      'Playtime session row not closed (not ours or gone)',
+      expect.objectContaining({ rowId: 43, source: 'rpc/client_finish_playtime' }),
+    );
   });
 
   it('detects game stop via polling and finalizes session', async () => {
@@ -302,9 +325,9 @@ describe('playtime', () => {
       GameSessions: { GetRunningApps: runningApps },
     };
     mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 333 }));
-    mockRestRequest
-      .mockResolvedValueOnce({ data: [{ id: 99 }], error: null, status: 201 })
-      .mockResolvedValueOnce({ data: null, error: null, status: 204 });
+    mockRpc
+      .mockResolvedValueOnce({ data: 99, error: null, status: 200 })
+      .mockResolvedValueOnce({ data: true, error: null, status: 200 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
 
@@ -318,8 +341,8 @@ describe('playtime', () => {
     await flushAsyncWork();
 
     // session should have been finalized by the poll, not stopSessionTracking
-    expect(mockRestRequest).toHaveBeenCalledTimes(2);
-    expect(mockRestRequest.mock.calls[1][1]?.method).toBe('PATCH');
+    expect(mockRpc).toHaveBeenCalledTimes(2);
+    expect(mockRpc.mock.calls[1][0]).toBe('client_finish_playtime');
 
     stopSessionTracking();
   });
@@ -343,8 +366,9 @@ describe('playtime', () => {
     await flushAsyncWork();
 
     stopSessionTracking();
-    // no errors thrown, mockRestRequest not called (no tracked game)
+    // no errors thrown, nothing written (no tracked game)
     expect(mockRestRequest).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it('getConfigPlaytimeTotals handles non-Error throws in catch', async () => {
@@ -362,25 +386,23 @@ describe('playtime', () => {
     };
     // source=undefined: hits ?? 'protondb' on both initial insert (line 74) and fallback insert (line 129)
     mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 999, source: undefined }));
-    mockRestRequest
+    mockRpc
       .mockResolvedValueOnce({ data: null, error: 'insert failed', status: 500 }) // initial fails -> rowId=null
-      .mockResolvedValueOnce({ data: null, error: null, status: 201 }); // fallback insert succeeds
+      .mockResolvedValueOnce({ data: 6, error: null, status: 200 }); // fallback insert succeeds
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
     startSessionTracking();
     await flushAsyncWork();
 
     // verify initial insert body has source='protondb' (line 74 fallback)
-    const [, insertInit] = mockRestRequest.mock.calls[0];
-    expect(JSON.parse(String(insertInit?.body))).toMatchObject({ source: 'protondb' });
+    expect(mockRpc.mock.calls[0][1]).toMatchObject({ p_source: 'protondb' });
 
     vi.advanceTimersByTime(61_000);
     stopSessionTracking();
     await flushAsyncWork();
 
     // verify fallback insert body also has source='protondb' (line 129 fallback)
-    const [, fallbackInit] = mockRestRequest.mock.calls[1];
-    expect(JSON.parse(String(fallbackInit?.body))).toMatchObject({ source: 'protondb' });
+    expect(mockRpc.mock.calls[1][1]).toMatchObject({ p_source: 'protondb' });
   });
 
   it('buildConfigKey uses appName when profileName is empty', async () => {
@@ -390,16 +412,14 @@ describe('playtime', () => {
     };
     // profileName='' falls back to appName in the || expression (line 30)
     mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 888, source: 'user' as const, profileName: '' }));
-    mockRestRequest.mockResolvedValueOnce({ data: [{ id: 1 }], error: null, status: 201 });
+    mockRpc.mockResolvedValueOnce({ data: 1, error: null, status: 200 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
     startSessionTracking();
     await flushAsyncWork();
 
-    const [, init] = mockRestRequest.mock.calls[0];
-    const body = JSON.parse(String(init?.body));
     // empty profileName -> appName is used -> config_key = "custom:Test Game"
-    expect(body.config_key).toBe('custom:Test Game');
+    expect(mockRpc.mock.calls[0][1]).toMatchObject({ p_config_key: 'custom:Test Game' });
 
     stopSessionTracking();
     await flushAsyncWork();
@@ -412,16 +432,15 @@ describe('playtime', () => {
       GameSessions: { GetRunningApps: runningApps },
     };
     mockGetActiveConfigForApp.mockReturnValue(makeConfig({ appId: 777 }));
-    mockRestRequest.mockResolvedValueOnce({ data: [{ id: 2 }], error: null, status: 201 });
+    mockRpc.mockResolvedValueOnce({ data: 2, error: null, status: 200 });
 
     const { startSessionTracking, stopSessionTracking } = await import('./playtime');
     startSessionTracking();
     await flushAsyncWork();
 
     // app was detected and session started
-    expect(mockRestRequest).toHaveBeenCalledTimes(1);
-    const body = JSON.parse(String(mockRestRequest.mock.calls[0][1]?.body));
-    expect(body.app_id).toBe('777');
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    expect(mockRpc.mock.calls[0][1]).toMatchObject({ p_app_id: '777' });
 
     stopSessionTracking();
     await flushAsyncWork();

@@ -3,7 +3,7 @@
 // Only stores user-submitted custom configs - never imported data.
 
 import { logFrontendEvent } from './logger';
-import { getVoterId } from './voting';
+import { callClientRpc, getVoterId } from './voting';
 import { getInstallationId, getLinkedProtonPulseUserId } from './protonPulseAccount';
 import { vrFieldsForSubmission, type PlayMode } from './vr';
 import type { ProtonRating } from '../types';
@@ -211,19 +211,16 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
     return { ok: false, error: validationError };
   }
 
-  const clientId = await getVoterId();
   const installationId = getInstallationId();
-  const protonPulseUserId = getLinkedProtonPulseUserId();
   void logFrontendEvent('INFO', 'Submitting user config', { appId: input.appId });
 
   try {
-    const { error } = await restRequest<null>('user_configs', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify({
-        client_id: clientId,
-        proton_pulse_user_id: protonPulseUserId,
-        installation_id: installationId,
+    // client_submit_report sets client_id, the linked account and
+    // installation_id itself and ignores moderation fields, so only report
+    // content goes in p_report.
+    const { error } = await callClientRpc<number>('client_submit_report', {
+      p_installation_id: installationId,
+      p_report: {
         app_id: input.appId,
         title: input.title,
         cpu: input.cpu,
@@ -260,8 +257,8 @@ export async function submitUserConfig(input: UserConfigInput): Promise<{ ok: bo
         // "does not own" (the old default was null, which the admin renders
         // as "false" -- the Game Owned: false bug in the report detail view).
         game_owned: true,
-      }),
-    }, { on_conflict: 'client_id,app_id' });
+      },
+    });
 
     lastSubmitAt = Date.now();
 
@@ -417,19 +414,12 @@ export async function getMyReportStatuses(): Promise<MyReportStatuses> {
 
 export { VALID_OS, VALID_RATINGS, VALID_GPU_VENDORS, VALID_SOURCES };
 
-// --- Owner delete (RLS via x-client-id header) ---
+// --- Owner delete (client_delete_report checks this install's secret) ---
 
 export async function deleteMyReport(appId: string): Promise<{ ok: boolean; error?: string }> {
-  const clientId = await getVoterId();
   void logFrontendEvent('INFO', 'Deleting own report from Supabase', { appId });
   try {
-    const { error } = await restRequest<null>('user_configs', {
-      method: 'DELETE',
-      headers: { 'x-client-id': clientId },
-    }, {
-      client_id: `eq.${clientId}`,
-      app_id: `eq.${appId}`,
-    });
+    const { error } = await callClientRpc<number>('client_delete_report', { p_app_id: appId });
     if (error) {
       void logFrontendEvent('ERROR', 'Report delete failed', { appId, error });
       return { ok: false, error };

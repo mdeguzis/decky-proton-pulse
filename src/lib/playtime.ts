@@ -4,7 +4,7 @@
 // Uses the same anonymous voter_id from the voting system so playtime
 // and votes are tied to the same identity.
 
-import { getVoterId, restRequest } from './voting';
+import { callClientRpc, getVoterId, restRequest } from './voting';
 import { getActiveConfigForApp, getTrackedConfigs } from './trackedConfigs';
 import type { TrackedConfig } from './trackedConfigs';
 import { logFrontendEvent } from './logger';
@@ -91,30 +91,20 @@ async function onGameStarted(appId: number, config: TrackedConfig): Promise<void
   });
 
   // insert a new session row with duration_minutes=0
-  // we'll PATCH it with the real duration when the game stops
-  const { data, error } = await restRequest<{ id: number }[]>('config_playtime', {
-    method: 'POST',
-    headers: {
-      Prefer: 'return=representation',
-    },
-    body: JSON.stringify({
-      voter_id: voterId,
-      app_id: String(appId),
-      config_key: configKey,
-      proton_version: config.protonVersion,
-      source: config.source ?? 'protondb',
-      session_start: new Date().toISOString(),
-      duration_minutes: 0,
-    }),
-  }, {
-    select: 'id',
+  // we'll close it with the real duration when the game stops
+  const { data, error } = await callClientRpc<number>('client_start_playtime', {
+    p_app_id: String(appId),
+    p_config_key: configKey,
+    p_proton_version: config.protonVersion,
+    p_source: config.source ?? 'protondb',
+    p_session_start: new Date().toISOString(),
   });
 
   let rowId: number | null = null;
   if (error) {
     void logFrontendEvent('ERROR', 'Failed to insert playtime session', { appId, error });
-  } else if (data && data.length > 0) {
-    rowId = data[0].id;
+  } else if (typeof data === 'number') {
+    rowId = data;
   }
 
   activeSession = {
@@ -148,20 +138,14 @@ async function onGameStopped(session: ActiveSession): Promise<void> {
 
   if (!session.supabaseRowId) {
     // initial insert failed, try a fresh insert with the full duration
-    const voterId = await getVoterId();
-    const { error } = await restRequest<null>('config_playtime', {
-      method: 'POST',
-      headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify({
-        voter_id: voterId,
-        app_id: String(session.appId),
-        config_key: session.configKey,
-        proton_version: session.config.protonVersion,
-        source: session.config.source ?? 'protondb',
-        session_start: new Date(session.startedAt).toISOString(),
-        session_end: new Date().toISOString(),
-        duration_minutes: durationMin,
-      }),
+    const { error } = await callClientRpc<number>('client_start_playtime', {
+      p_app_id: String(session.appId),
+      p_config_key: session.configKey,
+      p_proton_version: session.config.protonVersion,
+      p_source: session.config.source ?? 'protondb',
+      p_session_start: new Date(session.startedAt).toISOString(),
+      p_session_end: new Date().toISOString(),
+      p_duration_minutes: durationMin,
     });
     if (error) {
       void logFrontendEvent('ERROR', 'Failed to insert completed playtime session', {
@@ -172,17 +156,21 @@ async function onGameStopped(session: ActiveSession): Promise<void> {
     return;
   }
 
-  // update the existing row with session_end and computed duration
-  const { error } = await restRequest<null>('config_playtime', {
-    method: 'PATCH',
-    headers: { Prefer: 'return=minimal' },
-    body: JSON.stringify({
-      session_end: new Date().toISOString(),
-      duration_minutes: durationMin,
-    }),
-  }, {
-    id: `eq.${session.supabaseRowId}`,
+  // close the existing row with session_end and computed duration;
+  // the RPC only touches sessions this install started
+  const { data: closed, error } = await callClientRpc<boolean>('client_finish_playtime', {
+    p_row_id: session.supabaseRowId,
+    p_session_end: new Date().toISOString(),
+    p_duration_minutes: durationMin,
   });
+
+  if (!error && closed === false) {
+    void logFrontendEvent('WARNING', 'Playtime session row not closed (not ours or gone)', {
+      appId: session.appId,
+      rowId: session.supabaseRowId,
+      source: 'rpc/client_finish_playtime',
+    });
+  }
 
   if (error) {
     void logFrontendEvent('ERROR', 'Failed to update playtime session', {

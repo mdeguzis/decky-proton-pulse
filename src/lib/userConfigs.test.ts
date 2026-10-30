@@ -6,6 +6,8 @@ vi.mock('./logger', () => ({
 
 vi.mock('./voting', () => ({
   getVoterId: vi.fn().mockResolvedValue('deadbeef'.repeat(8)),
+  // Report writes go through the client_* RPCs (#62).
+  callClientRpc: vi.fn(),
 }));
 
 vi.mock('./protonPulseAccount', () => ({
@@ -15,6 +17,10 @@ vi.mock('./protonPulseAccount', () => ({
 
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
+
+import { callClientRpc } from './voting';
+const mockRpc = vi.mocked(callClientRpc);
+const rpcOk = { data: 1, error: null, status: 200 };
 
 function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -47,6 +53,7 @@ function validInput() {
 }
 
 beforeEach(() => {
+  mockRpc.mockReset();
   fetchMock.mockReset();
   vi.resetModules();
 });
@@ -133,23 +140,25 @@ describe('validateUserConfig', () => {
 });
 
 describe('submitUserConfig', () => {
-  it('posts to user_configs with upsert headers', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+  it('submits through client_submit_report with report content only', async () => {
+    mockRpc.mockResolvedValueOnce(rpcOk);
 
     const { submitUserConfig } = await import('./userConfigs');
     const result = await submitUserConfig(validInput());
 
     expect(result.ok).toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0]?.[0]).toContain('/user_configs?');
-    expect(fetchMock.mock.calls[0]?.[0]).toContain('on_conflict=client_id%2Capp_id');
-    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'POST' });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    const [fn, args] = mockRpc.mock.calls[0] ?? [];
+    expect(fn).toBe('client_submit_report');
+    expect(args).toMatchObject({ p_installation_id: 'install-123' });
 
-    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    const body = args?.p_report as Record<string, unknown>;
+    // ownership is set server-side from the install secret + link
+    expect(body).not.toHaveProperty('client_id');
+    expect(body).not.toHaveProperty('proton_pulse_user_id');
+    expect(body).not.toHaveProperty('installation_id');
     expect(body).toMatchObject({
-      client_id: 'deadbeef'.repeat(8),
-      proton_pulse_user_id: 'pp-user-9',
-      installation_id: 'install-123',
       app_id: '20',
       rating: 'gold',
       os: 'SteamOS 3.6',
@@ -169,11 +178,11 @@ describe('submitUserConfig', () => {
 
     expect(result.ok).toBe(false);
     expect(result.error).toMatch(/rating/i);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it('returns error on server failure', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'constraint violation' }, { status: 400 }));
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'constraint violation', status: 400 });
 
     const { submitUserConfig } = await import('./userConfigs');
     const result = await submitUserConfig(validInput());
@@ -249,7 +258,7 @@ describe('validateUserConfig lower bound', () => {
 
 describe('submitUserConfig optional field fallbacks', () => {
   it('uses defaults when optional fields are omitted', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+    mockRpc.mockResolvedValueOnce(rpcOk);
 
     const { submitUserConfig } = await import('./userConfigs');
     // omit all optional fields - each ?? fallback must be covered
@@ -265,7 +274,7 @@ describe('submitUserConfig optional field fallbacks', () => {
     });
 
     expect(result.ok).toBe(true);
-    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    const body = mockRpc.mock.calls[0]?.[1]?.p_report;
     expect(body).toMatchObject({
       gpu_driver: '',
       gpu_vendor: 'other',
@@ -289,7 +298,7 @@ describe('submitUserConfig play mode columns (#121)', () => {
     // Nulls rather than omitted keys: an edit that switches VR back to
     // Flatscreen has to CLEAR the old runtime, and a PATCH that omits a key
     // leaves the column untouched.
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+    mockRpc.mockResolvedValueOnce(rpcOk);
 
     const { submitUserConfig } = await import('./userConfigs');
     const result = await submitUserConfig({
@@ -300,12 +309,12 @@ describe('submitUserConfig play mode columns (#121)', () => {
     });
 
     expect(result.ok).toBe(true);
-    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    const body = mockRpc.mock.calls[0]?.[1]?.p_report;
     expect(body).toMatchObject({ play_mode: 'flat', vr_runtime: null, vr_device: null });
   });
 
   it('carries the runtime and headset on a VR report', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+    mockRpc.mockResolvedValueOnce(rpcOk);
 
     const { submitUserConfig } = await import('./userConfigs');
     const result = await submitUserConfig({
@@ -316,24 +325,24 @@ describe('submitUserConfig play mode columns (#121)', () => {
     });
 
     expect(result.ok).toBe(true);
-    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    const body = mockRpc.mock.calls[0]?.[1]?.p_report;
     expect(body).toMatchObject({ play_mode: 'vr', vr_runtime: 'wivrn', vr_device: 'Meta Quest 3' });
   });
 
   it('leaves play_mode null when the caller never asked', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+    mockRpc.mockResolvedValueOnce(rpcOk);
 
     const { submitUserConfig } = await import('./userConfigs');
     await submitUserConfig(validInput());
 
-    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    const body = mockRpc.mock.calls[0]?.[1]?.p_report;
     expect(body).toMatchObject({ play_mode: null, vr_runtime: null, vr_device: null });
   });
 });
 
 describe('submitUserConfig cooldown', () => {
   it('blocks a second submit within the cooldown window', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 201 }));
+    mockRpc.mockResolvedValueOnce(rpcOk);
 
     const { submitUserConfig } = await import('./userConfigs');
     const first = await submitUserConfig(validInput());
@@ -343,7 +352,7 @@ describe('submitUserConfig cooldown', () => {
     const second = await submitUserConfig(validInput());
     expect(second.ok).toBe(false);
     expect(second.error).toMatch(/cooldown/i);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -357,9 +366,8 @@ describe('getUserConfigs error paths', () => {
 });
 
 describe('restRequest non-object error payload', () => {
-  it('returns HTTP status fallback when error body is empty', async () => {
-    // empty body on a 400 response -> payload=null -> non-object path -> "HTTP 400"
-    fetchMock.mockResolvedValueOnce(new Response('', { status: 400 }));
+  it('passes the RPC error string through (restRequest builds "HTTP 400" for empty bodies)', async () => {
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'HTTP 400', status: 400 });
 
     const { submitUserConfig } = await import('./userConfigs');
     const result = await submitUserConfig(validInput());
@@ -369,8 +377,8 @@ describe('restRequest non-object error payload', () => {
 });
 
 describe('submitUserConfig fetch throws', () => {
-  it('returns error when fetch throws during submit', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('connection refused'));
+  it('returns error when the RPC call throws during submit', async () => {
+    mockRpc.mockRejectedValueOnce(new Error('connection refused'));
 
     const { submitUserConfig } = await import('./userConfigs');
     const result = await submitUserConfig(validInput());
@@ -380,24 +388,19 @@ describe('submitUserConfig fetch throws', () => {
 });
 
 describe('deleteMyReport', () => {
-  it('sends a DELETE with x-client-id and returns ok on 204', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+  it('deletes through client_delete_report and returns ok', async () => {
+    mockRpc.mockResolvedValueOnce(rpcOk);
 
     const { deleteMyReport } = await import('./userConfigs');
     const result = await deleteMyReport('620');
 
     expect(result.ok).toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] ?? [];
-    expect(url).toContain('/user_configs?');
-    expect(url).toContain('client_id=eq.');
-    expect(url).toContain('app_id=eq.620');
-    expect(init?.method).toBe('DELETE');
-    expect((init?.headers as Record<string, string>)['x-client-id']).toBe('deadbeef'.repeat(8));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockRpc).toHaveBeenCalledWith('client_delete_report', { p_app_id: '620' });
   });
 
-  it('returns the backend error when the DELETE fails', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'row not found' }, { status: 404 }));
+  it('returns the backend error when the RPC refuses the delete', async () => {
+    mockRpc.mockResolvedValueOnce({ data: null, error: 'row not found', status: 404 });
 
     const { deleteMyReport } = await import('./userConfigs');
     const result = await deleteMyReport('620');
@@ -405,8 +408,8 @@ describe('deleteMyReport', () => {
     expect(result.error).toMatch(/row not found/);
   });
 
-  it('returns the thrown message when fetch itself throws', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('socket closed'));
+  it('returns the thrown message when the RPC call throws', async () => {
+    mockRpc.mockRejectedValueOnce(new Error('socket closed'));
 
     const { deleteMyReport } = await import('./userConfigs');
     const result = await deleteMyReport('620');

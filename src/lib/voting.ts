@@ -1,5 +1,6 @@
 import { logFrontendEvent } from './logger';
 import type { VoteTotals } from './cache';
+import { getInstallationSecret } from './protonPulseAccount';
 
 const SUPABASE_URL = 'https://ilsgdshkaocrmibwdezk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_3Oqhm4JneafJNQw9BuUaxw_L9qZa-5V';
@@ -101,6 +102,22 @@ export async function restRequest<T>(
   };
 }
 
+// Writes go through the client_* RPCs, which check this install's secret
+// (sha256 kept server-side in client_secrets). The secret is the same
+// installation secret the account-link edge functions already use. The
+// first call registers it; a different secret for this voter id is refused,
+// and so is a banned client.
+export async function callClientRpc<T>(
+  fn: string,
+  args: Record<string, unknown>,
+): Promise<{ data: T | null; error: string | null; status: number }> {
+  const voterId = await getVoterId();
+  return restRequest<T>(`rpc/${fn}`, {
+    method: 'POST',
+    body: JSON.stringify({ p_client_id: voterId, p_secret: getInstallationSecret(), ...args }),
+  });
+}
+
 async function fetchExistingVote(
   voterId: string,
   appId: string,
@@ -157,17 +174,20 @@ export async function deleteVote(
   reportKey: string,
 ): Promise<boolean> {
   try {
-    const voterId = await getVoterId();
-    const { error } = await restRequest<null>('report_votes', {
-      method: 'DELETE',
-      headers: { Prefer: 'return=minimal' },
-    }, {
-      voter_id: `eq.${voterId}`,
-      app_id: `eq.${appId}`,
-      report_key: `eq.${reportKey}`,
+    const { error, status } = await callClientRpc<null>('client_cast_vote', {
+      p_app_id: appId, p_report_key: reportKey, p_vote: 0,
     });
-    return !error;
-  } catch {
+    if (error) {
+      void logFrontendEvent('ERROR', 'Vote delete failed', {
+        appId, reportKey, status, error, source: 'rpc/client_cast_vote',
+      });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    void logFrontendEvent('ERROR', 'Vote delete threw', {
+      appId, reportKey, error: err instanceof Error ? err.message : String(err),
+    });
     return false;
   }
 }
@@ -200,34 +220,15 @@ export async function submitVote(
       return true;
     }
 
-    const { error } = existingVote === null
-      ? await restRequest<null>('report_votes', {
-        method: 'POST',
-        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({
-          voter_id: voterId,
-          app_id: appId,
-          report_key: reportKey,
-          vote,
-        }),
-      }, {
-        on_conflict: 'voter_id,app_id,report_key',
-      })
-      : await restRequest<null>('report_votes', {
-        method: 'PATCH',
-        headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ vote }),
-      }, {
-        voter_id: `eq.${voterId}`,
-        app_id: `eq.${appId}`,
-        report_key: `eq.${reportKey}`,
-      });
+    const { error, status } = await callClientRpc<null>('client_cast_vote', {
+      p_app_id: appId, p_report_key: reportKey, p_vote: vote,
+    });
 
     lastVoteAt = Date.now();
 
     if (error) {
       void logFrontendEvent('ERROR', 'Vote submission failed', {
-        appId, reportKey, error,
+        appId, reportKey, status, error, source: 'rpc/client_cast_vote',
       });
       return false;
     }

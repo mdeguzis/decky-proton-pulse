@@ -73,30 +73,23 @@ describe('getVoterId', () => {
 });
 
 describe('submitVote', () => {
-  it('upserts the vote in one request', async () => {
+  it('casts the vote through client_cast_vote with the install secret', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ message: 'no rows' }, { status: 406 }))
-      .mockResolvedValueOnce(new Response(null, { status: 201 }));
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
 
     const { submitVote } = await import('./voting');
     const ok = await submitVote('123', 'report-1', 1);
 
     expect(ok).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[1]?.[0]).toContain('/report_votes?');
-    expect(fetchMock.mock.calls[1]?.[0]).toContain('on_conflict=voter_id%2Capp_id%2Creport_key');
+    expect(fetchMock.mock.calls[1]?.[0]).toMatch(/\/rest\/v1\/rpc\/client_cast_vote$/);
     expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({ method: 'POST' });
-    expect(fetchMock.mock.calls[1]?.[1]?.headers).toMatchObject({
-      Prefer: 'resolution=merge-duplicates,return=minimal',
-    });
-
-    const insertBody = fetchMock.mock.calls[1]?.[1]?.body;
-    expect(typeof insertBody).toBe('string');
-    expect(JSON.parse(insertBody as string)).toMatchObject({
-      app_id: '123',
-      report_key: 'report-1',
-      vote: 1,
-    });
+    const body = JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string);
+    expect(body).toMatchObject({ p_app_id: '123', p_report_key: 'report-1', p_vote: 1 });
+    expect(body.p_client_id).toEqual(expect.any(String));
+    // the secret is the installation secret the link edge functions use
+    expect(body.p_secret).toBe(lsStore['proton-pulse:installation-secret']);
   });
 
   it('returns false when the insert fails', async () => {
@@ -108,7 +101,7 @@ describe('submitVote', () => {
     await expect(submitVote('123', 'report-1', -1)).resolves.toBe(false);
   });
 
-  it('patches an existing vote instead of trying to reinsert it', async () => {
+  it('changes an existing vote through the same RPC, never a table PATCH', async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse({ vote: -1 }))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
@@ -117,11 +110,17 @@ describe('submitVote', () => {
     await expect(submitVote('123', 'report-1', 1)).resolves.toBe(true);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({ method: 'PATCH' });
-    expect(fetchMock.mock.calls[1]?.[0]).toContain('voter_id=eq.');
-    expect(fetchMock.mock.calls[1]?.[0]).toContain('app_id=eq.123');
-    expect(fetchMock.mock.calls[1]?.[0]).toContain('report_key=eq.report-1');
-    expect(fetchMock.mock.calls[1]?.[1]?.body).toBe(JSON.stringify({ vote: 1 }));
+    expect(fetchMock.mock.calls[1]?.[0]).toMatch(/\/rpc\/client_cast_vote$/);
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toMatchObject({ p_vote: 1 });
+  });
+
+  it('returns false when the server refuses the secret or a ban', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ message: 'no rows' }, { status: 406 }))
+      .mockResolvedValueOnce(jsonResponse({ message: 'client secret mismatch' }, { status: 403 }));
+
+    const { submitVote } = await import('./voting');
+    await expect(submitVote('124', 'report-2', 1)).resolves.toBe(false);
   });
 
   it('treats the same existing vote as a no-op success', async () => {
@@ -287,19 +286,18 @@ describe('deleteVote', () => {
     });
   });
 
-  it('sends a DELETE scoped to voter/app/report and returns true on success', async () => {
+  it('clears the vote with client_cast_vote(0) and returns true on success', async () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
 
     const { deleteVote } = await import('./voting');
     await expect(deleteVote('123', 'report-1')).resolves.toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] ?? [];
-    expect(url).toContain('/report_votes?');
-    expect(url).toContain('voter_id=eq.');
-    expect(url).toContain('app_id=eq.123');
-    expect(url).toContain('report_key=eq.report-1');
-    expect(init?.method).toBe('DELETE');
-    expect((init?.headers as Record<string, string>).Prefer).toBe('return=minimal');
+    expect(url).toMatch(/\/rpc\/client_cast_vote$/);
+    expect(init?.method).toBe('POST');
+    expect(JSON.parse(init?.body as string)).toMatchObject({
+      p_app_id: '123', p_report_key: 'report-1', p_vote: 0,
+    });
   });
 
   it('returns false when the DELETE returns a server error', async () => {
