@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema_version": 1,
-    "generated_at": "2026-10-25T21:24:24Z",
+    "generated_at": "2026-10-31T13:43:05Z",
     "generator": "python3 scripts/extract-proton-env-support.py [--tag <tool_id>=<tag>]",
     "how_to_update": "Bump tools.<id>.source.tag (or pass --tag) and re-run the generator. It refetches each tool's proton script from source.raw_url and rewrites switches and env_reads.",
     "method": "switches = check_environment(\"PROTON_X\", \"option\") pairs in the proton script; env_reads = other environment variables the script reads (os.environ, g_session.env, env_nonzero). A switch a tool does not list is silently ignored by that tool.",
@@ -223,16 +223,16 @@
       "source": {
         "label": "Proton-CachyOS",
         "repo": "CachyOS/proton-cachyos",
-        "tag": "cachyos-11.0-20260702-slr",
+        "tag": "cachyos-11.0-20261015-slr",
         "file": "proton",
         "repo_url": "https://github.com/CachyOS/proton-cachyos",
-        "release_url": "https://github.com/CachyOS/proton-cachyos/releases/tag/cachyos-11.0-20260702-slr",
-        "file_url": "https://github.com/CachyOS/proton-cachyos/blob/cachyos-11.0-20260702-slr/proton",
-        "raw_url": "https://raw.githubusercontent.com/CachyOS/proton-cachyos/cachyos-11.0-20260702-slr/proton",
-        "sha256": "aad4d855bc57faa839d49e38054125b53c44ee6b9ef472d1c1627482e8ac5572"
+        "release_url": "https://github.com/CachyOS/proton-cachyos/releases/tag/cachyos-11.0-20261015-slr",
+        "file_url": "https://github.com/CachyOS/proton-cachyos/blob/cachyos-11.0-20261015-slr/proton",
+        "raw_url": "https://raw.githubusercontent.com/CachyOS/proton-cachyos/cachyos-11.0-20261015-slr/proton",
+        "sha256": "6de153556453698d38c49ad7a6c8d7528134181f6b9e9c5fd240a0b9e38130d0"
       },
-      "switch_count": 51,
-      "env_read_count": 114,
+      "switch_count": 53,
+      "env_read_count": 117,
       "switches": {
         "DXVK_NVAPI_VKREFLEX": "vkreflex",
         "ENABLE_VKBASALT": "vkbasalt",
@@ -246,9 +246,10 @@
         "PROTON_DXVK_SAREK": "dxvksarek",
         "PROTON_ENABLE_MEDIACONV": "mediaconv",
         "PROTON_ENABLE_WAYLAND": "wayland",
+        "PROTON_FFX3_UPGRADE": "ffx3",
+        "PROTON_FFX4_UPGRADE": "ffx4",
         "PROTON_FORCE_LARGE_ADDRESS_AWARE": "forcelgadd",
         "PROTON_FORCE_NVAPI": "forcenvapi",
-        "PROTON_FSR3_UPGRADE": "fsr3",
         "PROTON_FSR4_INDICATOR": "fsr4hud",
         "PROTON_FSR4_UPGRADE": "fsr4",
         "PROTON_HEAP_DELAY_FREE": "heapdelayfree",
@@ -258,11 +259,10 @@
         "PROTON_HIDE_NVIDIA_GPU": "hidenvgpu",
         "PROTON_HIDE_VANGOGH_GPU": "hidevggpu",
         "PROTON_LOCAL_SHADER_CACHE": "localshadercache",
-        "PROTON_MLFG_UPGRADE": "mlfg",
         "PROTON_NATIVE_AGS": "nativeags",
+        "PROTON_NATIVE_STEAM": "nativesteam",
         "PROTON_NO_D3D10": "nod3d10",
         "PROTON_NO_D3D11": "nod3d11",
-        "PROTON_NO_ESYNC": "noesync",
         "PROTON_NO_FSYNC": "nofsync",
         "PROTON_NO_WM_DECORATION": "nowmdecoration",
         "PROTON_NO_XIM": "noxim",
@@ -283,7 +283,9 @@
         "PROTON_USE_WINED3D": "wined3d",
         "PROTON_USE_WINED3D11": "wined3d",
         "PROTON_USE_WOW64": "wow64",
+        "PROTON_VKD3D_LOWLATENCY": "vkd3dlowlatency",
         "PROTON_XESS_UPGRADE": "xess",
+        "PROTON_ZLUDA": "zluda",
         "PYROVEIL": "pyroveil"
       },
       "env_reads": [
@@ -291,8 +293,8 @@
         "DXVK_ENABLE_NVAPI",
         "DXVK_FILTER_DEVICE_NAME",
         "DXVK_FILTER_DEVICE_UUID",
-        "DXVK_HUD",
         "DXVK_LOG_LEVEL",
+        "DXVK_NO_UE4_WORKAROUND",
         "DXVK_NVAPI_ALLOW_OTHER_DRIVERS",
         "DXVK_NVAPI_DRIVER_VERSION",
         "DXVK_NVAPI_LOG_LEVEL",
@@ -300,6 +302,7 @@
         "ESPEAK_DATA_PATH",
         "FEX_APP_CONFIG",
         "FEX_APP_CONFIG_LOCATION",
+        "FEX_DISKCACHE",
         "FNA3D_FORCE_DRIVER",
         "FSR_FG_WATERMARK",
         "FSR_WATERMARK",
@@ -328,6 +331,7 @@
         "PROTON_CRASH_REPORT_DIR",
         "PROTON_DEMUX",
         "PROTON_DISABLE_HIDRAW",
+        "PROTON_DISABLE_LSTEAMCLIENT",
         "PROTON_DLL_COPY",
         "PROTON_EMULATE_STEAMINPUT",
         "PROTON_LIMIT_ADDRESS_SPACE",
@@ -335,9 +339,9 @@
         "PROTON_LOG",
         "PROTON_LOG_DIR",
         "PROTON_MEDIACONV_NO_VIDEO",
-        "PROTON_MEDIA_FORCE_GST",
         "PROTON_NO_STEAMINPUT",
         "PROTON_REMOTE_DEBUG_CMD",
+        "PROTON_SPOOF_STEAMINPUT_VIDPID",
         "PROTON_USE_ARM64",
         "PROTON_USE_XALIA",
         "PROTON_VIDEO_CONVERT",
@@ -370,7 +374,6 @@
         "WINEDEBUG",
         "WINEDLLOVERRIDES",
         "WINEDLLPATH",
-        "WINEESYNC",
         "WINEFSYNC",
         "WINELOADERNOEXEC",
         "WINEPREFIX",
@@ -386,6 +389,7 @@
         "WINE_HEAP_DELAY_FREE",
         "WINE_HEAP_TOP_DOWN",
         "WINE_HEAP_ZERO_MEMORY",
+        "WINE_HIDE_AMD_CPU",
         "WINE_HIDE_AMD_GPU",
         "WINE_HIDE_APU",
         "WINE_HIDE_INTEL_GPU",
@@ -400,7 +404,8 @@
         "WINE_USE_EGL",
         "XALIA_SUPPORTED_ONLY",
         "XDG_CONFIG_HOME",
-        "XLOCALEDIR"
+        "XLOCALEDIR",
+        "ZLUDA64_PATH"
       ]
     },
     "valve-experimental": {
@@ -532,13 +537,13 @@
       "source": {
         "label": "Proton (stable)",
         "repo": "ValveSoftware/Proton",
-        "tag": "proton-11.0-2c",
+        "tag": "proton-11.0-2e",
         "file": "proton",
         "repo_url": "https://github.com/ValveSoftware/Proton",
-        "release_url": "https://github.com/ValveSoftware/Proton/releases/tag/proton-11.0-2c",
-        "file_url": "https://github.com/ValveSoftware/Proton/blob/proton-11.0-2c/proton",
-        "raw_url": "https://raw.githubusercontent.com/ValveSoftware/Proton/proton-11.0-2c/proton",
-        "sha256": "787504a79bacf6b303984a9a846cf47463f36599248e8306b26d5faf78267aad"
+        "release_url": "https://github.com/ValveSoftware/Proton/releases/tag/proton-11.0-2e",
+        "file_url": "https://github.com/ValveSoftware/Proton/blob/proton-11.0-2e/proton",
+        "raw_url": "https://raw.githubusercontent.com/ValveSoftware/Proton/proton-11.0-2e/proton",
+        "sha256": "a4f94c208355639c87877ba63e8faf1f26d8c0731db04f722dee66cdfcfbf478"
       },
       "switch_count": 19,
       "env_read_count": 84,
@@ -748,6 +753,18 @@
         "ge"
       ]
     },
+    "PROTON_FFX3_UPGRADE": {
+      "option": "ffx3",
+      "tools": [
+        "cachyos"
+      ]
+    },
+    "PROTON_FFX4_UPGRADE": {
+      "option": "ffx4",
+      "tools": [
+        "cachyos"
+      ]
+    },
     "PROTON_FORCE_LARGE_ADDRESS_AWARE": {
       "option": "forcelgadd",
       "tools": [
@@ -769,8 +786,7 @@
     "PROTON_FSR3_UPGRADE": {
       "option": "fsr3",
       "tools": [
-        "ge",
-        "cachyos"
+        "ge"
       ]
     },
     "PROTON_FSR4_INDICATOR": {
@@ -851,14 +867,19 @@
     "PROTON_MLFG_UPGRADE": {
       "option": "mlfg",
       "tools": [
-        "ge",
-        "cachyos"
+        "ge"
       ]
     },
     "PROTON_NATIVE_AGS": {
       "option": "nativeags",
       "tools": [
         "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_NATIVE_STEAM": {
+      "option": "nativesteam",
+      "tools": [
         "cachyos"
       ]
     },
@@ -883,8 +904,7 @@
     "PROTON_NO_ESYNC": {
       "option": "noesync",
       "tools": [
-        "ge",
-        "cachyos"
+        "ge"
       ]
     },
     "PROTON_NO_FSYNC": {
@@ -1058,10 +1078,22 @@
         "ge"
       ]
     },
+    "PROTON_VKD3D_LOWLATENCY": {
+      "option": "vkd3dlowlatency",
+      "tools": [
+        "cachyos"
+      ]
+    },
     "PROTON_XESS_UPGRADE": {
       "option": "xess",
       "tools": [
         "ge",
+        "cachyos"
+      ]
+    },
+    "PROTON_ZLUDA": {
+      "option": "zluda",
+      "tools": [
         "cachyos"
       ]
     },
